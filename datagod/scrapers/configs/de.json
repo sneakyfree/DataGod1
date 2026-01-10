@@ -1,0 +1,59 @@
+{
+  "state_code": "DE",
+  "state_name": "Delaware",
+  "auth_type": "api_key",
+  "requests_per_minute": 60,
+  "requests_per_hour": 1000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "New Castle",
+      "base_url": "https://www.nccde.org/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 570719
+    },
+    {
+      "name": "Sussex",
+      "base_url": "https://www.sussexcountyde.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 237378
+    },
+    {
+      "name": "Kent",
+      "base_url": "https://www.co.kent.de.us/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 181851
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "Delaware has only 3 counties. New Castle County contains most corporate headquarters."
+}

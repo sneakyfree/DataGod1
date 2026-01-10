@@ -1,0 +1,42 @@
+{
+  "exported_at": "2025-12-30T05:34:21.108817",
+  "groups": [
+    {
+      "group_id": "exact_25701",
+      "canonical_record": {
+        "id": 1,
+        "name": "John Smith",
+        "address": "123 Main St",
+        "amount": 250000,
+        "date": "2023-01-15"
+      },
+      "duplicate_records": [
+        {
+          "id": 2,
+          "name": "John Smith",
+          "address": "123 Main St",
+          "amount": 250000,
+          "date": "2023-01-15"
+        }
+      ],
+      "confidence_score": 1.0,
+      "merge_strategy": "exact_match",
+      "total_records": 2,
+      "created_at": "2025-12-30T05:34:21.108622",
+      "last_updated": "2025-12-30T05:34:21.108623"
+    }
+  ],
+  "metrics": {
+    "total_records_processed": 10,
+    "duplicates_found": 1,
+    "duplicate_groups_created": 1,
+    "records_merged": 1,
+    "records_deleted": 1,
+    "processing_time_seconds": 0.00010442733764648438,
+    "similarity_threshold": 0.8,
+    "algorithm_used": "exact_match",
+    "deduplication_rate": 10.0,
+    "start_time": "2025-12-30T05:34:21.108597",
+    "end_time": "2025-12-30T05:34:21.108702"
+  }
+}

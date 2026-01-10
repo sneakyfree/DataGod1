@@ -1,0 +1,89 @@
+{
+  "state_code": "NM",
+  "state_name": "New Mexico",
+  "auth_type": "api_key",
+  "requests_per_minute": 60,
+  "requests_per_hour": 1000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "Bernalillo",
+      "base_url": "https://www.bernco.gov/clerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 679037
+    },
+    {
+      "name": "Dona Ana",
+      "base_url": "https://www.donaanacounty.org/clerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 219561
+    },
+    {
+      "name": "Santa Fe",
+      "base_url": "https://www.santafecountynm.gov/clerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 154823
+    },
+    {
+      "name": "Sandoval",
+      "base_url": "https://www.sandovalcountynm.gov/clerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 148834
+    },
+    {
+      "name": "San Juan",
+      "base_url": "https://www.sjcounty.net/clerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 123958
+    },
+    {
+      "name": "Valencia",
+      "base_url": "https://www.valenciacounty.com/clerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 76205
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "New Mexico County Clerks handle property recording. Bernalillo County (Albuquerque) has the largest volume."
+}

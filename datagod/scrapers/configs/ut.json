@@ -1,0 +1,89 @@
+{
+  "state_code": "UT",
+  "state_name": "Utah",
+  "auth_type": "api_key",
+  "requests_per_minute": 60,
+  "requests_per_hour": 1000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "Salt Lake",
+      "base_url": "https://slco.org/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 1185238
+    },
+    {
+      "name": "Utah",
+      "base_url": "https://www.utahcounty.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 659399
+    },
+    {
+      "name": "Davis",
+      "base_url": "https://www.daviscountyutah.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 361521
+    },
+    {
+      "name": "Weber",
+      "base_url": "https://www.webercountyutah.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 262223
+    },
+    {
+      "name": "Washington",
+      "base_url": "https://www.washco.utah.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 180279
+    },
+    {
+      "name": "Cache",
+      "base_url": "https://www.cachecounty.org/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 133060
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "Utah County Recorders handle property recording. Salt Lake and Utah counties have the largest volumes."
+}

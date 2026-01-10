@@ -1,0 +1,89 @@
+{
+  "state_code": "IA",
+  "state_name": "Iowa",
+  "auth_type": "api_key",
+  "requests_per_minute": 60,
+  "requests_per_hour": 1000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "Polk",
+      "base_url": "https://www.polkcountyiowa.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 492401
+    },
+    {
+      "name": "Linn",
+      "base_url": "https://www.linncountyiowa.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 227463
+    },
+    {
+      "name": "Scott",
+      "base_url": "https://www.scottcountyiowa.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 172943
+    },
+    {
+      "name": "Johnson",
+      "base_url": "https://www.johnsoncountyiowa.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 154032
+    },
+    {
+      "name": "Black Hawk",
+      "base_url": "https://www.blackhawkcounty.iowa.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 131228
+    },
+    {
+      "name": "Woodbury",
+      "base_url": "https://www.woodburycountyiowa.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 105252
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "Iowa County Recorders handle property recording. Polk County (Des Moines) has the largest volume."
+}

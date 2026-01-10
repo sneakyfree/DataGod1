@@ -1,0 +1,89 @@
+{
+  "state_code": "MN",
+  "state_name": "Minnesota",
+  "auth_type": "api_key",
+  "requests_per_minute": 60,
+  "requests_per_hour": 1000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "Hennepin",
+      "base_url": "https://www.hennepin.us/residents/property/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 1281565
+    },
+    {
+      "name": "Ramsey",
+      "base_url": "https://www.ramseycounty.us/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 552352
+    },
+    {
+      "name": "Dakota",
+      "base_url": "https://www.co.dakota.mn.us/PropertyTaxation/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 439882
+    },
+    {
+      "name": "Anoka",
+      "base_url": "https://www.anokacountymn.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 363887
+    },
+    {
+      "name": "Washington",
+      "base_url": "https://www.washingtoncountymn.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 267568
+    },
+    {
+      "name": "Scott",
+      "base_url": "https://www.scottcountymn.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 150928
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "Minnesota County Recorders provide public access to property and deed records through various county portals."
+}

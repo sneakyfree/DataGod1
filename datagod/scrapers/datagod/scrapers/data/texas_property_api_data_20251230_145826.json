@@ -1,0 +1,172 @@
+[
+  {
+    "source": "texas_property_api",
+    "source_id": "tx_property_1",
+    "title": "Property at 456 Oak Ave, Houston, TX 77002",
+    "description": "Property owned by Jane Smith 1 in Harris County",
+    "amount": 358000,
+    "date": "2021-03-10",
+    "url": "https://texas.propertyapi.gov/records/tx_property_1",
+    "jurisdiction": "Harris County, TX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "tx_property_1",
+      "county": "Harris",
+      "address": "456 Oak Ave, Houston, TX 77002",
+      "owner": "Jane Smith 1",
+      "appraised_value": 358000,
+      "last_sale_date": "2021-03-10",
+      "last_sale_amount": 410000,
+      "property_type": "Single Family Residence",
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "square_feet": 2275,
+      "year_built": 2006
+    },
+    "collected_at": "2025-12-30T14:58:26.147337",
+    "additional_data": {
+      "owner": "Jane Smith 1",
+      "property_type": "Single Family Residence",
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "square_feet": 2275,
+      "year_built": 2006
+    }
+  },
+  {
+    "source": "texas_property_api",
+    "source_id": "tx_property_2",
+    "title": "Property at 456 Oak Ave, Houston, TX 77003",
+    "description": "Property owned by Jane Smith 2 in Harris County",
+    "amount": 366000,
+    "date": "2021-03-10",
+    "url": "https://texas.propertyapi.gov/records/tx_property_2",
+    "jurisdiction": "Harris County, TX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "tx_property_2",
+      "county": "Harris",
+      "address": "456 Oak Ave, Houston, TX 77003",
+      "owner": "Jane Smith 2",
+      "appraised_value": 366000,
+      "last_sale_date": "2021-03-10",
+      "last_sale_amount": 420000,
+      "property_type": "Single Family Residence",
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "square_feet": 2350,
+      "year_built": 2007
+    },
+    "collected_at": "2025-12-30T14:58:26.147339",
+    "additional_data": {
+      "owner": "Jane Smith 2",
+      "property_type": "Single Family Residence",
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "square_feet": 2350,
+      "year_built": 2007
+    }
+  },
+  {
+    "source": "texas_property_api",
+    "source_id": "tx_property_3",
+    "title": "Property at 456 Oak Ave, Houston, TX 77004",
+    "description": "Property owned by Jane Smith 3 in Harris County",
+    "amount": 374000,
+    "date": "2021-03-10",
+    "url": "https://texas.propertyapi.gov/records/tx_property_3",
+    "jurisdiction": "Harris County, TX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "tx_property_3",
+      "county": "Harris",
+      "address": "456 Oak Ave, Houston, TX 77004",
+      "owner": "Jane Smith 3",
+      "appraised_value": 374000,
+      "last_sale_date": "2021-03-10",
+      "last_sale_amount": 430000,
+      "property_type": "Single Family Residence",
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "square_feet": 2425,
+      "year_built": 2008
+    },
+    "collected_at": "2025-12-30T14:58:26.147340",
+    "additional_data": {
+      "owner": "Jane Smith 3",
+      "property_type": "Single Family Residence",
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "square_feet": 2425,
+      "year_built": 2008
+    }
+  },
+  {
+    "source": "texas_property_api",
+    "source_id": "tx_property_4",
+    "title": "Property at 456 Oak Ave, Houston, TX 77005",
+    "description": "Property owned by Jane Smith 4 in Harris County",
+    "amount": 382000,
+    "date": "2021-03-10",
+    "url": "https://texas.propertyapi.gov/records/tx_property_4",
+    "jurisdiction": "Harris County, TX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "tx_property_4",
+      "county": "Harris",
+      "address": "456 Oak Ave, Houston, TX 77005",
+      "owner": "Jane Smith 4",
+      "appraised_value": 382000,
+      "last_sale_date": "2021-03-10",
+      "last_sale_amount": 440000,
+      "property_type": "Single Family Residence",
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "square_feet": 2500,
+      "year_built": 2009
+    },
+    "collected_at": "2025-12-30T14:58:26.147341",
+    "additional_data": {
+      "owner": "Jane Smith 4",
+      "property_type": "Single Family Residence",
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "square_feet": 2500,
+      "year_built": 2009
+    }
+  },
+  {
+    "source": "texas_property_api",
+    "source_id": "tx_property_5",
+    "title": "Property at 456 Oak Ave, Houston, TX 77006",
+    "description": "Property owned by Jane Smith 5 in Harris County",
+    "amount": 390000,
+    "date": "2021-03-10",
+    "url": "https://texas.propertyapi.gov/records/tx_property_5",
+    "jurisdiction": "Harris County, TX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "tx_property_5",
+      "county": "Harris",
+      "address": "456 Oak Ave, Houston, TX 77006",
+      "owner": "Jane Smith 5",
+      "appraised_value": 390000,
+      "last_sale_date": "2021-03-10",
+      "last_sale_amount": 450000,
+      "property_type": "Single Family Residence",
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "square_feet": 2575,
+      "year_built": 2010
+    },
+    "collected_at": "2025-12-30T14:58:26.147342",
+    "additional_data": {
+      "owner": "Jane Smith 5",
+      "property_type": "Single Family Residence",
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "square_feet": 2575,
+      "year_built": 2010
+    }
+  }
+]

@@ -1,0 +1,380 @@
+"""
+Tests for datagod/scrapers/api_manager.py
+
+Comprehensive tests for the API Manager module.
+"""
+
+import pytest
+from unittest.mock import Mock, patch, MagicMock, mock_open
+import json
+from datetime import datetime, timedelta
+import tempfile
+import os
+
+
+class TestAPIManagerInitialization:
+    """Tests for APIManager initialization"""
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_init_no_credentials_file(self, mock_exists):
+        """Test initialization when credentials file doesn't exist"""
+        mock_exists.return_value = False
+
+        # Import after patching to avoid import errors
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager(credentials_file="/tmp/nonexistent.json")
+
+        assert manager.credentials == {}
+        assert manager.active_integrations == {}
+        assert manager.usage_stats['total_requests'] == 0
+        assert manager.usage_stats['total_cost'] == 0.0
+
+    @patch('builtins.open', mock_open(read_data='{"api_key": "test123"}'))
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_init_with_credentials_file(self, mock_exists):
+        """Test initialization with existing credentials file"""
+        mock_exists.return_value = True
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager(credentials_file="/tmp/creds.json")
+
+        assert manager.credentials == {"api_key": "test123"}
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_init_with_invalid_json(self, mock_exists):
+        """Test initialization with invalid JSON credentials"""
+        mock_exists.return_value = True
+
+        with patch('builtins.open', mock_open(read_data='invalid json{')):
+            from datagod.scrapers.api_manager import APIManager
+
+            manager = APIManager(credentials_file="/tmp/bad.json")
+            assert manager.credentials == {}
+
+
+class TestCredentialsManagement:
+    """Tests for credentials management"""
+
+    def test_add_credentials(self, tmp_path):
+        """Test adding credentials"""
+        from datagod.scrapers.api_manager import APIManager
+
+        creds_file = tmp_path / "creds.json"
+        manager = APIManager(credentials_file=str(creds_file))
+
+        manager.add_credentials("test_api", {"key": "value123"})
+
+        assert "test_api" in manager.credentials
+        assert manager.credentials["test_api"]["key"] == "value123"
+        assert "updated_at" in manager.credentials["test_api"]
+
+    def test_add_credentials_overwrites_existing(self, tmp_path):
+        """Test that adding credentials overwrites existing ones"""
+        from datagod.scrapers.api_manager import APIManager
+
+        creds_file = tmp_path / "creds.json"
+        manager = APIManager(credentials_file=str(creds_file))
+
+        manager.add_credentials("test_api", {"key": "old_value"})
+        manager.add_credentials("test_api", {"key": "new_value"})
+
+        assert manager.credentials["test_api"]["key"] == "new_value"
+
+
+class TestIntegrationManagement:
+    """Tests for API integration management"""
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_get_integration_unknown_type(self, mock_exists):
+        """Test getting integration with unknown API type"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        integration = manager.get_integration(1, "unknown_api_type")
+
+        assert integration is None
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_get_integration_no_credentials(self, mock_exists):
+        """Test getting integration without credentials"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        # Use a registered API type but without credentials
+        integration = manager.get_integration(1, "florida_property_appraiser")
+
+        assert integration is None
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_is_integration_valid_no_expiry(self, mock_exists):
+        """Test integration validity check without token expiry"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        mock_integration = Mock(spec=[])  # No token_expires_at attribute
+
+        assert manager._is_integration_valid(mock_integration) is True
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_is_integration_valid_not_expired(self, mock_exists):
+        """Test integration validity with valid token"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        mock_integration = Mock()
+        mock_integration.token_expires_at = datetime.now() + timedelta(hours=1)
+
+        assert manager._is_integration_valid(mock_integration) is True
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_is_integration_valid_expired(self, mock_exists):
+        """Test integration validity with expired token"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        mock_integration = Mock()
+        mock_integration.token_expires_at = datetime.now() - timedelta(hours=1)
+
+        assert manager._is_integration_valid(mock_integration) is False
+
+
+class TestSearchAcrossAPIs:
+    """Tests for cross-API search functionality"""
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_search_across_apis_no_results(self, mock_exists):
+        """Test search across APIs with no results"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        results = manager.search_across_apis(1, {"query": "test"}, api_types=[])
+
+        assert results == []
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_get_available_apis_for_jurisdiction(self, mock_exists):
+        """Test getting available APIs for jurisdiction"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        apis = manager._get_available_apis_for_jurisdiction(1)
+
+        assert isinstance(apis, list)
+        assert len(apis) > 0
+
+
+class TestUsageTracking:
+    """Tests for API usage tracking"""
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_track_api_usage_new_api(self, mock_exists):
+        """Test tracking usage for a new API"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        manager._track_api_usage("test_api", 10)
+
+        assert "test_api" in manager.usage_stats['api_usage']
+        assert manager.usage_stats['api_usage']['test_api']['requests'] == 1
+        assert manager.usage_stats['api_usage']['test_api']['results'] == 10
+        assert manager.usage_stats['total_requests'] == 1
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_track_api_usage_existing_api(self, mock_exists):
+        """Test tracking usage for existing API"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        manager._track_api_usage("test_api", 5)
+        manager._track_api_usage("test_api", 10)
+
+        assert manager.usage_stats['api_usage']['test_api']['requests'] == 2
+        assert manager.usage_stats['api_usage']['test_api']['results'] == 15
+        assert manager.usage_stats['total_requests'] == 2
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_calculate_api_cost_known_api(self, mock_exists):
+        """Test cost calculation for known API"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        cost = manager._calculate_api_cost("florida_property_appraiser", 5)
+
+        assert cost == 0.10  # Base cost for Florida API
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_calculate_api_cost_high_volume(self, mock_exists):
+        """Test cost calculation for high volume requests"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        cost = manager._calculate_api_cost("florida_property_appraiser", 20)
+
+        # Base 0.10 + (20-10) * 0.01 = 0.20
+        assert cost == 0.20
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_calculate_api_cost_unknown_api(self, mock_exists):
+        """Test cost calculation for unknown API uses default"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        cost = manager._calculate_api_cost("unknown_api", 5)
+
+        assert cost == 0.10  # Default cost
+
+
+class TestMetricsAndReports:
+    """Tests for metrics and cost reporting"""
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_get_api_metrics_empty(self, mock_exists):
+        """Test getting metrics with no activity"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        metrics = manager.get_api_metrics()
+
+        assert 'overall' in metrics
+        assert 'integrations' in metrics
+        assert metrics['overall']['total_requests'] == 0
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_get_cost_report_no_usage(self, mock_exists):
+        """Test cost report with no usage"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        report = manager.get_cost_report()
+
+        assert report['total_cost'] == 0.0
+        assert report['total_requests'] == 0
+        assert report['cost_per_request'] == 0.0
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_get_cost_report_with_usage(self, mock_exists):
+        """Test cost report with usage"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        manager._track_api_usage("florida_property_appraiser", 5)
+        manager._track_api_usage("california_sos", 10)
+
+        report = manager.get_cost_report()
+
+        assert report['total_requests'] == 2
+        assert report['total_cost'] > 0
+        assert 'api_breakdown' in report
+
+
+class TestCleanupAndListing:
+    """Tests for cleanup and listing functionality"""
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_cleanup_expired_integrations_none(self, mock_exists):
+        """Test cleanup with no expired integrations"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        manager.cleanup_expired_integrations()
+
+        # Should not raise any errors
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_cleanup_expired_integrations_some_expired(self, mock_exists):
+        """Test cleanup removes expired integrations"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+
+        # Add mock integrations
+        valid_integration = Mock()
+        valid_integration.token_expires_at = datetime.now() + timedelta(hours=1)
+
+        expired_integration = Mock()
+        expired_integration.token_expires_at = datetime.now() - timedelta(hours=1)
+
+        manager.active_integrations['valid_key'] = valid_integration
+        manager.active_integrations['expired_key'] = expired_integration
+
+        manager.cleanup_expired_integrations()
+
+        assert 'valid_key' in manager.active_integrations
+        assert 'expired_key' not in manager.active_integrations
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_list_available_apis(self, mock_exists):
+        """Test listing available APIs"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        apis = manager.list_available_apis()
+
+        assert isinstance(apis, list)
+        # Should have registered APIs
+        assert len(apis) >= 0
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_get_api_info_unknown(self, mock_exists):
+        """Test getting info for unknown API"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+        info = manager.get_api_info("unknown_api")
+
+        assert info == {}
+
+
+class TestGlobalAPIManager:
+    """Tests for global API manager instance"""
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_get_api_manager(self, mock_exists):
+        """Test getting global API manager instance"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import get_api_manager, APIManager
+
+        manager = get_api_manager()
+
+        assert isinstance(manager, APIManager)

@@ -1,0 +1,202 @@
+[
+  {
+    "source": "mock_api",
+    "source_id": "mock_1",
+    "title": "Mock Record 1",
+    "description": "This is a mock record 1",
+    "amount": 1100.0,
+    "date": "2023-01-01",
+    "url": "https://example.com/record/1",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_1",
+      "title": "Mock Record 1",
+      "description": "This is a mock record 1",
+      "amount": 1100.0,
+      "date": "2023-01-01",
+      "url": "https://example.com/record/1"
+    },
+    "collected_at": "2025-12-30T14:58:26.147016"
+  },
+  {
+    "source": "mock_api",
+    "source_id": "mock_2",
+    "title": "Mock Record 2",
+    "description": "This is a mock record 2",
+    "amount": 1200.0,
+    "date": "2023-01-01",
+    "url": "https://example.com/record/2",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_2",
+      "title": "Mock Record 2",
+      "description": "This is a mock record 2",
+      "amount": 1200.0,
+      "date": "2023-01-01",
+      "url": "https://example.com/record/2"
+    },
+    "collected_at": "2025-12-30T14:58:26.147022"
+  },
+  {
+    "source": "mock_api",
+    "source_id": "mock_3",
+    "title": "Mock Record 3",
+    "description": "This is a mock record 3",
+    "amount": 1300.0,
+    "date": "2023-01-01",
+    "url": "https://example.com/record/3",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_3",
+      "title": "Mock Record 3",
+      "description": "This is a mock record 3",
+      "amount": 1300.0,
+      "date": "2023-01-01",
+      "url": "https://example.com/record/3"
+    },
+    "collected_at": "2025-12-30T14:58:26.147023"
+  },
+  {
+    "source": "mock_api",
+    "source_id": "mock_4",
+    "title": "Mock Record 4",
+    "description": "This is a mock record 4",
+    "amount": 1400.0,
+    "date": "2023-01-01",
+    "url": "https://example.com/record/4",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_4",
+      "title": "Mock Record 4",
+      "description": "This is a mock record 4",
+      "amount": 1400.0,
+      "date": "2023-01-01",
+      "url": "https://example.com/record/4"
+    },
+    "collected_at": "2025-12-30T14:58:26.147024"
+  },
+  {
+    "source": "mock_api",
+    "source_id": "mock_5",
+    "title": "Mock Record 5",
+    "description": "This is a mock record 5",
+    "amount": 1500.0,
+    "date": "2023-01-01",
+    "url": "https://example.com/record/5",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_5",
+      "title": "Mock Record 5",
+      "description": "This is a mock record 5",
+      "amount": 1500.0,
+      "date": "2023-01-01",
+      "url": "https://example.com/record/5"
+    },
+    "collected_at": "2025-12-30T14:58:26.147026"
+  },
+  {
+    "source": "mock_api",
+    "source_id": "mock_6",
+    "title": "Mock Record 6",
+    "description": "This is a mock record 6",
+    "amount": 1600.0,
+    "date": "2023-01-01",
+    "url": "https://example.com/record/6",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_6",
+      "title": "Mock Record 6",
+      "description": "This is a mock record 6",
+      "amount": 1600.0,
+      "date": "2023-01-01",
+      "url": "https://example.com/record/6"
+    },
+    "collected_at": "2025-12-30T14:58:26.147027"
+  },
+  {
+    "source": "mock_api",
+    "source_id": "mock_7",
+    "title": "Mock Record 7",
+    "description": "This is a mock record 7",
+    "amount": 1700.0,
+    "date": "2023-01-01",
+    "url": "https://example.com/record/7",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_7",
+      "title": "Mock Record 7",
+      "description": "This is a mock record 7",
+      "amount": 1700.0,
+      "date": "2023-01-01",
+      "url": "https://example.com/record/7"
+    },
+    "collected_at": "2025-12-30T14:58:26.147027"
+  },
+  {
+    "source": "mock_api",
+    "source_id": "mock_8",
+    "title": "Mock Record 8",
+    "description": "This is a mock record 8",
+    "amount": 1800.0,
+    "date": "2023-01-01",
+    "url": "https://example.com/record/8",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_8",
+      "title": "Mock Record 8",
+      "description": "This is a mock record 8",
+      "amount": 1800.0,
+      "date": "2023-01-01",
+      "url": "https://example.com/record/8"
+    },
+    "collected_at": "2025-12-30T14:58:26.147028"
+  },
+  {
+    "source": "mock_api",
+    "source_id": "mock_9",
+    "title": "Mock Record 9",
+    "description": "This is a mock record 9",
+    "amount": 1900.0,
+    "date": "2023-01-01",
+    "url": "https://example.com/record/9",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_9",
+      "title": "Mock Record 9",
+      "description": "This is a mock record 9",
+      "amount": 1900.0,
+      "date": "2023-01-01",
+      "url": "https://example.com/record/9"
+    },
+    "collected_at": "2025-12-30T14:58:26.147028"
+  },
+  {
+    "source": "mock_api",
+    "source_id": "mock_10",
+    "title": "Mock Record 10",
+    "description": "This is a mock record 10",
+    "amount": 2000.0,
+    "date": "2023-01-01",
+    "url": "https://example.com/record/10",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_10",
+      "title": "Mock Record 10",
+      "description": "This is a mock record 10",
+      "amount": 2000.0,
+      "date": "2023-01-01",
+      "url": "https://example.com/record/10"
+    },
+    "collected_at": "2025-12-30T14:58:26.147029"
+  }
+]

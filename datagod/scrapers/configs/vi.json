@@ -1,0 +1,59 @@
+{
+  "state_code": "VI",
+  "state_name": "US Virgin Islands",
+  "auth_type": "none",
+  "requests_per_minute": 30,
+  "requests_per_hour": 500,
+  "timeout": 45,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "St. Thomas",
+      "base_url": "https://www.ltg.gov.vi/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 51634
+    },
+    {
+      "name": "St. Croix",
+      "base_url": "https://www.ltg.gov.vi/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 41004
+    },
+    {
+      "name": "St. John",
+      "base_url": "https://www.ltg.gov.vi/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 4197
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "plot_number", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "US Virgin Islands consists of three main islands. Property records managed by Office of the Lieutenant Governor. Uses estate/plot numbering."
+}

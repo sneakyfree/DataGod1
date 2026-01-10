@@ -1,0 +1,97 @@
+{
+  "exported_at": "2025-12-30T05:34:21.110704",
+  "groups": [
+    {
+      "group_id": "fuzzy_894383",
+      "canonical_record": {
+        "id": 1,
+        "name": "John Smith",
+        "address": "123 Main St",
+        "amount": 250000,
+        "date": "2023-01-15"
+      },
+      "duplicate_records": [
+        {
+          "id": 2,
+          "name": "John Smith",
+          "address": "123 Main St",
+          "amount": 250000,
+          "date": "2023-01-15"
+        }
+      ],
+      "confidence_score": 0.8,
+      "merge_strategy": "fuzzy_match",
+      "total_records": 2,
+      "created_at": "2025-12-30T05:34:21.109629",
+      "last_updated": "2025-12-30T05:34:21.109630"
+    },
+    {
+      "group_id": "fuzzy_134490",
+      "canonical_record": {
+        "id": 3,
+        "name": "Jane Doe",
+        "address": "456 Oak Ave",
+        "amount": 300000,
+        "date": "2023-02-20"
+      },
+      "duplicate_records": [
+        {
+          "id": 4,
+          "name": "Jane Doe",
+          "address": "456 Oak Avenue",
+          "amount": 299999,
+          "date": "2023-02-20"
+        },
+        {
+          "id": 5,
+          "name": "Jane Doe",
+          "address": "456 Oak Ave Apt 5",
+          "amount": 300000,
+          "date": "2023-02-21"
+        }
+      ],
+      "confidence_score": 0.8,
+      "merge_strategy": "fuzzy_match",
+      "total_records": 3,
+      "created_at": "2025-12-30T05:34:21.109984",
+      "last_updated": "2025-12-30T05:34:21.109985"
+    },
+    {
+      "group_id": "fuzzy_158681",
+      "canonical_record": {
+        "id": 6,
+        "name": "Michael Johnson",
+        "address": "789 Pine Rd",
+        "amount": 180000,
+        "date": "2023-03-10"
+      },
+      "duplicate_records": [
+        {
+          "id": 7,
+          "name": "Mike Johnson",
+          "address": "789 Pine Road",
+          "amount": 180000,
+          "date": "2023-03-10"
+        }
+      ],
+      "confidence_score": 0.8,
+      "merge_strategy": "fuzzy_match",
+      "total_records": 2,
+      "created_at": "2025-12-30T05:34:21.110239",
+      "last_updated": "2025-12-30T05:34:21.110240"
+    }
+  ],
+  "metrics": {
+    "total_records_processed": 10,
+    "duplicates_found": 4,
+    "duplicate_groups_created": 3,
+    "records_merged": 3,
+    "records_deleted": 4,
+    "processing_time_seconds": 0.0016510486602783203,
+    "similarity_threshold": 0.8,
+    "algorithm_used": "fuzzy_match",
+    "deduplication_rate": 40.0,
+    "start_time": "2025-12-30T05:34:21.108988",
+    "end_time": "2025-12-30T05:34:21.110640"
+  }
+}

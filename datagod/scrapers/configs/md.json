@@ -1,0 +1,109 @@
+{
+  "state_code": "MD",
+  "state_name": "Maryland",
+  "auth_type": "api_key",
+  "requests_per_minute": 60,
+  "requests_per_hour": 1000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "Montgomery",
+      "base_url": "https://sdat.dat.maryland.gov/api/montgomery",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 1062061
+    },
+    {
+      "name": "Prince Georges",
+      "base_url": "https://sdat.dat.maryland.gov/api/princegeorges",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 967201
+    },
+    {
+      "name": "Baltimore County",
+      "base_url": "https://sdat.dat.maryland.gov/api/baltimorecounty",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 854535
+    },
+    {
+      "name": "Baltimore City",
+      "base_url": "https://sdat.dat.maryland.gov/api/baltimorecity",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 585708
+    },
+    {
+      "name": "Anne Arundel",
+      "base_url": "https://sdat.dat.maryland.gov/api/annearundel",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 588261
+    },
+    {
+      "name": "Howard",
+      "base_url": "https://sdat.dat.maryland.gov/api/howard",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 332317
+    },
+    {
+      "name": "Frederick",
+      "base_url": "https://sdat.dat.maryland.gov/api/frederick",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 271717
+    },
+    {
+      "name": "Harford",
+      "base_url": "https://sdat.dat.maryland.gov/api/harford",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 260924
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "Maryland provides centralized access through SDAT (State Department of Assessments and Taxation) for property data. Land records are available through individual circuit courts."
+}

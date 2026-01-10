@@ -1,0 +1,323 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, development, master ]
+  pull_request:
+    branches: [ main, development, master ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  MIN_COVERAGE: 80
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-lint-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-lint-
+
+    - name: Install lint tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort
+
+    - name: Check code formatting with Black
+      run: black --check --diff datagod api tests
+
+    - name: Check import sorting with isort
+      run: isort --check-only --diff datagod api tests
+
+    - name: Lint with flake8 (critical errors)
+      run: |
+        flake8 datagod api --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    - name: Lint with flake8 (all issues)
+      run: |
+        flake8 datagod api --count --max-complexity=15 --max-line-length=127 --statistics --exit-zero
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install bandit
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit
+
+    - name: Run security scan with Bandit
+      run: |
+        bandit -r datagod -ll -ii --format json --output bandit-report.json || true
+        bandit -r datagod -ll -ii --format txt
+
+    - name: Upload security report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-report
+        path: bandit-report.json
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: [lint]
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-xdist pytest-timeout
+
+    - name: Run unit tests
+      run: |
+        PYTHONPATH=.:api/src pytest tests/ \
+          -v \
+          --timeout=120 \
+          --cov=datagod \
+          --cov-report=xml \
+          --cov-report=html \
+          --cov-report=term-missing \
+          --junitxml=test-results.xml
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.python-version }}
+        path: |
+          test-results.xml
+          htmlcov/
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-py${{ matrix.python-version }}
+
+  scraper-tests:
+    name: Scraper Tests
+    runs-on: ubuntu-latest
+    needs: [lint]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-scraper-${{ hashFiles('**/requirements.txt') }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+
+    - name: Run scraper tests
+      run: |
+        PYTHONPATH=.:api/src pytest tests/test_state_scrapers/ tests/test_data_categories/ tests/test_paid_apis/ \
+          -v \
+          --timeout=120 \
+          --cov=datagod/scrapers \
+          --cov-report=xml \
+          --cov-report=term-missing \
+          --junitxml=scraper-test-results.xml
+
+    - name: Upload scraper test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: scraper-test-results
+        path: scraper-test-results.xml
+
+  validation-tests:
+    name: Validation Tests
+    runs-on: ubuntu-latest
+    needs: [lint]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-validation-${{ hashFiles('**/requirements.txt') }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+
+    - name: Run validation framework tests
+      run: |
+        PYTHONPATH=.:api/src pytest tests/test_validation/ tests/test_entity_linking/ \
+          -v \
+          --timeout=120 \
+          --cov=datagod/validation \
+          --cov=datagod/services \
+          --cov-report=xml \
+          --cov-report=term-missing \
+          --junitxml=validation-test-results.xml
+
+    - name: Upload validation test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: validation-test-results
+        path: validation-test-results.xml
+
+  coverage-check:
+    name: Coverage Check
+    runs-on: ubuntu-latest
+    needs: [unit-tests, scraper-tests, validation-tests]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-coverage-${{ hashFiles('**/requirements.txt') }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov coverage
+
+    - name: Run full test suite with coverage
+      run: |
+        PYTHONPATH=.:api/src pytest tests/ \
+          --cov=datagod \
+          --cov-report=xml \
+          --cov-report=term-missing \
+          --cov-fail-under=${{ env.MIN_COVERAGE }}
+
+    - name: Generate coverage badge
+      uses: cicirello/jacoco-badge-generator@v2
+      with:
+        badges-directory: badges
+        generate-coverage-badge: true
+        coverage-badge-filename: coverage.svg
+
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: [unit-tests, security]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install build tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install build wheel setuptools
+
+    - name: Build package
+      run: python -m build
+
+    - name: Upload package artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: dist/
+
+  # This job runs only on main/master branch pushes
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, coverage-check]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/development'
+    environment: staging
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist
+        path: dist/
+
+    - name: Build Docker image
+      run: |
+        docker build -t datagod:${{ github.sha }} .
+        docker tag datagod:${{ github.sha }} datagod:latest
+
+    - name: Run smoke tests on container
+      run: |
+        docker run --rm datagod:latest python -c "from datagod import *; print('Import test passed')"
+
+    - name: Notify deployment status
+      if: always()
+      run: |
+        echo "Staging deployment status: ${{ job.status }}"
+        echo "Commit: ${{ github.sha }}"
+        echo "Branch: ${{ github.ref }}"

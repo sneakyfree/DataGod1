@@ -1,0 +1,89 @@
+{
+  "state_code": "WY",
+  "state_name": "Wyoming",
+  "auth_type": "none",
+  "requests_per_minute": 60,
+  "requests_per_hour": 1000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "Laramie",
+      "base_url": "https://www.laramiecounty.com/clerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 100512
+    },
+    {
+      "name": "Natrona",
+      "base_url": "https://www.natronacounty-wy.gov/clerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 79858
+    },
+    {
+      "name": "Campbell",
+      "base_url": "https://www.ccgov.net/clerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 46341
+    },
+    {
+      "name": "Sweetwater",
+      "base_url": "https://www.sweetwatercountywy.gov/clerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 42343
+    },
+    {
+      "name": "Fremont",
+      "base_url": "https://www.fremontcountywy.org/clerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 40076
+    },
+    {
+      "name": "Albany",
+      "base_url": "https://www.co.albany.wy.us/clerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 38880
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "Wyoming County Clerk offices handle property recording. Laramie County (Cheyenne) is the most populous."
+}

@@ -1,0 +1,109 @@
+{
+  "state_code": "MI",
+  "state_name": "Michigan",
+  "auth_type": "api_key",
+  "requests_per_minute": 60,
+  "requests_per_hour": 1000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "Wayne",
+      "base_url": "https://www.waynecounty.com/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 1793561
+    },
+    {
+      "name": "Oakland",
+      "base_url": "https://www.oakgov.com/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 1274395
+    },
+    {
+      "name": "Macomb",
+      "base_url": "https://www.macombgov.org/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 881217
+    },
+    {
+      "name": "Kent",
+      "base_url": "https://www.accesskent.com/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 657974
+    },
+    {
+      "name": "Genesee",
+      "base_url": "https://www.gc4me.com/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 406892
+    },
+    {
+      "name": "Washtenaw",
+      "base_url": "https://www.washtenaw.org/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 372258
+    },
+    {
+      "name": "Ingham",
+      "base_url": "https://www.ingham.org/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 284900
+    },
+    {
+      "name": "Ottawa",
+      "base_url": "https://www.miottawa.org/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 296200
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "Michigan Register of Deeds offices are at the county level. Wayne County (Detroit) has the highest volume."
+}

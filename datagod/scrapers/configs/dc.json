@@ -1,0 +1,49 @@
+{
+  "state_code": "DC",
+  "state_name": "District of Columbia",
+  "auth_type": "api_key",
+  "requests_per_minute": 60,
+  "requests_per_hour": 1000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "District of Columbia",
+      "base_url": "https://otr.cfo.dc.gov/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/recorder/deed/search",
+      "lien_endpoint": "/recorder/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 689545
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "ssl", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/recorder/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/recorder/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    },
+    "business": {
+      "type": "api",
+      "url": "/dcra/business/search",
+      "fields": ["business_name", "entity_type", "status", "registration_date"]
+    },
+    "license": {
+      "type": "api",
+      "url": "/dcra/license/search",
+      "fields": ["license_type", "licensee_name", "issue_date", "expiration_date", "status"]
+    }
+  },
+  "notes": "District of Columbia uses SSL (Square, Suffix, Lot) instead of traditional parcel IDs. All property records handled by DC Recorder of Deeds. Business licensing through DCRA."
+}

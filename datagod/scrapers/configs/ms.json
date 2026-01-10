@@ -1,0 +1,89 @@
+{
+  "state_code": "MS",
+  "state_name": "Mississippi",
+  "auth_type": "api_key",
+  "requests_per_minute": 60,
+  "requests_per_hour": 1000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "Hinds",
+      "base_url": "https://www.co.hinds.ms.us/chanceryclerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 231840
+    },
+    {
+      "name": "Harrison",
+      "base_url": "https://www.co.harrison.ms.us/chanceryclerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 208080
+    },
+    {
+      "name": "DeSoto",
+      "base_url": "https://www.desotocountyms.gov/chanceryclerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 184945
+    },
+    {
+      "name": "Rankin",
+      "base_url": "https://www.rankincounty.org/chanceryclerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 157031
+    },
+    {
+      "name": "Jackson",
+      "base_url": "https://www.co.jackson.ms.us/chanceryclerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 142014
+    },
+    {
+      "name": "Madison",
+      "base_url": "https://www.madison-co.com/chanceryclerk/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 111003
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "Mississippi Chancery Clerks handle property recording. Hinds County (Jackson) has the largest volume."
+}

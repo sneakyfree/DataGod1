@@ -1,0 +1,172 @@
+[
+  {
+    "source": "california_property_api",
+    "source_id": "ca_property_1",
+    "title": "Property at 123 Main St, Los Angeles, CA 90002",
+    "description": "Property owned by John Doe 1 in Los Angeles County",
+    "amount": 510000,
+    "date": "2022-06-15",
+    "url": "https://california.propertyapi.gov/records/ca_property_1",
+    "jurisdiction": "Los Angeles County, CA",
+    "data_type": "property",
+    "raw_data": {
+      "id": "ca_property_1",
+      "county": "Los Angeles",
+      "address": "123 Main St, Los Angeles, CA 90002",
+      "owner": "John Doe 1",
+      "assessed_value": 510000,
+      "last_sale_date": "2022-06-15",
+      "last_sale_amount": 612000,
+      "property_type": "Single Family Residence",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "square_feet": 1850,
+      "year_built": 1991
+    },
+    "collected_at": "2025-12-30T14:58:26.147210",
+    "additional_data": {
+      "owner": "John Doe 1",
+      "property_type": "Single Family Residence",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "square_feet": 1850,
+      "year_built": 1991
+    }
+  },
+  {
+    "source": "california_property_api",
+    "source_id": "ca_property_2",
+    "title": "Property at 123 Main St, Los Angeles, CA 90003",
+    "description": "Property owned by John Doe 2 in Los Angeles County",
+    "amount": 520000,
+    "date": "2022-06-15",
+    "url": "https://california.propertyapi.gov/records/ca_property_2",
+    "jurisdiction": "Los Angeles County, CA",
+    "data_type": "property",
+    "raw_data": {
+      "id": "ca_property_2",
+      "county": "Los Angeles",
+      "address": "123 Main St, Los Angeles, CA 90003",
+      "owner": "John Doe 2",
+      "assessed_value": 520000,
+      "last_sale_date": "2022-06-15",
+      "last_sale_amount": 624000,
+      "property_type": "Single Family Residence",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "square_feet": 1900,
+      "year_built": 1992
+    },
+    "collected_at": "2025-12-30T14:58:26.147212",
+    "additional_data": {
+      "owner": "John Doe 2",
+      "property_type": "Single Family Residence",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "square_feet": 1900,
+      "year_built": 1992
+    }
+  },
+  {
+    "source": "california_property_api",
+    "source_id": "ca_property_3",
+    "title": "Property at 123 Main St, Los Angeles, CA 90004",
+    "description": "Property owned by John Doe 3 in Los Angeles County",
+    "amount": 530000,
+    "date": "2022-06-15",
+    "url": "https://california.propertyapi.gov/records/ca_property_3",
+    "jurisdiction": "Los Angeles County, CA",
+    "data_type": "property",
+    "raw_data": {
+      "id": "ca_property_3",
+      "county": "Los Angeles",
+      "address": "123 Main St, Los Angeles, CA 90004",
+      "owner": "John Doe 3",
+      "assessed_value": 530000,
+      "last_sale_date": "2022-06-15",
+      "last_sale_amount": 636000,
+      "property_type": "Single Family Residence",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "square_feet": 1950,
+      "year_built": 1993
+    },
+    "collected_at": "2025-12-30T14:58:26.147213",
+    "additional_data": {
+      "owner": "John Doe 3",
+      "property_type": "Single Family Residence",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "square_feet": 1950,
+      "year_built": 1993
+    }
+  },
+  {
+    "source": "california_property_api",
+    "source_id": "ca_property_4",
+    "title": "Property at 123 Main St, Los Angeles, CA 90005",
+    "description": "Property owned by John Doe 4 in Los Angeles County",
+    "amount": 540000,
+    "date": "2022-06-15",
+    "url": "https://california.propertyapi.gov/records/ca_property_4",
+    "jurisdiction": "Los Angeles County, CA",
+    "data_type": "property",
+    "raw_data": {
+      "id": "ca_property_4",
+      "county": "Los Angeles",
+      "address": "123 Main St, Los Angeles, CA 90005",
+      "owner": "John Doe 4",
+      "assessed_value": 540000,
+      "last_sale_date": "2022-06-15",
+      "last_sale_amount": 648000,
+      "property_type": "Single Family Residence",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "square_feet": 2000,
+      "year_built": 1994
+    },
+    "collected_at": "2025-12-30T14:58:26.147214",
+    "additional_data": {
+      "owner": "John Doe 4",
+      "property_type": "Single Family Residence",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "square_feet": 2000,
+      "year_built": 1994
+    }
+  },
+  {
+    "source": "california_property_api",
+    "source_id": "ca_property_5",
+    "title": "Property at 123 Main St, Los Angeles, CA 90006",
+    "description": "Property owned by John Doe 5 in Los Angeles County",
+    "amount": 550000,
+    "date": "2022-06-15",
+    "url": "https://california.propertyapi.gov/records/ca_property_5",
+    "jurisdiction": "Los Angeles County, CA",
+    "data_type": "property",
+    "raw_data": {
+      "id": "ca_property_5",
+      "county": "Los Angeles",
+      "address": "123 Main St, Los Angeles, CA 90006",
+      "owner": "John Doe 5",
+      "assessed_value": 550000,
+      "last_sale_date": "2022-06-15",
+      "last_sale_amount": 660000,
+      "property_type": "Single Family Residence",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "square_feet": 2050,
+      "year_built": 1995
+    },
+    "collected_at": "2025-12-30T14:58:26.147215",
+    "additional_data": {
+      "owner": "John Doe 5",
+      "property_type": "Single Family Residence",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "square_feet": 2050,
+      "year_built": 1995
+    }
+  }
+]

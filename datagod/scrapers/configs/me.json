@@ -1,0 +1,89 @@
+{
+  "state_code": "ME",
+  "state_name": "Maine",
+  "auth_type": "none",
+  "requests_per_minute": 60,
+  "requests_per_hour": 1000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "Cumberland",
+      "base_url": "https://www.cumberlandcounty.org/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 60,
+      "population": 303069
+    },
+    {
+      "name": "York",
+      "base_url": "https://www.yorkcountymaine.gov/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 60,
+      "population": 211972
+    },
+    {
+      "name": "Penobscot",
+      "base_url": "https://www.penobscot-county.net/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 152199
+    },
+    {
+      "name": "Kennebec",
+      "base_url": "https://www.kennebeccounty.org/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 123642
+    },
+    {
+      "name": "Androscoggin",
+      "base_url": "https://www.androscoggincountymaine.gov/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 111139
+    },
+    {
+      "name": "Aroostook",
+      "base_url": "https://www.aroostook.me.us/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 67105
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "Maine Register of Deeds offices are at the county level. Cumberland County (Portland area) is the most populous."
+}

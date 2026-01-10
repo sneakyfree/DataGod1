@@ -1,0 +1,89 @@
+{
+  "state_code": "KS",
+  "state_name": "Kansas",
+  "auth_type": "api_key",
+  "requests_per_minute": 60,
+  "requests_per_hour": 1000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "Johnson",
+      "base_url": "https://www.jocogov.org/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 609863
+    },
+    {
+      "name": "Sedgwick",
+      "base_url": "https://www.sedgwickcounty.org/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 523824
+    },
+    {
+      "name": "Shawnee",
+      "base_url": "https://www.snco.us/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 178909
+    },
+    {
+      "name": "Wyandotte",
+      "base_url": "https://www.wycokck.org/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 169245
+    },
+    {
+      "name": "Douglas",
+      "base_url": "https://www.douglascountyks.org/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 118053
+    },
+    {
+      "name": "Leavenworth",
+      "base_url": "https://www.leavenworthcounty.gov/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 60,
+      "population": 81758
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "Kansas Register of Deeds offices handle property recording. Johnson County (Kansas City suburbs) has the largest volume."
+}

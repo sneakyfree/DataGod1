@@ -1,0 +1,79 @@
+{
+  "state_code": "AK",
+  "state_name": "Alaska",
+  "auth_type": "api_key",
+  "requests_per_minute": 30,
+  "requests_per_hour": 500,
+  "timeout": 45,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "Anchorage",
+      "base_url": "https://www.muni.org/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 30,
+      "population": 291247
+    },
+    {
+      "name": "Fairbanks North Star",
+      "base_url": "https://www.fnsb.gov/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 30,
+      "population": 96849
+    },
+    {
+      "name": "Matanuska-Susitna",
+      "base_url": "https://www.matsugov.us/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 20,
+      "population": 107081
+    },
+    {
+      "name": "Kenai Peninsula",
+      "base_url": "https://www.kpb.us/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 30,
+      "population": 58708
+    },
+    {
+      "name": "Juneau",
+      "base_url": "https://juneau.org/recorder/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": true,
+      "rate_limit": 30,
+      "population": 32255
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "Alaska uses boroughs instead of counties. Recording handled by state district recorders."
+}

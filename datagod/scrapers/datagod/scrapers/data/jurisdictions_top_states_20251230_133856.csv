@@ -1,0 +1,51 @@
+name,state,county,type,website,api_available,api_documentation,scraper_needed,data_volume,priority,notes
+"Los Angeles County, CA",CA,Los Angeles,county,https://www.losangelescountyca.gov,False,,True,high,1,High priority - large population and data volume
+"San Diego County, CA",CA,San Diego,county,https://www.sandiegocountyca.gov,False,,True,high,1,High priority - large population and data volume
+"Orange County, CA",CA,Orange,county,https://www.orangecountyca.gov,False,,True,high,1,High priority - large population and data volume
+"Riverside County, CA",CA,Riverside,county,https://www.riversidecountyca.gov,False,,True,high,1,High priority - large population and data volume
+"San Bernardino County, CA",CA,San Bernardino,county,https://www.sanbernardinocountyca.gov,False,,True,high,1,High priority - large population and data volume
+"Santa Clara County, CA",CA,Santa Clara,county,https://www.santaclaracountyca.gov,False,,True,medium,2,Initial research needed
+"Alameda County, CA",CA,Alameda,county,https://www.alamedacountyca.gov,False,,True,medium,2,Initial research needed
+"Sacramento County, CA",CA,Sacramento,county,https://www.sacramentocountyca.gov,False,,True,medium,2,Initial research needed
+"Contra Costa County, CA",CA,Contra Costa,county,https://www.contracostacountyca.gov,False,,True,medium,2,Initial research needed
+"Fresno County, CA",CA,Fresno,county,https://www.fresnocountyca.gov,False,,True,medium,2,Initial research needed
+"Harris County, TX",TX,Harris,county,https://www.harriscountytx.gov,False,,True,high,1,High priority - large population and data volume
+"Dallas County, TX",TX,Dallas,county,https://www.dallascountytx.gov,False,,True,high,1,High priority - large population and data volume
+"Tarrant County, TX",TX,Tarrant,county,https://www.tarrantcountytx.gov,False,,True,high,1,High priority - large population and data volume
+"Bexar County, TX",TX,Bexar,county,https://www.bexarcountytx.gov,False,,True,high,1,High priority - large population and data volume
+"Travis County, TX",TX,Travis,county,https://www.traviscountytx.gov,False,,True,high,1,High priority - large population and data volume
+"Collin County, TX",TX,Collin,county,https://www.collincountytx.gov,False,,True,medium,2,Initial research needed
+"Denton County, TX",TX,Denton,county,https://www.dentoncountytx.gov,False,,True,medium,2,Initial research needed
+"El Paso County, TX",TX,El Paso,county,https://www.elpasocountytx.gov,False,,True,medium,2,Initial research needed
+"Fort Bend County, TX",TX,Fort Bend,county,https://www.fortbendcountytx.gov,False,,True,medium,2,Initial research needed
+"Hidalgo County, TX",TX,Hidalgo,county,https://www.hidalgocountytx.gov,False,,True,medium,2,Initial research needed
+"Miami-Dade County, FL",FL,Miami-Dade,county,https://www.miami-dadecountyfl.gov,False,,True,high,1,High priority - large population and data volume
+"Broward County, FL",FL,Broward,county,https://www.browardcountyfl.gov,False,,True,high,1,High priority - large population and data volume
+"Palm Beach County, FL",FL,Palm Beach,county,https://www.palmbeachcountyfl.gov,False,,True,high,1,High priority - large population and data volume
+"Hillsborough County, FL",FL,Hillsborough,county,https://www.hillsboroughcountyfl.gov,False,,True,high,1,High priority - large population and data volume
+"Orange County, FL",FL,Orange,county,https://www.orangecountyfl.gov,False,,True,high,1,High priority - large population and data volume
+"Pinellas County, FL",FL,Pinellas,county,https://www.pinellascountyfl.gov,False,,True,medium,2,Initial research needed
+"Duval County, FL",FL,Duval,county,https://www.duvalcountyfl.gov,False,,True,medium,2,Initial research needed
+"Lee County, FL",FL,Lee,county,https://www.leecountyfl.gov,False,,True,medium,2,Initial research needed
+"Polk County, FL",FL,Polk,county,https://www.polkcountyfl.gov,False,,True,medium,2,Initial research needed
+"Brevard County, FL",FL,Brevard,county,https://www.brevardcountyfl.gov,False,,True,medium,2,Initial research needed
+"Kings County, NY",NY,Kings,county,https://www.kingscountyny.gov,False,,True,high,1,High priority - large population and data volume
+"Queens County, NY",NY,Queens,county,https://www.queenscountyny.gov,False,,True,high,1,High priority - large population and data volume
+"New York County, NY",NY,New York,county,https://www.newyorkcountyny.gov,False,,True,high,1,High priority - large population and data volume
+"Suffolk County, NY",NY,Suffolk,county,https://www.suffolkcountyny.gov,False,,True,high,1,High priority - large population and data volume
+"Bronx County, NY",NY,Bronx,county,https://www.bronxcountyny.gov,False,,True,high,1,High priority - large population and data volume
+"Nassau County, NY",NY,Nassau,county,https://www.nassaucountyny.gov,False,,True,medium,2,Initial research needed
+"Westchester County, NY",NY,Westchester,county,https://www.westchestercountyny.gov,False,,True,medium,2,Initial research needed
+"Erie County, NY",NY,Erie,county,https://www.eriecountyny.gov,False,,True,medium,2,Initial research needed
+"Monroe County, NY",NY,Monroe,county,https://www.monroecountyny.gov,False,,True,medium,2,Initial research needed
+"Richmond County, NY",NY,Richmond,county,https://www.richmondcountyny.gov,False,,True,medium,2,Initial research needed
+"Cook County, IL",IL,Cook,county,https://www.cookcountyil.gov,False,,True,high,1,High priority - large population and data volume
+"DuPage County, IL",IL,DuPage,county,https://www.dupagecountyil.gov,False,,True,high,1,High priority - large population and data volume
+"Lake County, IL",IL,Lake,county,https://www.lakecountyil.gov,False,,True,high,1,High priority - large population and data volume
+"Will County, IL",IL,Will,county,https://www.willcountyil.gov,False,,True,high,1,High priority - large population and data volume
+"Kane County, IL",IL,Kane,county,https://www.kanecountyil.gov,False,,True,high,1,High priority - large population and data volume
+"McHenry County, IL",IL,McHenry,county,https://www.mchenrycountyil.gov,False,,True,medium,2,Initial research needed
+"Winnebago County, IL",IL,Winnebago,county,https://www.winnebagocountyil.gov,False,,True,medium,2,Initial research needed
+"St. Clair County, IL",IL,St. Clair,county,https://www.st.claircountyil.gov,False,,True,medium,2,Initial research needed
+"Madison County, IL",IL,Madison,county,https://www.madisoncountyil.gov,False,,True,medium,2,Initial research needed
+"Champaign County, IL",IL,Champaign,county,https://www.champaigncountyil.gov,False,,True,medium,2,Initial research needed

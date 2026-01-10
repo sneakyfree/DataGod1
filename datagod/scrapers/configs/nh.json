@@ -1,0 +1,89 @@
+{
+  "state_code": "NH",
+  "state_name": "New Hampshire",
+  "auth_type": "none",
+  "requests_per_minute": 60,
+  "requests_per_hour": 1000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "counties": [
+    {
+      "name": "Hillsborough",
+      "base_url": "https://www.hillsboroughcountynh.org/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 60,
+      "population": 422937
+    },
+    {
+      "name": "Rockingham",
+      "base_url": "https://www.rockinghamcountynh.org/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 60,
+      "population": 314176
+    },
+    {
+      "name": "Merrimack",
+      "base_url": "https://www.merrimackcounty.net/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 151391
+    },
+    {
+      "name": "Strafford",
+      "base_url": "https://www.co.strafford.nh.us/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 130633
+    },
+    {
+      "name": "Grafton",
+      "base_url": "https://www.graftoncountynh.us/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 91118
+    },
+    {
+      "name": "Cheshire",
+      "base_url": "https://www.co.cheshire.nh.us/registerofdeeds/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 30,
+      "population": 76085
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "New Hampshire Register of Deeds offices are at the county level. Hillsborough County has north and south registries."
+}

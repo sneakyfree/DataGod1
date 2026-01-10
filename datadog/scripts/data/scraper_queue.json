@@ -1,0 +1,47 @@
+{
+  "queue": [],
+  "tasks": {
+    "6c5eef4d-dbae-4f1f-b132-3d8e6e99c38e": {
+      "task_id": "6c5eef4d-dbae-4f1f-b132-3d8e6e99c38e",
+      "scraper_class": "mock_texas_scraper",
+      "jurisdiction_id": 100,
+      "jurisdiction_name": "Texas County 0",
+      "status": "failed",
+      "priority": 3,
+      "created_at": "2025-12-30T05:31:49.201396",
+      "started_at": "2025-12-30T05:31:49.307424",
+      "completed_at": "2025-12-30T05:31:49.308256",
+      "retry_count": 3,
+      "max_retries": 3,
+      "error": "JurisdictionScraper.__init__() missing 1 required positional argument: 'base_url'"
+    },
+    "83d52357-5cce-4777-928b-1173b9cdefaf": {
+      "task_id": "83d52357-5cce-4777-928b-1173b9cdefaf",
+      "scraper_class": "mock_texas_scraper",
+      "jurisdiction_id": 101,
+      "jurisdiction_name": "Texas County 1",
+      "status": "failed",
+      "priority": 3,
+      "created_at": "2025-12-30T05:31:49.201573",
+      "started_at": "2025-12-30T05:31:49.405003",
+      "completed_at": "2025-12-30T05:31:49.405396",
+      "retry_count": 3,
+      "max_retries": 3,
+      "error": "JurisdictionScraper.__init__() missing 1 required positional argument: 'base_url'"
+    },
+    "0c316b21-dbd4-4d7f-918b-1025a2ebcc0e": {
+      "task_id": "0c316b21-dbd4-4d7f-918b-1025a2ebcc0e",
+      "scraper_class": "mock_texas_scraper",
+      "jurisdiction_id": 102,
+      "jurisdiction_name": "Texas County 2",
+      "status": "failed",
+      "priority": 3,
+      "created_at": "2025-12-30T05:31:49.201715",
+      "started_at": "2025-12-30T05:31:49.405077",
+      "completed_at": "2025-12-30T05:31:49.405969",
+      "retry_count": 3,
+      "max_retries": 3,
+      "error": "JurisdictionScraper.__init__() missing 1 required positional argument: 'base_url'"
+    }
+  }
+}

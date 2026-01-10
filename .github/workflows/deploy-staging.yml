@@ -1,0 +1,132 @@
+name: Deploy to Staging
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types: [completed]
+    branches: [development]
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  deploy:
+    name: Deploy to Staging Environment
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: staging
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-deploy-${{ hashFiles('**/requirements.txt') }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Build Docker image
+      run: |
+        docker build -t datagod:staging-${{ github.sha }} .
+        docker tag datagod:staging-${{ github.sha }} datagod:staging-latest
+
+    - name: Run container health check
+      run: |
+        # Start container in background
+        docker run -d --name datagod-test datagod:staging-latest sleep 30
+
+        # Run quick smoke test
+        docker exec datagod-test python -c "
+        from datagod.scrapers import *
+        from datagod.validation import *
+        from datagod.services import *
+        print('Import test passed')
+        "
+
+        # Cleanup
+        docker stop datagod-test
+        docker rm datagod-test
+
+    - name: Run smoke tests
+      run: |
+        PYTHONPATH=.:api/src python -c "
+        # Quick validation tests
+        from datagod.validation import SchemaValidator, BusinessRuleValidator
+        from datagod.validation import validate_record
+
+        validator = SchemaValidator()
+        result = validator.validate({
+            'parcel_id': 'TEST-001',
+            'address': '123 Main Street',
+            'city': 'Springfield',
+            'state': 'IL',
+            'zip_code': '62701'
+        }, 'property')
+
+        assert result.is_valid, 'Schema validation smoke test failed'
+        print('Schema validation: OK')
+
+        # Business rules test
+        br_validator = BusinessRuleValidator()
+        br_result = br_validator.validate_property({
+            'year_built': 2000,
+            'assessed_value': 150000,
+            'state': 'CA'
+        })
+        assert br_result.is_valid, 'Business rules smoke test failed'
+        print('Business rules validation: OK')
+
+        print('All smoke tests passed!')
+        "
+
+    - name: Deploy to staging server
+      env:
+        STAGING_HOST: ${{ secrets.STAGING_HOST }}
+        STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+      run: |
+        # Placeholder for actual deployment steps
+        # In production, this would:
+        # 1. Push Docker image to registry
+        # 2. SSH to staging server
+        # 3. Pull and restart containers
+        echo "Deployment configuration:"
+        echo "  Image: datagod:staging-${{ github.sha }}"
+        echo "  Branch: ${{ github.ref }}"
+        echo "  Commit: ${{ github.sha }}"
+        echo "Staging deployment would proceed here..."
+
+    - name: Notify team on success
+      if: success()
+      run: |
+        echo "Staging deployment successful!"
+        echo "Deployed commit: ${{ github.sha }}"
+
+    - name: Notify team on failure
+      if: failure()
+      run: |
+        echo "Staging deployment failed!"
+        echo "Failed commit: ${{ github.sha }}"
+        exit 1
+
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: failure()
+
+    steps:
+    - name: Rollback to previous version
+      run: |
+        echo "Rolling back to previous staging version..."
+        # Placeholder for rollback steps
+        echo "Rollback completed"

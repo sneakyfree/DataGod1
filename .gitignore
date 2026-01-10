@@ -1,0 +1,99 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+.Python
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build artifacts
+*.pyc
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# DataGod specific
+db/
+exports/
+uploads/
+backups/
+cache/
+
+# Frontend build
+frontend/*/node_modules/
+frontend/*/build/
+frontend/*/.next/
+frontend/*/dist/
+
+# MyPy
+.mypy_cache/
+
+# Documentation build
+site/
+
+# Secrets and credentials
+*.pem
+*.key
+credentials.json
+secrets.json

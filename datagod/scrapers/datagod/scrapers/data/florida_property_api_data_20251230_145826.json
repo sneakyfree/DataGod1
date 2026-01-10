@@ -1,0 +1,172 @@
+[
+  {
+    "source": "florida_property_api",
+    "source_id": "fl_property_1",
+    "title": "Property at 789 Palm St, Miami, FL 33102",
+    "description": "Property owned by Robert Johnson 1 in Miami-Dade County",
+    "amount": 459000,
+    "date": "2020-11-05",
+    "url": "https://florida.propertyapi.gov/records/fl_property_1",
+    "jurisdiction": "Miami-Dade County, FL",
+    "data_type": "property",
+    "raw_data": {
+      "id": "fl_property_1",
+      "county": "Miami-Dade",
+      "address": "789 Palm St, Miami, FL 33102",
+      "owner": "Robert Johnson 1",
+      "assessed_value": 459000,
+      "last_sale_date": "2020-11-05",
+      "last_sale_amount": 511000,
+      "property_type": "Condominium",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "square_feet": 1540,
+      "year_built": 2011
+    },
+    "collected_at": "2025-12-30T14:58:26.147454",
+    "additional_data": {
+      "owner": "Robert Johnson 1",
+      "property_type": "Condominium",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "square_feet": 1540,
+      "year_built": 2011
+    }
+  },
+  {
+    "source": "florida_property_api",
+    "source_id": "fl_property_2",
+    "title": "Property at 789 Palm St, Miami, FL 33103",
+    "description": "Property owned by Robert Johnson 2 in Miami-Dade County",
+    "amount": 468000,
+    "date": "2020-11-05",
+    "url": "https://florida.propertyapi.gov/records/fl_property_2",
+    "jurisdiction": "Miami-Dade County, FL",
+    "data_type": "property",
+    "raw_data": {
+      "id": "fl_property_2",
+      "county": "Miami-Dade",
+      "address": "789 Palm St, Miami, FL 33103",
+      "owner": "Robert Johnson 2",
+      "assessed_value": 468000,
+      "last_sale_date": "2020-11-05",
+      "last_sale_amount": 522000,
+      "property_type": "Condominium",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "square_feet": 1580,
+      "year_built": 2012
+    },
+    "collected_at": "2025-12-30T14:58:26.147456",
+    "additional_data": {
+      "owner": "Robert Johnson 2",
+      "property_type": "Condominium",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "square_feet": 1580,
+      "year_built": 2012
+    }
+  },
+  {
+    "source": "florida_property_api",
+    "source_id": "fl_property_3",
+    "title": "Property at 789 Palm St, Miami, FL 33104",
+    "description": "Property owned by Robert Johnson 3 in Miami-Dade County",
+    "amount": 477000,
+    "date": "2020-11-05",
+    "url": "https://florida.propertyapi.gov/records/fl_property_3",
+    "jurisdiction": "Miami-Dade County, FL",
+    "data_type": "property",
+    "raw_data": {
+      "id": "fl_property_3",
+      "county": "Miami-Dade",
+      "address": "789 Palm St, Miami, FL 33104",
+      "owner": "Robert Johnson 3",
+      "assessed_value": 477000,
+      "last_sale_date": "2020-11-05",
+      "last_sale_amount": 533000,
+      "property_type": "Condominium",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "square_feet": 1620,
+      "year_built": 2013
+    },
+    "collected_at": "2025-12-30T14:58:26.147457",
+    "additional_data": {
+      "owner": "Robert Johnson 3",
+      "property_type": "Condominium",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "square_feet": 1620,
+      "year_built": 2013
+    }
+  },
+  {
+    "source": "florida_property_api",
+    "source_id": "fl_property_4",
+    "title": "Property at 789 Palm St, Miami, FL 33105",
+    "description": "Property owned by Robert Johnson 4 in Miami-Dade County",
+    "amount": 486000,
+    "date": "2020-11-05",
+    "url": "https://florida.propertyapi.gov/records/fl_property_4",
+    "jurisdiction": "Miami-Dade County, FL",
+    "data_type": "property",
+    "raw_data": {
+      "id": "fl_property_4",
+      "county": "Miami-Dade",
+      "address": "789 Palm St, Miami, FL 33105",
+      "owner": "Robert Johnson 4",
+      "assessed_value": 486000,
+      "last_sale_date": "2020-11-05",
+      "last_sale_amount": 544000,
+      "property_type": "Condominium",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "square_feet": 1660,
+      "year_built": 2014
+    },
+    "collected_at": "2025-12-30T14:58:26.147458",
+    "additional_data": {
+      "owner": "Robert Johnson 4",
+      "property_type": "Condominium",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "square_feet": 1660,
+      "year_built": 2014
+    }
+  },
+  {
+    "source": "florida_property_api",
+    "source_id": "fl_property_5",
+    "title": "Property at 789 Palm St, Miami, FL 33106",
+    "description": "Property owned by Robert Johnson 5 in Miami-Dade County",
+    "amount": 495000,
+    "date": "2020-11-05",
+    "url": "https://florida.propertyapi.gov/records/fl_property_5",
+    "jurisdiction": "Miami-Dade County, FL",
+    "data_type": "property",
+    "raw_data": {
+      "id": "fl_property_5",
+      "county": "Miami-Dade",
+      "address": "789 Palm St, Miami, FL 33106",
+      "owner": "Robert Johnson 5",
+      "assessed_value": 495000,
+      "last_sale_date": "2020-11-05",
+      "last_sale_amount": 555000,
+      "property_type": "Condominium",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "square_feet": 1700,
+      "year_built": 2015
+    },
+    "collected_at": "2025-12-30T14:58:26.147458",
+    "additional_data": {
+      "owner": "Robert Johnson 5",
+      "property_type": "Condominium",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "square_feet": 1700,
+      "year_built": 2015
+    }
+  }
+]

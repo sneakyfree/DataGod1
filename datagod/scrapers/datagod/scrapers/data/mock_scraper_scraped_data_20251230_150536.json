@@ -1,0 +1,212 @@
+[
+  {
+    "source": "mock_scraper",
+    "source_id": "mock_scrape_1",
+    "title": "Mock Scraped Record 1",
+    "description": "This is a mock scraped record 1",
+    "amount": 2150.0,
+    "date": "2023-02-01",
+    "url": "https://example.com/scraped/1",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_scrape_1",
+      "title": "Mock Scraped Record 1",
+      "description": "This is a mock scraped record 1",
+      "amount": 2150.0,
+      "date": "2023-02-01",
+      "url": "https://example.com/scraped/1"
+    },
+    "collected_at": "2025-12-30T15:05:36.257848",
+    "scraper_version": "1.0"
+  },
+  {
+    "source": "mock_scraper",
+    "source_id": "mock_scrape_2",
+    "title": "Mock Scraped Record 2",
+    "description": "This is a mock scraped record 2",
+    "amount": 2300.0,
+    "date": "2023-02-01",
+    "url": "https://example.com/scraped/2",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_scrape_2",
+      "title": "Mock Scraped Record 2",
+      "description": "This is a mock scraped record 2",
+      "amount": 2300.0,
+      "date": "2023-02-01",
+      "url": "https://example.com/scraped/2"
+    },
+    "collected_at": "2025-12-30T15:05:36.257854",
+    "scraper_version": "1.0"
+  },
+  {
+    "source": "mock_scraper",
+    "source_id": "mock_scrape_3",
+    "title": "Mock Scraped Record 3",
+    "description": "This is a mock scraped record 3",
+    "amount": 2450.0,
+    "date": "2023-02-01",
+    "url": "https://example.com/scraped/3",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_scrape_3",
+      "title": "Mock Scraped Record 3",
+      "description": "This is a mock scraped record 3",
+      "amount": 2450.0,
+      "date": "2023-02-01",
+      "url": "https://example.com/scraped/3"
+    },
+    "collected_at": "2025-12-30T15:05:36.257857",
+    "scraper_version": "1.0"
+  },
+  {
+    "source": "mock_scraper",
+    "source_id": "mock_scrape_4",
+    "title": "Mock Scraped Record 4",
+    "description": "This is a mock scraped record 4",
+    "amount": 2600.0,
+    "date": "2023-02-01",
+    "url": "https://example.com/scraped/4",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_scrape_4",
+      "title": "Mock Scraped Record 4",
+      "description": "This is a mock scraped record 4",
+      "amount": 2600.0,
+      "date": "2023-02-01",
+      "url": "https://example.com/scraped/4"
+    },
+    "collected_at": "2025-12-30T15:05:36.257858",
+    "scraper_version": "1.0"
+  },
+  {
+    "source": "mock_scraper",
+    "source_id": "mock_scrape_5",
+    "title": "Mock Scraped Record 5",
+    "description": "This is a mock scraped record 5",
+    "amount": 2750.0,
+    "date": "2023-02-01",
+    "url": "https://example.com/scraped/5",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_scrape_5",
+      "title": "Mock Scraped Record 5",
+      "description": "This is a mock scraped record 5",
+      "amount": 2750.0,
+      "date": "2023-02-01",
+      "url": "https://example.com/scraped/5"
+    },
+    "collected_at": "2025-12-30T15:05:36.257859",
+    "scraper_version": "1.0"
+  },
+  {
+    "source": "mock_scraper",
+    "source_id": "mock_scrape_6",
+    "title": "Mock Scraped Record 6",
+    "description": "This is a mock scraped record 6",
+    "amount": 2900.0,
+    "date": "2023-02-01",
+    "url": "https://example.com/scraped/6",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_scrape_6",
+      "title": "Mock Scraped Record 6",
+      "description": "This is a mock scraped record 6",
+      "amount": 2900.0,
+      "date": "2023-02-01",
+      "url": "https://example.com/scraped/6"
+    },
+    "collected_at": "2025-12-30T15:05:36.257861",
+    "scraper_version": "1.0"
+  },
+  {
+    "source": "mock_scraper",
+    "source_id": "mock_scrape_7",
+    "title": "Mock Scraped Record 7",
+    "description": "This is a mock scraped record 7",
+    "amount": 3050.0,
+    "date": "2023-02-01",
+    "url": "https://example.com/scraped/7",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_scrape_7",
+      "title": "Mock Scraped Record 7",
+      "description": "This is a mock scraped record 7",
+      "amount": 3050.0,
+      "date": "2023-02-01",
+      "url": "https://example.com/scraped/7"
+    },
+    "collected_at": "2025-12-30T15:05:36.257862",
+    "scraper_version": "1.0"
+  },
+  {
+    "source": "mock_scraper",
+    "source_id": "mock_scrape_8",
+    "title": "Mock Scraped Record 8",
+    "description": "This is a mock scraped record 8",
+    "amount": 3200.0,
+    "date": "2023-02-01",
+    "url": "https://example.com/scraped/8",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_scrape_8",
+      "title": "Mock Scraped Record 8",
+      "description": "This is a mock scraped record 8",
+      "amount": 3200.0,
+      "date": "2023-02-01",
+      "url": "https://example.com/scraped/8"
+    },
+    "collected_at": "2025-12-30T15:05:36.257863",
+    "scraper_version": "1.0"
+  },
+  {
+    "source": "mock_scraper",
+    "source_id": "mock_scrape_9",
+    "title": "Mock Scraped Record 9",
+    "description": "This is a mock scraped record 9",
+    "amount": 3350.0,
+    "date": "2023-02-01",
+    "url": "https://example.com/scraped/9",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_scrape_9",
+      "title": "Mock Scraped Record 9",
+      "description": "This is a mock scraped record 9",
+      "amount": 3350.0,
+      "date": "2023-02-01",
+      "url": "https://example.com/scraped/9"
+    },
+    "collected_at": "2025-12-30T15:05:36.257865",
+    "scraper_version": "1.0"
+  },
+  {
+    "source": "mock_scraper",
+    "source_id": "mock_scrape_10",
+    "title": "Mock Scraped Record 10",
+    "description": "This is a mock scraped record 10",
+    "amount": 3500.0,
+    "date": "2023-02-01",
+    "url": "https://example.com/scraped/10",
+    "jurisdiction": "Mock County, XX",
+    "data_type": "property",
+    "raw_data": {
+      "id": "mock_scrape_10",
+      "title": "Mock Scraped Record 10",
+      "description": "This is a mock scraped record 10",
+      "amount": 3500.0,
+      "date": "2023-02-01",
+      "url": "https://example.com/scraped/10"
+    },
+    "collected_at": "2025-12-30T15:05:36.257866",
+    "scraper_version": "1.0"
+  }
+]

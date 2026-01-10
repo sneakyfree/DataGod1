@@ -1,0 +1,49 @@
+{
+  "state_code": "AS",
+  "state_name": "American Samoa",
+  "auth_type": "none",
+  "requests_per_minute": 20,
+  "requests_per_hour": 300,
+  "timeout": 60,
+  "retry_attempts": 5,
+  "counties": [
+    {
+      "name": "Eastern District",
+      "base_url": "https://www.asbar.org/landrecords/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 20,
+      "population": 33481
+    },
+    {
+      "name": "Western District",
+      "base_url": "https://www.asbar.org/landrecords/api",
+      "property_endpoint": "/property/search",
+      "deed_endpoint": "/deed/search",
+      "lien_endpoint": "/lien/search",
+      "requires_auth": false,
+      "rate_limit": 20,
+      "population": 21692
+    }
+  ],
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "lot_id", "assessed_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
+    },
+    "lien": {
+      "type": "api",
+      "url": "/lien/search",
+      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    }
+  },
+  "notes": "American Samoa is an unincorporated US territory. Land ownership follows traditional communal system alongside individual titles. High Court of American Samoa manages land records."
+}
