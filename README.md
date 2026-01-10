@@ -1,5 +1,11 @@
 # DataGod - Public Records Data Platform
 
+[![Build Status](https://img.shields.io/github/actions/workflow/status/sneakyfree/DataGod1/ci.yml?branch=main&style=flat-square)](https://github.com/sneakyfree/DataGod1/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/sneakyfree/DataGod1?style=flat-square)](https://codecov.io/gh/sneakyfree/DataGod1)
+[![License](https://img.shields.io/github/license/sneakyfree/DataGod1?style=flat-square)](https://github.com/sneakyfree/DataGod1/blob/main/LICENSE)
+[![Version](https://img.shields.io/github/v/release/sneakyfree/DataGod1?style=flat-square)](https://github.com/sneakyfree/DataGod1/releases)
+[![Python Version](https://img.shields.io/badge/python-3.9%2B-blue?style=flat-square)](https://www.python.org/downloads/)
+
 DataGod is a comprehensive platform for collecting, organizing, and analyzing public records data from jurisdictions across the United States. The platform aggregates data from various sources including court records, property records, business registrations, and government databases to provide researchers, journalists, and businesses with powerful tools for data analysis.
 
 ## Features

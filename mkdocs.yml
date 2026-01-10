@@ -1,0 +1,89 @@
+# DataGod Documentation Configuration
+site_name: DataGod
+site_description: Public Records Data Platform Documentation
+site_author: DataGod Team
+site_url: https://datagod.example.com/docs
+
+# Repository
+repo_name: DataGod
+repo_url: https://github.com/sneakyfree/DataGod1
+edit_uri: edit/main/docs/
+
+# Navigation
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: development.md
+      - Quick Start: index.md#quick-start
+  - Architecture:
+      - System Overview: architecture.md
+      - Component Diagram: architecture.md#component-diagram
+      - Data Flow: architecture.md#data-flow
+  - API Documentation:
+      - Overview: api.md
+      - Endpoints: API_DOCUMENTATION.md
+      - Authentication: api.md#authentication
+  - Database:
+      - Schema: database.md
+      - ERD: database.md#entity-relationship-diagram
+      - Migrations: database.md#migrations
+  - Development:
+      - Setup: development.md
+      - Coding Standards: development.md#coding-standards
+      - Testing: development.md#testing
+      - Deployment: deployment.md
+  - User Guide:
+      - Introduction: user-guide.md
+      - Features: user-guide.md#features
+      - Usage: user-guide.md#usage
+  - About:
+      - License: LICENSE
+      - Contributing: CONTRIBUTING.md
+
+# Theme
+theme:
+  name: material
+  palette:
+    primary: indigo
+    accent: indigo
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+
+# Plugins
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [datagod]
+          options:
+            show_root_toc_entry: false
+            show_root_heading: true
+            show_root_full_path: false
+            show_category_heading: true
+            show_if_no_docstring: true
+            show_signature: true
+            show_signature_annotations: true
+            show_source: false
+            separate_signature: true
+            line_length: 80
+            merge_init_into_class: true
+            docstring_style: google
+            docstring_section_style: spacy
+            show_bases: true
+            show_inheritance: true
+            show_inheritance_diagram: false
+            show_submodules: true
+            show_symbol_type_toc: true
+            show_symbol_type_heading: true
