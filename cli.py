@@ -73,31 +73,176 @@ def serve_api(args):
 
 def run_scraper(args):
     """Run a scraper for a specific jurisdiction or all jurisdictions."""
-    print(f"Running scraper{'s' if args.all else ''}...")
-
     from db_manager import DatabaseManager
 
     db = DatabaseManager()
 
+    # State to scraper class mapping
+    STATE_SCRAPERS = {
+        'FL': ('datagod.scrapers.florida_api', 'FloridaPropertyAppraiserAPI'),
+        'CA': ('datagod.scrapers.california_api', 'CaliforniaPropertyAPI'),
+        'TX': ('datagod.scrapers.texas_api', 'TexasPropertyAPI'),
+        'NY': ('datagod.scrapers.newyork_api', 'NewYorkPropertyAPI'),
+        'IL': ('datagod.scrapers.illinois_api', 'IllinoisPropertyAPI'),
+        'PA': ('datagod.scrapers.pennsylvania_api', 'PennsylvaniaPropertyAPI'),
+        'AZ': ('datagod.scrapers.arizona_api', 'ArizonaPropertyAPI'),
+        'GA': ('datagod.scrapers.georgia_api', 'GeorgiaPropertyAPI'),
+        'OH': ('datagod.scrapers.ohio_api', 'OhioPropertyAPI'),
+        'WA': ('datagod.scrapers.washington_api', 'WashingtonPropertyAPI'),
+        'CO': ('datagod.scrapers.colorado_api', 'ColoradoPropertyAPI'),
+        'NC': ('datagod.scrapers.northcarolina_api', 'NorthCarolinaPropertyAPI'),
+        'VA': ('datagod.scrapers.virginia_api', 'VirginiaPropertyAPI'),
+        'NJ': ('datagod.scrapers.newjersey_api', 'NewJerseyPropertyAPI'),
+    }
+
+    def get_scraper_for_state(state: str):
+        """Get the appropriate scraper class for a state."""
+        scraper_info = STATE_SCRAPERS.get(state)
+        if not scraper_info:
+            return None
+        try:
+            import importlib
+            module_path, class_name = scraper_info
+            module = importlib.import_module(module_path)
+            return getattr(module, class_name)
+        except (ImportError, AttributeError) as e:
+            print(f"  Warning: Could not load scraper for {state}: {e}")
+            return None
+
+    def scrape_jurisdiction(jurisdiction: dict, dry_run: bool = False):
+        """Scrape a single jurisdiction."""
+        jid = jurisdiction['id']
+        name = jurisdiction['name']
+        state = jurisdiction.get('state', '')
+
+        if dry_run:
+            print(f"  [DRY RUN] Would scrape: {name} ({state})")
+            return {'status': 'dry_run', 'jurisdiction': name}
+
+        scraper_class = get_scraper_for_state(state)
+        if not scraper_class:
+            print(f"  [SKIP] No scraper available for state: {state}")
+            return {'status': 'skipped', 'reason': 'no_scraper', 'jurisdiction': name}
+
+        try:
+            print(f"  [START] Scraping {name} ({state})...")
+
+            # Get data source for this jurisdiction
+            data_sources = db.list_data_sources(jurisdiction_id=jid, limit=1)
+            if not data_sources:
+                ds_id = db.create_data_source(
+                    jurisdiction_id=jid,
+                    source_name=f"{name} Property Records",
+                    source_type="api",
+                    status="active"
+                )
+            else:
+                ds_id = data_sources[0]['id']
+
+            # Initialize scraper
+            config = {
+                'jurisdiction_id': jid,
+                'jurisdiction_name': name,
+                'data_source_id': ds_id,
+            }
+
+            scraper = scraper_class(jurisdiction_id=jid, config=config)
+
+            # Perform search
+            limit = getattr(args, 'limit', 100) or 100
+            records = scraper.search_records({'limit': limit})
+
+            if records:
+                saved_count = 0
+                for record in records:
+                    record_id = db.create_record(
+                        jurisdiction_id=jid,
+                        data_source_id=ds_id,
+                        record_type=record.get('record_type', 'property'),
+                        title=record.get('title', 'Property Record'),
+                        description=record.get('description'),
+                        amount=record.get('amount'),
+                        address=record.get('address'),
+                        city=record.get('city'),
+                        state=state,
+                        grantor=record.get('grantor'),
+                        grantee=record.get('grantee'),
+                        date=record.get('date'),
+                        raw_data=record
+                    )
+                    if record_id:
+                        saved_count += 1
+
+                print(f"  [DONE] {name}: Saved {saved_count}/{len(records)} records")
+                return {
+                    'status': 'success',
+                    'jurisdiction': name,
+                    'records_found': len(records),
+                    'records_saved': saved_count
+                }
+            else:
+                print(f"  [DONE] {name}: No records found")
+                return {'status': 'success', 'jurisdiction': name, 'records_found': 0}
+
+        except Exception as e:
+            print(f"  [ERROR] {name}: {e}")
+            return {'status': 'error', 'jurisdiction': name, 'error': str(e)}
+
+    # Process based on arguments
+    results = []
+    dry_run = getattr(args, 'dry_run', False)
+
     if args.all:
-        # Get all jurisdictions with scraper_needed=True
-        jurisdictions = db.list_jurisdictions(api_available=False, limit=1000)
-        print(f"Found {len(jurisdictions)} jurisdictions to scrape")
+        jurisdictions = db.list_jurisdictions(limit=1000)
+        print(f"Found {len(jurisdictions)} jurisdictions to process")
+        print("-" * 60)
 
         for jurisdiction in jurisdictions:
-            print(f"  - {jurisdiction['name']} ({jurisdiction['state']})")
+            result = scrape_jurisdiction(jurisdiction, dry_run=dry_run)
+            results.append(result)
+
     elif args.jurisdiction_id:
         jurisdiction = db.get_jurisdiction(args.jurisdiction_id)
         if jurisdiction:
-            print(f"Scraping jurisdiction: {jurisdiction['name']}")
-            # TODO: Implement actual scraper logic
-            print("Scraper functionality not yet fully implemented.")
+            result = scrape_jurisdiction(jurisdiction, dry_run=dry_run)
+            results.append(result)
         else:
             print(f"Jurisdiction {args.jurisdiction_id} not found.")
             sys.exit(1)
+
+    elif getattr(args, 'state', None):
+        jurisdictions = db.list_jurisdictions(state=args.state, limit=100)
+        print(f"Found {len(jurisdictions)} jurisdictions in {args.state}")
+        print("-" * 60)
+
+        for jurisdiction in jurisdictions:
+            result = scrape_jurisdiction(jurisdiction, dry_run=dry_run)
+            results.append(result)
+
     else:
-        print("Please specify --jurisdiction-id or --all")
+        print("Please specify --jurisdiction-id, --state, or --all")
+        print("Use --dry-run to preview without scraping")
         sys.exit(1)
+
+    # Print summary
+    if results:
+        print("\n" + "=" * 60)
+        print("SCRAPING SUMMARY")
+        print("=" * 60)
+        success = sum(1 for r in results if r.get('status') == 'success')
+        errors = sum(1 for r in results if r.get('status') == 'error')
+        skipped = sum(1 for r in results if r.get('status') == 'skipped')
+        dry_runs = sum(1 for r in results if r.get('status') == 'dry_run')
+        total_records = sum(r.get('records_saved', 0) for r in results)
+
+        print(f"  Total jurisdictions: {len(results)}")
+        print(f"  Successful: {success}")
+        print(f"  Errors: {errors}")
+        print(f"  Skipped: {skipped}")
+        if dry_runs:
+            print(f"  Dry runs: {dry_runs}")
+        print(f"  Total records saved: {total_records}")
+        print("=" * 60)
 
 
 def search_records(args):
@@ -435,7 +580,10 @@ Examples:
     # scrape command
     scrape_parser = subparsers.add_parser('scrape', help='Run scrapers')
     scrape_parser.add_argument('--jurisdiction-id', type=int, help='Specific jurisdiction ID to scrape')
+    scrape_parser.add_argument('--state', help='Scrape all jurisdictions in a state (e.g., FL, CA)')
     scrape_parser.add_argument('--all', action='store_true', help='Scrape all jurisdictions')
+    scrape_parser.add_argument('--dry-run', action='store_true', help='Preview without actually scraping')
+    scrape_parser.add_argument('--limit', type=int, default=100, help='Maximum records per jurisdiction (default: 100)')
 
     # search command
     search_parser = subparsers.add_parser('search', help='Search records')

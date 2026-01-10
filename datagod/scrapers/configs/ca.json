@@ -1,0 +1,680 @@
+{
+  "state_code": "CA",
+  "state_name": "California",
+  "state_fips": "06",
+  "auth_type": "api_key",
+  "requests_per_minute": 120,
+  "requests_per_hour": 3000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "tier": 1,
+  "total_counties": 58,
+  "counties": [
+    {
+      "name": "Los Angeles",
+      "fips": "06037",
+      "seat": "Los Angeles",
+      "population": 9829544,
+      "base_urls": {
+        "property_assessor": "https://portal.assessor.lacounty.gov/api",
+        "recorder": "https://recorder.lavote.net/api",
+        "court": "https://www.lacourt.org/api",
+        "clerk": "https://lavote.net/home/county-clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business", "permits"]
+    },
+    {
+      "name": "San Diego",
+      "fips": "06073",
+      "seat": "San Diego",
+      "population": 3298634,
+      "base_urls": {
+        "property_assessor": "https://arcc.sdcounty.ca.gov/api",
+        "recorder": "https://arcc.sdcounty.ca.gov/recorder/api",
+        "court": "https://www.sdcourt.ca.gov/api",
+        "clerk": "https://www.sdcounty.ca.gov/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Orange",
+      "fips": "06059",
+      "seat": "Santa Ana",
+      "population": 3186989,
+      "base_urls": {
+        "property_assessor": "https://ocassessor.ocgov.com/api",
+        "recorder": "https://ocrecorder.com/api",
+        "court": "https://www.occourts.org/api",
+        "clerk": "https://occlerk.com/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Riverside",
+      "fips": "06065",
+      "seat": "Riverside",
+      "population": 2470546,
+      "base_urls": {
+        "property_assessor": "https://www.asrclkrec.com/api",
+        "recorder": "https://www.asrclkrec.com/recorder/api",
+        "court": "https://www.riverside.courts.ca.gov/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "San Bernardino",
+      "fips": "06071",
+      "seat": "San Bernardino",
+      "population": 2181654,
+      "base_urls": {
+        "property_assessor": "https://www.sbcounty.gov/assessor/api",
+        "recorder": "https://www.sbcounty.gov/acr/api",
+        "court": "https://www.sb-court.org/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Santa Clara",
+      "fips": "06085",
+      "seat": "San Jose",
+      "population": 1936259,
+      "base_urls": {
+        "property_assessor": "https://www.sccassessor.org/api",
+        "recorder": "https://recorderonline.sccgov.org/api",
+        "court": "https://www.scscourt.org/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Alameda",
+      "fips": "06001",
+      "seat": "Oakland",
+      "population": 1671329,
+      "base_urls": {
+        "property_assessor": "https://www.acgov.org/assessor/api",
+        "recorder": "https://www.acgov.org/recorder/api",
+        "court": "https://www.alameda.courts.ca.gov/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Sacramento",
+      "fips": "06067",
+      "seat": "Sacramento",
+      "population": 1585055,
+      "base_urls": {
+        "property_assessor": "https://assessorparcelviewer.saccounty.net/api",
+        "recorder": "https://recorderonline.saccounty.net/api",
+        "court": "https://www.saccourt.ca.gov/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Contra Costa",
+      "fips": "06013",
+      "seat": "Martinez",
+      "population": 1165927,
+      "base_urls": {
+        "property_assessor": "https://www.contracosta.ca.gov/assessor/api",
+        "recorder": "https://www.cccounty.us/recorder/api",
+        "court": "https://www.cc-courts.org/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Fresno",
+      "fips": "06019",
+      "seat": "Fresno",
+      "population": 1008654,
+      "base_urls": {
+        "property_assessor": "https://www.co.fresno.ca.us/assessor/api",
+        "recorder": "https://www.co.fresno.ca.us/recorder/api",
+        "court": "https://www.fresno.courts.ca.gov/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Kern",
+      "fips": "06029",
+      "seat": "Bakersfield",
+      "population": 909235,
+      "base_urls": {
+        "property_assessor": "https://www.kerncounty.com/assessor/api",
+        "recorder": "https://www.kerncounty.com/recorder/api",
+        "court": "https://www.kern.courts.ca.gov/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "San Francisco",
+      "fips": "06075",
+      "seat": "San Francisco",
+      "population": 873965,
+      "base_urls": {
+        "property_assessor": "https://sfassessor.org/api",
+        "recorder": "https://sfgov.org/assessor-recorder/api",
+        "court": "https://www.sfsuperiorcourt.org/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business", "permits"]
+    },
+    {
+      "name": "Ventura",
+      "fips": "06111",
+      "seat": "Ventura",
+      "population": 843843,
+      "base_urls": {
+        "property_assessor": "https://recorder.countyofventura.org/api",
+        "court": "https://www.ventura.courts.ca.gov/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "San Mateo",
+      "fips": "06081",
+      "seat": "Redwood City",
+      "population": 764442,
+      "base_urls": {
+        "property_assessor": "https://www.smcacre.org/api",
+        "court": "https://www.sanmateocourt.org/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "San Joaquin",
+      "fips": "06077",
+      "seat": "Stockton",
+      "population": 779233,
+      "base_urls": {
+        "property_assessor": "https://www.sjgov.org/assessor/api",
+        "recorder": "https://www.sjgov.org/recorder/api",
+        "court": "https://www.sjcourts.org/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Stanislaus",
+      "fips": "06099",
+      "seat": "Modesto",
+      "population": 552878,
+      "base_urls": {
+        "property_assessor": "https://www.stancounty.com/assessor/api",
+        "recorder": "https://www.stancounty.com/recorder/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Sonoma",
+      "fips": "06097",
+      "seat": "Santa Rosa",
+      "population": 488863,
+      "base_urls": {
+        "property_assessor": "https://www.sonoma-county.org/assessor/api",
+        "recorder": "https://www.sonoma-county.org/recorder/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Tulare",
+      "fips": "06107",
+      "seat": "Visalia",
+      "population": 473117,
+      "base_urls": {
+        "property_assessor": "https://www.tularecounty.ca.gov/assessor/api",
+        "recorder": "https://www.tularecounty.ca.gov/recorder/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Santa Barbara",
+      "fips": "06083",
+      "seat": "Santa Barbara",
+      "population": 448229,
+      "base_urls": {
+        "property_assessor": "https://www.sbcassessor.com/api",
+        "recorder": "https://www.sbcrecorder.com/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Solano",
+      "fips": "06095",
+      "seat": "Fairfield",
+      "population": 453491,
+      "base_urls": {
+        "property_assessor": "https://www.solanocounty.com/assessor/api",
+        "recorder": "https://www.solanocounty.com/recorder/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Monterey",
+      "fips": "06053",
+      "seat": "Salinas",
+      "population": 439035,
+      "base_urls": {
+        "property_assessor": "https://www.co.monterey.ca.us/assessor/api",
+        "recorder": "https://www.co.monterey.ca.us/recorder/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Placer",
+      "fips": "06061",
+      "seat": "Auburn",
+      "population": 404739,
+      "base_urls": {
+        "property_assessor": "https://www.placer.ca.gov/assessor/api",
+        "recorder": "https://www.placer.ca.gov/recorder/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "San Luis Obispo",
+      "fips": "06079",
+      "seat": "San Luis Obispo",
+      "population": 282424,
+      "base_urls": {
+        "property_assessor": "https://www.slocounty.ca.gov/assessor/api",
+        "recorder": "https://www.slocounty.ca.gov/recorder/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Santa Cruz",
+      "fips": "06087",
+      "seat": "Santa Cruz",
+      "population": 270861,
+      "base_urls": {
+        "property_assessor": "https://www.co.santa-cruz.ca.us/assessor/api",
+        "recorder": "https://www.co.santa-cruz.ca.us/recorder/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Merced",
+      "fips": "06047",
+      "seat": "Merced",
+      "population": 286461,
+      "base_urls": {
+        "property_assessor": "https://www.co.merced.ca.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Marin",
+      "fips": "06041",
+      "seat": "San Rafael",
+      "population": 262321,
+      "base_urls": {
+        "property_assessor": "https://www.marincounty.org/assessor/api",
+        "recorder": "https://www.marincounty.org/recorder/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Butte",
+      "fips": "06007",
+      "seat": "Oroville",
+      "population": 211632,
+      "base_urls": {
+        "property_assessor": "https://www.buttecounty.net/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Yolo",
+      "fips": "06113",
+      "seat": "Woodland",
+      "population": 220408,
+      "base_urls": {
+        "property_assessor": "https://www.yolocounty.org/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "El Dorado",
+      "fips": "06017",
+      "seat": "Placerville",
+      "population": 192843,
+      "base_urls": {
+        "property_assessor": "https://www.edcgov.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Shasta",
+      "fips": "06089",
+      "seat": "Redding",
+      "population": 182155,
+      "base_urls": {
+        "property_assessor": "https://www.co.shasta.ca.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Imperial",
+      "fips": "06025",
+      "seat": "El Centro",
+      "population": 180191,
+      "base_urls": {
+        "property_assessor": "https://www.co.imperial.ca.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Kings",
+      "fips": "06031",
+      "seat": "Hanford",
+      "population": 153443,
+      "base_urls": {
+        "property_assessor": "https://www.countyofkings.com/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Madera",
+      "fips": "06039",
+      "seat": "Madera",
+      "population": 157672,
+      "base_urls": {
+        "property_assessor": "https://www.madera-county.com/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Napa",
+      "fips": "06055",
+      "seat": "Napa",
+      "population": 138019,
+      "base_urls": {
+        "property_assessor": "https://www.countyofnapa.org/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Humboldt",
+      "fips": "06023",
+      "seat": "Eureka",
+      "population": 136310,
+      "base_urls": {
+        "property_assessor": "https://humboldtgov.org/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Nevada",
+      "fips": "06057",
+      "seat": "Nevada City",
+      "population": 102241,
+      "base_urls": {
+        "property_assessor": "https://www.mynevadacounty.com/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Sutter",
+      "fips": "06101",
+      "seat": "Yuba City",
+      "population": 99633,
+      "base_urls": {
+        "property_assessor": "https://www.co.sutter.ca.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Mendocino",
+      "fips": "06045",
+      "seat": "Ukiah",
+      "population": 91305,
+      "base_urls": {
+        "property_assessor": "https://www.mendocinocounty.org/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Yuba",
+      "fips": "06115",
+      "seat": "Marysville",
+      "population": 81575,
+      "base_urls": {
+        "property_assessor": "https://www.co.yuba.ca.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Lake",
+      "fips": "06033",
+      "seat": "Lakeport",
+      "population": 68163,
+      "base_urls": {
+        "property_assessor": "https://www.lakecountyca.gov/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Tehama",
+      "fips": "06103",
+      "seat": "Red Bluff",
+      "population": 65829,
+      "base_urls": {
+        "property_assessor": "https://www.co.tehama.ca.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "San Benito",
+      "fips": "06069",
+      "seat": "Hollister",
+      "population": 64209,
+      "base_urls": {
+        "property_assessor": "https://www.cosb.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Tuolumne",
+      "fips": "06109",
+      "seat": "Sonora",
+      "population": 55810,
+      "base_urls": {
+        "property_assessor": "https://www.co.tuolumne.ca.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Calaveras",
+      "fips": "06009",
+      "seat": "San Andreas",
+      "population": 45905,
+      "base_urls": {
+        "property_assessor": "https://www.calaverasgov.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Siskiyou",
+      "fips": "06093",
+      "seat": "Yreka",
+      "population": 44076,
+      "base_urls": {
+        "property_assessor": "https://www.co.siskiyou.ca.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Amador",
+      "fips": "06005",
+      "seat": "Jackson",
+      "population": 40474,
+      "base_urls": {
+        "property_assessor": "https://www.amadorgov.org/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Lassen",
+      "fips": "06035",
+      "seat": "Susanville",
+      "population": 32730,
+      "base_urls": {
+        "property_assessor": "https://www.lassencounty.org/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Glenn",
+      "fips": "06021",
+      "seat": "Willows",
+      "population": 28917,
+      "base_urls": {
+        "property_assessor": "https://www.countyofglenn.net/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Del Norte",
+      "fips": "06015",
+      "seat": "Crescent City",
+      "population": 27743,
+      "base_urls": {
+        "property_assessor": "https://www.co.del-norte.ca.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Colusa",
+      "fips": "06011",
+      "seat": "Colusa",
+      "population": 21917,
+      "base_urls": {
+        "property_assessor": "https://www.countyofcolusa.org/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Plumas",
+      "fips": "06063",
+      "seat": "Quincy",
+      "population": 19790,
+      "base_urls": {
+        "property_assessor": "https://www.plumascounty.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Inyo",
+      "fips": "06027",
+      "seat": "Independence",
+      "population": 19016,
+      "base_urls": {
+        "property_assessor": "https://www.inyocounty.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Mariposa",
+      "fips": "06043",
+      "seat": "Mariposa",
+      "population": 17795,
+      "base_urls": {
+        "property_assessor": "https://www.mariposacounty.org/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Mono",
+      "fips": "06051",
+      "seat": "Bridgeport",
+      "population": 13247,
+      "base_urls": {
+        "property_assessor": "https://www.monocounty.ca.gov/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Trinity",
+      "fips": "06105",
+      "seat": "Weaverville",
+      "population": 16112,
+      "base_urls": {
+        "property_assessor": "https://www.trinitycounty.org/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Modoc",
+      "fips": "06049",
+      "seat": "Alturas",
+      "population": 8700,
+      "base_urls": {
+        "property_assessor": "https://www.co.modoc.ca.us/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Sierra",
+      "fips": "06091",
+      "seat": "Downieville",
+      "population": 3236,
+      "base_urls": {
+        "property_assessor": "https://www.sierracounty.ca.gov/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Alpine",
+      "fips": "06003",
+      "seat": "Markleeville",
+      "population": 1204,
+      "base_urls": {
+        "property_assessor": "https://www.alpinecountyca.gov/assessor/api"
+      },
+      "data_sources": ["property", "court"]
+    }
+  ],
+  "state_level_apis": {
+    "secretary_of_state": {
+      "url": "https://businesssearch.sos.ca.gov/api",
+      "data_types": ["corporations", "llcs", "partnerships", "trademarks"]
+    },
+    "courts": {
+      "url": "https://www.courts.ca.gov/api",
+      "data_types": ["case_search", "opinions", "filings"]
+    },
+    "bar_association": {
+      "url": "https://www.calbar.ca.gov/api",
+      "data_types": ["attorney_lookup", "disciplinary_records"]
+    },
+    "professional_licensing": {
+      "url": "https://www.dca.ca.gov/api",
+      "data_types": ["licenses", "disciplinary_actions"]
+    },
+    "contractor_licensing": {
+      "url": "https://www.cslb.ca.gov/api",
+      "data_types": ["contractor_licenses", "violations"]
+    }
+  },
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "apn", "assessed_value", "market_value", "tax_amount"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration", "document_number"]
+    },
+    "court": {
+      "type": "api",
+      "url": "/case/search",
+      "fields": ["case_number", "case_type", "parties", "filing_date", "status"]
+    },
+    "business": {
+      "type": "api",
+      "url": "/business/search",
+      "fields": ["entity_name", "entity_number", "status", "formation_date", "agent"]
+    }
+  },
+  "notes": "California has the largest population and most comprehensive public records access. Most major counties have API access. Secretary of State provides business entity search."
+}

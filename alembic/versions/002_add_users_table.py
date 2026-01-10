@@ -65,6 +65,10 @@ def upgrade() -> None:
         sa.Column('subscription_tier', sa.String(50), default='free', nullable=False),
         sa.Column('subscription_expires', sa.DateTime(), nullable=True),
 
+        # Stripe integration
+        sa.Column('stripe_customer_id', sa.String(255), nullable=True),
+        sa.Column('stripe_subscription_id', sa.String(255), nullable=True),
+
         # API usage tracking
         sa.Column('api_calls_today', sa.Integer(), default=0, nullable=False),
         sa.Column('api_calls_reset_at', sa.DateTime(), nullable=True),
@@ -91,9 +95,15 @@ def upgrade() -> None:
     op.create_index('idx_user_disabled', 'users', ['disabled'])
     op.create_index('idx_user_email_verified', 'users', ['email_verified'])
 
+    # Create unique indexes for Stripe IDs
+    op.create_index('idx_user_stripe_customer', 'users', ['stripe_customer_id'], unique=True)
+    op.create_index('idx_user_stripe_subscription', 'users', ['stripe_subscription_id'], unique=True)
+
 
 def downgrade() -> None:
     # Drop indexes
+    op.drop_index('idx_user_stripe_subscription', table_name='users')
+    op.drop_index('idx_user_stripe_customer', table_name='users')
     op.drop_index('idx_user_email_verified', table_name='users')
     op.drop_index('idx_user_disabled', table_name='users')
     op.drop_index('idx_user_subscription', table_name='users')

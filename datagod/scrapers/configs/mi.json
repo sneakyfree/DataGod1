@@ -1,109 +1,312 @@
 {
   "state_code": "MI",
   "state_name": "Michigan",
-  "auth_type": "api_key",
-  "requests_per_minute": 60,
-  "requests_per_hour": 1000,
-  "timeout": 30,
-  "retry_attempts": 3,
-  "counties": [
-    {
-      "name": "Wayne",
-      "base_url": "https://www.waynecounty.com/registerofdeeds/api",
-      "property_endpoint": "/property/search",
-      "deed_endpoint": "/deed/search",
-      "lien_endpoint": "/lien/search",
-      "requires_auth": true,
-      "rate_limit": 60,
-      "population": 1793561
+  "state_fips": "26",
+  "tier": 1,
+  "total_counties": 83,
+  "state_apis": {
+    "secretary_of_state": {
+      "name": "MI LARA - Corporations",
+      "base_url": "https://cofs.lara.state.mi.us/SearchApi/Search/Search",
+      "api_url": null,
+      "data_types": ["business_filings", "ucc"],
+      "requires_auth": false,
+      "rate_limit": 60
     },
-    {
-      "name": "Oakland",
-      "base_url": "https://www.oakgov.com/registerofdeeds/api",
-      "property_endpoint": "/property/search",
-      "deed_endpoint": "/deed/search",
-      "lien_endpoint": "/lien/search",
-      "requires_auth": true,
-      "rate_limit": 60,
-      "population": 1274395
+    "courts": {
+      "name": "MI Courts Case Search",
+      "base_url": "https://courts.michigan.gov/case-search",
+      "api_url": null,
+      "data_types": ["court_cases", "civil", "criminal", "family"],
+      "requires_auth": false
     },
-    {
-      "name": "Macomb",
-      "base_url": "https://www.macombgov.org/registerofdeeds/api",
-      "property_endpoint": "/property/search",
-      "deed_endpoint": "/deed/search",
-      "lien_endpoint": "/lien/search",
-      "requires_auth": true,
-      "rate_limit": 60,
-      "population": 881217
+    "bar": {
+      "name": "State Bar of Michigan - Attorney Search",
+      "base_url": "https://www.michbar.org/member/directory",
+      "api_url": null,
+      "data_types": ["attorney_search"],
+      "requires_auth": false
     },
-    {
-      "name": "Kent",
-      "base_url": "https://www.accesskent.com/registerofdeeds/api",
-      "property_endpoint": "/property/search",
-      "deed_endpoint": "/deed/search",
-      "lien_endpoint": "/lien/search",
-      "requires_auth": true,
-      "rate_limit": 60,
-      "population": 657974
+    "professional_licensing": {
+      "name": "MI LARA - Professional Licensing",
+      "base_url": "https://aca-prod.accela.com/LARA/Default.aspx",
+      "api_url": null,
+      "data_types": ["professional_licenses"],
+      "requires_auth": false
     },
-    {
-      "name": "Genesee",
-      "base_url": "https://www.gc4me.com/registerofdeeds/api",
-      "property_endpoint": "/property/search",
-      "deed_endpoint": "/deed/search",
-      "lien_endpoint": "/lien/search",
-      "requires_auth": true,
-      "rate_limit": 60,
-      "population": 406892
-    },
-    {
-      "name": "Washtenaw",
-      "base_url": "https://www.washtenaw.org/registerofdeeds/api",
-      "property_endpoint": "/property/search",
-      "deed_endpoint": "/deed/search",
-      "lien_endpoint": "/lien/search",
-      "requires_auth": true,
-      "rate_limit": 60,
-      "population": 372258
-    },
-    {
-      "name": "Ingham",
-      "base_url": "https://www.ingham.org/registerofdeeds/api",
-      "property_endpoint": "/property/search",
-      "deed_endpoint": "/deed/search",
-      "lien_endpoint": "/lien/search",
-      "requires_auth": true,
-      "rate_limit": 60,
-      "population": 284900
-    },
-    {
-      "name": "Ottawa",
-      "base_url": "https://www.miottawa.org/registerofdeeds/api",
-      "property_endpoint": "/property/search",
-      "deed_endpoint": "/deed/search",
-      "lien_endpoint": "/lien/search",
-      "requires_auth": true,
-      "rate_limit": 60,
-      "population": 296200
-    }
-  ],
-  "data_sources": {
-    "property": {
-      "type": "api",
-      "url": "/property/search",
-      "fields": ["owner_name", "property_address", "parcel_id", "assessed_value"]
-    },
-    "deed": {
-      "type": "api",
-      "url": "/deed/search",
-      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration"]
-    },
-    "lien": {
-      "type": "api",
-      "url": "/lien/search",
-      "fields": ["debtor", "creditor", "amount", "filing_date", "lien_type"]
+    "treasury": {
+      "name": "MI Treasury - Property Tax",
+      "base_url": "https://www.michigan.gov/treasury/0,4679,7-121-1751_2228---,00.html",
+      "api_url": null,
+      "data_types": ["property_tax"],
+      "requires_auth": false
     }
   },
-  "notes": "Michigan Register of Deeds offices are at the county level. Wayne County (Detroit) has the highest volume."
+  "counties": [
+    {
+      "name": "Wayne County",
+      "fips": "26163",
+      "seat": "Detroit",
+      "population": 1793561,
+      "base_urls": {
+        "assessor": "https://www.waynecounty.com/elected/assessor/",
+        "recorder": "https://www.waynecounty.com/elected/register-of-deeds/",
+        "clerk": "https://www.3rdcc.org/",
+        "treasurer": "https://www.waynecounty.com/elected/treasurer/",
+        "gis": "https://gis.waynecounty.com/"
+      },
+      "data_sources": ["property", "deeds", "court", "taxes", "gis"],
+      "notes": "Largest county, includes Detroit"
+    },
+    {
+      "name": "Oakland County",
+      "fips": "26125",
+      "seat": "Pontiac",
+      "population": 1274395,
+      "base_urls": {
+        "assessor": "https://www.oakgov.com/equalization/",
+        "recorder": "https://www.oakgov.com/clerkrod/rod/",
+        "clerk": "https://www.oakgov.com/courts/",
+        "treasurer": "https://www.oakgov.com/treasurer/",
+        "gis": "https://gis.oakgov.com/"
+      },
+      "data_sources": ["property", "deeds", "court", "taxes", "gis"]
+    },
+    {
+      "name": "Macomb County",
+      "fips": "26099",
+      "seat": "Mount Clemens",
+      "population": 881217,
+      "base_urls": {
+        "assessor": "https://equalization.macombgov.org/",
+        "recorder": "https://clerk.macombgov.org/registerofdeeds",
+        "clerk": "https://circuitcourt.macombgov.org/",
+        "treasurer": "https://treasurer.macombgov.org/",
+        "gis": "https://gis.macombgov.org/"
+      },
+      "data_sources": ["property", "deeds", "court", "taxes", "gis"]
+    },
+    {
+      "name": "Kent County",
+      "fips": "26081",
+      "seat": "Grand Rapids",
+      "population": 657974,
+      "base_urls": {
+        "assessor": "https://www.accesskent.com/Departments/Equalization/",
+        "recorder": "https://www.accesskent.com/Departments/RegisterOfDeeds/",
+        "clerk": "https://www.accesskent.com/Courts/",
+        "treasurer": "https://www.accesskent.com/Departments/Treasurer/",
+        "gis": "https://gis.accesskent.com/"
+      },
+      "data_sources": ["property", "deeds", "court", "taxes", "gis"]
+    },
+    {
+      "name": "Genesee County",
+      "fips": "26049",
+      "seat": "Flint",
+      "population": 406892,
+      "base_urls": {
+        "assessor": "https://www.gc4me.com/departments/equalization/",
+        "recorder": "https://www.gc4me.com/departments/register_of_deeds/",
+        "clerk": "https://www.gc4me.com/courts/",
+        "gis": "https://gis.gc4me.com/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Washtenaw County",
+      "fips": "26161",
+      "seat": "Ann Arbor",
+      "population": 372258,
+      "base_urls": {
+        "assessor": "https://www.washtenaw.org/312/Equalization",
+        "recorder": "https://www.washtenaw.org/274/Register-of-Deeds",
+        "clerk": "https://www.washtenaw.org/278/Trial-Court",
+        "treasurer": "https://www.washtenaw.org/276/Treasurer",
+        "gis": "https://gis.washtenaw.org/"
+      },
+      "data_sources": ["property", "deeds", "court", "taxes", "gis"]
+    },
+    {
+      "name": "Ottawa County",
+      "fips": "26139",
+      "seat": "Grand Haven",
+      "population": 296200,
+      "base_urls": {
+        "assessor": "https://www.miottawa.org/Departments/Equalization/",
+        "recorder": "https://www.miottawa.org/Departments/RegisterofDeeds/",
+        "clerk": "https://www.miottawa.org/Courts/",
+        "gis": "https://gis.miottawa.org/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Ingham County",
+      "fips": "26065",
+      "seat": "Mason",
+      "population": 284900,
+      "base_urls": {
+        "assessor": "https://eq.ingham.org/",
+        "recorder": "https://rod.ingham.org/",
+        "clerk": "https://cc.ingham.org/",
+        "treasurer": "https://tr.ingham.org/",
+        "gis": "https://gis.ingham.org/"
+      },
+      "data_sources": ["property", "deeds", "court", "taxes", "gis"],
+      "notes": "Includes Lansing (state capital)"
+    },
+    {
+      "name": "Kalamazoo County",
+      "fips": "26077",
+      "seat": "Kalamazoo",
+      "population": 265066,
+      "base_urls": {
+        "assessor": "https://www.kalcounty.com/equalization/",
+        "recorder": "https://www.kalcounty.com/register/",
+        "clerk": "https://www.kalcounty.com/courts/",
+        "gis": "https://gis.kalcounty.com/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Saginaw County",
+      "fips": "26145",
+      "seat": "Saginaw",
+      "population": 190539,
+      "base_urls": {
+        "assessor": "https://www.saginawcounty.com/equalization/",
+        "recorder": "https://www.saginawcounty.com/registerofdeeds/",
+        "clerk": "https://www.saginawcounty.com/10thcircuitcourt/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Livingston County",
+      "fips": "26093",
+      "seat": "Howell",
+      "population": 193866,
+      "base_urls": {
+        "assessor": "https://www.livgov.com/equalization/",
+        "recorder": "https://www.livgov.com/rod/",
+        "clerk": "https://www.livgov.com/courts/",
+        "gis": "https://gis.livgov.com/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Monroe County",
+      "fips": "26115",
+      "seat": "Monroe",
+      "population": 154809,
+      "base_urls": {
+        "assessor": "https://www.co.monroe.mi.us/government/departments_offices/equalization.php",
+        "recorder": "https://www.co.monroe.mi.us/government/departments_offices/register_of_deeds.php",
+        "clerk": "https://www.co.monroe.mi.us/government/courts/circuit_court.php"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Bay County",
+      "fips": "26017",
+      "seat": "Bay City",
+      "population": 103126,
+      "base_urls": {
+        "assessor": "https://www.baycounty-mi.gov/Equalization/",
+        "recorder": "https://www.baycounty-mi.gov/RegisterOfDeeds/",
+        "clerk": "https://www.baycounty-mi.gov/CircuitCourt/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Muskegon County",
+      "fips": "26121",
+      "seat": "Muskegon",
+      "population": 175824,
+      "base_urls": {
+        "assessor": "https://www.co.muskegon.mi.us/391/Equalization",
+        "recorder": "https://www.co.muskegon.mi.us/382/Register-of-Deeds",
+        "clerk": "https://www.co.muskegon.mi.us/376/Circuit-Court"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Calhoun County",
+      "fips": "26025",
+      "seat": "Marshall",
+      "population": 134159,
+      "base_urls": {
+        "assessor": "https://www.calhouncountymi.gov/departments/equalization/",
+        "recorder": "https://www.calhouncountymi.gov/departments/register_of_deeds/",
+        "clerk": "https://www.calhouncountymi.gov/courts/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Berrien County",
+      "fips": "26021",
+      "seat": "St. Joseph",
+      "population": 154316,
+      "base_urls": {
+        "assessor": "https://www.berriencounty.org/168/Equalization",
+        "recorder": "https://www.berriencounty.org/163/Register-of-Deeds",
+        "clerk": "https://www.berriencounty.org/155/Trial-Court",
+        "gis": "https://gis.berriencounty.org/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "St. Clair County",
+      "fips": "26147",
+      "seat": "Port Huron",
+      "population": 159566,
+      "base_urls": {
+        "assessor": "https://www.stclaircounty.org/Offices/equalization/",
+        "recorder": "https://www.stclaircounty.org/Offices/registerofdeeds/",
+        "clerk": "https://www.stclaircounty.org/Offices/circuitcourt/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Jackson County",
+      "fips": "26075",
+      "seat": "Jackson",
+      "population": 160366,
+      "base_urls": {
+        "assessor": "https://www.co.jackson.mi.us/155/Equalization",
+        "recorder": "https://www.co.jackson.mi.us/151/Register-of-Deeds",
+        "clerk": "https://www.co.jackson.mi.us/143/Circuit-Court"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Allegan County",
+      "fips": "26005",
+      "seat": "Allegan",
+      "population": 120502,
+      "base_urls": {
+        "assessor": "https://www.allegancounty.org/268/Equalization",
+        "recorder": "https://www.allegancounty.org/263/Register-of-Deeds",
+        "clerk": "https://www.allegancounty.org/254/Circuit-Court"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Eaton County",
+      "fips": "26045",
+      "seat": "Charlotte",
+      "population": 111817,
+      "base_urls": {
+        "assessor": "https://www.eatoncounty.org/181/Equalization",
+        "recorder": "https://www.eatoncounty.org/175/Register-of-Deeds",
+        "clerk": "https://www.eatoncounty.org/164/Circuit-Court"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    }
+  ],
+  "remaining_counties_pattern": {
+    "total_remaining": 63,
+    "url_pattern": "https://www.{county_slug}countymi.gov/",
+    "common_departments": ["equalization", "register-of-deeds", "circuit-court", "treasurer"],
+    "notes": "Michigan uses 'Equalization' for property assessment. Upper Peninsula counties may have different patterns."
+  }
 }

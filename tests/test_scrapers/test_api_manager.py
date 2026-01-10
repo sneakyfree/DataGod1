@@ -378,3 +378,283 @@ class TestGlobalAPIManager:
         manager = get_api_manager()
 
         assert isinstance(manager, APIManager)
+
+
+class TestAPIManagerCachedIntegration:
+    """Tests for cached integration handling"""
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_get_integration_returns_cached_if_valid(self, mock_exists):
+        """Test that get_integration returns cached integration if valid"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+
+        # Create a mock integration
+        mock_integration = Mock()
+        mock_integration.token_expires_at = datetime.now() + timedelta(hours=1)
+
+        # Add to cache
+        manager.active_integrations["1_test_api"] = mock_integration
+
+        # Should return the cached one
+        result = manager.get_integration(1, "test_api")
+        assert result is mock_integration
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_get_integration_removes_invalid_cache(self, mock_exists):
+        """Test that get_integration removes invalid cached integration"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+
+        # Create an expired mock integration
+        mock_integration = Mock()
+        mock_integration.token_expires_at = datetime.now() - timedelta(hours=1)
+
+        # Add to cache
+        manager.active_integrations["1_florida_property_appraiser"] = mock_integration
+
+        # Should remove the invalid integration and return None (no credentials)
+        result = manager.get_integration(1, "florida_property_appraiser")
+        assert "1_florida_property_appraiser" not in manager.active_integrations
+
+
+class TestAPIManagerCreateIntegration:
+    """Tests for integration creation"""
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_create_integration_success(self, mock_exists):
+        """Test successful integration creation"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+
+        # Create a mock API class
+        mock_api_class = Mock()
+        mock_instance = Mock()
+        mock_instance.authenticate.return_value = True
+        mock_api_class.return_value = mock_instance
+
+        # Register it
+        manager._get_api_registry()['test_api'] = mock_api_class
+
+        # Add credentials
+        manager.credentials['test_api'] = {'api_key': 'test123'}
+
+        # Create integration
+        integration = manager._create_integration(1, 'test_api', 'Test Jurisdiction')
+
+        assert integration is mock_instance
+        mock_api_class.assert_called_once()
+        mock_instance.authenticate.assert_called_once()
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_create_integration_auth_fails(self, mock_exists):
+        """Test integration creation when auth fails"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+
+        # Create a mock API class that fails auth
+        mock_api_class = Mock()
+        mock_instance = Mock()
+        mock_instance.authenticate.return_value = False
+        mock_api_class.return_value = mock_instance
+
+        # Register it
+        manager._get_api_registry()['test_api'] = mock_api_class
+
+        # Add credentials
+        manager.credentials['test_api'] = {'api_key': 'test123'}
+
+        # Create integration should fail
+        integration = manager._create_integration(1, 'test_api')
+
+        assert integration is None
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_create_integration_exception(self, mock_exists):
+        """Test integration creation handles exceptions"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+
+        # Create a mock API class that raises exception
+        mock_api_class = Mock(side_effect=Exception("API Error"))
+
+        # Register it
+        manager._get_api_registry()['test_api'] = mock_api_class
+
+        # Add credentials
+        manager.credentials['test_api'] = {'api_key': 'test123'}
+
+        # Create integration should handle exception
+        integration = manager._create_integration(1, 'test_api')
+
+        assert integration is None
+
+
+class TestAPIManagerSearchWithResults:
+    """Tests for search with actual results"""
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_search_across_apis_with_results(self, mock_exists):
+        """Test search across APIs with actual results"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+
+        # Create mock integration with results
+        mock_integration = Mock()
+        mock_integration.search_records.return_value = [
+            {'id': 1, 'name': 'Test Record 1'},
+            {'id': 2, 'name': 'Test Record 2'}
+        ]
+        mock_integration.token_expires_at = datetime.now() + timedelta(hours=1)
+
+        # Add to active integrations
+        manager.active_integrations["1_test_api"] = mock_integration
+
+        # Perform search
+        results = manager.search_across_apis(1, {"query": "test"}, api_types=["test_api"])
+
+        assert len(results) == 2
+        assert results[0]['id'] == 1
+        mock_integration.search_records.assert_called_once()
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_search_across_apis_with_exception(self, mock_exists):
+        """Test search handles exceptions gracefully"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+
+        # Create mock integration that raises exception
+        mock_integration = Mock()
+        mock_integration.search_records.side_effect = Exception("Search failed")
+        mock_integration.token_expires_at = datetime.now() + timedelta(hours=1)
+
+        # Add to active integrations
+        manager.active_integrations["1_test_api"] = mock_integration
+
+        # Perform search - should not raise
+        results = manager.search_across_apis(1, {"query": "test"}, api_types=["test_api"])
+
+        assert results == []
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_search_across_apis_auto_detect(self, mock_exists):
+        """Test search auto-detects available APIs"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+
+        # Search without specifying api_types
+        results = manager.search_across_apis(1, {"query": "test"})
+
+        # Should not raise and return empty list (no active integrations)
+        assert isinstance(results, list)
+
+
+class TestAPIManagerGetApiInfo:
+    """Tests for get_api_info with known APIs"""
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_get_api_info_known_api(self, mock_exists):
+        """Test getting info for a known API"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+
+        # Create a mock API class
+        class MockAPIClass:
+            pass
+
+        # Register it
+        manager._get_api_registry()['test_api'] = MockAPIClass
+
+        # Add credentials
+        manager.credentials['test_api'] = {
+            'api_key': 'test123',
+            'updated_at': '2023-01-01T00:00:00'
+        }
+
+        info = manager.get_api_info("test_api")
+
+        assert info['api_type'] == 'test_api'
+        assert info['class_name'] == 'MockAPIClass'
+        assert info['has_credentials'] is True
+        assert info['last_updated'] == '2023-01-01T00:00:00'
+
+
+class TestAPIManagerGetMetricsWithIntegrations:
+    """Tests for get_api_metrics with active integrations"""
+
+    @patch('datagod.scrapers.api_manager.os.path.exists')
+    def test_get_api_metrics_with_integrations(self, mock_exists):
+        """Test getting metrics with active integrations"""
+        mock_exists.return_value = False
+
+        from datagod.scrapers.api_manager import APIManager
+
+        manager = APIManager()
+
+        # Create mock integration with metrics
+        mock_integration = Mock()
+        mock_integration.get_metrics.return_value = {
+            'requests': 10,
+            'errors': 1
+        }
+
+        # Add to active integrations
+        manager.active_integrations["1_test_api"] = mock_integration
+
+        metrics = manager.get_api_metrics()
+
+        assert '1_test_api' in metrics['integrations']
+        assert metrics['integrations']['1_test_api']['jurisdiction_id'] == 1
+        assert metrics['integrations']['1_test_api']['api_type'] == 'test_api'
+        assert metrics['integrations']['1_test_api']['requests'] == 10
+
+
+class TestAPIManagerSaveCredentials:
+    """Tests for credentials saving with error handling"""
+
+    def test_save_credentials_write_error(self, tmp_path):
+        """Test save credentials handles write errors"""
+        from datagod.scrapers.api_manager import APIManager
+
+        # Use a path that will fail to write
+        creds_file = tmp_path / "creds.json"
+        manager = APIManager(credentials_file=str(creds_file))
+
+        # Make the directory read-only to cause write failure
+        import stat
+        creds_file.touch()
+        os.chmod(str(creds_file), stat.S_IRUSR)
+
+        try:
+            # This should not raise, just log error
+            manager._save_credentials()
+        finally:
+            # Restore permissions
+            os.chmod(str(creds_file), stat.S_IWUSR | stat.S_IRUSR)

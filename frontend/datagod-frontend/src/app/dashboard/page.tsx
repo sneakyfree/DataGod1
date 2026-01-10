@@ -4,10 +4,14 @@ import { Box, Typography, Grid, Paper, Skeleton } from '@mui/material';
 import { ProtectedRoute } from '../../context/AuthContext';
 import { DashboardStats } from '../../components/DashboardStats';
 import { RecentRecords } from '../../components/RecentRecords';
+import { RecentActivity } from '../../components/activity/RecentActivity';
+import { QuickStartCards } from '../../components/onboarding/QuickStartCards';
+import { useOnboarding } from '../../hooks/useOnboarding';
 import { useAuth } from '../../context/AuthContext';
 
 function DashboardContent() {
   const { user } = useAuth();
+  const { shouldShowQuickStart, dismissQuickStart, isLoaded } = useOnboarding();
 
   return (
     <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
@@ -19,6 +23,13 @@ function DashboardContent() {
           Here&apos;s an overview of your DataGod dashboard
         </Typography>
       </Box>
+
+      {/* Quick Start Cards for new users */}
+      {isLoaded && shouldShowQuickStart && (
+        <Box sx={{ mb: 3 }}>
+          <QuickStartCards onDismiss={dismissQuickStart} />
+        </Box>
+      )}
 
       <Grid container spacing={3}>
         {/* Stats Cards */}
@@ -54,7 +65,7 @@ function DashboardContent() {
                 href="/records"
               />
               <QuickActionItem
-                title="Jurisdictions"
+                title="Coverage Map"
                 description="Explore coverage by region"
                 href="/jurisdictions"
               />
@@ -66,12 +77,15 @@ function DashboardContent() {
             </Box>
           </Paper>
 
-          <Paper sx={{ p: 2 }}>
+          <Paper sx={{ p: 2, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
               Subscription Status
             </Typography>
             <SubscriptionStatus />
           </Paper>
+
+          {/* Recent Activity */}
+          <RecentActivity limit={8} />
         </Grid>
       </Grid>
     </Box>

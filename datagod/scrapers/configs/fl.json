@@ -1,0 +1,746 @@
+{
+  "state_code": "FL",
+  "state_name": "Florida",
+  "state_fips": "12",
+  "auth_type": "api_key",
+  "requests_per_minute": 120,
+  "requests_per_hour": 3000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "tier": 1,
+  "total_counties": 67,
+  "counties": [
+    {
+      "name": "Miami-Dade",
+      "fips": "12086",
+      "seat": "Miami",
+      "population": 2716940,
+      "base_urls": {
+        "property_assessor": "https://www.miamidade.gov/pa/api",
+        "recorder": "https://www2.miami-dadeclerk.com/api",
+        "court": "https://www.miami-dadeclerk.com/courts/api",
+        "clerk": "https://www2.miami-dadeclerk.com/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business", "permits", "criminal"]
+    },
+    {
+      "name": "Broward",
+      "fips": "12011",
+      "seat": "Fort Lauderdale",
+      "population": 1944375,
+      "base_urls": {
+        "property_assessor": "https://www.bcpa.net/api",
+        "recorder": "https://www.browardclerk.org/api",
+        "court": "https://www.17th.flcourts.org/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Palm Beach",
+      "fips": "12099",
+      "seat": "West Palm Beach",
+      "population": 1496770,
+      "base_urls": {
+        "property_assessor": "https://www.pbcgov.org/papa/api",
+        "recorder": "https://www.mypalmbeachclerk.com/api",
+        "court": "https://www.15thcircuit.com/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Hillsborough",
+      "fips": "12057",
+      "seat": "Tampa",
+      "population": 1471968,
+      "base_urls": {
+        "property_assessor": "https://www.hcpafl.org/api",
+        "recorder": "https://www.hillsclerk.com/api",
+        "court": "https://www.fljud13.org/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Orange",
+      "fips": "12095",
+      "seat": "Orlando",
+      "population": 1429908,
+      "base_urls": {
+        "property_assessor": "https://www.ocpafl.org/api",
+        "recorder": "https://www.myorangeclerk.com/api",
+        "court": "https://www.ninthcircuit.org/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Pinellas",
+      "fips": "12103",
+      "seat": "Clearwater",
+      "population": 974996,
+      "base_urls": {
+        "property_assessor": "https://www.pcpao.org/api",
+        "recorder": "https://www.mypinellasclerk.org/api",
+        "court": "https://www.jud6.org/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Duval",
+      "fips": "12031",
+      "seat": "Jacksonville",
+      "population": 995567,
+      "base_urls": {
+        "property_assessor": "https://www.coj.net/pa/api",
+        "recorder": "https://www.duvalclerk.com/api",
+        "court": "https://www.jud4.org/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Lee",
+      "fips": "12071",
+      "seat": "Fort Myers",
+      "population": 770577,
+      "base_urls": {
+        "property_assessor": "https://www.leepa.org/api",
+        "recorder": "https://www.leeclerk.org/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Polk",
+      "fips": "12105",
+      "seat": "Bartow",
+      "population": 725046,
+      "base_urls": {
+        "property_assessor": "https://www.polkpa.org/api",
+        "recorder": "https://www.polkcountyclerk.net/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Brevard",
+      "fips": "12009",
+      "seat": "Titusville",
+      "population": 601942,
+      "base_urls": {
+        "property_assessor": "https://www.bcpao.us/api",
+        "recorder": "https://www.brevardclerk.us/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Volusia",
+      "fips": "12127",
+      "seat": "DeLand",
+      "population": 553284,
+      "base_urls": {
+        "property_assessor": "https://www.vcpa.org/api",
+        "recorder": "https://www.clerk.org/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Seminole",
+      "fips": "12117",
+      "seat": "Sanford",
+      "population": 471826,
+      "base_urls": {
+        "property_assessor": "https://www.scpafl.org/api",
+        "recorder": "https://www.seminoleclerk.org/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Pasco",
+      "fips": "12101",
+      "seat": "Dade City",
+      "population": 561891,
+      "base_urls": {
+        "property_assessor": "https://www.pascopa.com/api",
+        "recorder": "https://www.pascoclerk.com/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Sarasota",
+      "fips": "12115",
+      "seat": "Sarasota",
+      "population": 434006,
+      "base_urls": {
+        "property_assessor": "https://www.sc-pa.com/api",
+        "recorder": "https://www.sarasotaclerk.com/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Manatee",
+      "fips": "12081",
+      "seat": "Bradenton",
+      "population": 403253,
+      "base_urls": {
+        "property_assessor": "https://www.manateepao.com/api",
+        "recorder": "https://www.manateeclerk.org/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Collier",
+      "fips": "12021",
+      "seat": "Naples",
+      "population": 393764,
+      "base_urls": {
+        "property_assessor": "https://www.collierappraiser.com/api",
+        "recorder": "https://www.collierclerk.com/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Marion",
+      "fips": "12083",
+      "seat": "Ocala",
+      "population": 378453,
+      "base_urls": {
+        "property_assessor": "https://www.pa.marion.fl.us/api",
+        "recorder": "https://www.marioncountyclerk.org/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Escambia",
+      "fips": "12033",
+      "seat": "Pensacola",
+      "population": 321750,
+      "base_urls": {
+        "property_assessor": "https://www.escpa.org/api",
+        "recorder": "https://www.escambiaclerk.com/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Lake",
+      "fips": "12069",
+      "seat": "Tavares",
+      "population": 383956,
+      "base_urls": {
+        "property_assessor": "https://www.lakecopropappr.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Leon",
+      "fips": "12073",
+      "seat": "Tallahassee",
+      "population": 295519,
+      "base_urls": {
+        "property_assessor": "https://www.leonpa.org/api",
+        "recorder": "https://www.clerk.leon.fl.us/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Osceola",
+      "fips": "12097",
+      "seat": "Kissimmee",
+      "population": 388656,
+      "base_urls": {
+        "property_assessor": "https://www.property-appraiser.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "St. Lucie",
+      "fips": "12111",
+      "seat": "Fort Pierce",
+      "population": 345408,
+      "base_urls": {
+        "property_assessor": "https://www.paslc.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Alachua",
+      "fips": "12001",
+      "seat": "Gainesville",
+      "population": 278468,
+      "base_urls": {
+        "property_assessor": "https://www.acpafl.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Clay",
+      "fips": "12019",
+      "seat": "Green Cove Springs",
+      "population": 222711,
+      "base_urls": {
+        "property_assessor": "https://www.ccpao.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "St. Johns",
+      "fips": "12109",
+      "seat": "St. Augustine",
+      "population": 273425,
+      "base_urls": {
+        "property_assessor": "https://www.sjcpa.us/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Santa Rosa",
+      "fips": "12113",
+      "seat": "Milton",
+      "population": 188495,
+      "base_urls": {
+        "property_assessor": "https://www.srcpa.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Charlotte",
+      "fips": "12015",
+      "seat": "Punta Gorda",
+      "population": 188910,
+      "base_urls": {
+        "property_assessor": "https://www.ccappraiser.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Hernando",
+      "fips": "12053",
+      "seat": "Brooksville",
+      "population": 194515,
+      "base_urls": {
+        "property_assessor": "https://www.hernandopa-fl.us/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Martin",
+      "fips": "12085",
+      "seat": "Stuart",
+      "population": 161000,
+      "base_urls": {
+        "property_assessor": "https://www.pa.martin.fl.us/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Indian River",
+      "fips": "12061",
+      "seat": "Vero Beach",
+      "population": 159788,
+      "base_urls": {
+        "property_assessor": "https://www.ircpa.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Bay",
+      "fips": "12005",
+      "seat": "Panama City",
+      "population": 180852,
+      "base_urls": {
+        "property_assessor": "https://www.baypa.net/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Okaloosa",
+      "fips": "12091",
+      "seat": "Crestview",
+      "population": 211668,
+      "base_urls": {
+        "property_assessor": "https://www.okaloosapafl.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Citrus",
+      "fips": "12017",
+      "seat": "Inverness",
+      "population": 154879,
+      "base_urls": {
+        "property_assessor": "https://www.citruspa.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Flagler",
+      "fips": "12035",
+      "seat": "Bunnell",
+      "population": 117910,
+      "base_urls": {
+        "property_assessor": "https://www.flaglerpa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Sumter",
+      "fips": "12119",
+      "seat": "Bushnell",
+      "population": 132420,
+      "base_urls": {
+        "property_assessor": "https://www.sumterpa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Nassau",
+      "fips": "12089",
+      "seat": "Fernandina Beach",
+      "population": 91010,
+      "base_urls": {
+        "property_assessor": "https://www.nassauflpa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Monroe",
+      "fips": "12087",
+      "seat": "Key West",
+      "population": 82874,
+      "base_urls": {
+        "property_assessor": "https://www.mcpafl.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Putnam",
+      "fips": "12107",
+      "seat": "Palatka",
+      "population": 74521,
+      "base_urls": {
+        "property_assessor": "https://www.putnam-fl.com/pa/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Columbia",
+      "fips": "12023",
+      "seat": "Lake City",
+      "population": 70542,
+      "base_urls": {
+        "property_assessor": "https://www.columbiaappraiser.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Highlands",
+      "fips": "12055",
+      "seat": "Sebring",
+      "population": 106221,
+      "base_urls": {
+        "property_assessor": "https://www.hcpao.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Walton",
+      "fips": "12131",
+      "seat": "DeFuniak Springs",
+      "population": 74071,
+      "base_urls": {
+        "property_assessor": "https://www.co.walton.fl.us/pa/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Jackson",
+      "fips": "12063",
+      "seat": "Marianna",
+      "population": 48472,
+      "base_urls": {
+        "property_assessor": "https://www.jacksoncopa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Suwannee",
+      "fips": "12121",
+      "seat": "Live Oak",
+      "population": 44290,
+      "base_urls": {
+        "property_assessor": "https://www.suwanneepa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Hendry",
+      "fips": "12051",
+      "seat": "LaBelle",
+      "population": 42022,
+      "base_urls": {
+        "property_assessor": "https://www.hendrypa.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Okeechobee",
+      "fips": "12093",
+      "seat": "Okeechobee",
+      "population": 41627,
+      "base_urls": {
+        "property_assessor": "https://www.okeechobeepa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Levy",
+      "fips": "12075",
+      "seat": "Bronson",
+      "population": 44085,
+      "base_urls": {
+        "property_assessor": "https://www.levypa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "DeSoto",
+      "fips": "12027",
+      "seat": "Arcadia",
+      "population": 37768,
+      "base_urls": {
+        "property_assessor": "https://www.desotopa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Gadsden",
+      "fips": "12039",
+      "seat": "Quincy",
+      "population": 44146,
+      "base_urls": {
+        "property_assessor": "https://www.gadsdencountypa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Baker",
+      "fips": "12003",
+      "seat": "Macclenny",
+      "population": 29701,
+      "base_urls": {
+        "property_assessor": "https://www.bakerpa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Bradford",
+      "fips": "12007",
+      "seat": "Starke",
+      "population": 28426,
+      "base_urls": {
+        "property_assessor": "https://www.bradfordappraiser.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Holmes",
+      "fips": "12059",
+      "seat": "Bonifay",
+      "population": 19798,
+      "base_urls": {
+        "property_assessor": "https://www.holmescountypa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Washington",
+      "fips": "12133",
+      "seat": "Chipley",
+      "population": 25192,
+      "base_urls": {
+        "property_assessor": "https://www.washingtonpa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Taylor",
+      "fips": "12123",
+      "seat": "Perry",
+      "population": 22098,
+      "base_urls": {
+        "property_assessor": "https://www.taylorcountypa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Madison",
+      "fips": "12079",
+      "seat": "Madison",
+      "population": 18474,
+      "base_urls": {
+        "property_assessor": "https://www.madisoncopa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Union",
+      "fips": "12125",
+      "seat": "Lake Butler",
+      "population": 15535,
+      "base_urls": {
+        "property_assessor": "https://www.unioncountypa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Gilchrist",
+      "fips": "12041",
+      "seat": "Trenton",
+      "population": 18582,
+      "base_urls": {
+        "property_assessor": "https://www.gilchristpa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Hardee",
+      "fips": "12049",
+      "seat": "Wauchula",
+      "population": 26938,
+      "base_urls": {
+        "property_assessor": "https://www.hardeepa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Dixie",
+      "fips": "12029",
+      "seat": "Cross City",
+      "population": 17052,
+      "base_urls": {
+        "property_assessor": "https://www.dixiepa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Calhoun",
+      "fips": "12013",
+      "seat": "Blountstown",
+      "population": 14105,
+      "base_urls": {
+        "property_assessor": "https://www.calhouncopa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Gulf",
+      "fips": "12045",
+      "seat": "Port St. Joe",
+      "population": 16055,
+      "base_urls": {
+        "property_assessor": "https://www.gulfcopa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Jefferson",
+      "fips": "12065",
+      "seat": "Monticello",
+      "population": 14733,
+      "base_urls": {
+        "property_assessor": "https://www.jeffersonpa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Hamilton",
+      "fips": "12047",
+      "seat": "Jasper",
+      "population": 14237,
+      "base_urls": {
+        "property_assessor": "https://www.hamiltoncopa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Franklin",
+      "fips": "12037",
+      "seat": "Apalachicola",
+      "population": 12364,
+      "base_urls": {
+        "property_assessor": "https://www.franklincopa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Glades",
+      "fips": "12043",
+      "seat": "Moore Haven",
+      "population": 13957,
+      "base_urls": {
+        "property_assessor": "https://www.gladespa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Lafayette",
+      "fips": "12067",
+      "seat": "Mayo",
+      "population": 8402,
+      "base_urls": {
+        "property_assessor": "https://www.lafayettepa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Liberty",
+      "fips": "12077",
+      "seat": "Bristol",
+      "population": 8354,
+      "base_urls": {
+        "property_assessor": "https://www.libertypa.com/api"
+      },
+      "data_sources": ["property", "court"]
+    }
+  ],
+  "state_level_apis": {
+    "secretary_of_state": {
+      "url": "https://dos.myflorida.com/sunbiz/api",
+      "data_types": ["corporations", "llcs", "partnerships", "fictitious_names"]
+    },
+    "courts": {
+      "url": "https://www.flcourts.org/api",
+      "data_types": ["case_search", "opinions", "filings"]
+    },
+    "bar_association": {
+      "url": "https://www.floridabar.org/api",
+      "data_types": ["attorney_lookup", "disciplinary_records"]
+    },
+    "professional_licensing": {
+      "url": "https://www.myfloridalicense.com/api",
+      "data_types": ["licenses", "violations"]
+    },
+    "dbpr": {
+      "url": "https://www.myfloridalicense.com/dbpr/api",
+      "data_types": ["business_licenses", "professional_licenses", "complaints"]
+    }
+  },
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "parcel_id", "just_value", "assessed_value", "taxable_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration", "official_records_book"]
+    },
+    "court": {
+      "type": "api",
+      "url": "/case/search",
+      "fields": ["case_number", "case_type", "parties", "filing_date", "status", "division"]
+    },
+    "business": {
+      "type": "api",
+      "url": "/business/search",
+      "fields": ["entity_name", "document_number", "status", "filing_date", "registered_agent"]
+    }
+  },
+  "notes": "Florida has excellent public records access under the Sunshine Law. Property Appraisers handle property records. Clerks handle court records and recording."
+}

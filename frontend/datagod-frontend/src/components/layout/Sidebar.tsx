@@ -22,9 +22,14 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import MapIcon from '@mui/icons-material/Map';
+import HubIcon from '@mui/icons-material/Hub';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import PaymentIcon from '@mui/icons-material/Payment';
 import InfoIcon from '@mui/icons-material/Info';
 import ContactMailIcon from '@mui/icons-material/ContactMail';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import { useAuth } from '../../context/AuthContext';
 
 const drawerWidth = 260;
@@ -44,7 +49,16 @@ export const Sidebar = ({ mobileOpen, onDrawerToggle }: SidebarProps) => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Search', icon: <SearchIcon />, path: '/search' },
     { text: 'Records', icon: <DescriptionIcon />, path: '/records' },
-    { text: 'Jurisdictions', icon: <MapIcon />, path: '/jurisdictions' },
+    { text: 'Entity Network', icon: <HubIcon />, path: '/network' },
+    { text: 'Coverage Map', icon: <MapIcon />, path: '/jurisdictions' },
+    { text: 'Saved Searches', icon: <BookmarkIcon />, path: '/saved' },
+    { text: 'Favorites', icon: <FavoriteIcon />, path: '/favorites' },
+  ];
+
+  // Admin navigation items (for admin users)
+  const adminMenuItems = [
+    { text: 'Admin Dashboard', icon: <AdminPanelSettingsIcon />, path: '/admin' },
+    { text: 'Coverage Admin', icon: <AssessmentIcon />, path: '/admin/coverage' },
   ];
 
   // Auth navigation items (not authenticated)
@@ -195,6 +209,39 @@ export const Sidebar = ({ mobileOpen, onDrawerToggle }: SidebarProps) => {
                 </ListItemButton>
               </ListItem>
             </List>
+
+            {/* Admin Section (for admin users) */}
+            {user?.roles?.includes('admin') && (
+              <>
+                <Divider sx={{ mx: 2 }} />
+                <Typography variant="overline" sx={{ px: 3, pt: 1, color: 'text.secondary' }}>
+                  Admin
+                </Typography>
+                <List sx={{ py: 1 }}>
+                  {adminMenuItems.map((item) => (
+                    <ListItem key={item.text} disablePadding>
+                      <ListItemButton
+                        onClick={() => handleNavigation(item.path)}
+                        selected={isActive(item.path)}
+                        sx={{
+                          mx: 1,
+                          borderRadius: 1,
+                          '&.Mui-selected': {
+                            backgroundColor: 'warning.light',
+                            '&:hover': {
+                              backgroundColor: 'warning.light',
+                            },
+                          },
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 40, color: 'warning.main' }}>{item.icon}</ListItemIcon>
+                        <ListItemText primary={item.text} />
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
+                </List>
+              </>
+            )}
           </>
         ) : (
           <List sx={{ py: 1 }}>

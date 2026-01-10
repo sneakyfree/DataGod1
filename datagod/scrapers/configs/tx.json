@@ -1,0 +1,435 @@
+{
+  "state_code": "TX",
+  "state_name": "Texas",
+  "state_fips": "48",
+  "auth_type": "api_key",
+  "requests_per_minute": 120,
+  "requests_per_hour": 3000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "tier": 1,
+  "total_counties": 254,
+  "counties": [
+    {
+      "name": "Harris",
+      "fips": "48201",
+      "seat": "Houston",
+      "population": 4731145,
+      "base_urls": {
+        "property_assessor": "https://hcad.org/api",
+        "recorder": "https://www.cclerk.hctx.net/api",
+        "court": "https://www.justex.net/api",
+        "clerk": "https://www.cclerk.hctx.net/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business", "criminal"]
+    },
+    {
+      "name": "Dallas",
+      "fips": "48113",
+      "seat": "Dallas",
+      "population": 2613539,
+      "base_urls": {
+        "property_assessor": "https://www.dallascad.org/api",
+        "recorder": "https://www.dallascounty.org/clerk/api",
+        "court": "https://www.dallascourts.com/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Tarrant",
+      "fips": "48439",
+      "seat": "Fort Worth",
+      "population": 2110640,
+      "base_urls": {
+        "property_assessor": "https://www.tad.org/api",
+        "recorder": "https://www.tarrantcounty.com/clerk/api",
+        "court": "https://www.tarrantcounty.com/courts/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Bexar",
+      "fips": "48029",
+      "seat": "San Antonio",
+      "population": 2009324,
+      "base_urls": {
+        "property_assessor": "https://www.bcad.org/api",
+        "recorder": "https://www.bexar.org/clerk/api",
+        "court": "https://www.bexar.org/courts/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Travis",
+      "fips": "48453",
+      "seat": "Austin",
+      "population": 1290188,
+      "base_urls": {
+        "property_assessor": "https://www.traviscad.org/api",
+        "recorder": "https://www.traviscountyclerk.org/api",
+        "court": "https://www.traviscountytx.gov/courts/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Collin",
+      "fips": "48085",
+      "seat": "McKinney",
+      "population": 1064465,
+      "base_urls": {
+        "property_assessor": "https://www.collincad.org/api",
+        "recorder": "https://www.collincountytx.gov/clerk/api",
+        "court": "https://www.collincountytx.gov/courts/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Hidalgo",
+      "fips": "48215",
+      "seat": "Edinburg",
+      "population": 870781,
+      "base_urls": {
+        "property_assessor": "https://www.hidalgoad.org/api",
+        "recorder": "https://www.co.hidalgo.tx.us/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Denton",
+      "fips": "48121",
+      "seat": "Denton",
+      "population": 906422,
+      "base_urls": {
+        "property_assessor": "https://www.dentoncad.com/api",
+        "recorder": "https://www.dentoncounty.gov/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Fort Bend",
+      "fips": "48157",
+      "seat": "Richmond",
+      "population": 822779,
+      "base_urls": {
+        "property_assessor": "https://www.fbcad.org/api",
+        "recorder": "https://www.fortbendcountytx.gov/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "El Paso",
+      "fips": "48141",
+      "seat": "El Paso",
+      "population": 865657,
+      "base_urls": {
+        "property_assessor": "https://www.epcad.org/api",
+        "recorder": "https://www.epcounty.com/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Williamson",
+      "fips": "48491",
+      "seat": "Georgetown",
+      "population": 609017,
+      "base_urls": {
+        "property_assessor": "https://www.wcad.org/api",
+        "recorder": "https://www.wilco.org/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Montgomery",
+      "fips": "48339",
+      "seat": "Conroe",
+      "population": 620443,
+      "base_urls": {
+        "property_assessor": "https://www.mcad-tx.org/api",
+        "recorder": "https://www.mctx.org/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Cameron",
+      "fips": "48061",
+      "seat": "Brownsville",
+      "population": 423163,
+      "base_urls": {
+        "property_assessor": "https://www.cameroncad.org/api",
+        "recorder": "https://www.co.cameron.tx.us/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Nueces",
+      "fips": "48355",
+      "seat": "Corpus Christi",
+      "population": 353178,
+      "base_urls": {
+        "property_assessor": "https://www.nuecescad.net/api",
+        "recorder": "https://www.nuecesco.com/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Bell",
+      "fips": "48027",
+      "seat": "Belton",
+      "population": 370386,
+      "base_urls": {
+        "property_assessor": "https://www.bellcad.org/api",
+        "recorder": "https://www.bellcountytx.com/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Brazoria",
+      "fips": "48039",
+      "seat": "Angleton",
+      "population": 372031,
+      "base_urls": {
+        "property_assessor": "https://www.brazoriacad.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Galveston",
+      "fips": "48167",
+      "seat": "Galveston",
+      "population": 350682,
+      "base_urls": {
+        "property_assessor": "https://www.galvestoncad.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Lubbock",
+      "fips": "48303",
+      "seat": "Lubbock",
+      "population": 310639,
+      "base_urls": {
+        "property_assessor": "https://www.lubbockcad.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Webb",
+      "fips": "48479",
+      "seat": "Laredo",
+      "population": 276652,
+      "base_urls": {
+        "property_assessor": "https://www.webbcad.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Jefferson",
+      "fips": "48245",
+      "seat": "Beaumont",
+      "population": 256526,
+      "base_urls": {
+        "property_assessor": "https://www.jcad.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "McLennan",
+      "fips": "48309",
+      "seat": "Waco",
+      "population": 261044,
+      "base_urls": {
+        "property_assessor": "https://www.mclennancad.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Smith",
+      "fips": "48423",
+      "seat": "Tyler",
+      "population": 232751,
+      "base_urls": {
+        "property_assessor": "https://www.smithcad.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Brazos",
+      "fips": "48041",
+      "seat": "Bryan",
+      "population": 229211,
+      "base_urls": {
+        "property_assessor": "https://www.brazoscad.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Hays",
+      "fips": "48209",
+      "seat": "San Marcos",
+      "population": 241067,
+      "base_urls": {
+        "property_assessor": "https://www.hayscad.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Guadalupe",
+      "fips": "48187",
+      "seat": "Seguin",
+      "population": 172706,
+      "base_urls": {
+        "property_assessor": "https://www.guadalupead.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Johnson",
+      "fips": "48251",
+      "seat": "Cleburne",
+      "population": 181704,
+      "base_urls": {
+        "property_assessor": "https://www.johnsoncad.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Ellis",
+      "fips": "48139",
+      "seat": "Waxahachie",
+      "population": 192455,
+      "base_urls": {
+        "property_assessor": "https://www.elliscad.com/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Kaufman",
+      "fips": "48257",
+      "seat": "Kaufman",
+      "population": 145310,
+      "base_urls": {
+        "property_assessor": "https://www.kaufmancad.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Ector",
+      "fips": "48135",
+      "seat": "Odessa",
+      "population": 165171,
+      "base_urls": {
+        "property_assessor": "https://www.ectorcad.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Midland",
+      "fips": "48329",
+      "seat": "Midland",
+      "population": 176832,
+      "base_urls": {
+        "property_assessor": "https://www.midcad.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Randall",
+      "fips": "48381",
+      "seat": "Canyon",
+      "population": 142879,
+      "base_urls": {
+        "property_assessor": "https://www.randallcad.org/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Potter",
+      "fips": "48375",
+      "seat": "Amarillo",
+      "population": 118525,
+      "base_urls": {
+        "property_assessor": "https://www.pottercad.org/api"
+      },
+      "data_sources": ["property", "court"]
+    }
+  ],
+  "remaining_counties_pattern": {
+    "base_url_template": "https://www.{county_slug}cad.org/api",
+    "fallback_template": "https://www.co.{county_slug}.tx.us/api",
+    "generate_for": [
+      "Anderson", "Andrews", "Angelina", "Aransas", "Archer", "Armstrong", "Atascosa", "Austin",
+      "Bailey", "Bandera", "Bastrop", "Baylor", "Bee", "Blanco", "Borden", "Bosque", "Bowie",
+      "Brewster", "Briscoe", "Brooks", "Brown", "Burleson", "Burnet", "Caldwell", "Calhoun",
+      "Callahan", "Camp", "Carson", "Cass", "Castro", "Chambers", "Cherokee", "Childress",
+      "Clay", "Cochran", "Coke", "Coleman", "Collingsworth", "Colorado", "Comal", "Comanche",
+      "Concho", "Cooke", "Coryell", "Cottle", "Crane", "Crockett", "Crosby", "Culberson",
+      "Dallam", "Dawson", "Deaf Smith", "Delta", "DeWitt", "Dickens", "Dimmit", "Donley",
+      "Duval", "Eastland", "Edwards", "Erath", "Falls", "Fannin", "Fayette", "Fisher",
+      "Floyd", "Foard", "Franklin", "Freestone", "Frio", "Gaines", "Garza", "Gillespie",
+      "Glasscock", "Goliad", "Gonzales", "Gray", "Grayson", "Gregg", "Grimes", "Hale",
+      "Hall", "Hamilton", "Hansford", "Hardeman", "Hardin", "Harrison", "Hartley", "Haskell",
+      "Hemphill", "Henderson", "Hill", "Hockley", "Hood", "Hopkins", "Houston", "Howard",
+      "Hudspeth", "Hunt", "Hutchinson", "Irion", "Jack", "Jackson", "Jasper", "Jeff Davis",
+      "Jim Hogg", "Jim Wells", "Jones", "Karnes", "Kendall", "Kenedy", "Kent", "Kerr",
+      "Kimble", "King", "Kinney", "Kleberg", "Knox", "La Salle", "Lamar", "Lamb", "Lampasas",
+      "Lavaca", "Lee", "Leon", "Liberty", "Limestone", "Lipscomb", "Live Oak", "Llano",
+      "Loving", "Lynn", "Madison", "Marion", "Martin", "Mason", "Matagorda", "Maverick",
+      "McCulloch", "McMullen", "Medina", "Menard", "Milam", "Mills", "Mitchell", "Montague",
+      "Moore", "Morris", "Motley", "Nacogdoches", "Navarro", "Newton", "Nolan", "Ochiltree",
+      "Oldham", "Orange", "Palo Pinto", "Panola", "Parker", "Parmer", "Pecos", "Polk",
+      "Presidio", "Rains", "Reagan", "Real", "Red River", "Reeves", "Refugio", "Roberts",
+      "Robertson", "Rockwall", "Runnels", "Rusk", "Sabine", "San Augustine", "San Jacinto",
+      "San Patricio", "San Saba", "Schleicher", "Scurry", "Shackelford", "Shelby", "Sherman",
+      "Somervell", "Starr", "Stephens", "Sterling", "Stonewall", "Sutton", "Swisher",
+      "Taylor", "Terrell", "Terry", "Throckmorton", "Titus", "Tom Green", "Trinity", "Tyler",
+      "Upshur", "Upton", "Uvalde", "Val Verde", "Van Zandt", "Victoria", "Walker", "Waller",
+      "Ward", "Washington", "Wharton", "Wheeler", "Wichita", "Wilbarger", "Willacy", "Wilson",
+      "Winkler", "Wise", "Wood", "Yoakum", "Young", "Zapata", "Zavala"
+    ]
+  },
+  "state_level_apis": {
+    "secretary_of_state": {
+      "url": "https://www.sos.state.tx.us/api",
+      "data_types": ["corporations", "llcs", "assumed_names", "ucc_filings"]
+    },
+    "comptroller": {
+      "url": "https://comptroller.texas.gov/api",
+      "data_types": ["franchise_tax", "sales_tax_permits", "unclaimed_property"]
+    },
+    "courts": {
+      "url": "https://www.txcourts.gov/api",
+      "data_types": ["case_search", "opinions", "filings"]
+    },
+    "bar_association": {
+      "url": "https://www.texasbar.com/api",
+      "data_types": ["attorney_lookup", "disciplinary_records"]
+    },
+    "professional_licensing": {
+      "url": "https://www.tdlr.texas.gov/api",
+      "data_types": ["licenses", "violations"]
+    }
+  },
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "account_number", "market_value", "appraised_value", "tax_amount"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration", "instrument_number"]
+    },
+    "court": {
+      "type": "api",
+      "url": "/case/search",
+      "fields": ["cause_number", "case_type", "parties", "filing_date", "status"]
+    },
+    "business": {
+      "type": "api",
+      "url": "/business/search",
+      "fields": ["entity_name", "file_number", "status", "formation_date", "registered_agent"]
+    }
+  },
+  "notes": "Texas has 254 counties - the most of any US state. Central Appraisal Districts (CADs) handle property records. Major counties have modern API access."
+}

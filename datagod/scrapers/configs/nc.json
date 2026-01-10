@@ -1,0 +1,310 @@
+{
+  "state_code": "NC",
+  "state_name": "North Carolina",
+  "state_fips": "37",
+  "tier": 1,
+  "total_counties": 100,
+  "state_apis": {
+    "secretary_of_state": {
+      "name": "NC Secretary of State - Corporations",
+      "base_url": "https://www.sosnc.gov/online_services/search/by_title/_Business_Registration",
+      "api_url": null,
+      "data_types": ["business_filings", "ucc"],
+      "requires_auth": false,
+      "rate_limit": 60
+    },
+    "courts": {
+      "name": "NC Courts eCourts",
+      "base_url": "https://www.nccourts.gov/court-dates",
+      "api_url": null,
+      "data_types": ["court_cases", "civil", "criminal"],
+      "requires_auth": false
+    },
+    "bar": {
+      "name": "NC State Bar - Attorney Search",
+      "base_url": "https://www.ncbar.gov/for-the-public/find-lawyer/",
+      "api_url": null,
+      "data_types": ["attorney_search"],
+      "requires_auth": false
+    },
+    "professional_licensing": {
+      "name": "NC OSBM - Licensing Boards",
+      "base_url": "https://www.ncosbm.gov/licensing-boards",
+      "api_url": null,
+      "data_types": ["professional_licenses"],
+      "requires_auth": false
+    },
+    "register_of_deeds": {
+      "name": "NC Register of Deeds Association",
+      "base_url": "https://www.ncrod.org/",
+      "api_url": null,
+      "data_types": ["deeds", "liens", "plats"],
+      "requires_auth": false,
+      "notes": "Links to all 100 county ROD offices"
+    }
+  },
+  "counties": [
+    {
+      "name": "Mecklenburg County",
+      "fips": "37119",
+      "seat": "Charlotte",
+      "population": 1115482,
+      "base_urls": {
+        "assessor": "https://tax.mecknc.gov/",
+        "recorder": "https://www.mecknc.gov/rod/",
+        "clerk": "https://www.meckbar.org/",
+        "sheriff": "https://www.mecksheriff.com/",
+        "gis": "https://polaris3g.mecklenburgcountync.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"],
+      "notes": "Largest county, includes Charlotte"
+    },
+    {
+      "name": "Wake County",
+      "fips": "37183",
+      "seat": "Raleigh",
+      "population": 1129410,
+      "base_urls": {
+        "assessor": "https://services.wake.gov/realestate/",
+        "recorder": "https://www.wake.gov/departments-government/register-deeds",
+        "clerk": "https://www.nccourts.gov/locations/wake-county",
+        "sheriff": "https://www.wakegov.com/sheriff",
+        "gis": "https://maps.wakegov.com/property/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"],
+      "notes": "State capital"
+    },
+    {
+      "name": "Guilford County",
+      "fips": "37081",
+      "seat": "Greensboro",
+      "population": 541299,
+      "base_urls": {
+        "assessor": "https://www.guilfordcountync.gov/our-county/tax/real-estate-appraisal",
+        "recorder": "https://www.guilfordcountync.gov/our-county/register-of-deeds",
+        "clerk": "https://www.nccourts.gov/locations/guilford-county",
+        "gis": "https://gis.guilfordcountync.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Forsyth County",
+      "fips": "37067",
+      "seat": "Winston-Salem",
+      "population": 382295,
+      "base_urls": {
+        "assessor": "https://www.co.forsyth.nc.us/tax/",
+        "recorder": "https://www.co.forsyth.nc.us/rod/",
+        "clerk": "https://www.nccourts.gov/locations/forsyth-county",
+        "gis": "https://gis.co.forsyth.nc.us/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Durham County",
+      "fips": "37063",
+      "seat": "Durham",
+      "population": 324833,
+      "base_urls": {
+        "assessor": "https://www.dconc.gov/government/departments-f-z/tax-administration",
+        "recorder": "https://www.dconc.gov/government/departments-a-e/register-of-deeds",
+        "clerk": "https://www.nccourts.gov/locations/durham-county",
+        "gis": "https://maps.durhamnc.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "New Hanover County",
+      "fips": "37129",
+      "seat": "Wilmington",
+      "population": 234473,
+      "base_urls": {
+        "assessor": "https://tax.nhcgov.com/",
+        "recorder": "https://rod.nhcgov.com/",
+        "clerk": "https://www.nccourts.gov/locations/new-hanover-county",
+        "gis": "https://gis.nhcgov.com/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Union County",
+      "fips": "37179",
+      "seat": "Monroe",
+      "population": 239859,
+      "base_urls": {
+        "assessor": "https://www.unioncountync.gov/departments/tax-administration",
+        "recorder": "https://www.unioncountync.gov/departments/register-of-deeds",
+        "clerk": "https://www.nccourts.gov/locations/union-county",
+        "gis": "https://gis.unioncountync.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Cabarrus County",
+      "fips": "37025",
+      "seat": "Concord",
+      "population": 225804,
+      "base_urls": {
+        "assessor": "https://www.cabarruscounty.us/government/departments/tax",
+        "recorder": "https://www.cabarruscounty.us/government/departments/register-of-deeds",
+        "clerk": "https://www.nccourts.gov/locations/cabarrus-county",
+        "gis": "https://gis.cabarruscounty.us/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Gaston County",
+      "fips": "37071",
+      "seat": "Gastonia",
+      "population": 227943,
+      "base_urls": {
+        "assessor": "https://www.gastongov.com/departments/tax-assessor-s-office",
+        "recorder": "https://www.gastongov.com/departments/register-of-deeds",
+        "clerk": "https://www.nccourts.gov/locations/gaston-county"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Buncombe County",
+      "fips": "37021",
+      "seat": "Asheville",
+      "population": 269452,
+      "base_urls": {
+        "assessor": "https://www.buncombecounty.org/governing/depts/tax/",
+        "recorder": "https://www.buncombecounty.org/governing/depts/register-of-deeds/",
+        "clerk": "https://www.nccourts.gov/locations/buncombe-county",
+        "gis": "https://gis.buncombecounty.org/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Catawba County",
+      "fips": "37035",
+      "seat": "Newton",
+      "population": 160610,
+      "base_urls": {
+        "assessor": "https://www.catawbacountync.gov/county-services/tax/",
+        "recorder": "https://www.catawbacountync.gov/county-services/register-of-deeds/",
+        "clerk": "https://www.nccourts.gov/locations/catawba-county"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Iredell County",
+      "fips": "37097",
+      "seat": "Statesville",
+      "population": 188280,
+      "base_urls": {
+        "assessor": "https://www.co.iredell.nc.us/168/Tax",
+        "recorder": "https://www.co.iredell.nc.us/164/Register-of-Deeds",
+        "clerk": "https://www.nccourts.gov/locations/iredell-county",
+        "gis": "https://gis.co.iredell.nc.us/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Rowan County",
+      "fips": "37159",
+      "seat": "Salisbury",
+      "population": 146875,
+      "base_urls": {
+        "assessor": "https://www.rowancountync.gov/186/Tax",
+        "recorder": "https://www.rowancountync.gov/170/Register-of-Deeds",
+        "clerk": "https://www.nccourts.gov/locations/rowan-county"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Cumberland County",
+      "fips": "37051",
+      "seat": "Fayetteville",
+      "population": 335509,
+      "base_urls": {
+        "assessor": "https://www.cumberlandcountync.gov/departments/tax-group/tax",
+        "recorder": "https://www.cumberlandcountync.gov/departments/register-of-deeds-group/register-of-deeds",
+        "clerk": "https://www.nccourts.gov/locations/cumberland-county",
+        "gis": "https://gis.cumberlandcountync.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Harnett County",
+      "fips": "37085",
+      "seat": "Lillington",
+      "population": 137203,
+      "base_urls": {
+        "assessor": "https://www.harnett.org/tax/",
+        "recorder": "https://www.harnett.org/rod/",
+        "clerk": "https://www.nccourts.gov/locations/harnett-county"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Pitt County",
+      "fips": "37147",
+      "seat": "Greenville",
+      "population": 181775,
+      "base_urls": {
+        "assessor": "https://www.pittcountync.gov/148/Tax-Office",
+        "recorder": "https://www.pittcountync.gov/139/Register-of-Deeds",
+        "clerk": "https://www.nccourts.gov/locations/pitt-county"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Johnston County",
+      "fips": "37101",
+      "seat": "Smithfield",
+      "population": 214697,
+      "base_urls": {
+        "assessor": "https://www.johnstonnc.com/tax/",
+        "recorder": "https://www.johnstonnc.com/registerofdeeds/",
+        "clerk": "https://www.nccourts.gov/locations/johnston-county",
+        "gis": "https://gis.johnstonnc.com/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Alamance County",
+      "fips": "37001",
+      "seat": "Graham",
+      "population": 167040,
+      "base_urls": {
+        "assessor": "https://www.alamance-nc.com/tax/",
+        "recorder": "https://www.alamance-nc.com/registerofdeeds/",
+        "clerk": "https://www.nccourts.gov/locations/alamance-county"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Davidson County",
+      "fips": "37057",
+      "seat": "Lexington",
+      "population": 168277,
+      "base_urls": {
+        "assessor": "https://www.co.davidson.nc.us/147/Tax",
+        "recorder": "https://www.co.davidson.nc.us/141/Register-of-Deeds",
+        "clerk": "https://www.nccourts.gov/locations/davidson-county"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Randolph County",
+      "fips": "37151",
+      "seat": "Asheboro",
+      "population": 144640,
+      "base_urls": {
+        "assessor": "https://www.randolphcountync.gov/1048/Tax",
+        "recorder": "https://www.randolphcountync.gov/129/Register-of-Deeds",
+        "clerk": "https://www.nccourts.gov/locations/randolph-county"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    }
+  ],
+  "remaining_counties_pattern": {
+    "total_remaining": 80,
+    "url_pattern": "https://www.{county_slug}countync.gov/",
+    "common_departments": ["tax", "register-of-deeds", "sheriff"],
+    "notes": "NC has exactly 100 counties. All courts searchable via NCCourts.gov"
+  }
+}

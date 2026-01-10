@@ -1,0 +1,317 @@
+{
+  "state_code": "GA",
+  "state_name": "Georgia",
+  "state_fips": "13",
+  "tier": 1,
+  "total_counties": 159,
+  "state_apis": {
+    "secretary_of_state": {
+      "name": "GA Secretary of State - Corporations",
+      "base_url": "https://ecorp.sos.ga.gov/BusinessSearch",
+      "api_url": null,
+      "data_types": ["business_filings", "ucc"],
+      "requires_auth": false,
+      "rate_limit": 60
+    },
+    "courts": {
+      "name": "Georgia Courts Case Search",
+      "base_url": "https://gsccca.org/search/",
+      "api_url": null,
+      "data_types": ["court_cases", "superior_court", "state_court"],
+      "requires_auth": false,
+      "notes": "GSCCCA - Georgia Superior Court Clerks' Cooperative Authority"
+    },
+    "bar": {
+      "name": "State Bar of Georgia",
+      "base_url": "https://www.gabar.org/membership/membersearch.cfm",
+      "api_url": null,
+      "data_types": ["attorney_search"],
+      "requires_auth": false
+    },
+    "professional_licensing": {
+      "name": "Georgia PLB - Professional Licensing",
+      "base_url": "https://verify.sos.ga.gov/verification/",
+      "api_url": null,
+      "data_types": ["professional_licenses"],
+      "requires_auth": false
+    },
+    "real_estate": {
+      "name": "GREC - Georgia Real Estate Commission",
+      "base_url": "https://verify.sos.ga.gov/verification/",
+      "api_url": null,
+      "data_types": ["real_estate_licenses"],
+      "requires_auth": false
+    }
+  },
+  "counties": [
+    {
+      "name": "Fulton County",
+      "fips": "13121",
+      "seat": "Atlanta",
+      "population": 1066710,
+      "base_urls": {
+        "assessor": "https://www.fultoncountyga.gov/services/tax-assessor",
+        "recorder": "https://www.fultoncountyga.gov/inside-fulton-county/fulton-county-departments/superior-court-clerk",
+        "clerk": "https://www.fultoncountyga.gov/services/superior-court-clerk",
+        "sheriff": "https://www.fcsoga.org/",
+        "gis": "https://gis.fultoncountyga.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"],
+      "notes": "Largest county, includes Atlanta"
+    },
+    {
+      "name": "DeKalb County",
+      "fips": "13089",
+      "seat": "Decatur",
+      "population": 764382,
+      "base_urls": {
+        "assessor": "https://web.dekalbcountyga.gov/TaxCommissioner/",
+        "recorder": "https://www.dekalbcountyga.gov/superior-court-clerk/",
+        "clerk": "https://www.dekalbcountyga.gov/superior-court-clerk/",
+        "gis": "https://gis.dekalbcountyga.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Gwinnett County",
+      "fips": "13135",
+      "seat": "Lawrenceville",
+      "population": 957062,
+      "base_urls": {
+        "assessor": "https://www.gwinnettcounty.com/web/gwinnett/departments/taxcommissioner",
+        "recorder": "https://www.gwinnettcourts.com/web/portal/Home",
+        "clerk": "https://www.gwinnettcourts.com/",
+        "sheriff": "https://www.gwinnettcountysheriff.com/",
+        "gis": "https://gis.gwinnettcounty.com/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Cobb County",
+      "fips": "13067",
+      "seat": "Marietta",
+      "population": 766149,
+      "base_urls": {
+        "assessor": "https://www.cobbassessor.org/",
+        "recorder": "https://www.cobbcounty.org/courts/superior-court",
+        "clerk": "https://www.cobbcounty.org/courts/clerk-superior-court",
+        "sheriff": "https://www.cobbsheriff.org/",
+        "gis": "https://gis.cobbcountyga.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Cherokee County",
+      "fips": "13057",
+      "seat": "Canton",
+      "population": 266620,
+      "base_urls": {
+        "assessor": "https://cherokeega.com/tax-assessor/",
+        "recorder": "https://cherokeega.com/clerk-of-superior-court/",
+        "clerk": "https://cherokeega.com/clerk-of-superior-court/",
+        "gis": "https://gis.cherokeega.com/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Clayton County",
+      "fips": "13063",
+      "seat": "Jonesboro",
+      "population": 297595,
+      "base_urls": {
+        "assessor": "https://www.claytoncountyga.gov/government/tax-assessor",
+        "recorder": "https://www.claytoncountyga.gov/government/clerk-of-superior-court",
+        "clerk": "https://www.claytoncountyga.gov/government/clerk-of-superior-court",
+        "gis": "https://gis.claytoncountyga.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Douglas County",
+      "fips": "13097",
+      "seat": "Douglasville",
+      "population": 146343,
+      "base_urls": {
+        "assessor": "https://www.celebratedouglascounty.com/156/Tax-Assessors-Office",
+        "recorder": "https://www.celebratedouglascounty.com/149/Clerk-of-Superior-Court",
+        "clerk": "https://www.celebratedouglascounty.com/149/Clerk-of-Superior-Court"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Forsyth County",
+      "fips": "13117",
+      "seat": "Cumming",
+      "population": 251283,
+      "base_urls": {
+        "assessor": "https://www.forsythco.com/Departments-Offices/Board-of-Assessors",
+        "recorder": "https://www.forsythco.com/Departments-Offices/Clerk-of-Courts",
+        "clerk": "https://www.forsythco.com/Departments-Offices/Clerk-of-Courts",
+        "gis": "https://gis.forsythco.com/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Henry County",
+      "fips": "13151",
+      "seat": "McDonough",
+      "population": 240712,
+      "base_urls": {
+        "assessor": "https://www.co.henry.ga.us/Departments/Board-of-Tax-Assessors",
+        "recorder": "https://www.co.henry.ga.us/Departments/Clerk-of-Superior-Court",
+        "clerk": "https://www.co.henry.ga.us/Departments/Clerk-of-Superior-Court",
+        "gis": "https://gis.co.henry.ga.us/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Rockdale County",
+      "fips": "13247",
+      "seat": "Conyers",
+      "population": 93570,
+      "base_urls": {
+        "assessor": "https://www.rockdalecountyga.gov/departments/tax-assessor",
+        "recorder": "https://www.rockdalecountyga.gov/departments/clerk-of-superior-court",
+        "clerk": "https://www.rockdalecountyga.gov/departments/clerk-of-superior-court"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Bibb County",
+      "fips": "13021",
+      "seat": "Macon",
+      "population": 153159,
+      "base_urls": {
+        "assessor": "https://www.maconbibb.us/tax-assessor/",
+        "recorder": "https://www.maconbibb.us/clerk-of-superior-court/",
+        "clerk": "https://www.maconbibb.us/clerk-of-superior-court/",
+        "gis": "https://gis.maconbibb.us/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"],
+      "notes": "Consolidated with City of Macon"
+    },
+    {
+      "name": "Chatham County",
+      "fips": "13051",
+      "seat": "Savannah",
+      "population": 295291,
+      "base_urls": {
+        "assessor": "https://boa.chathamcountyga.gov/",
+        "recorder": "https://www.chathamcourts.org/",
+        "clerk": "https://www.chathamcourts.org/",
+        "sheriff": "https://www.chathamcountysheriff.org/",
+        "gis": "https://gis.chathamcountyga.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Muscogee County",
+      "fips": "13215",
+      "seat": "Columbus",
+      "population": 206922,
+      "base_urls": {
+        "assessor": "https://www.columbusga.gov/taxassessors/",
+        "recorder": "https://www.columbusga.gov/superiorcourt/",
+        "clerk": "https://www.columbusga.gov/superiorcourt/"
+      },
+      "data_sources": ["property", "deeds", "court"],
+      "notes": "Consolidated with City of Columbus"
+    },
+    {
+      "name": "Richmond County",
+      "fips": "13245",
+      "seat": "Augusta",
+      "population": 206607,
+      "base_urls": {
+        "assessor": "https://www.augustaga.gov/1127/Board-of-Assessors",
+        "recorder": "https://www.augustaga.gov/1110/Clerk-of-Superior-Court",
+        "clerk": "https://www.augustaga.gov/1110/Clerk-of-Superior-Court",
+        "gis": "https://gis.augustaga.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"],
+      "notes": "Consolidated with City of Augusta"
+    },
+    {
+      "name": "Columbia County",
+      "fips": "13073",
+      "seat": "Evans",
+      "population": 160215,
+      "base_urls": {
+        "assessor": "https://www.columbiacountyga.gov/government/departments-f-m/Tax-Assessors",
+        "recorder": "https://www.columbiacountyga.gov/government/elected-officials/clerk-of-courts",
+        "clerk": "https://www.columbiacountyga.gov/government/elected-officials/clerk-of-courts"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Hall County",
+      "fips": "13139",
+      "seat": "Gainesville",
+      "population": 206921,
+      "base_urls": {
+        "assessor": "https://www.hallcounty.org/169/Tax-Assessor",
+        "recorder": "https://www.hallcounty.org/152/Clerk-of-Courts",
+        "clerk": "https://www.hallcounty.org/152/Clerk-of-Courts",
+        "gis": "https://gis.hallcounty.org/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Paulding County",
+      "fips": "13223",
+      "seat": "Dallas",
+      "population": 171025,
+      "base_urls": {
+        "assessor": "https://www.paulding.gov/167/Board-of-Tax-Assessors",
+        "recorder": "https://www.paulding.gov/145/Clerk-of-Superior-Court",
+        "clerk": "https://www.paulding.gov/145/Clerk-of-Superior-Court"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Fayette County",
+      "fips": "13113",
+      "seat": "Fayetteville",
+      "population": 118544,
+      "base_urls": {
+        "assessor": "https://www.fayettecountyga.gov/property_appraisal/index.htm",
+        "recorder": "https://www.fayettecountyga.gov/clerk_of_courts/index.htm",
+        "clerk": "https://www.fayettecountyga.gov/clerk_of_courts/index.htm",
+        "gis": "https://gis.fayettecountyga.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Newton County",
+      "fips": "13217",
+      "seat": "Covington",
+      "population": 114100,
+      "base_urls": {
+        "assessor": "https://www.co.newton.ga.us/167/Tax-Assessor",
+        "recorder": "https://www.co.newton.ga.us/152/Clerk-of-Superior-Court",
+        "clerk": "https://www.co.newton.ga.us/152/Clerk-of-Superior-Court"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Coweta County",
+      "fips": "13077",
+      "seat": "Newnan",
+      "population": 149135,
+      "base_urls": {
+        "assessor": "https://www.coweta.ga.us/government/departments/tax-assessor",
+        "recorder": "https://www.coweta.ga.us/government/departments/clerk-of-courts",
+        "clerk": "https://www.coweta.ga.us/government/departments/clerk-of-courts",
+        "gis": "https://gis.coweta.ga.us/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    }
+  ],
+  "remaining_counties_pattern": {
+    "total_remaining": 139,
+    "url_pattern": "https://www.{county_slug}countyga.gov/",
+    "common_departments": ["tax-assessor", "clerk-of-superior-court", "sheriff"],
+    "notes": "Georgia has 159 counties - 2nd most in US after Texas",
+    "gsccca_note": "Most GA county deed/court records searchable via GSCCCA at https://gsccca.org/"
+  }
+}

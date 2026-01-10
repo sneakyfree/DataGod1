@@ -61,6 +61,12 @@ class Jurisdiction(Base, TimestampMixin):
     contact_info = Column(JSON, nullable=True)  # Contact details
     jurisdiction_metadata = Column(JSON, nullable=True)     # Additional jurisdiction data
 
+    # FIPS code support for standardized county identification
+    fips_code = Column(String(5), nullable=True, index=True)  # Full 5-digit FIPS (state + county)
+    state_fips = Column(String(2), nullable=True, index=True)  # 2-digit state FIPS
+    county_fips = Column(String(3), nullable=True, index=True)  # 3-digit county FIPS
+    county_seat = Column(String(100), nullable=True)  # County seat city name
+
     # Relationships
     data_sources = relationship("DataSource", back_populates="jurisdiction", cascade="all, delete-orphan")
     records = relationship("Record", back_populates="jurisdiction", cascade="all, delete-orphan")
@@ -70,6 +76,8 @@ class Jurisdiction(Base, TimestampMixin):
         Index('idx_jurisdiction_state_county', 'state', 'county'),
         Index('idx_jurisdiction_type', 'type'),
         Index('idx_jurisdiction_api_available', 'api_available'),
+        Index('idx_jurisdiction_fips', 'fips_code'),
+        Index('idx_jurisdiction_state_fips', 'state_fips'),
     )
 
     def __repr__(self):
@@ -292,6 +300,204 @@ class Relationship(Base, TimestampMixin):
         return f"<Relationship(id={self.id}, type='{self.relationship_type}', entities={self.entity1_id}-{self.entity2_id})>"
 
 
+class SavedSearch(Base, TimestampMixin):
+    """Represents a saved search for a user"""
+    __tablename__ = 'saved_searches'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+
+    # Search details
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+
+    # Search parameters stored as JSON
+    search_params = Column(JSON, nullable=False)  # query, filters, sort, etc.
+
+    # Usage tracking
+    last_run = Column(DateTime, nullable=True)
+    run_count = Column(Integer, default=0, nullable=False)
+
+    # Notification settings
+    notify_on_new_results = Column(Boolean, default=False, nullable=False)
+    notification_frequency = Column(String(50), default='daily')  # 'daily', 'weekly', 'immediate'
+    last_notification = Column(DateTime, nullable=True)
+    last_result_count = Column(Integer, default=0, nullable=False)
+
+    # Indexes
+    __table_args__ = (
+        Index('idx_saved_search_user', 'user_id'),
+        Index('idx_saved_search_name', 'name'),
+        Index('idx_saved_search_notify', 'notify_on_new_results'),
+    )
+
+    def __repr__(self):
+        return f"<SavedSearch(id={self.id}, name='{self.name}', user_id={self.user_id})>"
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary representation"""
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'name': self.name,
+            'description': self.description,
+            'search_params': self.search_params,
+            'last_run': self.last_run.isoformat() if self.last_run else None,
+            'run_count': self.run_count,
+            'notify_on_new_results': self.notify_on_new_results,
+            'notification_frequency': self.notification_frequency,
+            'last_result_count': self.last_result_count,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class UserFavorite(Base, TimestampMixin):
+    """Represents a user's favorited record or entity"""
+    __tablename__ = 'user_favorites'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+
+    # Can favorite either a record or an entity
+    record_id = Column(Integer, ForeignKey('records.id'), nullable=True)
+    entity_id = Column(Integer, ForeignKey('entities.id'), nullable=True)
+
+    # Type for quick filtering
+    favorite_type = Column(String(50), nullable=False)  # 'record', 'entity'
+
+    # User notes
+    notes = Column(Text, nullable=True)
+    tags = Column(JSON, nullable=True)  # User-defined tags
+
+    # Indexes
+    __table_args__ = (
+        Index('idx_favorite_user', 'user_id'),
+        Index('idx_favorite_record', 'record_id'),
+        Index('idx_favorite_entity', 'entity_id'),
+        Index('idx_favorite_type', 'favorite_type'),
+    )
+
+    def __repr__(self):
+        return f"<UserFavorite(id={self.id}, user_id={self.user_id}, type='{self.favorite_type}')>"
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary representation"""
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'record_id': self.record_id,
+            'entity_id': self.entity_id,
+            'favorite_type': self.favorite_type,
+            'notes': self.notes,
+            'tags': self.tags,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class UserActivity(Base, TimestampMixin):
+    """Tracks user activity for recent history and analytics"""
+    __tablename__ = 'user_activities'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+
+    # Activity details
+    activity_type = Column(String(50), nullable=False)  # 'view_record', 'search', 'export', 'view_entity', etc.
+
+    # Reference to what was accessed
+    record_id = Column(Integer, ForeignKey('records.id'), nullable=True)
+    entity_id = Column(Integer, ForeignKey('entities.id'), nullable=True)
+    search_id = Column(Integer, ForeignKey('saved_searches.id'), nullable=True)
+
+    # Activity context
+    activity_data = Column(JSON, nullable=True)  # Additional context (search query, export format, etc.)
+
+    # Session info
+    ip_address = Column(String(45), nullable=True)  # IPv6 compatible
+    user_agent = Column(String(500), nullable=True)
+
+    # Indexes
+    __table_args__ = (
+        Index('idx_activity_user', 'user_id'),
+        Index('idx_activity_type', 'activity_type'),
+        Index('idx_activity_created', 'created_at'),
+        Index('idx_activity_record', 'record_id'),
+        Index('idx_activity_entity', 'entity_id'),
+    )
+
+    def __repr__(self):
+        return f"<UserActivity(id={self.id}, user_id={self.user_id}, type='{self.activity_type}')>"
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary representation"""
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'activity_type': self.activity_type,
+            'record_id': self.record_id,
+            'entity_id': self.entity_id,
+            'search_id': self.search_id,
+            'activity_data': self.activity_data,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class ShareLink(Base, TimestampMixin):
+    """Represents a shareable link for records or entities"""
+    __tablename__ = 'share_links'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+
+    # Share token (unique identifier for the link)
+    token = Column(String(64), unique=True, nullable=False, index=True)
+
+    # What is being shared (record or entity)
+    record_id = Column(Integer, ForeignKey('records.id'), nullable=True)
+    entity_id = Column(Integer, ForeignKey('entities.id'), nullable=True)
+    share_type = Column(String(20), nullable=False)  # 'record' or 'entity'
+
+    # Optional message from sharer
+    message = Column(Text, nullable=True)
+
+    # Expiration settings
+    expires_at = Column(DateTime, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    # Access tracking
+    view_count = Column(Integer, default=0, nullable=False)
+    last_viewed = Column(DateTime, nullable=True)
+
+    # Indexes
+    __table_args__ = (
+        Index('idx_share_token', 'token'),
+        Index('idx_share_user', 'user_id'),
+        Index('idx_share_record', 'record_id'),
+        Index('idx_share_entity', 'entity_id'),
+        Index('idx_share_active', 'is_active'),
+    )
+
+    def __repr__(self):
+        return f"<ShareLink(id={self.id}, token='{self.token[:8]}...', type='{self.share_type}')>"
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary representation"""
+        return {
+            'id': self.id,
+            'token': self.token,
+            'share_type': self.share_type,
+            'record_id': self.record_id,
+            'entity_id': self.entity_id,
+            'message': self.message,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'is_active': self.is_active,
+            'view_count': self.view_count,
+            'last_viewed': self.last_viewed.isoformat() if self.last_viewed else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class User(Base, TimestampMixin):
     """
     Represents a user in the DataGod system.
@@ -344,6 +550,10 @@ class User(Base, TimestampMixin):
     # Subscription (basic tracking - full subscription model separate)
     subscription_tier = Column(String(50), default='free', nullable=False)  # free, basic, pro, enterprise
     subscription_expires = Column(DateTime, nullable=True)
+
+    # Stripe integration
+    stripe_customer_id = Column(String(255), nullable=True, unique=True, index=True)
+    stripe_subscription_id = Column(String(255), nullable=True, unique=True, index=True)
 
     # API usage tracking
     api_calls_today = Column(Integer, default=0, nullable=False)

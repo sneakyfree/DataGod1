@@ -21,10 +21,12 @@ import {
   CardContent,
   Pagination,
 } from '@mui/material';
-import { Search as SearchIcon, FilterList, Clear } from '@mui/icons-material';
+import { Search as SearchIcon, FilterList, Clear, BookmarkAdd } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
 import { ProtectedRoute } from '../../context/AuthContext';
+import { ExportButton } from '../../components/export';
+import { SaveSearchModal } from '../../components/search/SaveSearchModal';
 
 interface SearchFilters {
   query: string;
@@ -59,6 +61,7 @@ function SearchContent() {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
 
   // Fetch jurisdictions for filter dropdown
   const { data: jurisdictions } = useQuery({
@@ -155,6 +158,27 @@ function SearchContent() {
           >
             Search
           </Button>
+          {hasSearched && searchResults?.total > 0 && (
+            <>
+              <Button
+                variant="outlined"
+                startIcon={<BookmarkAdd />}
+                onClick={() => setSaveModalOpen(true)}
+              >
+                Save Search
+              </Button>
+              <ExportButton
+                searchQuery={filters.query}
+                filters={{
+                  jurisdiction_ids: filters.jurisdiction_ids,
+                  record_types: filters.record_types,
+                  date_from: filters.date_from,
+                  date_to: filters.date_to,
+                }}
+                resultCount={searchResults.total}
+              />
+            </>
+          )}
         </Box>
 
         {/* Filters */}
@@ -314,6 +338,21 @@ function SearchContent() {
           </Typography>
         </Paper>
       )}
+
+      {/* Save Search Modal */}
+      <SaveSearchModal
+        open={saveModalOpen}
+        onClose={() => setSaveModalOpen(false)}
+        searchParams={{
+          query: filters.query,
+          filters: {
+            jurisdiction_ids: filters.jurisdiction_ids,
+            record_types: filters.record_types,
+            date_from: filters.date_from,
+            date_to: filters.date_to,
+          },
+        }}
+      />
     </Container>
   );
 }

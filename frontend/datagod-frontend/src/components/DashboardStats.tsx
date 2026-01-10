@@ -1,8 +1,9 @@
 'use client';
 
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Paper, Typography, Tooltip } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/api';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 export const DashboardStats = () => {
   // Fetch real data from API
@@ -23,11 +24,32 @@ export const DashboardStats = () => {
 
   const currentStats = stats || defaultStats;
 
+  // User-friendly labels with tooltips for clarity
   const statsItems = [
-    { label: 'Total Records', value: currentStats.totalRecords, color: 'primary' },
-    { label: 'Jurisdictions', value: currentStats.jurisdictions, color: 'secondary' },
-    { label: 'Data Sources', value: currentStats.dataSources, color: 'success' },
-    { label: 'Active Scrapers', value: currentStats.activeScrapers, color: 'info' },
+    {
+      label: 'Total Records',
+      value: currentStats.totalRecords,
+      color: 'primary',
+      tooltip: 'Public records available for search'
+    },
+    {
+      label: 'Coverage Areas',
+      value: currentStats.jurisdictions,
+      color: 'secondary',
+      tooltip: 'Counties and states with available records'
+    },
+    {
+      label: 'Record Sources',
+      value: currentStats.dataSources,
+      color: 'success',
+      tooltip: 'Different types of public record sources'
+    },
+    {
+      label: 'Live Data Feeds',
+      value: currentStats.activeScrapers,
+      color: 'info',
+      tooltip: 'Active connections bringing in fresh data'
+    },
   ];
 
   return (
@@ -41,35 +63,48 @@ export const DashboardStats = () => {
       gap: { xs: 1, sm: 2 }
     }}>
       {statsItems.map((item, index) => (
-        <Paper key={index} sx={{
-          p: { xs: 1.5, sm: 2 },
-          textAlign: 'center',
-          backgroundColor: `${item.color}.light`,
-          color: `${item.color}.contrastText`,
-          minHeight: { xs: 80, sm: 100 },
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-        }}>
-          <Typography
-            variant="caption"
-            sx={{
-              fontSize: { xs: '0.65rem', sm: '0.75rem' },
-              fontWeight: 500
-            }}
-          >
-            {item.label}
-          </Typography>
-          <Typography
-            variant="h4"
-            sx={{
-              fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' },
-              fontWeight: 'bold'
-            }}
-          >
-            {item.value.toLocaleString()}
-          </Typography>
-        </Paper>
+        <Tooltip key={index} title={item.tooltip} arrow placement="top">
+          <Paper sx={{
+            p: { xs: 1.5, sm: 2 },
+            textAlign: 'center',
+            backgroundColor: `${item.color}.light`,
+            color: `${item.color}.contrastText`,
+            minHeight: { xs: 80, sm: 100 },
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            cursor: 'help',
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: 2,
+            },
+          }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 0.5,
+              }}
+            >
+              {item.label}
+              <InfoOutlinedIcon sx={{ fontSize: 12, opacity: 0.7 }} />
+            </Typography>
+            <Typography
+              variant="h4"
+              sx={{
+                fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' },
+                fontWeight: 'bold'
+              }}
+            >
+              {item.value.toLocaleString()}
+            </Typography>
+          </Paper>
+        </Tooltip>
       ))}
     </Box>
   );

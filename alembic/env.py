@@ -2,6 +2,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+from sqlalchemy.ext.declarative import declarative_base
 
 from alembic import context
 import os
@@ -10,9 +11,12 @@ import sys
 # Add project root to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-# Import our models and configuration
+# Import configuration ONLY - don't import models to avoid auto-creation
 from datagod.config.settings import DATABASE_URL
-from datagod.models import Base
+
+# Create a separate Base for Alembic - we don't need the full models, just the metadata
+# The migrations define their own table structures
+Base = declarative_base()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -2,6 +2,13 @@
 Scraper Orchestration System
 Manages scraper execution, scheduling, task queue, and monitoring
 Implements Task 4.3 of the Master Plan
+
+Features:
+- Task queue management with priority
+- Worker pool for concurrent scraping
+- Progress monitoring and metrics
+- Error handling and retries
+- Coverage tracking integration
 """
 
 import asyncio
@@ -20,6 +27,61 @@ from typing import Dict, Any, List, Optional, Callable, Type, Tuple
 import heapq
 
 logger = logging.getLogger(__name__)
+
+
+# Coverage status constants
+class CoverageStatus(Enum):
+    """Coverage status for jurisdictions"""
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+    STALE = "stale"
+    NO_DATA = "no_data"
+    ERROR = "error"
+
+
+class CoverageGapReason(Enum):
+    """Reasons why coverage may be unavailable for a jurisdiction/category"""
+    NO_PUBLIC_ACCESS = "no_public_access"      # Data not publicly available
+    NO_DIGITAL_RECORDS = "no_digital_records"  # Paper-only jurisdiction
+    PAYWALL = "paywall"                         # Available but requires payment
+    AUTH_REQUIRED = "auth_required"             # Registration/login needed
+    API_UNAVAILABLE = "api_unavailable"         # No API or scraping endpoint
+    RATE_LIMITED = "rate_limited"               # Temporarily blocked due to rate limits
+    GEOGRAPHIC_RESTRICTION = "geo_restricted"   # IP/location restrictions
+    MAINTENANCE = "maintenance"                 # Source temporarily unavailable
+    DATA_FORMAT_ISSUE = "format_issue"          # Data exists but can't be parsed
+    LEGAL_RESTRICTION = "legal_restriction"     # Legal/terms of service issue
+    UNKNOWN = "unknown"                          # Reason not determined
+
+
+@dataclass
+class CoverageGap:
+    """Represents a gap in coverage for a jurisdiction/category"""
+    fips_code: str
+    jurisdiction_name: str
+    data_category: str
+    reason: CoverageGapReason
+    notes: str = ""
+    discovered_at: datetime = field(default_factory=datetime.utcnow)
+    last_checked: datetime = field(default_factory=datetime.utcnow)
+    source_url: str = ""
+    alternative_source: str = ""
+    estimated_availability: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary"""
+        return {
+            'fips_code': self.fips_code,
+            'jurisdiction_name': self.jurisdiction_name,
+            'data_category': self.data_category,
+            'reason': self.reason.value,
+            'notes': self.notes,
+            'discovered_at': self.discovered_at.isoformat(),
+            'last_checked': self.last_checked.isoformat(),
+            'source_url': self.source_url,
+            'alternative_source': self.alternative_source,
+            'estimated_availability': self.estimated_availability,
+        }
 
 
 class TaskStatus(Enum):
@@ -536,6 +598,154 @@ class ScraperOrchestrator:
         """Set callback functions"""
         self._on_task_complete = on_complete
         self._on_task_error = on_error
+
+    def update_coverage(
+        self,
+        fips_code: str,
+        data_category: str,
+        status: CoverageStatus,
+        record_count: int = 0,
+        source_url: str = '',
+        notes: str = ''
+    ):
+        """
+        Update coverage tracking for a jurisdiction/category.
+
+        Args:
+            fips_code: 5-digit FIPS code for the jurisdiction
+            data_category: Category of data (e.g., 'court_records', 'business_filings')
+            status: Coverage status
+            record_count: Number of records collected
+            source_url: URL of the data source
+            notes: Additional notes about coverage
+        """
+        if not self.db_manager:
+            logger.warning("No db_manager configured, cannot update coverage")
+            return
+
+        try:
+            # Update jurisdiction_coverage table
+            coverage_data = {
+                'fips_code': fips_code,
+                'data_category': data_category,
+                'coverage_status': status.value,
+                'record_count': record_count,
+                'last_scraped': datetime.utcnow(),
+                'source_url': source_url,
+                'notes': notes
+            }
+
+            # Use upsert pattern
+            self.db_manager.upsert_coverage(coverage_data)
+            logger.info(f"Updated coverage for {fips_code}/{data_category}: {status.value}")
+
+        except Exception as e:
+            logger.error(f"Failed to update coverage for {fips_code}: {e}")
+
+    def get_coverage_summary(self) -> Dict[str, Any]:
+        """
+        Get coverage summary across all jurisdictions.
+
+        Returns:
+            Dictionary with coverage statistics
+        """
+        if not self.db_manager:
+            return {'error': 'No database configured'}
+
+        try:
+            return self.db_manager.get_coverage_summary()
+        except Exception as e:
+            logger.error(f"Failed to get coverage summary: {e}")
+            return {'error': str(e)}
+
+    def get_coverage_gaps(
+        self,
+        state: str = None,
+        data_category: str = None,
+        min_population: int = 0
+    ) -> List[Dict[str, Any]]:
+        """
+        Get list of jurisdictions with missing or incomplete coverage.
+
+        Args:
+            state: Filter by state (2-letter code)
+            data_category: Filter by data category
+            min_population: Minimum population threshold
+
+        Returns:
+            List of jurisdictions with coverage gaps
+        """
+        if not self.db_manager:
+            return []
+
+        try:
+            return self.db_manager.get_coverage_gaps(
+                state=state,
+                data_category=data_category,
+                min_population=min_population
+            )
+        except Exception as e:
+            logger.error(f"Failed to get coverage gaps: {e}")
+            return []
+
+    def queue_coverage_refresh(
+        self,
+        fips_code: str,
+        data_categories: List[str] = None,
+        priority: TaskPriority = TaskPriority.NORMAL
+    ) -> List[str]:
+        """
+        Queue scraping tasks to refresh coverage for a jurisdiction.
+
+        Args:
+            fips_code: 5-digit FIPS code
+            data_categories: List of categories to refresh (all if None)
+            priority: Task priority
+
+        Returns:
+            List of task IDs queued
+        """
+        if not self.db_manager:
+            logger.warning("No db_manager configured")
+            return []
+
+        task_ids = []
+
+        try:
+            # Get jurisdiction info
+            jurisdiction = self.db_manager.get_jurisdiction_by_fips(fips_code)
+            if not jurisdiction:
+                logger.error(f"Jurisdiction not found for FIPS: {fips_code}")
+                return []
+
+            # Default categories if not specified
+            if not data_categories:
+                data_categories = [
+                    'court_records', 'business_filings', 'professional_licenses',
+                    'property_records', 'vital_records', 'criminal_records'
+                ]
+
+            # Queue tasks for each category
+            for category in data_categories:
+                scraper_name = f"{category}_scraper"
+                if scraper_name in self._scraper_registry:
+                    task_id = self.add_task(
+                        scraper_name=scraper_name,
+                        scraper_config={'data_category': category},
+                        jurisdiction_id=jurisdiction['id'],
+                        jurisdiction_name=jurisdiction['name'],
+                        priority=priority
+                    )
+                    task_ids.append(task_id)
+                else:
+                    logger.warning(f"No scraper registered for category: {category}")
+
+            logger.info(f"Queued {len(task_ids)} tasks for FIPS {fips_code}")
+            return task_ids
+
+        except Exception as e:
+            logger.error(f"Failed to queue coverage refresh: {e}")
+            return []
     
     def cancel_task(self, task_id: str) -> bool:
         """Cancel a pending task"""
@@ -550,7 +760,7 @@ class ScraperOrchestrator:
         """Retry all failed tasks"""
         tasks = self.task_queue.get_all_tasks()
         retried = 0
-        
+
         for task in tasks:
             if task.status == TaskStatus.FAILED:
                 task.status = TaskStatus.PENDING
@@ -558,8 +768,206 @@ class ScraperOrchestrator:
                 task.error = None
                 self.task_queue.put(task)
                 retried += 1
-        
+
         return retried
+
+    def record_coverage_gap(
+        self,
+        fips_code: str,
+        jurisdiction_name: str,
+        data_category: str,
+        reason: CoverageGapReason,
+        notes: str = "",
+        source_url: str = "",
+        alternative_source: str = ""
+    ) -> bool:
+        """
+        Record a coverage gap with a specific reason.
+
+        This helps track WHY coverage is missing, enabling:
+        - Prioritization of fixable gaps (auth_required vs no_public_access)
+        - Gap analysis reporting
+        - Alternative source identification
+        - Future availability tracking
+
+        Args:
+            fips_code: 5-digit FIPS code
+            jurisdiction_name: Human-readable jurisdiction name
+            data_category: Category of data
+            reason: Reason for the coverage gap
+            notes: Additional context
+            source_url: URL that was attempted
+            alternative_source: Potential alternative data source
+
+        Returns:
+            True if gap was recorded successfully
+        """
+        if not self.db_manager:
+            logger.warning("No db_manager configured, cannot record coverage gap")
+            return False
+
+        try:
+            gap = CoverageGap(
+                fips_code=fips_code,
+                jurisdiction_name=jurisdiction_name,
+                data_category=data_category,
+                reason=reason,
+                notes=notes,
+                source_url=source_url,
+                alternative_source=alternative_source
+            )
+
+            # Store gap in jurisdiction metadata
+            with self.db_manager.get_session() as session:
+                from datagod.models import Jurisdiction
+
+                jurisdiction = session.query(Jurisdiction).filter_by(
+                    fips_code=fips_code
+                ).first()
+
+                if jurisdiction:
+                    from sqlalchemy.orm.attributes import flag_modified
+
+                    metadata = dict(jurisdiction.jurisdiction_metadata or {})
+                    coverage = dict(metadata.get('coverage', {}))
+
+                    # Update category with gap info
+                    coverage[data_category] = {
+                        'status': 'gap',
+                        'gap_reason': reason.value,
+                        'notes': notes,
+                        'source_url': source_url,
+                        'alternative_source': alternative_source,
+                        'last_checked': datetime.utcnow().isoformat(),
+                        'record_count': 0
+                    }
+
+                    metadata['coverage'] = coverage
+                    jurisdiction.jurisdiction_metadata = metadata
+                    flag_modified(jurisdiction, 'jurisdiction_metadata')
+                    session.commit()
+
+                    logger.info(
+                        f"Recorded coverage gap: {jurisdiction_name} / {data_category} "
+                        f"- {reason.value}"
+                    )
+                    return True
+                else:
+                    logger.warning(f"Jurisdiction not found for FIPS: {fips_code}")
+                    return False
+
+        except Exception as e:
+            logger.error(f"Failed to record coverage gap: {e}")
+            return False
+
+    def get_gaps_by_reason(
+        self,
+        reason: CoverageGapReason = None,
+        state: str = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Get coverage gaps filtered by reason.
+
+        Args:
+            reason: Filter by specific gap reason
+            state: Filter by state code
+
+        Returns:
+            List of gaps with reason details
+        """
+        if not self.db_manager:
+            return []
+
+        try:
+            gaps = []
+            with self.db_manager.get_session() as session:
+                from datagod.models import Jurisdiction
+
+                query = session.query(Jurisdiction).filter(
+                    Jurisdiction.fips_code.isnot(None)
+                )
+
+                if state:
+                    query = query.filter(Jurisdiction.state == state)
+
+                for j in query.all():
+                    metadata = j.jurisdiction_metadata or {}
+                    coverage = metadata.get('coverage', {})
+
+                    for category, cat_data in coverage.items():
+                        if isinstance(cat_data, dict) and cat_data.get('status') == 'gap':
+                            gap_reason = cat_data.get('gap_reason', 'unknown')
+
+                            # Filter by reason if specified
+                            if reason and gap_reason != reason.value:
+                                continue
+
+                            gaps.append({
+                                'fips_code': j.fips_code,
+                                'jurisdiction_name': j.name,
+                                'state': j.state,
+                                'data_category': category,
+                                'reason': gap_reason,
+                                'notes': cat_data.get('notes', ''),
+                                'source_url': cat_data.get('source_url', ''),
+                                'alternative_source': cat_data.get('alternative_source', ''),
+                                'last_checked': cat_data.get('last_checked'),
+                            })
+
+            return gaps
+
+        except Exception as e:
+            logger.error(f"Failed to get gaps by reason: {e}")
+            return []
+
+    def get_gap_summary(self) -> Dict[str, Any]:
+        """
+        Get summary of coverage gaps by reason.
+
+        Returns:
+            Dict with gap counts by reason and category
+        """
+        if not self.db_manager:
+            return {}
+
+        try:
+            summary = {
+                'total_gaps': 0,
+                'by_reason': {},
+                'by_category': {},
+                'by_state': {},
+                'fixable_gaps': 0,  # Gaps that could potentially be resolved
+            }
+
+            # Reasons that are potentially fixable
+            fixable_reasons = {
+                CoverageGapReason.AUTH_REQUIRED.value,
+                CoverageGapReason.RATE_LIMITED.value,
+                CoverageGapReason.MAINTENANCE.value,
+                CoverageGapReason.DATA_FORMAT_ISSUE.value,
+            }
+
+            gaps = self.get_gaps_by_reason()
+
+            for gap in gaps:
+                summary['total_gaps'] += 1
+
+                reason = gap['reason']
+                category = gap['data_category']
+                state = gap['state']
+
+                summary['by_reason'][reason] = summary['by_reason'].get(reason, 0) + 1
+                summary['by_category'][category] = summary['by_category'].get(category, 0) + 1
+                summary['by_state'][state] = summary['by_state'].get(state, 0) + 1
+
+                if reason in fixable_reasons:
+                    summary['fixable_gaps'] += 1
+
+            return summary
+
+        except Exception as e:
+            logger.error(f"Failed to get gap summary: {e}")
+            return {}
 
 
 class ScheduledTask:

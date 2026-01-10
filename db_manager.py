@@ -10,6 +10,7 @@ from contextlib import contextmanager
 
 from sqlalchemy import create_engine, or_, and_, func, desc, asc
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
+from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.pool import QueuePool
 
@@ -929,14 +930,18 @@ class DatabaseManager:
             logger.error(f"Error getting user by email: {e}")
             return None
 
-    def get_user_for_auth(self, username: str) -> Optional[Dict[str, Any]]:
+    def get_user_for_auth(self, username_or_email: str) -> Optional[Dict[str, Any]]:
         """
-        Get user by username with hashed_password included (for authentication).
+        Get user by username or email with hashed_password included (for authentication).
         Returns a dictionary with hashed_password field included.
         """
         try:
             with self.get_session() as session:
-                user = session.query(User).filter_by(username=username).first()
+                # Try by username first
+                user = session.query(User).filter_by(username=username_or_email).first()
+                # If not found, try by email
+                if not user:
+                    user = session.query(User).filter_by(email=username_or_email).first()
                 if user:
                     return self._user_to_dict_with_password(user)
                 return None
@@ -944,11 +949,13 @@ class DatabaseManager:
             logger.error(f"Error getting user for auth: {e}")
             return None
 
-    def check_user_locked(self, username: str) -> bool:
+    def check_user_locked(self, username_or_email: str) -> bool:
         """Check if a user account is locked."""
         try:
             with self.get_session() as session:
-                user = session.query(User).filter_by(username=username).first()
+                user = session.query(User).filter_by(username=username_or_email).first()
+                if not user:
+                    user = session.query(User).filter_by(email=username_or_email).first()
                 if not user:
                     return False
                 if user.locked_until and user.locked_until > datetime.utcnow():
@@ -1241,6 +1248,320 @@ class DatabaseManager:
             logger.error(f"Error incrementing exports: {e}")
             return False
 
+    # ==================== FIPS & COVERAGE OPERATIONS ====================
+
+    def get_jurisdiction_by_fips(self, fips_code: str) -> Optional[Dict[str, Any]]:
+        """Get a jurisdiction by FIPS code."""
+        try:
+            with self.get_session() as session:
+                jurisdiction = session.query(Jurisdiction).filter_by(fips_code=fips_code).first()
+                if jurisdiction:
+                    return self._jurisdiction_to_dict(jurisdiction)
+                return None
+        except SQLAlchemyError as e:
+            logger.error(f"Error getting jurisdiction by FIPS: {e}")
+            return None
+
+    def create_jurisdiction_with_fips(
+        self,
+        name: str,
+        state: str,
+        fips_code: str,
+        state_fips: str = None,
+        county_fips: str = None,
+        county_seat: str = None,
+        population: int = None,
+        jurisdiction_type: str = 'county'
+    ) -> Optional[int]:
+        """
+        Create a new jurisdiction with FIPS code.
+
+        Returns:
+            int: The ID of the created jurisdiction, or None if failed.
+        """
+        try:
+            with self.get_session() as session:
+                # Check if already exists
+                existing = session.query(Jurisdiction).filter_by(fips_code=fips_code).first()
+                if existing:
+                    logger.debug(f"Jurisdiction with FIPS {fips_code} already exists")
+                    return existing.id
+
+                jurisdiction = Jurisdiction(
+                    name=name,
+                    state=state,
+                    county=name.replace(' County', '').replace(' Parish', '').replace(' Borough', ''),
+                    type=jurisdiction_type,
+                    fips_code=fips_code,
+                    state_fips=state_fips or fips_code[:2],
+                    county_fips=county_fips or fips_code[2:],
+                    county_seat=county_seat,
+                    population=population,
+                    api_available=False,
+                    scraper_needed=True
+                )
+                session.add(jurisdiction)
+                session.flush()
+                jurisdiction_id = jurisdiction.id
+                logger.info(f"Created jurisdiction: {name} (FIPS: {fips_code}, ID: {jurisdiction_id})")
+                return jurisdiction_id
+        except IntegrityError:
+            logger.error(f"Jurisdiction '{name}' already exists")
+            return None
+        except SQLAlchemyError as e:
+            logger.error(f"Error creating jurisdiction with FIPS: {e}")
+            return None
+
+    def bulk_create_jurisdictions(self, jurisdictions_data: List[Dict[str, Any]]) -> Dict[str, int]:
+        """
+        Bulk create jurisdictions from a list of dictionaries.
+
+        Args:
+            jurisdictions_data: List of dicts with keys: name, state, fips_code, etc.
+
+        Returns:
+            Dict with 'created', 'skipped', 'errors' counts.
+        """
+        result = {'created': 0, 'skipped': 0, 'errors': 0}
+
+        try:
+            with self.get_session() as session:
+                for data in jurisdictions_data:
+                    try:
+                        # Check if already exists
+                        existing = session.query(Jurisdiction).filter_by(
+                            fips_code=data.get('fips_code')
+                        ).first()
+
+                        if existing:
+                            result['skipped'] += 1
+                            continue
+
+                        # Use unique name format: "County Name, ST"
+                        county_name = data['name']
+                        state_code = data['state']
+                        unique_name = f"{county_name}, {state_code}"
+
+                        jurisdiction = Jurisdiction(
+                            name=unique_name,
+                            state=state_code,
+                            county=county_name.replace(' County', '').replace(' Parish', '').replace(' Borough', '').replace(' Municipality', '').replace(' Census Area', ''),
+                            type=data.get('type', 'county'),
+                            fips_code=data.get('fips_code'),
+                            state_fips=data.get('state_fips') or (data.get('fips_code', '')[:2] if data.get('fips_code') else None),
+                            county_fips=data.get('county_fips') or (data.get('fips_code', '')[2:] if data.get('fips_code') else None),
+                            county_seat=data.get('county_seat') or data.get('seat'),
+                            population=data.get('population'),
+                            api_available=data.get('api_available', False),
+                            scraper_needed=data.get('scraper_needed', True)
+                        )
+                        session.add(jurisdiction)
+                        result['created'] += 1
+
+                    except Exception as e:
+                        logger.error(f"Error adding jurisdiction {data.get('name')}: {e}")
+                        result['errors'] += 1
+
+                session.commit()
+                logger.info(f"Bulk create results: {result}")
+
+        except SQLAlchemyError as e:
+            logger.error(f"Error in bulk create: {e}")
+            result['errors'] += 1
+
+        return result
+
+    def upsert_coverage(self, coverage_data: Dict[str, Any]) -> bool:
+        """
+        Insert or update coverage tracking record.
+
+        Args:
+            coverage_data: Dict with fips_code, data_category, coverage_status, etc.
+
+        Returns:
+            bool: True if successful
+        """
+        try:
+            with self.get_session() as session:
+                # Get jurisdiction by FIPS
+                jurisdiction = session.query(Jurisdiction).filter_by(
+                    fips_code=coverage_data['fips_code']
+                ).first()
+
+                if not jurisdiction:
+                    logger.warning(f"Jurisdiction not found for FIPS: {coverage_data['fips_code']}")
+                    return False
+
+                # For now, store coverage info in jurisdiction metadata
+                # TODO: Create dedicated jurisdiction_coverage table if needed
+                metadata = jurisdiction.jurisdiction_metadata or {}
+                coverage = metadata.get('coverage', {})
+                category = coverage_data['data_category']
+
+                coverage[category] = {
+                    'status': coverage_data.get('coverage_status', 'no_data'),
+                    'record_count': coverage_data.get('record_count', 0),
+                    'last_scraped': coverage_data.get('last_scraped', datetime.utcnow()).isoformat() if coverage_data.get('last_scraped') else None,
+                    'source_url': coverage_data.get('source_url', ''),
+                    'notes': coverage_data.get('notes', '')
+                }
+
+                metadata['coverage'] = coverage
+                jurisdiction.jurisdiction_metadata = metadata
+                # Flag the JSON field as modified to ensure SQLAlchemy persists changes
+                flag_modified(jurisdiction, 'jurisdiction_metadata')
+                jurisdiction.updated_at = datetime.utcnow()
+
+                logger.info(f"Updated coverage for {coverage_data['fips_code']}/{category}")
+                return True
+
+        except SQLAlchemyError as e:
+            logger.error(f"Error upserting coverage: {e}")
+            return False
+
+    def get_coverage_summary(self) -> Dict[str, Any]:
+        """
+        Get coverage summary across all jurisdictions.
+
+        Returns:
+            Dict with coverage statistics.
+        """
+        try:
+            with self.get_session() as session:
+                total = session.query(func.count(Jurisdiction.id)).scalar() or 0
+                with_fips = session.query(func.count(Jurisdiction.id)).filter(
+                    Jurisdiction.fips_code.isnot(None)
+                ).scalar() or 0
+
+                # Count by state
+                state_counts = session.query(
+                    Jurisdiction.state,
+                    func.count(Jurisdiction.id)
+                ).group_by(Jurisdiction.state).all()
+
+                # Count jurisdictions with coverage data
+                with_coverage = 0
+                complete_coverage = 0
+
+                jurisdictions = session.query(Jurisdiction).filter(
+                    Jurisdiction.jurisdiction_metadata.isnot(None)
+                ).all()
+
+                for j in jurisdictions:
+                    if j.jurisdiction_metadata and j.jurisdiction_metadata.get('coverage'):
+                        with_coverage += 1
+                        coverage = j.jurisdiction_metadata['coverage']
+                        if all(c.get('status') == 'complete' for c in coverage.values()):
+                            complete_coverage += 1
+
+                return {
+                    'total_jurisdictions': total,
+                    'jurisdictions_with_fips': with_fips,
+                    'jurisdictions_with_coverage': with_coverage,
+                    'jurisdictions_complete': complete_coverage,
+                    'coverage_percentage': round(with_coverage / total * 100, 1) if total > 0 else 0,
+                    'complete_percentage': round(complete_coverage / total * 100, 1) if total > 0 else 0,
+                    'by_state': {state: count for state, count in state_counts if state}
+                }
+
+        except SQLAlchemyError as e:
+            logger.error(f"Error getting coverage summary: {e}")
+            return {'error': str(e)}
+
+    def get_coverage_gaps(
+        self,
+        state: str = None,
+        data_category: str = None,
+        min_population: int = 0
+    ) -> List[Dict[str, Any]]:
+        """
+        Get jurisdictions with missing or incomplete coverage.
+
+        Args:
+            state: Filter by state code
+            data_category: Filter by specific data category
+            min_population: Minimum population threshold
+
+        Returns:
+            List of jurisdictions with coverage gaps.
+        """
+        gaps = []
+        try:
+            with self.get_session() as session:
+                query = session.query(Jurisdiction)
+
+                if state:
+                    query = query.filter(Jurisdiction.state == state)
+                if min_population > 0:
+                    query = query.filter(Jurisdiction.population >= min_population)
+
+                for jurisdiction in query.all():
+                    coverage = {}
+                    if jurisdiction.jurisdiction_metadata:
+                        coverage = jurisdiction.jurisdiction_metadata.get('coverage', {})
+
+                    # Check for gaps
+                    has_gap = False
+                    missing_categories = []
+
+                    # Default categories to check
+                    categories = [
+                        'court_records', 'business_filings', 'professional_licenses',
+                        'property_records', 'vital_records', 'criminal_records'
+                    ]
+
+                    if data_category:
+                        categories = [data_category]
+
+                    for cat in categories:
+                        if cat not in coverage or coverage[cat].get('status') != 'complete':
+                            has_gap = True
+                            missing_categories.append(cat)
+
+                    if has_gap:
+                        gaps.append({
+                            'id': jurisdiction.id,
+                            'name': jurisdiction.name,
+                            'state': jurisdiction.state,
+                            'fips_code': jurisdiction.fips_code,
+                            'population': jurisdiction.population,
+                            'missing_categories': missing_categories,
+                            'current_coverage': coverage
+                        })
+
+                # Sort by population (high to low) for prioritization
+                gaps.sort(key=lambda x: x.get('population') or 0, reverse=True)
+
+        except SQLAlchemyError as e:
+            logger.error(f"Error getting coverage gaps: {e}")
+
+        return gaps
+
+    def list_jurisdictions_by_state(self, state: str) -> List[Dict[str, Any]]:
+        """Get all jurisdictions for a state."""
+        try:
+            with self.get_session() as session:
+                jurisdictions = session.query(Jurisdiction).filter_by(
+                    state=state
+                ).order_by(Jurisdiction.name).all()
+                return [self._jurisdiction_to_dict(j) for j in jurisdictions]
+        except SQLAlchemyError as e:
+            logger.error(f"Error listing jurisdictions by state: {e}")
+            return []
+
+    def get_jurisdiction_count_by_state(self) -> Dict[str, int]:
+        """Get count of jurisdictions per state."""
+        try:
+            with self.get_session() as session:
+                counts = session.query(
+                    Jurisdiction.state,
+                    func.count(Jurisdiction.id)
+                ).group_by(Jurisdiction.state).all()
+                return {state: count for state, count in counts if state}
+        except SQLAlchemyError as e:
+            logger.error(f"Error getting jurisdiction counts: {e}")
+            return {}
+
     # ==================== HELPER METHODS ====================
 
     def _user_to_dict(self, user: User) -> Dict[str, Any]:
@@ -1255,6 +1576,8 @@ class DatabaseManager:
             "roles": user.roles or ['user'],
             "last_login": user.last_login.isoformat() if user.last_login else None,
             "login_count": user.login_count or 0,
+            "failed_login_count": user.failed_login_count or 0,
+            "locked_until": user.locked_until.isoformat() if user.locked_until else None,
             "subscription_tier": user.subscription_tier or 'free',
             "subscription_expires": user.subscription_expires.isoformat() if user.subscription_expires else None,
             "api_calls_today": user.api_calls_today or 0,
@@ -1280,10 +1603,14 @@ class DatabaseManager:
             "api_available": jurisdiction.api_available,
             "scraper_needed": jurisdiction.scraper_needed,
             "population": jurisdiction.population,
-            "area_sq_miles": jurisdiction.area_sq_miles,
+            "area_sq_miles": getattr(jurisdiction, 'area_sq_miles', None),
             "description": jurisdiction.description,
-            "contact_info": jurisdiction.contact_info,
+            "contact_info": getattr(jurisdiction, 'contact_info', None),
             "metadata": jurisdiction.jurisdiction_metadata,
+            "fips_code": jurisdiction.fips_code,
+            "state_fips": jurisdiction.state_fips,
+            "county_fips": jurisdiction.county_fips,
+            "county_seat": jurisdiction.county_seat,
             "created_at": jurisdiction.created_at.isoformat() if jurisdiction.created_at else None,
             "updated_at": jurisdiction.updated_at.isoformat() if jurisdiction.updated_at else None
         }

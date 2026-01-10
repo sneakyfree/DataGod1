@@ -74,11 +74,11 @@ function JurisdictionsContent() {
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Jurisdictions
+        Coverage Map
       </Typography>
 
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Explore our coverage across counties and jurisdictions nationwide
+        Explore our coverage across all 50 states and thousands of counties nationwide
       </Typography>
 
       {/* Filters */}
@@ -87,7 +87,7 @@ function JurisdictionsContent() {
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              placeholder="Search jurisdictions..."
+              placeholder="Search coverage areas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
@@ -127,7 +127,7 @@ function JurisdictionsContent() {
               {data?.total || 0}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Total Jurisdictions
+              Coverage Areas
             </Typography>
           </Paper>
         </Grid>
@@ -156,7 +156,7 @@ function JurisdictionsContent() {
       {/* Error State */}
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          Failed to load jurisdictions. Please try again.
+          Failed to load coverage areas. Please try again.
         </Alert>
       )}
 
@@ -236,7 +236,7 @@ function JurisdictionsContent() {
       {!isLoading && filteredJurisdictions.length === 0 && (
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <Typography variant="h6" color="text.secondary">
-            No jurisdictions found
+            No coverage areas found
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             Try adjusting your search or filter

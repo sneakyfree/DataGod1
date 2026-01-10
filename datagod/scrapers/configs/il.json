@@ -1,0 +1,313 @@
+{
+  "state_code": "IL",
+  "state_name": "Illinois",
+  "state_fips": "17",
+  "tier": 1,
+  "total_counties": 102,
+  "state_apis": {
+    "secretary_of_state": {
+      "name": "IL Secretary of State - Business Services",
+      "base_url": "https://www.ilsos.gov/corporatellc/",
+      "api_url": null,
+      "data_types": ["business_filings", "ucc", "trademarks"],
+      "requires_auth": false,
+      "rate_limit": 60
+    },
+    "courts": {
+      "name": "Illinois Courts",
+      "base_url": "https://www.illinoiscourts.gov",
+      "api_url": null,
+      "data_types": ["court_cases", "appellate"],
+      "requires_auth": false
+    },
+    "ardc": {
+      "name": "Attorney Registration and Disciplinary Commission",
+      "base_url": "https://www.iardc.org/lrs/",
+      "api_url": null,
+      "data_types": ["attorney_search"],
+      "requires_auth": false
+    },
+    "professional_licensing": {
+      "name": "IL DFPR - Professional Licensing",
+      "base_url": "https://online-dfpr.micropact.com/lookup/licenselookup.aspx",
+      "api_url": null,
+      "data_types": ["professional_licenses"],
+      "requires_auth": false
+    },
+    "comptroller": {
+      "name": "IL Comptroller - Vendor Payments",
+      "base_url": "https://ledger.illinoiscomptroller.gov/",
+      "api_url": null,
+      "data_types": ["government_payments", "vendor_data"],
+      "requires_auth": false
+    }
+  },
+  "counties": [
+    {
+      "name": "Cook County",
+      "fips": "17031",
+      "seat": "Chicago",
+      "population": 5275541,
+      "base_urls": {
+        "assessor": "https://www.cookcountyassessor.com/",
+        "recorder": "https://www.cookcountyrecorder.com/",
+        "clerk": "https://www.cookcountyclerkofcourt.org/",
+        "sheriff": "https://www.cookcountysheriff.org/",
+        "treasurer": "https://www.cookcountytreasurer.com/",
+        "gis": "https://maps.cookcountyil.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "taxes", "gis"],
+      "notes": "Largest county in IL, includes Chicago"
+    },
+    {
+      "name": "DuPage County",
+      "fips": "17043",
+      "seat": "Wheaton",
+      "population": 932877,
+      "base_urls": {
+        "assessor": "https://www.dupageco.org/PropertyInfo/",
+        "recorder": "https://www.dupageco.org/Recorder/",
+        "clerk": "https://www.dupageco.org/Courts/CircuitClerk/",
+        "sheriff": "https://www.dupagesheriff.org/",
+        "gis": "https://gis.dupageco.org/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Kane County",
+      "fips": "17089",
+      "seat": "Geneva",
+      "population": 516522,
+      "base_urls": {
+        "assessor": "https://www.kanecountyassessments.org/",
+        "recorder": "https://www.kanecountyil.gov/recorder/",
+        "clerk": "https://www.kanecountyil.gov/Circuitclerk/",
+        "gis": "https://gis.kanecountyil.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Lake County",
+      "fips": "17097",
+      "seat": "Waukegan",
+      "population": 714342,
+      "base_urls": {
+        "assessor": "https://www.lakecountyil.gov/144/Chief-County-Assessment-Office",
+        "recorder": "https://www.lakecountyil.gov/150/Recorder-of-Deeds",
+        "clerk": "https://www.lakecountyil.gov/145/Circuit-Clerk",
+        "sheriff": "https://www.lakecountyil.gov/155/Sheriff",
+        "gis": "https://gis.lakecountyil.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "McHenry County",
+      "fips": "17111",
+      "seat": "Woodstock",
+      "population": 310229,
+      "base_urls": {
+        "assessor": "https://www.mchenrycountyil.gov/county-government/departments-a-i/assessment-division",
+        "recorder": "https://www.mchenrycountyil.gov/county-government/departments-j-z/recorder-of-deeds",
+        "clerk": "https://www.mchenrycountyil.gov/county-government/departments-a-i/circuit-clerk",
+        "gis": "https://gis.mchenrycountyil.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Will County",
+      "fips": "17197",
+      "seat": "Joliet",
+      "population": 696355,
+      "base_urls": {
+        "assessor": "https://www.willcountylandrecords.com/",
+        "recorder": "https://www.willcountyillinois.com/County-Offices/Recorder-of-Deeds",
+        "clerk": "https://www.willcountyillinois.com/County-Offices/Circuit-Clerk",
+        "sheriff": "https://www.willcountyillinois.com/County-Offices/Sheriff",
+        "gis": "https://gis.willcountyillinois.com/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Madison County",
+      "fips": "17119",
+      "seat": "Edwardsville",
+      "population": 264461,
+      "base_urls": {
+        "assessor": "https://www.co.madison.il.us/departments/assessment.php",
+        "recorder": "https://www.co.madison.il.us/departments/recorder.php",
+        "clerk": "https://www.co.madison.il.us/departments/circuit_clerk.php",
+        "gis": "https://gis.co.madison.il.us/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "St. Clair County",
+      "fips": "17163",
+      "seat": "Belleville",
+      "population": 259686,
+      "base_urls": {
+        "assessor": "https://www.co.st-clair.il.us/departments/assessment-supervisor",
+        "recorder": "https://www.co.st-clair.il.us/departments/recorder",
+        "clerk": "https://www.co.st-clair.il.us/departments/circuit-clerk"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Peoria County",
+      "fips": "17143",
+      "seat": "Peoria",
+      "population": 181830,
+      "base_urls": {
+        "assessor": "https://www.peoriacounty.org/256/Supervisor-of-Assessments",
+        "recorder": "https://www.peoriacounty.org/259/Recorder-of-Deeds",
+        "clerk": "https://www.peoriacounty.org/247/Circuit-Clerk",
+        "gis": "https://gis.peoriacounty.org/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Sangamon County",
+      "fips": "17167",
+      "seat": "Springfield",
+      "population": 197465,
+      "base_urls": {
+        "assessor": "https://www.sangamoncountyclerk.com/assessments/",
+        "recorder": "https://www.sangamoncountyrecorder.org/",
+        "clerk": "https://www.sangamoncountycircuitclerk.org/"
+      },
+      "data_sources": ["property", "deeds", "court"],
+      "notes": "State capital"
+    },
+    {
+      "name": "Champaign County",
+      "fips": "17019",
+      "seat": "Urbana",
+      "population": 210006,
+      "base_urls": {
+        "assessor": "https://champaigncountyillinois.gov/CountyGovernment/CountyOffices/AssessmentOffice.aspx",
+        "recorder": "https://champaigncountyillinois.gov/CountyGovernment/CountyOffices/Recorder.aspx",
+        "clerk": "https://champaigncountyillinois.gov/CountyGovernment/CountyOffices/CircuitClerk.aspx",
+        "gis": "https://gis.champaigncountyillinois.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "McLean County",
+      "fips": "17113",
+      "seat": "Bloomington",
+      "population": 173114,
+      "base_urls": {
+        "assessor": "https://www.mcleancountyil.gov/285/Assessment-Office",
+        "recorder": "https://www.mcleancountyil.gov/279/Recorder-of-Deeds",
+        "clerk": "https://www.mcleancountyil.gov/264/Circuit-Clerk",
+        "gis": "https://gis.mcleancountyil.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Tazewell County",
+      "fips": "17179",
+      "seat": "Pekin",
+      "population": 133332,
+      "base_urls": {
+        "assessor": "https://www.tazewell.com/countyassessments.html",
+        "recorder": "https://www.tazewell.com/recorder.html",
+        "clerk": "https://www.tazewell.com/circuitclerk.html"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Winnebago County",
+      "fips": "17201",
+      "seat": "Rockford",
+      "population": 285350,
+      "base_urls": {
+        "assessor": "https://www.wincoil.us/departments/supervisor-of-assessments/",
+        "recorder": "https://www.wincoil.us/departments/recorder-of-deeds/",
+        "clerk": "https://www.wincoil.us/departments/circuit-clerk/",
+        "sheriff": "https://www.wincoil.us/departments/sheriff/",
+        "gis": "https://gis.wincoil.us/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Kankakee County",
+      "fips": "17091",
+      "seat": "Kankakee",
+      "population": 109862,
+      "base_urls": {
+        "assessor": "https://www.k3county.net/assessment/",
+        "recorder": "https://www.k3county.net/recorder/",
+        "clerk": "https://www.k3county.net/circuitclerk/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Rock Island County",
+      "fips": "17161",
+      "seat": "Rock Island",
+      "population": 143936,
+      "base_urls": {
+        "assessor": "https://www.rockislandcounty.org/Assessor/",
+        "recorder": "https://www.rockislandcounty.org/Recorder/",
+        "clerk": "https://www.rockislandcounty.org/CircuitClerk/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Kendall County",
+      "fips": "17093",
+      "seat": "Yorkville",
+      "population": 131869,
+      "base_urls": {
+        "assessor": "https://www.co.kendall.il.us/departments/assessment/",
+        "recorder": "https://www.co.kendall.il.us/departments/recorder/",
+        "clerk": "https://www.co.kendall.il.us/departments/circuit-clerk/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Grundy County",
+      "fips": "17063",
+      "seat": "Morris",
+      "population": 52533,
+      "base_urls": {
+        "assessor": "https://www.grundyco.org/supervisor-of-assessments/",
+        "recorder": "https://www.grundyco.org/recorder/",
+        "clerk": "https://www.grundyco.org/circuit-clerk/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Macon County",
+      "fips": "17115",
+      "seat": "Decatur",
+      "population": 104437,
+      "base_urls": {
+        "assessor": "https://www.maconcounty.illinois.gov/departments/supervisor_of_assessments.php",
+        "recorder": "https://www.maconcounty.illinois.gov/departments/recorder.php",
+        "clerk": "https://www.maconcounty.illinois.gov/departments/circuit_clerk.php"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "DeKalb County",
+      "fips": "17037",
+      "seat": "Sycamore",
+      "population": 105160,
+      "base_urls": {
+        "assessor": "https://dekalbcounty.org/departments/supervisor-of-assessments/",
+        "recorder": "https://dekalbcounty.org/departments/recorder/",
+        "clerk": "https://dekalbcounty.org/departments/circuit-clerk/",
+        "gis": "https://gis.dekalbcounty.org/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    }
+  ],
+  "remaining_counties_pattern": {
+    "total_remaining": 82,
+    "url_pattern": "https://www.{county_slug}countyil.gov/",
+    "common_departments": ["assessor", "recorder", "circuit-clerk", "sheriff"],
+    "notes": "Remaining 82 counties follow similar URL patterns"
+  }
+}

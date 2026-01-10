@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -13,39 +13,90 @@ import {
   Alert,
   Paper,
   Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
-import { ContentCopy, Share, Close, Check } from '@mui/icons-material';
+import { ContentCopy, Share, Close, Check, Link as LinkIcon } from '@mui/icons-material';
 import { useMutation } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
 
 interface ShareModalProps {
   open: boolean;
   onClose: () => void;
-  recordId: string;
-  recordTitle: string;
+  recordId?: number;
+  entityId?: number;
+  itemTitle: string;
+  itemType?: 'record' | 'entity';
 }
 
-export const ShareModal = ({ open, onClose, recordId, recordTitle }: ShareModalProps) => {
-  const [email, setEmail] = useState('');
+interface ShareLinkResponse {
+  id: number;
+  token: string;
+  share_url: string;
+  share_type: string;
+  expires_at: string | null;
+  view_count: number;
+  created_at: string;
+}
+
+export const ShareModal = ({
+  open,
+  onClose,
+  recordId,
+  entityId,
+  itemTitle,
+  itemType = 'record'
+}: ShareModalProps) => {
   const [message, setMessage] = useState('');
+  const [expiresInDays, setExpiresInDays] = useState<number | ''>('');
   const [shareLink, setShareLink] = useState('');
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
-  // Generate share link
-  const generateShareLink = () => {
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    const shareUrl = `${baseUrl}/share/${recordId}`;
-    setShareLink(shareUrl);
-    return shareUrl;
-  };
+  // Reset state when modal opens/closes
+  useEffect(() => {
+    if (open) {
+      setShareLink('');
+      setMessage('');
+      setExpiresInDays('');
+      setError(null);
+      setCopied(false);
+    }
+  }, [open]);
+
+  // Create share link mutation
+  const createShareMutation = useMutation({
+    mutationFn: async () => {
+      const data: {
+        record_id?: number;
+        entity_id?: number;
+        message?: string;
+        expires_in_days?: number;
+      } = {};
+
+      if (recordId) data.record_id = recordId;
+      if (entityId) data.entity_id = entityId;
+      if (message) data.message = message;
+      if (expiresInDays) data.expires_in_days = expiresInDays;
+
+      return apiService.createShareLink(data);
+    },
+    onSuccess: (response) => {
+      const shareData = response.data as ShareLinkResponse;
+      setShareLink(shareData.share_url);
+    },
+    onError: (err: any) => {
+      setError(err.response?.data?.detail || 'Failed to create share link. Please try again.');
+    }
+  });
 
   // Copy to clipboard
   const copyToClipboard = () => {
-    const link = shareLink || generateShareLink();
+    if (!shareLink) return;
 
-    navigator.clipboard.writeText(link)
+    navigator.clipboard.writeText(shareLink)
       .then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -55,40 +106,17 @@ export const ShareModal = ({ open, onClose, recordId, recordTitle }: ShareModalP
       });
   };
 
-  // Share via email mutation
-  const shareMutation = useMutation({
-    mutationFn: (data: { recordId: string; email: string; message: string }) =>
-      apiService.shareRecord(data),
-    onSuccess: () => {
-      setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-        handleClose();
-      }, 2000);
-    },
-    onError: (err: any) => {
-      setError(err.response?.data?.detail || 'Failed to share record. Please try again.');
-    }
-  });
-
-  const handleShare = () => {
-    if (!email) {
-      setError('Please enter an email address');
-      return;
-    }
-
-    shareMutation.mutate({
-      recordId,
-      email,
-      message: message || `I thought you might be interested in this record: ${recordTitle}`,
-    });
+  const handleGenerateLink = () => {
+    setError(null);
+    createShareMutation.mutate();
   };
 
   const handleClose = () => {
-    setEmail('');
     setMessage('');
+    setExpiresInDays('');
+    setShareLink('');
     setError(null);
-    setSuccess(false);
+    setCopied(false);
     onClose();
   };
 
@@ -105,7 +133,7 @@ export const ShareModal = ({ open, onClose, recordId, recordTitle }: ShareModalP
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: { xs: '90%', sm: 450 },
+          width: { xs: '90%', sm: 480 },
           maxHeight: '90vh',
           overflow: 'auto',
           p: 3,
@@ -113,7 +141,7 @@ export const ShareModal = ({ open, onClose, recordId, recordTitle }: ShareModalP
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography id="share-modal-title" variant="h6">
-            Share Record
+            Share {itemType === 'entity' ? 'Entity' : 'Record'}
           </Typography>
           <IconButton onClick={handleClose} size="small">
             <Close />
@@ -121,7 +149,7 @@ export const ShareModal = ({ open, onClose, recordId, recordTitle }: ShareModalP
         </Box>
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Share &quot;{recordTitle}&quot; with others
+          Create a shareable link for &quot;{itemTitle}&quot;
         </Typography>
 
         {error && (
@@ -130,76 +158,105 @@ export const ShareModal = ({ open, onClose, recordId, recordTitle }: ShareModalP
           </Alert>
         )}
 
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            Record shared successfully!
-          </Alert>
-        )}
+        {/* Share Link Generated */}
+        {shareLink ? (
+          <Box>
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Share link created successfully!
+            </Alert>
 
-        {/* Share Link Section */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Share Link
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Share Link
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+              <TextField
+                fullWidth
+                size="small"
+                value={shareLink}
+                InputProps={{
+                  readOnly: true,
+                }}
+              />
+              <Tooltip title={copied ? 'Copied!' : 'Copy link'}>
+                <IconButton onClick={copyToClipboard} color={copied ? 'success' : 'default'}>
+                  {copied ? <Check /> : <ContentCopy />}
+                </IconButton>
+              </Tooltip>
+            </Box>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Anyone with this link can view this {itemType}.
+              {expiresInDays && ` Link expires in ${expiresInDays} day${expiresInDays > 1 ? 's' : ''}.`}
+            </Typography>
+
+            <Divider sx={{ my: 2 }} />
+
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={() => setShareLink('')}
+                fullWidth
+              >
+                Create Another Link
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleClose}
+                fullWidth
+              >
+                Done
+              </Button>
+            </Box>
+          </Box>
+        ) : (
+          /* Create Share Link Form */
+          <Box>
             <TextField
               fullWidth
               size="small"
-              value={shareLink || generateShareLink()}
-              InputProps={{
-                readOnly: true,
-              }}
+              label="Optional message"
+              placeholder="Add a note for the recipient..."
+              multiline
+              rows={2}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              sx={{ mb: 2 }}
+              disabled={createShareMutation.isPending}
             />
-            <Tooltip title={copied ? 'Copied!' : 'Copy link'}>
-              <IconButton onClick={copyToClipboard} color={copied ? 'success' : 'default'}>
-                {copied ? <Check /> : <ContentCopy />}
-              </IconButton>
-            </Tooltip>
+
+            <FormControl fullWidth size="small" sx={{ mb: 3 }}>
+              <InputLabel>Link Expiration</InputLabel>
+              <Select
+                value={expiresInDays}
+                label="Link Expiration"
+                onChange={(e) => setExpiresInDays(e.target.value as number | '')}
+                disabled={createShareMutation.isPending}
+              >
+                <MenuItem value="">Never expires</MenuItem>
+                <MenuItem value={1}>1 day</MenuItem>
+                <MenuItem value={7}>7 days</MenuItem>
+                <MenuItem value={30}>30 days</MenuItem>
+                <MenuItem value={90}>90 days</MenuItem>
+                <MenuItem value={365}>1 year</MenuItem>
+              </Select>
+            </FormControl>
+
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleGenerateLink}
+              disabled={createShareMutation.isPending}
+              startIcon={createShareMutation.isPending ? <CircularProgress size={20} /> : <LinkIcon />}
+              fullWidth
+            >
+              {createShareMutation.isPending ? 'Creating Link...' : 'Create Share Link'}
+            </Button>
+
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2, textAlign: 'center' }}>
+              The link will allow anyone to view this {itemType} without logging in.
+            </Typography>
           </Box>
-        </Box>
-
-        <Divider sx={{ my: 2 }} />
-
-        {/* Share via Email Section */}
-        <Box>
-          <Typography variant="subtitle2" gutterBottom>
-            Share via Email
-          </Typography>
-
-          <TextField
-            fullWidth
-            size="small"
-            label="Email address"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            sx={{ mb: 2 }}
-            disabled={shareMutation.isPending}
-          />
-
-          <TextField
-            fullWidth
-            size="small"
-            label="Message (optional)"
-            multiline
-            rows={3}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            sx={{ mb: 2 }}
-            disabled={shareMutation.isPending}
-          />
-
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleShare}
-            disabled={shareMutation.isPending}
-            startIcon={shareMutation.isPending ? <CircularProgress size={20} /> : <Share />}
-            fullWidth
-          >
-            {shareMutation.isPending ? 'Sharing...' : 'Share via Email'}
-          </Button>
-        </Box>
+        )}
       </Paper>
     </Modal>
   );

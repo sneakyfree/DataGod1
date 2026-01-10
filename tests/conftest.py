@@ -4,6 +4,7 @@ Pytest configuration and fixtures for DataGod tests
 
 import pytest
 import os
+import sys
 from typing import Generator, Dict, Any
 from datetime import datetime
 from unittest.mock import MagicMock, patch
@@ -14,6 +15,49 @@ TEST_DATABASE_URL = "sqlite:///:memory:"
 # Set test environment
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["TESTING"] = "1"
+
+
+@pytest.fixture(autouse=True)
+def clean_module_imports():
+    """
+    Clean up imported modules between tests to prevent test pollution.
+    This is especially important for modules with global state.
+    """
+    # Capture modules before test
+    modules_before = set(sys.modules.keys())
+
+    yield
+
+    # Clean up modules that were imported during the test
+    modules_to_clean = [
+        'main',
+        'db_manager',
+    ]
+
+    for module in modules_to_clean:
+        if module in sys.modules:
+            del sys.modules[module]
+
+
+@pytest.fixture(autouse=True)
+def reset_api_manager():
+    """Reset the global API manager instance between tests"""
+    yield
+
+    # Clean up the global API manager
+    try:
+        from datagod.scrapers import api_manager
+        if hasattr(api_manager, 'api_manager'):
+            # Reset the singleton
+            api_manager.api_manager.active_integrations.clear()
+            api_manager.api_manager.usage_stats = {
+                'total_requests': 0,
+                'total_cost': 0.0,
+                'api_usage': {},
+                'last_updated': datetime.now().isoformat()
+            }
+    except ImportError:
+        pass
 
 
 @pytest.fixture(scope="session")

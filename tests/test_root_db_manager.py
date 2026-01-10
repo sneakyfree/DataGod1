@@ -757,3 +757,311 @@ class TestListWithFilters:
         # Offset results should be one less (if enough records)
         if len(all_results) > 1:
             assert len(offset_results) == len(all_results) - 1
+
+
+class TestUserManagement:
+    """Tests for user management operations"""
+
+    @pytest.fixture
+    def db_manager(self):
+        """Create test database manager with users table"""
+        from db_manager import DatabaseManager
+        with patch('db_manager.DATABASE_URL', TEST_DATABASE_URL):
+            dm = DatabaseManager(database_url=TEST_DATABASE_URL)
+            dm.init_database()
+            return dm
+
+    def test_create_user(self, db_manager):
+        """Test creating a user"""
+        user_id = db_manager.create_user(
+            username="testuser",
+            email="test@example.com",
+            hashed_password="hashed_password_here",
+            full_name="Test User",
+            roles=["user"],
+            subscription_tier="free"
+        )
+        assert user_id is not None
+        assert isinstance(user_id, int)
+
+    def test_create_user_duplicate_username(self, db_manager):
+        """Test creating user with duplicate username returns None"""
+        db_manager.create_user(
+            username="duplicate",
+            email="first@example.com",
+            hashed_password="hash1"
+        )
+        result = db_manager.create_user(
+            username="duplicate",
+            email="second@example.com",
+            hashed_password="hash2"
+        )
+        assert result is None
+
+    def test_get_user_by_id(self, db_manager):
+        """Test getting user by ID"""
+        user_id = db_manager.create_user(
+            username="getbyid",
+            email="getbyid@example.com",
+            hashed_password="hash"
+        )
+        user = db_manager.get_user(user_id)
+        assert user is not None
+        assert user['username'] == "getbyid"
+        assert user['email'] == "getbyid@example.com"
+
+    def test_get_user_not_found(self, db_manager):
+        """Test getting non-existent user returns None"""
+        user = db_manager.get_user(99999)
+        assert user is None
+
+    def test_get_user_by_username(self, db_manager):
+        """Test getting user by username"""
+        db_manager.create_user(
+            username="byusername",
+            email="byusername@example.com",
+            hashed_password="hash"
+        )
+        user = db_manager.get_user_by_username("byusername")
+        assert user is not None
+        assert user['username'] == "byusername"
+
+    def test_get_user_by_email(self, db_manager):
+        """Test getting user by email"""
+        db_manager.create_user(
+            username="byemail",
+            email="byemail@example.com",
+            hashed_password="hash"
+        )
+        user = db_manager.get_user_by_email("byemail@example.com")
+        assert user is not None
+        assert user['email'] == "byemail@example.com"
+
+    def test_get_user_for_auth(self, db_manager):
+        """Test getting user for authentication (includes hashed_password)"""
+        db_manager.create_user(
+            username="authuser",
+            email="auth@example.com",
+            hashed_password="secret_hash"
+        )
+        user = db_manager.get_user_for_auth("authuser")
+        assert user is not None
+        assert 'hashed_password' in user
+        assert user['hashed_password'] == "secret_hash"
+
+    def test_get_user_for_auth_by_email(self, db_manager):
+        """Test getting user for auth using email"""
+        db_manager.create_user(
+            username="authuser2",
+            email="auth2@example.com",
+            hashed_password="secret_hash2"
+        )
+        user = db_manager.get_user_for_auth("auth2@example.com")
+        assert user is not None
+        assert user['email'] == "auth2@example.com"
+
+    def test_update_user(self, db_manager):
+        """Test updating user fields"""
+        user_id = db_manager.create_user(
+            username="updateme",
+            email="updateme@example.com",
+            hashed_password="hash"
+        )
+        result = db_manager.update_user(user_id, full_name="Updated Name")
+        assert result is True
+
+        user = db_manager.get_user(user_id)
+        assert user['full_name'] == "Updated Name"
+
+    def test_update_user_not_found(self, db_manager):
+        """Test updating non-existent user returns False"""
+        result = db_manager.update_user(99999, full_name="Name")
+        assert result is False
+
+    def test_update_user_by_username(self, db_manager):
+        """Test updating user by username"""
+        db_manager.create_user(
+            username="updatebyname",
+            email="updatebyname@example.com",
+            hashed_password="hash"
+        )
+        result = db_manager.update_user_by_username("updatebyname", full_name="New Name")
+        assert result is True
+
+        user = db_manager.get_user_by_username("updatebyname")
+        assert user['full_name'] == "New Name"
+
+    def test_delete_user(self, db_manager):
+        """Test deleting user by ID"""
+        user_id = db_manager.create_user(
+            username="deleteme",
+            email="deleteme@example.com",
+            hashed_password="hash"
+        )
+        result = db_manager.delete_user(user_id)
+        assert result is True
+
+        user = db_manager.get_user(user_id)
+        assert user is None
+
+    def test_delete_user_by_username(self, db_manager):
+        """Test deleting user by username"""
+        db_manager.create_user(
+            username="deletebyname",
+            email="deletebyname@example.com",
+            hashed_password="hash"
+        )
+        result = db_manager.delete_user_by_username("deletebyname")
+        assert result is True
+
+        user = db_manager.get_user_by_username("deletebyname")
+        assert user is None
+
+    def test_list_users(self, db_manager):
+        """Test listing users"""
+        db_manager.create_user(username="user1", email="u1@e.com", hashed_password="h")
+        db_manager.create_user(username="user2", email="u2@e.com", hashed_password="h")
+
+        users = db_manager.list_users()
+        assert len(users) >= 2
+
+    def test_list_users_by_subscription_tier(self, db_manager):
+        """Test listing users filtered by subscription tier"""
+        db_manager.create_user(
+            username="freeuser",
+            email="free@e.com",
+            hashed_password="h",
+            subscription_tier="free"
+        )
+        db_manager.create_user(
+            username="prouser",
+            email="pro@e.com",
+            hashed_password="h",
+            subscription_tier="pro"
+        )
+
+        users = db_manager.list_users(subscription_tier="pro")
+        assert all(u['subscription_tier'] == 'pro' for u in users)
+
+    def test_count_users(self, db_manager):
+        """Test counting users"""
+        initial = db_manager.count_users()
+        db_manager.create_user(username="cnt1", email="cnt1@e.com", hashed_password="h")
+        db_manager.create_user(username="cnt2", email="cnt2@e.com", hashed_password="h")
+
+        count = db_manager.count_users()
+        assert count == initial + 2
+
+    def test_record_login_success(self, db_manager):
+        """Test recording successful login"""
+        db_manager.create_user(
+            username="logintest",
+            email="login@e.com",
+            hashed_password="h"
+        )
+        result = db_manager.record_login("logintest", success=True)
+        assert result is True
+
+        user = db_manager.get_user_by_username("logintest")
+        assert user['login_count'] == 1
+        assert user['last_login'] is not None
+
+    def test_record_login_failure(self, db_manager):
+        """Test recording failed login"""
+        db_manager.create_user(
+            username="loginfail",
+            email="fail@e.com",
+            hashed_password="h"
+        )
+        db_manager.record_login("loginfail", success=False)
+        db_manager.record_login("loginfail", success=False)
+
+        user = db_manager.get_user_by_username("loginfail")
+        assert user['failed_login_count'] == 2
+
+    def test_account_lockout(self, db_manager):
+        """Test account lockout after 5 failed attempts"""
+        db_manager.create_user(
+            username="locktest",
+            email="lock@e.com",
+            hashed_password="h"
+        )
+        for _ in range(5):
+            db_manager.record_login("locktest", success=False)
+
+        locked = db_manager.check_user_locked("locktest")
+        assert locked is True
+
+    def test_check_user_not_locked(self, db_manager):
+        """Test checking unlocked user"""
+        db_manager.create_user(
+            username="unlocked",
+            email="unlocked@e.com",
+            hashed_password="h"
+        )
+        locked = db_manager.check_user_locked("unlocked")
+        assert locked is False
+
+    def test_set_password_reset_token(self, db_manager):
+        """Test setting password reset token"""
+        db_manager.create_user(
+            username="resetuser",
+            email="reset@example.com",
+            hashed_password="h"
+        )
+        result = db_manager.set_password_reset_token("reset@example.com", "test_token_123")
+        assert result is True
+
+    def test_get_user_by_reset_token(self, db_manager):
+        """Test getting user by reset token"""
+        db_manager.create_user(
+            username="tokenuser",
+            email="token@example.com",
+            hashed_password="h"
+        )
+        db_manager.set_password_reset_token("token@example.com", "my_token")
+
+        user = db_manager.get_user_by_reset_token("my_token")
+        assert user is not None
+        assert user['email'] == "token@example.com"
+
+    def test_clear_password_reset_token(self, db_manager):
+        """Test clearing password reset token"""
+        user_id = db_manager.create_user(
+            username="cleartoken",
+            email="clear@example.com",
+            hashed_password="h"
+        )
+        db_manager.set_password_reset_token("clear@example.com", "temp_token")
+        result = db_manager.clear_password_reset_token(user_id)
+        assert result is True
+
+        user = db_manager.get_user_by_reset_token("temp_token")
+        assert user is None
+
+    def test_increment_api_calls(self, db_manager):
+        """Test incrementing API call count"""
+        user_id = db_manager.create_user(
+            username="apiuser",
+            email="api@example.com",
+            hashed_password="h"
+        )
+        db_manager.increment_api_calls(user_id)
+        db_manager.increment_api_calls(user_id)
+
+        user = db_manager.get_user(user_id)
+        assert user['api_calls_today'] == 2
+
+    def test_increment_exports(self, db_manager):
+        """Test incrementing export count"""
+        user_id = db_manager.create_user(
+            username="exportuser",
+            email="export@example.com",
+            hashed_password="h"
+        )
+        db_manager.increment_exports(user_id)
+        db_manager.increment_exports(user_id)
+        db_manager.increment_exports(user_id)
+
+        user = db_manager.get_user(user_id)
+        assert user['exports_this_month'] == 3

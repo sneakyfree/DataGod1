@@ -1,0 +1,718 @@
+{
+  "state_code": "NY",
+  "state_name": "New York",
+  "state_fips": "36",
+  "auth_type": "api_key",
+  "requests_per_minute": 120,
+  "requests_per_hour": 3000,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "tier": 1,
+  "total_counties": 62,
+  "counties": [
+    {
+      "name": "Kings",
+      "fips": "36047",
+      "seat": "Brooklyn",
+      "population": 2736074,
+      "alternate_name": "Brooklyn",
+      "base_urls": {
+        "property_assessor": "https://a836-acris.nyc.gov/api",
+        "recorder": "https://a836-acris.nyc.gov/api",
+        "court": "https://iapps.courts.state.ny.us/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business", "permits"],
+      "nyc_borough": true
+    },
+    {
+      "name": "Queens",
+      "fips": "36081",
+      "seat": "Jamaica",
+      "population": 2405464,
+      "base_urls": {
+        "property_assessor": "https://a836-acris.nyc.gov/api",
+        "recorder": "https://a836-acris.nyc.gov/api",
+        "court": "https://iapps.courts.state.ny.us/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business", "permits"],
+      "nyc_borough": true
+    },
+    {
+      "name": "New York",
+      "fips": "36061",
+      "seat": "Manhattan",
+      "population": 1694251,
+      "alternate_name": "Manhattan",
+      "base_urls": {
+        "property_assessor": "https://a836-acris.nyc.gov/api",
+        "recorder": "https://a836-acris.nyc.gov/api",
+        "court": "https://iapps.courts.state.ny.us/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business", "permits"],
+      "nyc_borough": true
+    },
+    {
+      "name": "Suffolk",
+      "fips": "36103",
+      "seat": "Riverhead",
+      "population": 1525920,
+      "base_urls": {
+        "property_assessor": "https://gis.suffolkcountyny.gov/api",
+        "recorder": "https://www.suffolkcountyny.gov/clerk/api",
+        "court": "https://iapps.courts.state.ny.us/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Bronx",
+      "fips": "36005",
+      "seat": "Bronx",
+      "population": 1472654,
+      "base_urls": {
+        "property_assessor": "https://a836-acris.nyc.gov/api",
+        "recorder": "https://a836-acris.nyc.gov/api",
+        "court": "https://iapps.courts.state.ny.us/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business", "permits"],
+      "nyc_borough": true
+    },
+    {
+      "name": "Nassau",
+      "fips": "36059",
+      "seat": "Mineola",
+      "population": 1395774,
+      "base_urls": {
+        "property_assessor": "https://www.nassaucountyny.gov/assessor/api",
+        "recorder": "https://www.nassaucountyny.gov/clerk/api",
+        "court": "https://iapps.courts.state.ny.us/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business"]
+    },
+    {
+      "name": "Westchester",
+      "fips": "36119",
+      "seat": "White Plains",
+      "population": 1004457,
+      "base_urls": {
+        "property_assessor": "https://gis.westchestergov.com/api",
+        "recorder": "https://www.westchesterclerk.com/api",
+        "court": "https://iapps.courts.state.ny.us/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Richmond",
+      "fips": "36085",
+      "seat": "Staten Island",
+      "population": 495747,
+      "alternate_name": "Staten Island",
+      "base_urls": {
+        "property_assessor": "https://a836-acris.nyc.gov/api",
+        "recorder": "https://a836-acris.nyc.gov/api",
+        "court": "https://iapps.courts.state.ny.us/api"
+      },
+      "data_sources": ["property", "court", "recorder", "business", "permits"],
+      "nyc_borough": true
+    },
+    {
+      "name": "Erie",
+      "fips": "36029",
+      "seat": "Buffalo",
+      "population": 954236,
+      "base_urls": {
+        "property_assessor": "https://www2.erie.gov/realproperty/api",
+        "recorder": "https://www2.erie.gov/clerk/api",
+        "court": "https://iapps.courts.state.ny.us/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Monroe",
+      "fips": "36055",
+      "seat": "Rochester",
+      "population": 759443,
+      "base_urls": {
+        "property_assessor": "https://www.monroecounty.gov/rpts/api",
+        "recorder": "https://www.monroecounty.gov/clerk/api",
+        "court": "https://iapps.courts.state.ny.us/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Onondaga",
+      "fips": "36067",
+      "seat": "Syracuse",
+      "population": 476516,
+      "base_urls": {
+        "property_assessor": "https://www.ongov.net/rpts/api",
+        "recorder": "https://www.ongov.net/clerk/api",
+        "court": "https://iapps.courts.state.ny.us/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Orange",
+      "fips": "36071",
+      "seat": "Goshen",
+      "population": 401310,
+      "base_urls": {
+        "property_assessor": "https://www.orangecountygov.com/rpts/api",
+        "recorder": "https://www.orangecountygov.com/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Rockland",
+      "fips": "36087",
+      "seat": "New City",
+      "population": 338329,
+      "base_urls": {
+        "property_assessor": "https://www.rocklandgov.com/rpts/api",
+        "recorder": "https://www.rocklandgov.com/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Albany",
+      "fips": "36001",
+      "seat": "Albany",
+      "population": 314848,
+      "base_urls": {
+        "property_assessor": "https://www.albanycounty.com/rpts/api",
+        "recorder": "https://www.albanycounty.com/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Dutchess",
+      "fips": "36027",
+      "seat": "Poughkeepsie",
+      "population": 295911,
+      "base_urls": {
+        "property_assessor": "https://www.dutchessny.gov/rpts/api",
+        "recorder": "https://www.dutchessny.gov/clerk/api"
+      },
+      "data_sources": ["property", "court", "recorder"]
+    },
+    {
+      "name": "Saratoga",
+      "fips": "36091",
+      "seat": "Ballston Spa",
+      "population": 235509,
+      "base_urls": {
+        "property_assessor": "https://www.saratogacountyny.gov/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Oneida",
+      "fips": "36065",
+      "seat": "Utica",
+      "population": 232125,
+      "base_urls": {
+        "property_assessor": "https://www.ocgov.net/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Niagara",
+      "fips": "36063",
+      "seat": "Lockport",
+      "population": 212666,
+      "base_urls": {
+        "property_assessor": "https://www.niagaracounty.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Broome",
+      "fips": "36007",
+      "seat": "Binghamton",
+      "population": 198683,
+      "base_urls": {
+        "property_assessor": "https://www.gobroomecounty.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Ulster",
+      "fips": "36111",
+      "seat": "Kingston",
+      "population": 181851,
+      "base_urls": {
+        "property_assessor": "https://ulstercountyny.gov/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Rensselaer",
+      "fips": "36083",
+      "seat": "Troy",
+      "population": 161130,
+      "base_urls": {
+        "property_assessor": "https://www.rensco.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Schenectady",
+      "fips": "36093",
+      "seat": "Schenectady",
+      "population": 158061,
+      "base_urls": {
+        "property_assessor": "https://www.schenectadycounty.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Chautauqua",
+      "fips": "36013",
+      "seat": "Mayville",
+      "population": 127657,
+      "base_urls": {
+        "property_assessor": "https://www.co.chautauqua.ny.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Oswego",
+      "fips": "36075",
+      "seat": "Oswego",
+      "population": 117525,
+      "base_urls": {
+        "property_assessor": "https://www.oswegocounty.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Jefferson",
+      "fips": "36045",
+      "seat": "Watertown",
+      "population": 116721,
+      "base_urls": {
+        "property_assessor": "https://www.co.jefferson.ny.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "St. Lawrence",
+      "fips": "36089",
+      "seat": "Canton",
+      "population": 108505,
+      "base_urls": {
+        "property_assessor": "https://www.stlawco.org/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Tompkins",
+      "fips": "36109",
+      "seat": "Ithaca",
+      "population": 105740,
+      "base_urls": {
+        "property_assessor": "https://www.tompkinscountyny.gov/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Putnam",
+      "fips": "36079",
+      "seat": "Carmel",
+      "population": 97668,
+      "base_urls": {
+        "property_assessor": "https://www.putnamcountyny.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Steuben",
+      "fips": "36101",
+      "seat": "Bath",
+      "population": 95379,
+      "base_urls": {
+        "property_assessor": "https://www.steubencony.org/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Wayne",
+      "fips": "36117",
+      "seat": "Lyons",
+      "population": 91283,
+      "base_urls": {
+        "property_assessor": "https://www.co.wayne.ny.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Chemung",
+      "fips": "36015",
+      "seat": "Elmira",
+      "population": 84148,
+      "base_urls": {
+        "property_assessor": "https://www.chemungcountyny.gov/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Clinton",
+      "fips": "36019",
+      "seat": "Plattsburgh",
+      "population": 79843,
+      "base_urls": {
+        "property_assessor": "https://www.clintoncountygov.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Cattaraugus",
+      "fips": "36009",
+      "seat": "Little Valley",
+      "population": 77042,
+      "base_urls": {
+        "property_assessor": "https://www.cattco.org/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Sullivan",
+      "fips": "36105",
+      "seat": "Monticello",
+      "population": 78624,
+      "base_urls": {
+        "property_assessor": "https://www.co.sullivan.ny.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Madison",
+      "fips": "36053",
+      "seat": "Wampsville",
+      "population": 68016,
+      "base_urls": {
+        "property_assessor": "https://www.madisoncounty.ny.gov/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Cayuga",
+      "fips": "36011",
+      "seat": "Auburn",
+      "population": 76576,
+      "base_urls": {
+        "property_assessor": "https://www.cayugacounty.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Livingston",
+      "fips": "36051",
+      "seat": "Geneseo",
+      "population": 61834,
+      "base_urls": {
+        "property_assessor": "https://www.livingstoncounty.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Warren",
+      "fips": "36113",
+      "seat": "Lake George",
+      "population": 65737,
+      "base_urls": {
+        "property_assessor": "https://www.warrencountyny.gov/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Columbia",
+      "fips": "36021",
+      "seat": "Hudson",
+      "population": 61570,
+      "base_urls": {
+        "property_assessor": "https://www.columbiacountyny.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Washington",
+      "fips": "36115",
+      "seat": "Fort Edward",
+      "population": 61204,
+      "base_urls": {
+        "property_assessor": "https://www.co.washington.ny.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Genesee",
+      "fips": "36037",
+      "seat": "Batavia",
+      "population": 58388,
+      "base_urls": {
+        "property_assessor": "https://www.co.genesee.ny.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Fulton",
+      "fips": "36035",
+      "seat": "Johnstown",
+      "population": 53383,
+      "base_urls": {
+        "property_assessor": "https://www.fultoncountyny.gov/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Ontario",
+      "fips": "36069",
+      "seat": "Canandaigua",
+      "population": 112458,
+      "base_urls": {
+        "property_assessor": "https://www.co.ontario.ny.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Montgomery",
+      "fips": "36057",
+      "seat": "Fonda",
+      "population": 49532,
+      "base_urls": {
+        "property_assessor": "https://www.co.montgomery.ny.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Tioga",
+      "fips": "36107",
+      "seat": "Owego",
+      "population": 48455,
+      "base_urls": {
+        "property_assessor": "https://www.tiogacountyny.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Otsego",
+      "fips": "36077",
+      "seat": "Cooperstown",
+      "population": 58524,
+      "base_urls": {
+        "property_assessor": "https://www.otsegocounty.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Allegany",
+      "fips": "36003",
+      "seat": "Belmont",
+      "population": 46091,
+      "base_urls": {
+        "property_assessor": "https://www.alleganyco.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Franklin",
+      "fips": "36033",
+      "seat": "Malone",
+      "population": 50022,
+      "base_urls": {
+        "property_assessor": "https://www.franklincony.org/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Delaware",
+      "fips": "36025",
+      "seat": "Delhi",
+      "population": 44308,
+      "base_urls": {
+        "property_assessor": "https://www.co.delaware.ny.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Greene",
+      "fips": "36039",
+      "seat": "Catskill",
+      "population": 49221,
+      "base_urls": {
+        "property_assessor": "https://www.greenegov.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Cortland",
+      "fips": "36023",
+      "seat": "Cortland",
+      "population": 47581,
+      "base_urls": {
+        "property_assessor": "https://www.cortland-co.org/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Chenango",
+      "fips": "36017",
+      "seat": "Norwich",
+      "population": 47220,
+      "base_urls": {
+        "property_assessor": "https://www.co.chenango.ny.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Essex",
+      "fips": "36031",
+      "seat": "Elizabethtown",
+      "population": 37381,
+      "base_urls": {
+        "property_assessor": "https://www.co.essex.ny.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Herkimer",
+      "fips": "36043",
+      "seat": "Herkimer",
+      "population": 61319,
+      "base_urls": {
+        "property_assessor": "https://www.herkimercounty.org/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Orleans",
+      "fips": "36073",
+      "seat": "Albion",
+      "population": 41175,
+      "base_urls": {
+        "property_assessor": "https://www.orleanscountyny.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Lewis",
+      "fips": "36049",
+      "seat": "Lowville",
+      "population": 26296,
+      "base_urls": {
+        "property_assessor": "https://www.lewiscountyny.org/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Wyoming",
+      "fips": "36121",
+      "seat": "Warsaw",
+      "population": 40531,
+      "base_urls": {
+        "property_assessor": "https://www.wyomingco.net/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Seneca",
+      "fips": "36099",
+      "seat": "Waterloo",
+      "population": 33814,
+      "base_urls": {
+        "property_assessor": "https://www.co.seneca.ny.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Yates",
+      "fips": "36123",
+      "seat": "Penn Yan",
+      "population": 24774,
+      "base_urls": {
+        "property_assessor": "https://www.yatescounty.org/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Schuyler",
+      "fips": "36097",
+      "seat": "Watkins Glen",
+      "population": 17807,
+      "base_urls": {
+        "property_assessor": "https://www.schuylercounty.us/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Schoharie",
+      "fips": "36095",
+      "seat": "Schoharie",
+      "population": 29714,
+      "base_urls": {
+        "property_assessor": "https://www.schohariecounty-ny.gov/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    },
+    {
+      "name": "Hamilton",
+      "fips": "36041",
+      "seat": "Lake Pleasant",
+      "population": 5107,
+      "base_urls": {
+        "property_assessor": "https://www.hamiltoncounty.com/rpts/api"
+      },
+      "data_sources": ["property", "court"]
+    }
+  ],
+  "state_level_apis": {
+    "secretary_of_state": {
+      "url": "https://appext20.dos.ny.gov/corp_public/api",
+      "data_types": ["corporations", "llcs", "partnerships", "assumed_names"]
+    },
+    "courts": {
+      "url": "https://iapps.courts.state.ny.us/api",
+      "data_types": ["ecourts", "webcrims", "webcivilsupreme"]
+    },
+    "bar_association": {
+      "url": "https://www.nysba.org/api",
+      "data_types": ["attorney_lookup"]
+    },
+    "attorney_registration": {
+      "url": "https://iapps.courts.state.ny.us/attorney/api",
+      "data_types": ["attorney_search", "disciplinary_history"]
+    },
+    "professional_licensing": {
+      "url": "https://www.op.nysed.gov/api",
+      "data_types": ["licenses", "disciplinary_actions"]
+    },
+    "acris": {
+      "url": "https://a836-acris.nyc.gov/api",
+      "data_types": ["property_records", "deeds", "mortgages"],
+      "coverage": "NYC only"
+    }
+  },
+  "data_sources": {
+    "property": {
+      "type": "api",
+      "url": "/property/search",
+      "fields": ["owner_name", "property_address", "block", "lot", "assessed_value", "market_value"]
+    },
+    "deed": {
+      "type": "api",
+      "url": "/deed/search",
+      "fields": ["grantor", "grantee", "document_type", "record_date", "consideration", "crfn"]
+    },
+    "court": {
+      "type": "api",
+      "url": "/case/search",
+      "fields": ["index_number", "case_type", "parties", "filing_date", "status"]
+    },
+    "business": {
+      "type": "api",
+      "url": "/business/search",
+      "fields": ["entity_name", "dos_id", "status", "formation_date", "registered_agent"]
+    }
+  },
+  "notes": "New York has 62 counties including NYC's 5 boroughs. NYC uses ACRIS for property records. eCourts provides statewide case access."
+}

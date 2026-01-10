@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -16,25 +16,254 @@ import {
   Switch,
   FormControlLabel,
   FormGroup,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
-import { Person, Notifications, Security, CreditCard } from '@mui/icons-material';
+import {
+  Person,
+  Notifications,
+  Security,
+  CreditCard,
+  Visibility,
+  VisibilityOff,
+  Check,
+} from '@mui/icons-material';
 import { ProtectedRoute, useAuth } from '../../context/AuthContext';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiService } from '../../services/api';
+
+function PasswordChangeModal({
+  open,
+  onClose
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const resetForm = () => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setError(null);
+    setSuccess(false);
+  };
+
+  const changeMutation = useMutation({
+    mutationFn: (data: { current_password: string; new_password: string }) =>
+      apiService.changePassword(data),
+    onSuccess: () => {
+      setSuccess(true);
+      setTimeout(() => {
+        resetForm();
+        onClose();
+      }, 2000);
+    },
+    onError: (err: any) => {
+      setError(err.response?.data?.detail || 'Failed to change password');
+    }
+  });
+
+  const handleSubmit = () => {
+    setError(null);
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError('All fields are required');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setError('New password must be at least 8 characters');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match');
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      setError('New password must be different from current password');
+      return;
+    }
+
+    changeMutation.mutate({
+      current_password: currentPassword,
+      new_password: newPassword
+    });
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Change Password</DialogTitle>
+      <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2, mt: 1 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        {success && (
+          <Alert severity="success" sx={{ mb: 2, mt: 1 }} icon={<Check />}>
+            Password changed successfully!
+          </Alert>
+        )}
+
+        <TextField
+          fullWidth
+          label="Current Password"
+          type={showCurrentPassword ? 'text' : 'password'}
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          disabled={changeMutation.isPending || success}
+          sx={{ mt: 2, mb: 2 }}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  edge="end"
+                >
+                  {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        <TextField
+          fullWidth
+          label="New Password"
+          type={showNewPassword ? 'text' : 'password'}
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          disabled={changeMutation.isPending || success}
+          helperText="At least 8 characters"
+          sx={{ mb: 2 }}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  edge="end"
+                >
+                  {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        <TextField
+          fullWidth
+          label="Confirm New Password"
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          disabled={changeMutation.isPending || success}
+          error={confirmPassword.length > 0 && confirmPassword !== newPassword}
+          helperText={
+            confirmPassword.length > 0 && confirmPassword !== newPassword
+              ? 'Passwords do not match'
+              : ''
+          }
+        />
+      </DialogContent>
+      <DialogActions sx={{ p: 2 }}>
+        <Button onClick={handleClose} disabled={changeMutation.isPending}>
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={changeMutation.isPending || success}
+          startIcon={changeMutation.isPending ? <CircularProgress size={20} /> : null}
+        >
+          {changeMutation.isPending ? 'Changing...' : 'Change Password'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
 
 function SettingsContent() {
   const { user, updateProfile, isLoading, error, clearError } = useAuth();
+  const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
     email: user?.email || '',
   });
+  const [success, setSuccess] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [notificationsSaving, setNotificationsSaving] = useState(false);
+
+  // Fetch notification settings
+  const { data: notificationSettings, isLoading: loadingNotifications } = useQuery({
+    queryKey: ['notification-settings'],
+    queryFn: async () => {
+      const response = await apiService.getNotificationSettings();
+      return response.data;
+    }
+  });
+
   const [notifications, setNotifications] = useState({
     email_updates: true,
     security_alerts: true,
     marketing: false,
     weekly_digest: true,
   });
-  const [success, setSuccess] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
+
+  // Update local state when settings load
+  useEffect(() => {
+    if (notificationSettings) {
+      setNotifications({
+        email_updates: notificationSettings.email_updates ?? true,
+        security_alerts: notificationSettings.security_alerts ?? true,
+        marketing: notificationSettings.marketing ?? false,
+        weekly_digest: notificationSettings.weekly_digest ?? true,
+      });
+    }
+  }, [notificationSettings]);
+
+  // Update form when user changes
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        full_name: user.full_name || '',
+        email: user.email || '',
+      });
+    }
+  }, [user]);
+
+  // Notification update mutation
+  const notificationMutation = useMutation({
+    mutationFn: (data: typeof notifications) =>
+      apiService.updateNotificationSettings(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notification-settings'] });
+      setNotificationsSaving(false);
+    },
+    onError: () => {
+      setNotificationsSaving(false);
+    }
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -44,10 +273,15 @@ function SettingsContent() {
   };
 
   const handleNotificationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNotifications(prev => ({
-      ...prev,
+    const newNotifications = {
+      ...notifications,
       [e.target.name]: e.target.checked,
-    }));
+    };
+    setNotifications(newNotifications);
+    setNotificationsSaving(true);
+
+    // Debounced save
+    notificationMutation.mutate(newNotifications);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -145,53 +379,67 @@ function SettingsContent() {
 
       {/* Notification Settings */}
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-          <Notifications color="primary" />
-          <Typography variant="h6">Notification Preferences</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Notifications color="primary" />
+            <Typography variant="h6">Notification Preferences</Typography>
+          </Box>
+          {notificationsSaving && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CircularProgress size={16} />
+              <Typography variant="caption" color="text.secondary">Saving...</Typography>
+            </Box>
+          )}
         </Box>
 
-        <FormGroup>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={notifications.email_updates}
-                onChange={handleNotificationChange}
-                name="email_updates"
-              />
-            }
-            label="Email updates about new records and features"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={notifications.security_alerts}
-                onChange={handleNotificationChange}
-                name="security_alerts"
-              />
-            }
-            label="Security alerts and account notifications"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={notifications.weekly_digest}
-                onChange={handleNotificationChange}
-                name="weekly_digest"
-              />
-            }
-            label="Weekly digest of activity in your searches"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={notifications.marketing}
-                onChange={handleNotificationChange}
-                name="marketing"
-              />
-            }
-            label="Marketing and promotional emails"
-          />
-        </FormGroup>
+        {loadingNotifications ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <FormGroup>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={notifications.email_updates}
+                  onChange={handleNotificationChange}
+                  name="email_updates"
+                />
+              }
+              label="Email updates about new records and features"
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={notifications.security_alerts}
+                  onChange={handleNotificationChange}
+                  name="security_alerts"
+                />
+              }
+              label="Security alerts and account notifications"
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={notifications.weekly_digest}
+                  onChange={handleNotificationChange}
+                  name="weekly_digest"
+                />
+              }
+              label="Weekly digest of activity in your searches"
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={notifications.marketing}
+                  onChange={handleNotificationChange}
+                  name="marketing"
+                />
+              }
+              label="Marketing and promotional emails"
+            />
+          </FormGroup>
+        )}
       </Paper>
 
       {/* Security Settings */}
@@ -206,10 +454,12 @@ function SettingsContent() {
             <Box>
               <Typography variant="subtitle1">Password</Typography>
               <Typography variant="body2" color="text.secondary">
-                Last changed: Never
+                Keep your account secure with a strong password
               </Typography>
             </Box>
-            <Button variant="outlined">Change Password</Button>
+            <Button variant="outlined" onClick={() => setPasswordModalOpen(true)}>
+              Change Password
+            </Button>
           </Box>
 
           <Divider />
@@ -221,7 +471,9 @@ function SettingsContent() {
                 Add an extra layer of security to your account
               </Typography>
             </Box>
-            <Button variant="outlined">Enable</Button>
+            <Button variant="outlined" disabled>
+              Coming Soon
+            </Button>
           </Box>
 
           <Divider />
@@ -233,7 +485,9 @@ function SettingsContent() {
                 Manage devices that are logged into your account
               </Typography>
             </Box>
-            <Button variant="outlined">View Sessions</Button>
+            <Button variant="outlined" disabled>
+              Coming Soon
+            </Button>
           </Box>
         </Box>
       </Paper>
@@ -263,6 +517,12 @@ function SettingsContent() {
           </Button>
         </Box>
       </Paper>
+
+      {/* Password Change Modal */}
+      <PasswordChangeModal
+        open={passwordModalOpen}
+        onClose={() => setPasswordModalOpen(false)}
+      />
     </Container>
   );
 }

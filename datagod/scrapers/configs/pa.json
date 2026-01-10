@@ -1,0 +1,839 @@
+{
+  "state_code": "PA",
+  "state_name": "Pennsylvania",
+  "state_fips": "42",
+  "tier": 1,
+  "total_counties": 67,
+  "state_apis": {
+    "secretary_of_state": {
+      "name": "PA Department of State - Corporations",
+      "base_url": "https://www.corporations.pa.gov/search/corpsearch",
+      "api_url": null,
+      "data_types": ["business_filings", "ucc", "notaries"],
+      "requires_auth": false,
+      "rate_limit": 60
+    },
+    "courts": {
+      "name": "PA Unified Judicial System",
+      "base_url": "https://ujsportal.pacourts.us",
+      "api_url": "https://ujsportal.pacourts.us/CaseSearch",
+      "data_types": ["civil_cases", "criminal_cases", "dockets"],
+      "requires_auth": false,
+      "rate_limit": 30
+    },
+    "attorney_registration": {
+      "name": "PA Disciplinary Board",
+      "base_url": "https://www.padisciplinaryboard.org/for-the-public/find-attorney",
+      "api_url": null,
+      "data_types": ["attorney_search"],
+      "requires_auth": false
+    },
+    "professional_licensing": {
+      "name": "PA Licensing System (PALS)",
+      "base_url": "https://www.pals.pa.gov",
+      "api_url": null,
+      "data_types": ["professional_licenses", "contractor_licenses"],
+      "requires_auth": false
+    },
+    "real_estate": {
+      "name": "PA Real Estate Commission",
+      "base_url": "https://www.dos.pa.gov/ProfessionalLicensing/BoardsCommissions/RealEstateCommission",
+      "api_url": null,
+      "data_types": ["real_estate_licenses"],
+      "requires_auth": false
+    }
+  },
+  "counties": [
+    {
+      "name": "Adams County",
+      "fips": "42001",
+      "seat": "Gettysburg",
+      "population": 103009,
+      "base_urls": {
+        "assessor": "https://www.adamscounty.us/Assessor",
+        "recorder": "https://www.adamscounty.us/RecorderOfDeeds",
+        "prothonotary": "https://www.adamscounty.us/Prothonotary",
+        "sheriff": "https://www.adamscounty.us/Sheriff"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff"]
+    },
+    {
+      "name": "Allegheny County",
+      "fips": "42003",
+      "seat": "Pittsburgh",
+      "population": 1216045,
+      "base_urls": {
+        "assessor": "https://www.alleghenycounty.us/real-estate/index.aspx",
+        "recorder": "https://www.alleghenycounty.us/real-estate/deeds.aspx",
+        "prothonotary": "https://www.alleghenycounty.us/court-records/prothonotary.aspx",
+        "sheriff": "https://www.alleghenycounty.us/sheriff/index.aspx"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Armstrong County",
+      "fips": "42005",
+      "seat": "Kittanning",
+      "population": 65356,
+      "base_urls": {
+        "assessor": "https://www.armstrongcountypa.gov/departments/assessment",
+        "recorder": "https://www.armstrongcountypa.gov/departments/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Beaver County",
+      "fips": "42007",
+      "seat": "Beaver",
+      "population": 168215,
+      "base_urls": {
+        "assessor": "https://www.beavercountypa.gov/departments/assessment",
+        "recorder": "https://www.beavercountypa.gov/departments/recorder-of-deeds",
+        "prothonotary": "https://www.beavercountypa.gov/departments/prothonotary"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Bedford County",
+      "fips": "42009",
+      "seat": "Bedford",
+      "population": 48154,
+      "base_urls": {
+        "assessor": "https://www.bedfordcountypa.org/government/county-offices/assessment-office",
+        "recorder": "https://www.bedfordcountypa.org/government/county-offices/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Berks County",
+      "fips": "42011",
+      "seat": "Reading",
+      "population": 428849,
+      "base_urls": {
+        "assessor": "https://www.berkspa.gov/departments/assessments",
+        "recorder": "https://www.berkspa.gov/departments/recorder-of-deeds",
+        "prothonotary": "https://www.berkspa.gov/departments/prothonotary",
+        "gis": "https://gis.berkspa.gov"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Blair County",
+      "fips": "42013",
+      "seat": "Hollidaysburg",
+      "population": 122822,
+      "base_urls": {
+        "assessor": "https://www.blaircountypa.gov/159/Assessment",
+        "recorder": "https://www.blaircountypa.gov/161/Recorder-of-Deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Bradford County",
+      "fips": "42015",
+      "seat": "Towanda",
+      "population": 60833,
+      "base_urls": {
+        "assessor": "https://www.bradfordcountypa.org/Offices/Assessment",
+        "recorder": "https://www.bradfordcountypa.org/Offices/Recorder-of-Deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Bucks County",
+      "fips": "42017",
+      "seat": "Doylestown",
+      "population": 646538,
+      "base_urls": {
+        "assessor": "https://www.buckscounty.gov/government/assessment",
+        "recorder": "https://www.buckscounty.gov/government/recorder-of-deeds",
+        "prothonotary": "https://www.buckscounty.gov/government/courts/prothonotary",
+        "sheriff": "https://www.buckscounty.gov/government/sheriff",
+        "gis": "https://gis.buckscounty.gov"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Butler County",
+      "fips": "42019",
+      "seat": "Butler",
+      "population": 193763,
+      "base_urls": {
+        "assessor": "https://www.butlercountypa.gov/118/Assessment-Office",
+        "recorder": "https://www.butlercountypa.gov/120/Recorder-of-Deeds",
+        "gis": "https://gis.butlercountypa.gov"
+      },
+      "data_sources": ["property", "deeds", "gis"]
+    },
+    {
+      "name": "Cambria County",
+      "fips": "42021",
+      "seat": "Ebensburg",
+      "population": 133472,
+      "base_urls": {
+        "assessor": "https://www.co.cambria.pa.us/Pages/Assessment.aspx",
+        "recorder": "https://www.co.cambria.pa.us/Pages/Recorder-of-Deeds.aspx"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Cameron County",
+      "fips": "42023",
+      "seat": "Emporium",
+      "population": 4447,
+      "base_urls": {
+        "assessor": "https://www.cameroncountypa.com/assessment-office",
+        "recorder": "https://www.cameroncountypa.com/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Carbon County",
+      "fips": "42025",
+      "seat": "Jim Thorpe",
+      "population": 65249,
+      "base_urls": {
+        "assessor": "https://www.carboncounty.com/index.php/assessment-office",
+        "recorder": "https://www.carboncounty.com/index.php/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Centre County",
+      "fips": "42027",
+      "seat": "Bellefonte",
+      "population": 162385,
+      "base_urls": {
+        "assessor": "https://www.centrecountypa.gov/176/Assessment",
+        "recorder": "https://www.centrecountypa.gov/183/Recorder-of-Deeds",
+        "prothonotary": "https://www.centrecountypa.gov/180/Prothonotary",
+        "gis": "https://gis.centrecountypa.gov"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Chester County",
+      "fips": "42029",
+      "seat": "West Chester",
+      "population": 534413,
+      "base_urls": {
+        "assessor": "https://www.chescoplanning.org/assessment/index.cfm",
+        "recorder": "https://www.chesco.org/186/Recorder-of-Deeds",
+        "prothonotary": "https://www.chesco.org/184/Prothonotary",
+        "sheriff": "https://www.chesco.org/170/Sheriff",
+        "gis": "https://gis.chesco.org"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Clarion County",
+      "fips": "42031",
+      "seat": "Clarion",
+      "population": 37721,
+      "base_urls": {
+        "assessor": "https://www.co.clarion.pa.us/index.php/government/county-offices/assessment",
+        "recorder": "https://www.co.clarion.pa.us/index.php/government/county-offices/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Clearfield County",
+      "fips": "42033",
+      "seat": "Clearfield",
+      "population": 80216,
+      "base_urls": {
+        "assessor": "https://www.clearfieldco.org/index.php/government/county-offices/assessment-office",
+        "recorder": "https://www.clearfieldco.org/index.php/government/county-offices/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Clinton County",
+      "fips": "42035",
+      "seat": "Lock Haven",
+      "population": 39238,
+      "base_urls": {
+        "assessor": "https://www.clintoncountypa.com/county-government/assessment",
+        "recorder": "https://www.clintoncountypa.com/county-government/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Columbia County",
+      "fips": "42037",
+      "seat": "Bloomsburg",
+      "population": 64964,
+      "base_urls": {
+        "assessor": "https://www.columbiapa.org/departments/assessment",
+        "recorder": "https://www.columbiapa.org/departments/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Crawford County",
+      "fips": "42039",
+      "seat": "Meadville",
+      "population": 85074,
+      "base_urls": {
+        "assessor": "https://www.crawfordcountypa.net/Assessment-Office",
+        "recorder": "https://www.crawfordcountypa.net/Recorder-of-Deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Cumberland County",
+      "fips": "42041",
+      "seat": "Carlisle",
+      "population": 263802,
+      "base_urls": {
+        "assessor": "https://www.ccpa.net/152/Assessment-Office",
+        "recorder": "https://www.ccpa.net/166/Recorder-of-Deeds",
+        "prothonotary": "https://www.ccpa.net/164/Prothonotary",
+        "gis": "https://gis.ccpa.net"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Dauphin County",
+      "fips": "42043",
+      "seat": "Harrisburg",
+      "population": 286401,
+      "base_urls": {
+        "assessor": "https://www.dauphincounty.org/government/offices/assessment_office.php",
+        "recorder": "https://www.dauphincounty.org/government/offices/recorder_of_deeds.php",
+        "prothonotary": "https://www.dauphincounty.org/government/courts/prothonotary.php",
+        "gis": "https://gis.dauphincounty.org"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Delaware County",
+      "fips": "42045",
+      "seat": "Media",
+      "population": 576830,
+      "base_urls": {
+        "assessor": "https://www.delcopa.gov/treasurer/realestatetaxes.html",
+        "recorder": "https://www.delcopa.gov/rca/index.html",
+        "prothonotary": "https://www.delcopa.gov/courts/prothonotary.html",
+        "sheriff": "https://www.delcopa.gov/sheriff/index.html",
+        "gis": "https://gis.delcopa.gov"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Elk County",
+      "fips": "42047",
+      "seat": "Ridgway",
+      "population": 30169,
+      "base_urls": {
+        "assessor": "https://www.co.elk.pa.us/index.php/assessment-office",
+        "recorder": "https://www.co.elk.pa.us/index.php/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Erie County",
+      "fips": "42049",
+      "seat": "Erie",
+      "population": 270876,
+      "base_urls": {
+        "assessor": "https://eriecountypa.gov/departments/assessment/",
+        "recorder": "https://eriecountypa.gov/departments/recorder-of-deeds/",
+        "prothonotary": "https://eriecountypa.gov/courts/prothonotary/",
+        "sheriff": "https://eriecountypa.gov/departments/sheriff/",
+        "gis": "https://gis.eriecountypa.gov"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Fayette County",
+      "fips": "42051",
+      "seat": "Uniontown",
+      "population": 130329,
+      "base_urls": {
+        "assessor": "https://www.fayettecountypa.org/177/Assessment-Office",
+        "recorder": "https://www.fayettecountypa.org/179/Recorder-of-Deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Forest County",
+      "fips": "42053",
+      "seat": "Tionesta",
+      "population": 7716,
+      "base_urls": {
+        "assessor": "https://www.co.forest.pa.us/assessment",
+        "recorder": "https://www.co.forest.pa.us/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Franklin County",
+      "fips": "42055",
+      "seat": "Chambersburg",
+      "population": 155932,
+      "base_urls": {
+        "assessor": "https://franklincountypa.gov/index.php/assessment",
+        "recorder": "https://franklincountypa.gov/index.php/recorder-of-deeds",
+        "gis": "https://gis.franklincountypa.gov"
+      },
+      "data_sources": ["property", "deeds", "gis"]
+    },
+    {
+      "name": "Fulton County",
+      "fips": "42057",
+      "seat": "McConnellsburg",
+      "population": 14530,
+      "base_urls": {
+        "assessor": "https://www.co.fulton.pa.us/assessment-office",
+        "recorder": "https://www.co.fulton.pa.us/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Greene County",
+      "fips": "42059",
+      "seat": "Waynesburg",
+      "population": 36233,
+      "base_urls": {
+        "assessor": "https://www.co.greene.pa.us/index.php/assessment-office",
+        "recorder": "https://www.co.greene.pa.us/index.php/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Huntingdon County",
+      "fips": "42061",
+      "seat": "Huntingdon",
+      "population": 45913,
+      "base_urls": {
+        "assessor": "https://www.huntingdoncounty.net/assessor",
+        "recorder": "https://www.huntingdoncounty.net/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Indiana County",
+      "fips": "42063",
+      "seat": "Indiana",
+      "population": 85755,
+      "base_urls": {
+        "assessor": "https://www.indianacountypa.gov/departments/assessment/",
+        "recorder": "https://www.indianacountypa.gov/departments/recorder-of-deeds/"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Jefferson County",
+      "fips": "42065",
+      "seat": "Brookville",
+      "population": 44084,
+      "base_urls": {
+        "assessor": "https://www.jeffersoncountypa.com/assessment-office",
+        "recorder": "https://www.jeffersoncountypa.com/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Juniata County",
+      "fips": "42067",
+      "seat": "Mifflintown",
+      "population": 24763,
+      "base_urls": {
+        "assessor": "https://www.juniataco.org/departments/assessment-office",
+        "recorder": "https://www.juniataco.org/departments/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Lackawanna County",
+      "fips": "42069",
+      "seat": "Scranton",
+      "population": 214437,
+      "base_urls": {
+        "assessor": "https://www.lackawannacounty.org/index.php/assessment",
+        "recorder": "https://www.lackawannacounty.org/index.php/recorder-of-deeds",
+        "prothonotary": "https://www.lackawannacounty.org/index.php/prothonotary",
+        "gis": "https://gis.lackawannacounty.org"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Lancaster County",
+      "fips": "42071",
+      "seat": "Lancaster",
+      "population": 552984,
+      "base_urls": {
+        "assessor": "https://www.co.lancaster.pa.us/179/Assessment",
+        "recorder": "https://www.co.lancaster.pa.us/181/Recorder-of-Deeds",
+        "prothonotary": "https://www.co.lancaster.pa.us/192/Prothonotary",
+        "sheriff": "https://www.co.lancaster.pa.us/188/Sheriff",
+        "gis": "https://gis.co.lancaster.pa.us"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Lawrence County",
+      "fips": "42073",
+      "seat": "New Castle",
+      "population": 87382,
+      "base_urls": {
+        "assessor": "https://www.co.lawrence.pa.us/assessment",
+        "recorder": "https://www.co.lawrence.pa.us/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Lebanon County",
+      "fips": "42075",
+      "seat": "Lebanon",
+      "population": 143257,
+      "base_urls": {
+        "assessor": "https://www.lebcounty.org/depts/Assessment/Pages/default.aspx",
+        "recorder": "https://www.lebcounty.org/depts/RecorderofDeeds/Pages/default.aspx",
+        "gis": "https://gis.lebcounty.org"
+      },
+      "data_sources": ["property", "deeds", "gis"]
+    },
+    {
+      "name": "Lehigh County",
+      "fips": "42077",
+      "seat": "Allentown",
+      "population": 374557,
+      "base_urls": {
+        "assessor": "https://www.lehighcounty.org/Departments/Assessment",
+        "recorder": "https://www.lehighcounty.org/Departments/Recorder-of-Deeds",
+        "prothonotary": "https://www.lehighcounty.org/Departments/Prothonotary",
+        "gis": "https://gis.lehighcounty.org"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Luzerne County",
+      "fips": "42079",
+      "seat": "Wilkes-Barre",
+      "population": 325594,
+      "base_urls": {
+        "assessor": "https://www.luzernecounty.org/445/Assessment",
+        "recorder": "https://www.luzernecounty.org/447/Recorder-of-Deeds",
+        "prothonotary": "https://www.luzernecounty.org/444/Prothonotary",
+        "gis": "https://gis.luzernecounty.org"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Lycoming County",
+      "fips": "42081",
+      "seat": "Williamsport",
+      "population": 116111,
+      "base_urls": {
+        "assessor": "https://www.lyco.org/Departments/Assessment",
+        "recorder": "https://www.lyco.org/Departments/Recorder-of-Deeds",
+        "gis": "https://gis.lyco.org"
+      },
+      "data_sources": ["property", "deeds", "gis"]
+    },
+    {
+      "name": "McKean County",
+      "fips": "42083",
+      "seat": "Smethport",
+      "population": 40968,
+      "base_urls": {
+        "assessor": "https://www.mckeancountypa.org/assessment",
+        "recorder": "https://www.mckeancountypa.org/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Mercer County",
+      "fips": "42085",
+      "seat": "Mercer",
+      "population": 112630,
+      "base_urls": {
+        "assessor": "https://www.mcc.co.mercer.pa.us/assessment",
+        "recorder": "https://www.mcc.co.mercer.pa.us/recorder"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Mifflin County",
+      "fips": "42087",
+      "seat": "Lewistown",
+      "population": 46682,
+      "base_urls": {
+        "assessor": "https://www.co.mifflin.pa.us/departments/assessment",
+        "recorder": "https://www.co.mifflin.pa.us/departments/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Monroe County",
+      "fips": "42089",
+      "seat": "Stroudsburg",
+      "population": 172621,
+      "base_urls": {
+        "assessor": "https://www.monroecountypa.gov/Dept/Assessment",
+        "recorder": "https://www.monroecountypa.gov/Dept/RecorderOfDeeds",
+        "gis": "https://gis.monroecountypa.gov"
+      },
+      "data_sources": ["property", "deeds", "gis"]
+    },
+    {
+      "name": "Montgomery County",
+      "fips": "42091",
+      "seat": "Norristown",
+      "population": 856553,
+      "base_urls": {
+        "assessor": "https://www.montcopa.org/152/Assessment",
+        "recorder": "https://www.montcopa.org/157/Recorder-of-Deeds",
+        "prothonotary": "https://www.montcopa.org/154/Prothonotary",
+        "sheriff": "https://www.montcopa.org/163/Sheriff",
+        "gis": "https://gis.montcopa.org"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Montour County",
+      "fips": "42093",
+      "seat": "Danville",
+      "population": 18523,
+      "base_urls": {
+        "assessor": "https://www.montourco.org/assessment",
+        "recorder": "https://www.montourco.org/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Northampton County",
+      "fips": "42095",
+      "seat": "Easton",
+      "population": 312951,
+      "base_urls": {
+        "assessor": "https://www.northamptoncounty.org/ASSESS/Pages/default.aspx",
+        "recorder": "https://www.northamptoncounty.org/RECORDER/Pages/default.aspx",
+        "prothonotary": "https://www.northamptoncounty.org/PROTHY/Pages/default.aspx",
+        "gis": "https://gis.northamptoncounty.org"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Northumberland County",
+      "fips": "42097",
+      "seat": "Sunbury",
+      "population": 91647,
+      "base_urls": {
+        "assessor": "https://www.northumberlandco.org/index.php/assessment",
+        "recorder": "https://www.northumberlandco.org/index.php/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Perry County",
+      "fips": "42099",
+      "seat": "New Bloomfield",
+      "population": 46272,
+      "base_urls": {
+        "assessor": "https://www.perryco.org/assessment",
+        "recorder": "https://www.perryco.org/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Philadelphia County",
+      "fips": "42101",
+      "seat": "Philadelphia",
+      "population": 1603797,
+      "base_urls": {
+        "assessor": "https://property.phila.gov/",
+        "recorder": "https://www.phila.gov/departments/department-of-records/",
+        "prothonotary": "https://www.courts.phila.gov/civil/",
+        "sheriff": "https://www.phila.gov/departments/office-of-the-sheriff/",
+        "licenses": "https://www.phila.gov/li/",
+        "gis": "https://atlas.phila.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "licenses", "gis"],
+      "notes": "City-County consolidated government"
+    },
+    {
+      "name": "Pike County",
+      "fips": "42103",
+      "seat": "Milford",
+      "population": 59000,
+      "base_urls": {
+        "assessor": "https://www.pikepa.org/assessment.html",
+        "recorder": "https://www.pikepa.org/recorder.html"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Potter County",
+      "fips": "42105",
+      "seat": "Coudersport",
+      "population": 16526,
+      "base_urls": {
+        "assessor": "https://www.pottercountypa.net/assessment",
+        "recorder": "https://www.pottercountypa.net/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Schuylkill County",
+      "fips": "42107",
+      "seat": "Pottsville",
+      "population": 144517,
+      "base_urls": {
+        "assessor": "https://www.co.schuylkill.pa.us/Offices/Assessment/",
+        "recorder": "https://www.co.schuylkill.pa.us/Offices/RecorderOfDeeds/"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Snyder County",
+      "fips": "42109",
+      "seat": "Middleburg",
+      "population": 40784,
+      "base_urls": {
+        "assessor": "https://www.snydercounty.org/Departments/Assessment/",
+        "recorder": "https://www.snydercounty.org/Departments/RecorderOfDeeds/"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Somerset County",
+      "fips": "42111",
+      "seat": "Somerset",
+      "population": 74949,
+      "base_urls": {
+        "assessor": "https://www.co.somerset.pa.us/assessment",
+        "recorder": "https://www.co.somerset.pa.us/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Sullivan County",
+      "fips": "42113",
+      "seat": "Laporte",
+      "population": 6066,
+      "base_urls": {
+        "assessor": "https://www.sullivancounty-pa.us/assessment",
+        "recorder": "https://www.sullivancounty-pa.us/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Susquehanna County",
+      "fips": "42115",
+      "seat": "Montrose",
+      "population": 40328,
+      "base_urls": {
+        "assessor": "https://www.susqco.com/assessment",
+        "recorder": "https://www.susqco.com/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Tioga County",
+      "fips": "42117",
+      "seat": "Wellsboro",
+      "population": 40591,
+      "base_urls": {
+        "assessor": "https://www.tiogacountypa.us/Departments/Assessment",
+        "recorder": "https://www.tiogacountypa.us/Departments/RecorderOfDeeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Union County",
+      "fips": "42119",
+      "seat": "Lewisburg",
+      "population": 45049,
+      "base_urls": {
+        "assessor": "https://www.unionco.org/departments/assessment",
+        "recorder": "https://www.unionco.org/departments/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Venango County",
+      "fips": "42121",
+      "seat": "Franklin",
+      "population": 51268,
+      "base_urls": {
+        "assessor": "https://www.co.venango.pa.us/157/Assessment",
+        "recorder": "https://www.co.venango.pa.us/159/Recorder-of-Deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Warren County",
+      "fips": "42123",
+      "seat": "Warren",
+      "population": 39466,
+      "base_urls": {
+        "assessor": "https://www.warrencountypa.net/assessment-office",
+        "recorder": "https://www.warrencountypa.net/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Washington County",
+      "fips": "42125",
+      "seat": "Washington",
+      "population": 209349,
+      "base_urls": {
+        "assessor": "https://www.co.washington.pa.us/144/Assessment",
+        "recorder": "https://www.co.washington.pa.us/146/Recorder-of-Deeds",
+        "gis": "https://gis.co.washington.pa.us"
+      },
+      "data_sources": ["property", "deeds", "gis"]
+    },
+    {
+      "name": "Wayne County",
+      "fips": "42127",
+      "seat": "Honesdale",
+      "population": 52046,
+      "base_urls": {
+        "assessor": "https://www.waynecountypa.gov/144/Assessment",
+        "recorder": "https://www.waynecountypa.gov/146/Recorder-of-Deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "Westmoreland County",
+      "fips": "42129",
+      "seat": "Greensburg",
+      "population": 355719,
+      "base_urls": {
+        "assessor": "https://www.co.westmoreland.pa.us/170/Assessment",
+        "recorder": "https://www.co.westmoreland.pa.us/172/Recorder-of-Deeds",
+        "prothonotary": "https://www.co.westmoreland.pa.us/175/Prothonotary",
+        "gis": "https://gis.co.westmoreland.pa.us"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Wyoming County",
+      "fips": "42131",
+      "seat": "Tunkhannock",
+      "population": 27046,
+      "base_urls": {
+        "assessor": "https://www.wycopa.org/assessment",
+        "recorder": "https://www.wycopa.org/recorder-of-deeds"
+      },
+      "data_sources": ["property", "deeds"]
+    },
+    {
+      "name": "York County",
+      "fips": "42133",
+      "seat": "York",
+      "population": 456438,
+      "base_urls": {
+        "assessor": "https://www.yorkcountypa.gov/177/Assessment",
+        "recorder": "https://www.yorkcountypa.gov/179/Recorder-of-Deeds",
+        "prothonotary": "https://www.yorkcountypa.gov/184/Prothonotary",
+        "gis": "https://gis.yorkcountypa.gov"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    }
+  ]
+}

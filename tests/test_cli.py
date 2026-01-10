@@ -224,14 +224,17 @@ class TestRunScraper:
         with patch('db_manager.DatabaseManager') as mock_db_class:
             mock_db = MagicMock()
             mock_db.list_jurisdictions.return_value = [
-                {'name': 'County A', 'state': 'TX'},
-                {'name': 'County B', 'state': 'CA'}
+                {'id': 1, 'name': 'County A', 'state': 'TX'},
+                {'id': 2, 'name': 'County B', 'state': 'CA'}
             ]
             mock_db_class.return_value = mock_db
 
             args = MagicMock()
             args.all = True
             args.jurisdiction_id = None
+            args.state = None
+            args.dry_run = True  # Use dry run to avoid actual scraping
+            args.limit = 100
 
             with patch('builtins.print'):
                 run_scraper(args)
@@ -244,12 +247,15 @@ class TestRunScraper:
 
         with patch('db_manager.DatabaseManager') as mock_db_class:
             mock_db = MagicMock()
-            mock_db.get_jurisdiction.return_value = {'id': 1, 'name': 'Test County'}
+            mock_db.get_jurisdiction.return_value = {'id': 1, 'name': 'Test County', 'state': 'TX'}
             mock_db_class.return_value = mock_db
 
             args = MagicMock()
             args.all = False
             args.jurisdiction_id = 1
+            args.state = None
+            args.dry_run = True  # Use dry run to avoid actual scraping
+            args.limit = 100
 
             with patch('builtins.print'):
                 run_scraper(args)
@@ -268,6 +274,9 @@ class TestRunScraper:
             args = MagicMock()
             args.all = False
             args.jurisdiction_id = 999
+            args.state = None
+            args.dry_run = False
+            args.limit = 100
 
             with patch('builtins.print'):
                 with pytest.raises(SystemExit) as exc_info:
@@ -285,6 +294,9 @@ class TestRunScraper:
             args = MagicMock()
             args.all = False
             args.jurisdiction_id = None
+            args.state = None
+            args.dry_run = False
+            args.limit = 100
 
             with patch('builtins.print'):
                 with pytest.raises(SystemExit) as exc_info:

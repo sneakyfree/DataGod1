@@ -1,0 +1,313 @@
+{
+  "state_code": "OH",
+  "state_name": "Ohio",
+  "state_fips": "39",
+  "tier": 1,
+  "total_counties": 88,
+  "state_apis": {
+    "secretary_of_state": {
+      "name": "OH Secretary of State - Business Search",
+      "base_url": "https://businesssearch.ohiosos.gov/",
+      "api_url": null,
+      "data_types": ["business_filings", "ucc"],
+      "requires_auth": false,
+      "rate_limit": 60
+    },
+    "courts": {
+      "name": "Ohio Supreme Court",
+      "base_url": "https://www.supremecourt.ohio.gov/",
+      "api_url": null,
+      "data_types": ["court_cases", "opinions"],
+      "requires_auth": false
+    },
+    "attorney_registration": {
+      "name": "OH Attorney Registration",
+      "base_url": "https://www.supremecourt.ohio.gov/AttorneySearch/",
+      "api_url": null,
+      "data_types": ["attorney_search"],
+      "requires_auth": false
+    },
+    "professional_licensing": {
+      "name": "OH eLicense",
+      "base_url": "https://elicense.ohio.gov/",
+      "api_url": null,
+      "data_types": ["professional_licenses"],
+      "requires_auth": false
+    },
+    "bwc": {
+      "name": "Bureau of Workers Compensation",
+      "base_url": "https://www.bwc.ohio.gov/employer/EmployerSearch/EmployerSearch.aspx",
+      "api_url": null,
+      "data_types": ["employer_data"],
+      "requires_auth": false
+    }
+  },
+  "counties": [
+    {
+      "name": "Cuyahoga County",
+      "fips": "39035",
+      "seat": "Cleveland",
+      "population": 1264817,
+      "base_urls": {
+        "auditor": "https://myplace.cuyahogacounty.us/",
+        "recorder": "https://recorder.cuyahogacounty.us/",
+        "clerk": "https://cpdocket.cp.cuyahogacounty.us/",
+        "sheriff": "https://sheriff.cuyahogacounty.us/",
+        "treasurer": "https://treasurer.cuyahogacounty.us/",
+        "gis": "https://gis.cuyahogacounty.us/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "taxes", "gis"],
+      "notes": "Largest county, includes Cleveland"
+    },
+    {
+      "name": "Franklin County",
+      "fips": "39049",
+      "seat": "Columbus",
+      "population": 1323807,
+      "base_urls": {
+        "auditor": "https://property.franklincountyauditor.com/",
+        "recorder": "https://recorder.franklincountyohio.gov/",
+        "clerk": "https://clerk.franklincountyohio.gov/",
+        "sheriff": "https://sheriff.franklincountyohio.gov/",
+        "gis": "https://gis.franklincountyohio.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"],
+      "notes": "State capital, includes Columbus"
+    },
+    {
+      "name": "Hamilton County",
+      "fips": "39061",
+      "seat": "Cincinnati",
+      "population": 830639,
+      "base_urls": {
+        "auditor": "https://hamiltoncountyauditor.org/",
+        "recorder": "https://recorder.hamilton-co.org/",
+        "clerk": "https://www.courtclerk.org/",
+        "sheriff": "https://www.hcso.org/",
+        "gis": "https://gis.hamilton-co.org/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Summit County",
+      "fips": "39153",
+      "seat": "Akron",
+      "population": 540428,
+      "base_urls": {
+        "auditor": "https://fiscalofficer.summitoh.net/",
+        "recorder": "https://recorder.summitoh.net/",
+        "clerk": "https://www.cpclerk.co.summit.oh.us/",
+        "gis": "https://gis.summitoh.net/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Lorain County",
+      "fips": "39093",
+      "seat": "Elyria",
+      "population": 312964,
+      "base_urls": {
+        "auditor": "https://www.loraincountyauditor.com/",
+        "recorder": "https://www.loraincountyrecorder.com/",
+        "clerk": "https://www.loraincountycpclerk.com/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Greene County",
+      "fips": "39057",
+      "seat": "Xenia",
+      "population": 166752,
+      "base_urls": {
+        "auditor": "https://www.co.greene.oh.us/84/Auditor",
+        "recorder": "https://www.co.greene.oh.us/91/Recorder",
+        "clerk": "https://www.co.greene.oh.us/77/Clerk-of-Courts",
+        "gis": "https://gis.co.greene.oh.us/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Mahoning County",
+      "fips": "39099",
+      "seat": "Youngstown",
+      "population": 228683,
+      "base_urls": {
+        "auditor": "https://www.mahoningcountyoh.gov/181/Auditor",
+        "recorder": "https://www.mahoningcountyoh.gov/188/Recorder",
+        "clerk": "https://www.mahoningcountyoh.gov/175/Clerk-of-Courts"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Lucas County",
+      "fips": "39095",
+      "seat": "Toledo",
+      "population": 431279,
+      "base_urls": {
+        "auditor": "https://www.co.lucas.oh.us/287/Auditor",
+        "recorder": "https://www.co.lucas.oh.us/294/Recorder",
+        "clerk": "https://www.lucas-co-clerk-of-courts.org/",
+        "sheriff": "https://www.co.lucas.oh.us/314/Sheriff",
+        "gis": "https://gis.co.lucas.oh.us/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Montgomery County",
+      "fips": "39113",
+      "seat": "Dayton",
+      "population": 537309,
+      "base_urls": {
+        "auditor": "https://www.mcrealestate.org/",
+        "recorder": "https://www.mcrecorder.org/",
+        "clerk": "https://www.clerk.co.montgomery.oh.us/",
+        "sheriff": "https://www.mcohio.org/government/elected_officials/sheriff/",
+        "gis": "https://gis.mcohio.org/"
+      },
+      "data_sources": ["property", "deeds", "court", "sheriff", "gis"]
+    },
+    {
+      "name": "Stark County",
+      "fips": "39151",
+      "seat": "Canton",
+      "population": 374853,
+      "base_urls": {
+        "auditor": "https://www.starkauditor.org/",
+        "recorder": "https://www.starkrecorder.org/",
+        "clerk": "https://www.starkcountyclerkofcourts.org/",
+        "gis": "https://gis.starkcountyohio.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Butler County",
+      "fips": "39017",
+      "seat": "Hamilton",
+      "population": 390357,
+      "base_urls": {
+        "auditor": "https://www.butlercountyauditor.org/",
+        "recorder": "https://www.butlercountyohio.org/recorder/",
+        "clerk": "https://www.butlercountyclerk.org/",
+        "gis": "https://gis.butlercountyohio.org/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Lake County",
+      "fips": "39085",
+      "seat": "Painesville",
+      "population": 232603,
+      "base_urls": {
+        "auditor": "https://www.lakecountyohio.gov/auditor/",
+        "recorder": "https://www.lakecountyohio.gov/recorder/",
+        "clerk": "https://www.lakecountyohio.gov/clerkofcourts/",
+        "gis": "https://gis.lakecountyohio.gov/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Medina County",
+      "fips": "39103",
+      "seat": "Medina",
+      "population": 183678,
+      "base_urls": {
+        "auditor": "https://www.medinacountyauditor.org/",
+        "recorder": "https://www.medinacountyrecorder.com/",
+        "clerk": "https://www.medina-county.com/clerkofcourts/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Trumbull County",
+      "fips": "39155",
+      "seat": "Warren",
+      "population": 199144,
+      "base_urls": {
+        "auditor": "https://www.auditor.co.trumbull.oh.us/",
+        "recorder": "https://www.recorder.co.trumbull.oh.us/",
+        "clerk": "https://www.clerk.co.trumbull.oh.us/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Delaware County",
+      "fips": "39041",
+      "seat": "Delaware",
+      "population": 214124,
+      "base_urls": {
+        "auditor": "https://www.co.delaware.oh.us/auditor/",
+        "recorder": "https://www.co.delaware.oh.us/recorder/",
+        "clerk": "https://www.co.delaware.oh.us/clerk/",
+        "gis": "https://gis.co.delaware.oh.us/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Warren County",
+      "fips": "39165",
+      "seat": "Lebanon",
+      "population": 242337,
+      "base_urls": {
+        "auditor": "https://www.co.warren.oh.us/auditor/",
+        "recorder": "https://www.co.warren.oh.us/recorder/",
+        "clerk": "https://www.co.warren.oh.us/clerkofcourts/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Clermont County",
+      "fips": "39025",
+      "seat": "Batavia",
+      "population": 208601,
+      "base_urls": {
+        "auditor": "https://auditor.clermontcountyohio.gov/",
+        "recorder": "https://recorder.clermontcountyohio.gov/",
+        "clerk": "https://clerkofcourts.clermontcountyohio.gov/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Portage County",
+      "fips": "39133",
+      "seat": "Ravenna",
+      "population": 161791,
+      "base_urls": {
+        "auditor": "https://www.co.portage.oh.us/auditor",
+        "recorder": "https://www.co.portage.oh.us/recorder",
+        "clerk": "https://www.co.portage.oh.us/clerk-of-courts"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    },
+    {
+      "name": "Licking County",
+      "fips": "39089",
+      "seat": "Newark",
+      "population": 179432,
+      "base_urls": {
+        "auditor": "https://www.lcounty.com/auditor/",
+        "recorder": "https://www.lcounty.com/recorder/",
+        "clerk": "https://www.lcounty.com/clerkofcourts/",
+        "gis": "https://gis.lcounty.com/"
+      },
+      "data_sources": ["property", "deeds", "court", "gis"]
+    },
+    {
+      "name": "Fairfield County",
+      "fips": "39045",
+      "seat": "Lancaster",
+      "population": 160921,
+      "base_urls": {
+        "auditor": "https://www.co.fairfield.oh.us/auditor/",
+        "recorder": "https://www.co.fairfield.oh.us/recorder/",
+        "clerk": "https://www.co.fairfield.oh.us/clerk/"
+      },
+      "data_sources": ["property", "deeds", "court"]
+    }
+  ],
+  "remaining_counties_pattern": {
+    "total_remaining": 68,
+    "url_pattern": "https://www.co.{county_slug}.oh.us/",
+    "common_departments": ["auditor", "recorder", "clerk-of-courts", "sheriff"],
+    "notes": "Ohio uses 'Auditor' instead of 'Assessor' for property records"
+  }
+}

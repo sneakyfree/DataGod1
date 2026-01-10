@@ -7,10 +7,14 @@ This service provides:
 - Multiple merge strategies (keep newest, keep most complete, manual)
 - Batch deduplication for large datasets
 - Audit trail for merged records
+- Name standardization (first/middle/last parsing, suffix handling)
+- Address normalization (USPS standards)
+- Multi-pass matching (exact ID, normalized name, fuzzy)
 """
 
 import logging
-from typing import Dict, List, Any, Optional, Callable
+import re
+from typing import Dict, List, Any, Optional, Callable, Tuple
 from datetime import datetime
 from dataclasses import dataclass, field
 from enum import Enum
@@ -64,6 +68,453 @@ class MergeResult:
     audit_info: Dict[str, Any]
 
 
+class NameStandardizer:
+    """
+    Standardize names for deduplication matching.
+
+    Handles:
+    - First/middle/last name parsing
+    - Suffix extraction (Jr., Sr., III, etc.)
+    - Prefix removal (Mr., Mrs., Dr., etc.)
+    - Case normalization
+    - Common nickname expansion
+    """
+
+    # Common name suffixes
+    SUFFIXES = {
+        'jr', 'jr.', 'junior',
+        'sr', 'sr.', 'senior',
+        'i', 'ii', 'iii', 'iv', 'v',
+        '1st', '2nd', '3rd', '4th', '5th',
+        'esq', 'esq.', 'esquire',
+        'phd', 'ph.d.', 'ph.d',
+        'md', 'm.d.', 'm.d',
+        'dds', 'd.d.s.',
+        'jd', 'j.d.',
+    }
+
+    # Name prefixes to remove
+    PREFIXES = {
+        'mr', 'mr.', 'mister',
+        'mrs', 'mrs.', 'missus',
+        'ms', 'ms.', 'miss',
+        'dr', 'dr.', 'doctor',
+        'prof', 'prof.', 'professor',
+        'rev', 'rev.', 'reverend',
+        'hon', 'hon.', 'honorable',
+        'sir', 'dame', 'lord', 'lady',
+    }
+
+    # Common nickname mappings
+    NICKNAMES = {
+        'william': ['bill', 'will', 'billy', 'willy', 'liam'],
+        'robert': ['bob', 'rob', 'bobby', 'robby', 'bert'],
+        'richard': ['rick', 'dick', 'rich', 'richie', 'ricky'],
+        'james': ['jim', 'jimmy', 'jamie', 'jas'],
+        'john': ['jack', 'johnny', 'jon'],
+        'michael': ['mike', 'mikey', 'mick'],
+        'thomas': ['tom', 'tommy', 'thom'],
+        'charles': ['charlie', 'chuck', 'chas'],
+        'joseph': ['joe', 'joey', 'jo'],
+        'david': ['dave', 'davey', 'davie'],
+        'edward': ['ed', 'eddie', 'ted', 'teddy', 'ned'],
+        'christopher': ['chris', 'topher', 'kit'],
+        'daniel': ['dan', 'danny'],
+        'matthew': ['matt', 'matty'],
+        'anthony': ['tony', 'ant'],
+        'steven': ['steve', 'stevie'],
+        'stephen': ['steve', 'stevie'],
+        'andrew': ['andy', 'drew'],
+        'joshua': ['josh'],
+        'kenneth': ['ken', 'kenny'],
+        'kevin': ['kev'],
+        'brian': ['bri'],
+        'timothy': ['tim', 'timmy'],
+        'ronald': ['ron', 'ronny', 'ronnie'],
+        'jason': ['jay', 'jase'],
+        'jeffrey': ['jeff', 'geoff'],
+        'benjamin': ['ben', 'benji', 'benny'],
+        'nicholas': ['nick', 'nicky', 'nico'],
+        'samuel': ['sam', 'sammy'],
+        'patrick': ['pat', 'patty', 'paddy'],
+        'alexander': ['alex', 'xander', 'sandy'],
+        'jonathan': ['jon', 'jonny', 'nathan'],
+        'elizabeth': ['liz', 'lizzy', 'beth', 'betty', 'eliza', 'lisa', 'libby'],
+        'margaret': ['maggie', 'meg', 'peggy', 'marge', 'margie', 'greta'],
+        'jennifer': ['jen', 'jenny', 'jenn'],
+        'patricia': ['pat', 'patty', 'trish', 'tricia'],
+        'barbara': ['barb', 'barbie', 'babs'],
+        'susan': ['sue', 'suzy', 'susie'],
+        'jessica': ['jess', 'jessie'],
+        'catherine': ['cathy', 'kate', 'katie', 'cat'],
+        'katherine': ['kathy', 'kate', 'katie', 'kat', 'kitty'],
+        'rebecca': ['becky', 'becca', 'reba'],
+        'deborah': ['deb', 'debbie', 'debby'],
+        'stephanie': ['steph', 'stephie'],
+        'christine': ['chris', 'chrissie', 'tina'],
+        'christina': ['chris', 'chrissie', 'tina'],
+        'victoria': ['vicky', 'vicki', 'tori'],
+        'amanda': ['mandy', 'mandi'],
+        'melissa': ['mel', 'missy', 'lisa'],
+        'dorothy': ['dot', 'dotty', 'dottie'],
+        'theodore': ['ted', 'teddy', 'theo'],
+        'lawrence': ['larry', 'laurie'],
+        'gerald': ['jerry', 'gerry'],
+        'harold': ['harry', 'hal'],
+        'walter': ['walt', 'wally'],
+        'raymond': ['ray'],
+        'gregory': ['greg', 'gregg'],
+        'frederick': ['fred', 'freddy', 'rick'],
+        'albert': ['al', 'bert', 'bertie'],
+        'arthur': ['art', 'artie'],
+        'eugene': ['gene'],
+        'phillip': ['phil'],
+        'philip': ['phil'],
+        'leonard': ['leo', 'len', 'lenny'],
+        'henry': ['hank', 'harry', 'hal'],
+        'francis': ['frank', 'fran', 'frankie'],
+        'frances': ['fran', 'frankie', 'fanny'],
+    }
+
+    # Build reverse nickname map
+    _nickname_to_canonical = {}
+    for canonical, nicks in NICKNAMES.items():
+        _nickname_to_canonical[canonical] = canonical
+        for nick in nicks:
+            _nickname_to_canonical[nick] = canonical
+
+    @classmethod
+    def standardize(cls, name: str) -> Dict[str, str]:
+        """
+        Standardize a full name into components.
+
+        Returns dict with: first, middle, last, suffix, normalized_full
+        """
+        if not name:
+            return {'first': '', 'middle': '', 'last': '', 'suffix': '', 'normalized_full': ''}
+
+        # Clean and normalize
+        name = name.strip().lower()
+        name = re.sub(r'[^\w\s\'-]', ' ', name)  # Keep letters, spaces, hyphens, apostrophes
+        name = re.sub(r'\s+', ' ', name)  # Normalize whitespace
+
+        parts = name.split()
+
+        # Remove prefixes
+        while parts and parts[0] in cls.PREFIXES:
+            parts.pop(0)
+
+        # Extract suffix
+        suffix = ''
+        if parts and parts[-1] in cls.SUFFIXES:
+            suffix = parts.pop()
+
+        # Also check for comma-separated suffix (e.g., "Smith, Jr.")
+        if parts and ',' in parts[-1]:
+            last_part = parts[-1].replace(',', '')
+            if last_part in cls.SUFFIXES:
+                suffix = last_part
+                parts.pop()
+
+        # Parse remaining parts
+        first = ''
+        middle = ''
+        last = ''
+
+        if len(parts) == 1:
+            last = parts[0]
+        elif len(parts) == 2:
+            first = parts[0]
+            last = parts[1]
+        elif len(parts) >= 3:
+            first = parts[0]
+            last = parts[-1]
+            middle = ' '.join(parts[1:-1])
+
+        # Get canonical first name (for nickname matching)
+        canonical_first = cls._nickname_to_canonical.get(first, first)
+
+        # Build normalized full name
+        normalized_parts = [canonical_first]
+        if middle:
+            normalized_parts.append(middle)
+        normalized_parts.append(last)
+        normalized_full = ' '.join(normalized_parts)
+
+        return {
+            'first': first,
+            'middle': middle,
+            'last': last,
+            'suffix': suffix,
+            'canonical_first': canonical_first,
+            'normalized_full': normalized_full,
+        }
+
+    @classmethod
+    def names_match(cls, name1: str, name2: str, threshold: float = 0.85) -> Tuple[bool, float]:
+        """
+        Check if two names match, accounting for nicknames.
+
+        Returns (is_match, confidence_score)
+        """
+        std1 = cls.standardize(name1)
+        std2 = cls.standardize(name2)
+
+        # Exact match on normalized
+        if std1['normalized_full'] == std2['normalized_full']:
+            return True, 1.0
+
+        # Check last name match
+        if std1['last'] != std2['last']:
+            # Allow for hyphenated names
+            if not (std1['last'] in std2['last'] or std2['last'] in std1['last']):
+                return False, 0.0
+
+        # Check first name (with nickname expansion)
+        first_match = (
+            std1['canonical_first'] == std2['canonical_first'] or
+            std1['first'] == std2['first']
+        )
+
+        if first_match:
+            # First and last match
+            score = 0.95 if std1['middle'] == std2['middle'] else 0.90
+            return True, score
+
+        # Partial first name match (initials)
+        if std1['first'] and std2['first']:
+            if std1['first'][0] == std2['first'][0]:
+                # Same initial, might be abbreviation
+                return True, 0.75
+
+        return False, 0.0
+
+
+class AddressNormalizer:
+    """
+    Normalize addresses according to USPS standards.
+
+    Handles:
+    - Street type abbreviations (Street -> ST, Avenue -> AVE)
+    - Directional abbreviations (North -> N, Southwest -> SW)
+    - Unit/apartment standardization
+    - State abbreviations
+    - ZIP code formatting
+    """
+
+    # USPS street type abbreviations
+    STREET_TYPES = {
+        'alley': 'ALY', 'allee': 'ALY', 'ally': 'ALY', 'aly': 'ALY',
+        'avenue': 'AVE', 'av': 'AVE', 'aven': 'AVE', 'avenu': 'AVE', 'avn': 'AVE', 'avnue': 'AVE', 'ave': 'AVE',
+        'boulevard': 'BLVD', 'boul': 'BLVD', 'boulv': 'BLVD', 'blvd': 'BLVD',
+        'circle': 'CIR', 'circ': 'CIR', 'circl': 'CIR', 'crcl': 'CIR', 'crcle': 'CIR', 'cir': 'CIR',
+        'court': 'CT', 'crt': 'CT', 'ct': 'CT',
+        'drive': 'DR', 'driv': 'DR', 'drv': 'DR', 'dr': 'DR',
+        'expressway': 'EXPY', 'exp': 'EXPY', 'expr': 'EXPY', 'express': 'EXPY', 'expw': 'EXPY', 'expy': 'EXPY',
+        'freeway': 'FWY', 'freewy': 'FWY', 'frway': 'FWY', 'frwy': 'FWY', 'fwy': 'FWY',
+        'highway': 'HWY', 'highwy': 'HWY', 'hiway': 'HWY', 'hiwy': 'HWY', 'hway': 'HWY', 'hwy': 'HWY',
+        'lane': 'LN', 'ln': 'LN',
+        'parkway': 'PKWY', 'parkwy': 'PKWY', 'pkway': 'PKWY', 'pkwy': 'PKWY', 'pky': 'PKWY',
+        'place': 'PL', 'pl': 'PL',
+        'plaza': 'PLZ', 'plza': 'PLZ', 'plz': 'PLZ',
+        'road': 'RD', 'rd': 'RD',
+        'route': 'RTE', 'rte': 'RTE', 'rt': 'RTE',
+        'square': 'SQ', 'sqr': 'SQ', 'sqre': 'SQ', 'squ': 'SQ', 'sq': 'SQ',
+        'street': 'ST', 'strt': 'ST', 'str': 'ST', 'st': 'ST',
+        'terrace': 'TER', 'terr': 'TER', 'ter': 'TER',
+        'trail': 'TRL', 'trails': 'TRL', 'trl': 'TRL',
+        'turnpike': 'TPKE', 'trnpk': 'TPKE', 'turnpk': 'TPKE', 'tpke': 'TPKE',
+        'way': 'WAY', 'wy': 'WAY',
+        # Additional common types
+        'crossing': 'XING', 'xing': 'XING',
+        'path': 'PATH',
+        'walk': 'WALK',
+        'loop': 'LOOP',
+        'run': 'RUN',
+        'point': 'PT', 'pt': 'PT',
+        'ridge': 'RDG', 'rdg': 'RDG',
+        'view': 'VW', 'vw': 'VW',
+        'cove': 'CV', 'cv': 'CV',
+        'bend': 'BND', 'bnd': 'BND',
+    }
+
+    # Directional abbreviations
+    DIRECTIONS = {
+        'north': 'N', 'n': 'N', 'no': 'N',
+        'south': 'S', 's': 'S', 'so': 'S',
+        'east': 'E', 'e': 'E',
+        'west': 'W', 'w': 'W',
+        'northeast': 'NE', 'ne': 'NE',
+        'northwest': 'NW', 'nw': 'NW',
+        'southeast': 'SE', 'se': 'SE',
+        'southwest': 'SW', 'sw': 'SW',
+    }
+
+    # Unit type abbreviations
+    UNIT_TYPES = {
+        'apartment': 'APT', 'apt': 'APT', 'ap': 'APT',
+        'suite': 'STE', 'ste': 'STE', 'suit': 'STE',
+        'unit': 'UNIT', 'un': 'UNIT',
+        'building': 'BLDG', 'bldg': 'BLDG', 'bld': 'BLDG',
+        'floor': 'FL', 'fl': 'FL', 'flr': 'FL',
+        'room': 'RM', 'rm': 'RM',
+        'department': 'DEPT', 'dept': 'DEPT',
+        'office': 'OFC', 'ofc': 'OFC',
+        'lot': 'LOT',
+        'space': 'SPC', 'spc': 'SPC',
+        'pier': 'PIER',
+        'slip': 'SLIP',
+        'trailer': 'TRLR', 'trlr': 'TRLR',
+        'penthouse': 'PH', 'ph': 'PH',
+        'basement': 'BSMT', 'bsmt': 'BSMT',
+        'lower': 'LOWR', 'lowr': 'LOWR',
+        'upper': 'UPPR', 'uppr': 'UPPR',
+        'rear': 'REAR',
+        'front': 'FRNT', 'frnt': 'FRNT',
+        'side': 'SIDE',
+        'stop': 'STOP',
+    }
+
+    # State abbreviations
+    STATES = {
+        'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
+        'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
+        'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
+        'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
+        'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+        'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
+        'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
+        'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
+        'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
+        'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+        'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
+        'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
+        'wisconsin': 'WI', 'wyoming': 'WY', 'district of columbia': 'DC',
+        'puerto rico': 'PR', 'guam': 'GU', 'virgin islands': 'VI',
+        'american samoa': 'AS', 'northern mariana islands': 'MP',
+    }
+
+    @classmethod
+    def normalize(cls, address: str, city: str = '', state: str = '', zip_code: str = '') -> Dict[str, str]:
+        """
+        Normalize an address to USPS standards.
+
+        Returns dict with normalized components.
+        """
+        if not address:
+            return {
+                'street': '',
+                'city': '',
+                'state': '',
+                'zip': '',
+                'normalized_full': '',
+            }
+
+        # Combine parts if provided separately
+        full_addr = address.strip().upper()
+
+        # Clean and normalize
+        full_addr = re.sub(r'[^\w\s#\-/]', ' ', full_addr)
+        full_addr = re.sub(r'\s+', ' ', full_addr)
+
+        parts = full_addr.split()
+        normalized_parts = []
+
+        i = 0
+        while i < len(parts):
+            part = parts[i].lower()
+
+            # Check for directions
+            if part in cls.DIRECTIONS:
+                normalized_parts.append(cls.DIRECTIONS[part])
+            # Check for street types
+            elif part in cls.STREET_TYPES:
+                normalized_parts.append(cls.STREET_TYPES[part])
+            # Check for unit types
+            elif part in cls.UNIT_TYPES:
+                normalized_parts.append(cls.UNIT_TYPES[part])
+            # Check for ordinal numbers (1st, 2nd, etc.)
+            elif re.match(r'^\d+(st|nd|rd|th)$', part):
+                normalized_parts.append(part.upper())
+            # Keep numbers and regular words
+            else:
+                normalized_parts.append(parts[i].upper())
+
+            i += 1
+
+        normalized_street = ' '.join(normalized_parts)
+
+        # Normalize city
+        normalized_city = city.strip().upper() if city else ''
+
+        # Normalize state
+        normalized_state = state.strip().upper() if state else ''
+        if normalized_state.lower() in cls.STATES:
+            normalized_state = cls.STATES[normalized_state.lower()]
+
+        # Normalize ZIP code (keep first 5 digits)
+        normalized_zip = re.sub(r'[^\d]', '', zip_code)[:5] if zip_code else ''
+
+        # Build full normalized address
+        full_parts = [normalized_street]
+        if normalized_city:
+            full_parts.append(normalized_city)
+        if normalized_state:
+            full_parts.append(normalized_state)
+        if normalized_zip:
+            full_parts.append(normalized_zip)
+
+        return {
+            'street': normalized_street,
+            'city': normalized_city,
+            'state': normalized_state,
+            'zip': normalized_zip,
+            'normalized_full': ', '.join(full_parts) if len(full_parts) > 1 else normalized_street,
+        }
+
+    @classmethod
+    def addresses_match(cls, addr1: str, addr2: str,
+                       city1: str = '', city2: str = '',
+                       state1: str = '', state2: str = '',
+                       zip1: str = '', zip2: str = '') -> Tuple[bool, float]:
+        """
+        Check if two addresses match.
+
+        Returns (is_match, confidence_score)
+        """
+        norm1 = cls.normalize(addr1, city1, state1, zip1)
+        norm2 = cls.normalize(addr2, city2, state2, zip2)
+
+        # Exact match
+        if norm1['normalized_full'] == norm2['normalized_full']:
+            return True, 1.0
+
+        # Street match with ZIP
+        if norm1['street'] == norm2['street'] and norm1['zip'] == norm2['zip']:
+            return True, 0.95
+
+        # Street match with city/state
+        if norm1['street'] == norm2['street']:
+            if norm1['city'] == norm2['city'] and norm1['state'] == norm2['state']:
+                return True, 0.90
+            elif norm1['state'] == norm2['state']:
+                return True, 0.80
+
+        # Partial street match (handle unit differences)
+        street1_parts = set(norm1['street'].split())
+        street2_parts = set(norm2['street'].split())
+
+        common = street1_parts & street2_parts
+        total = street1_parts | street2_parts
+
+        if len(common) > 0 and len(total) > 0:
+            similarity = len(common) / len(total)
+            if similarity >= 0.8:
+                return True, similarity * 0.9
+
+        return False, 0.0
+
+
 class DeduplicationService:
     """
     Service for detecting and handling duplicate records.
@@ -73,6 +524,9 @@ class DeduplicationService:
     - Multiple merge strategies
     - Batch processing for large datasets
     - Full audit trail
+    - Multi-pass matching (exact ID, normalized name, address, fuzzy)
+    - Name standardization with nickname support
+    - Address normalization (USPS standards)
     """
 
     # Default thresholds
@@ -80,14 +534,24 @@ class DeduplicationService:
     DEFAULT_POSSIBLE_THRESHOLD = 0.70
 
     # Fields that indicate a likely duplicate if they match
-    HIGH_WEIGHT_FIELDS = ['parcel_id', 'document_number', 'record_id', 'ssn', 'ein']
-    MEDIUM_WEIGHT_FIELDS = ['property_address', 'grantor', 'grantee', 'owner_name']
-    LOW_WEIGHT_FIELDS = ['record_date', 'amount', 'document_type']
+    HIGH_WEIGHT_FIELDS = ['parcel_id', 'document_number', 'record_id', 'ssn', 'ein', 'license_number', 'case_number']
+    MEDIUM_WEIGHT_FIELDS = ['property_address', 'grantor', 'grantee', 'owner_name', 'full_name', 'name', 'address']
+    LOW_WEIGHT_FIELDS = ['record_date', 'amount', 'document_type', 'city', 'state', 'zip_code']
+
+    # Name fields for standardized matching
+    NAME_FIELDS = ['full_name', 'name', 'owner_name', 'grantor', 'grantee', 'defendant', 'plaintiff',
+                   'first_name', 'last_name', 'business_name', 'entity_name']
+
+    # Address fields for normalized matching
+    ADDRESS_FIELDS = ['address', 'property_address', 'street_address', 'mailing_address',
+                      'residence_address', 'business_address']
 
     def __init__(self,
                  entity_linker: EntityLinker = None,
                  duplicate_threshold: float = None,
-                 possible_threshold: float = None):
+                 possible_threshold: float = None,
+                 use_name_standardization: bool = True,
+                 use_address_normalization: bool = True):
         """
         Initialize the DeduplicationService.
 
@@ -95,17 +559,22 @@ class DeduplicationService:
             entity_linker: EntityLinker instance for fuzzy matching
             duplicate_threshold: Threshold for definite duplicates (default 0.85)
             possible_threshold: Threshold for possible duplicates (default 0.70)
+            use_name_standardization: Enable name standardization with nicknames
+            use_address_normalization: Enable USPS address normalization
         """
         self.entity_linker = entity_linker or EntityLinker()
         self.duplicate_threshold = duplicate_threshold or self.DEFAULT_DUPLICATE_THRESHOLD
         self.possible_threshold = possible_threshold or self.DEFAULT_POSSIBLE_THRESHOLD
+        self.use_name_standardization = use_name_standardization
+        self.use_address_normalization = use_address_normalization
 
         # Track processed groups
         self.duplicate_groups: Dict[str, DuplicateGroup] = {}
         self.merge_history: List[MergeResult] = []
 
         logger.info(f"DeduplicationService initialized with thresholds: "
-                   f"duplicate={self.duplicate_threshold}, possible={self.possible_threshold}")
+                   f"duplicate={self.duplicate_threshold}, possible={self.possible_threshold}, "
+                   f"name_std={use_name_standardization}, addr_norm={use_address_normalization}")
 
     def find_duplicates(self, record: Dict[str, Any],
                        candidates: List[Dict[str, Any]]) -> List[DuplicateGroup]:
@@ -214,9 +683,14 @@ class DeduplicationService:
         return all_groups
 
     def _calculate_similarity(self, record1: Dict[str, Any],
-                             record2: Dict[str, Any]) -> tuple[float, List[str]]:
+                             record2: Dict[str, Any]) -> Tuple[float, List[str]]:
         """
-        Calculate similarity between two records.
+        Calculate similarity between two records using multi-pass matching.
+
+        Pass 1: Exact ID match (highest confidence)
+        Pass 2: Normalized name match (with nickname handling)
+        Pass 3: Normalized address match (USPS standards)
+        Pass 4: Fuzzy field matching
 
         Returns:
             Tuple of (similarity score, list of matching fields)
@@ -229,7 +703,7 @@ class DeduplicationService:
         scores = []
         weights = []
 
-        # Check high-weight fields
+        # PASS 1: Check high-weight ID fields (exact match)
         for field in self.HIGH_WEIGHT_FIELDS:
             if field in record1 and field in record2:
                 if record1[field] and record2[field]:
@@ -243,8 +717,69 @@ class DeduplicationService:
                         scores.append(0.0)
                         weights.append(3.0)
 
-        # Check medium-weight fields with fuzzy matching
+        # PASS 2: Name field matching with standardization
+        if self.use_name_standardization:
+            for field in self.NAME_FIELDS:
+                if field in record1 and field in record2:
+                    if record1[field] and record2[field]:
+                        val1 = str(record1[field])
+                        val2 = str(record2[field])
+                        is_match, confidence = NameStandardizer.names_match(val1, val2)
+                        if is_match:
+                            scores.append(confidence)
+                            weights.append(2.5)  # High weight for name matches
+                            match_fields.append(f"{field}_normalized")
+                        else:
+                            # Fall back to Jaro-Winkler
+                            similarity = self.entity_linker._jaro_winkler(
+                                val1.lower().strip(),
+                                val2.lower().strip()
+                            )
+                            scores.append(similarity)
+                            weights.append(2.0)
+                            if similarity > 0.85:
+                                match_fields.append(field)
+
+        # PASS 3: Address field matching with USPS normalization
+        if self.use_address_normalization:
+            for field in self.ADDRESS_FIELDS:
+                if field in record1 and field in record2:
+                    if record1[field] and record2[field]:
+                        addr1 = str(record1[field])
+                        addr2 = str(record2[field])
+
+                        # Get city/state/zip if available
+                        city1 = str(record1.get('city', ''))
+                        city2 = str(record2.get('city', ''))
+                        state1 = str(record1.get('state', ''))
+                        state2 = str(record2.get('state', ''))
+                        zip1 = str(record1.get('zip_code', record1.get('zip', '')))
+                        zip2 = str(record2.get('zip_code', record2.get('zip', '')))
+
+                        is_match, confidence = AddressNormalizer.addresses_match(
+                            addr1, addr2, city1, city2, state1, state2, zip1, zip2
+                        )
+                        if is_match:
+                            scores.append(confidence)
+                            weights.append(2.5)  # High weight for address matches
+                            match_fields.append(f"{field}_normalized")
+                        else:
+                            # Fall back to Jaro-Winkler
+                            similarity = self.entity_linker._jaro_winkler(
+                                addr1.lower().strip(),
+                                addr2.lower().strip()
+                            )
+                            scores.append(similarity)
+                            weights.append(2.0)
+                            if similarity > 0.85:
+                                match_fields.append(field)
+
+        # PASS 4: Check remaining medium-weight fields with fuzzy matching
+        # Skip fields already handled by name/address normalization
+        handled_fields = set(self.NAME_FIELDS) | set(self.ADDRESS_FIELDS)
         for field in self.MEDIUM_WEIGHT_FIELDS:
+            if field in handled_fields:
+                continue
             if field in record1 and field in record2:
                 if record1[field] and record2[field]:
                     val1 = str(record1[field])

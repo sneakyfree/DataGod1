@@ -364,3 +364,354 @@ class TestUserModelStripeFields:
 
         assert 'stripe_subscription_id' in result
         assert result['stripe_subscription_id'] == "sub_test_456"
+
+
+class TestStripeServiceWithRealStripe:
+    """Tests for StripeService with mocked Stripe library."""
+
+    @patch('api.src.stripe_service.stripe.Customer.create')
+    def test_create_customer_real_stripe(self, mock_create):
+        """Test creating customer with real Stripe (mocked)."""
+        from api.src.stripe_service import StripeService
+
+        # Mock the Stripe response
+        mock_customer = MagicMock()
+        mock_customer.id = 'cus_real_123'
+        mock_customer.email = 'test@example.com'
+        mock_customer.name = 'Test User'
+        mock_customer.metadata = {'user_id': '1'}
+        mock_customer.created = 1704067200
+        mock_create.return_value = mock_customer
+
+        service = StripeService()
+        service.stripe_available = True  # Force real mode
+
+        customer = service.create_customer(
+            email='test@example.com',
+            name='Test User',
+            metadata={'user_id': '1'}
+        )
+
+        mock_create.assert_called_once()
+        assert customer['id'] == 'cus_real_123'
+        assert customer['email'] == 'test@example.com'
+
+    @patch('api.src.stripe_service.stripe.Customer.create')
+    def test_create_customer_stripe_error(self, mock_create):
+        """Test handling Stripe error when creating customer."""
+        from api.src.stripe_service import StripeService
+        import stripe
+
+        mock_create.side_effect = stripe.error.StripeError("API Error")
+
+        service = StripeService()
+        service.stripe_available = True
+
+        with pytest.raises(stripe.error.StripeError):
+            service.create_customer(email='test@example.com')
+
+    @patch('api.src.stripe_service.stripe.checkout.Session.create')
+    def test_create_checkout_session_real_stripe(self, mock_create):
+        """Test creating checkout session with real Stripe (mocked)."""
+        from api.src.stripe_service import StripeService
+
+        mock_session = MagicMock()
+        mock_session.id = 'cs_real_123'
+        mock_session.url = 'https://checkout.stripe.com/pay/cs_real_123'
+        mock_session.status = 'open'
+        mock_create.return_value = mock_session
+
+        service = StripeService()
+        service.stripe_available = True
+
+        session = service.create_checkout_session(
+            customer_id='cus_123',
+            price_id='price_123',
+            success_url='https://example.com/success',
+            cancel_url='https://example.com/cancel'
+        )
+
+        mock_create.assert_called_once()
+        assert session['id'] == 'cs_real_123'
+        assert session['url'] == 'https://checkout.stripe.com/pay/cs_real_123'
+
+    @patch('api.src.stripe_service.stripe.checkout.Session.create')
+    def test_create_checkout_session_stripe_error(self, mock_create):
+        """Test handling Stripe error when creating checkout session."""
+        from api.src.stripe_service import StripeService
+        import stripe
+
+        mock_create.side_effect = stripe.error.StripeError("API Error")
+
+        service = StripeService()
+        service.stripe_available = True
+
+        with pytest.raises(stripe.error.StripeError):
+            service.create_checkout_session(
+                customer_id='cus_123',
+                price_id='price_123',
+                success_url='https://example.com/success',
+                cancel_url='https://example.com/cancel'
+            )
+
+    @patch('api.src.stripe_service.stripe.billing_portal.Session.create')
+    def test_create_portal_session_real_stripe(self, mock_create):
+        """Test creating portal session with real Stripe (mocked)."""
+        from api.src.stripe_service import StripeService
+
+        mock_session = MagicMock()
+        mock_session.url = 'https://billing.stripe.com/portal/session_123'
+        mock_create.return_value = mock_session
+
+        service = StripeService()
+        service.stripe_available = True
+
+        session = service.create_portal_session(
+            customer_id='cus_123',
+            return_url='https://example.com/account'
+        )
+
+        mock_create.assert_called_once()
+        assert session['url'] == 'https://billing.stripe.com/portal/session_123'
+
+    @patch('api.src.stripe_service.stripe.billing_portal.Session.create')
+    def test_create_portal_session_stripe_error(self, mock_create):
+        """Test handling Stripe error when creating portal session."""
+        from api.src.stripe_service import StripeService
+        import stripe
+
+        mock_create.side_effect = stripe.error.StripeError("API Error")
+
+        service = StripeService()
+        service.stripe_available = True
+
+        with pytest.raises(stripe.error.StripeError):
+            service.create_portal_session(
+                customer_id='cus_123',
+                return_url='https://example.com/account'
+            )
+
+    @patch('api.src.stripe_service.stripe.Subscription.retrieve')
+    def test_get_subscription_real_stripe(self, mock_retrieve):
+        """Test getting subscription with real Stripe (mocked)."""
+        from api.src.stripe_service import StripeService
+
+        mock_sub = MagicMock()
+        mock_sub.id = 'sub_123'
+        mock_sub.status = 'active'
+        mock_sub.current_period_start = 1704067200
+        mock_sub.current_period_end = 1706745600
+        mock_sub.cancel_at_period_end = False
+        mock_sub.items.data = [MagicMock(price=MagicMock(id='price_basic'))]
+        mock_retrieve.return_value = mock_sub
+
+        service = StripeService()
+        service.stripe_available = True
+
+        result = service.get_subscription('sub_123')
+
+        mock_retrieve.assert_called_once_with('sub_123')
+        assert result['id'] == 'sub_123'
+        assert result['status'] == 'active'
+
+    @patch('api.src.stripe_service.stripe.Subscription.retrieve')
+    def test_get_subscription_stripe_error(self, mock_retrieve):
+        """Test handling Stripe error when getting subscription."""
+        from api.src.stripe_service import StripeService
+        import stripe
+
+        mock_retrieve.side_effect = stripe.error.StripeError("Not found")
+
+        service = StripeService()
+        service.stripe_available = True
+
+        result = service.get_subscription('sub_invalid')
+        assert result is None
+
+    @patch('api.src.stripe_service.stripe.Subscription.modify')
+    def test_cancel_subscription_at_period_end(self, mock_modify):
+        """Test canceling subscription at period end with real Stripe."""
+        from api.src.stripe_service import StripeService
+
+        service = StripeService()
+        service.stripe_available = True
+
+        result = service.cancel_subscription('sub_123', at_period_end=True)
+
+        mock_modify.assert_called_once_with('sub_123', cancel_at_period_end=True)
+        assert result is True
+
+    @patch('api.src.stripe_service.stripe.Subscription.delete')
+    def test_cancel_subscription_immediately(self, mock_delete):
+        """Test canceling subscription immediately with real Stripe."""
+        from api.src.stripe_service import StripeService
+
+        service = StripeService()
+        service.stripe_available = True
+
+        result = service.cancel_subscription('sub_123', at_period_end=False)
+
+        mock_delete.assert_called_once_with('sub_123')
+        assert result is True
+
+    @patch('api.src.stripe_service.stripe.Subscription.modify')
+    def test_cancel_subscription_stripe_error(self, mock_modify):
+        """Test handling Stripe error when canceling subscription."""
+        from api.src.stripe_service import StripeService
+        import stripe
+
+        mock_modify.side_effect = stripe.error.StripeError("API Error")
+
+        service = StripeService()
+        service.stripe_available = True
+
+        result = service.cancel_subscription('sub_123')
+        assert result is False
+
+    @patch('api.src.stripe_service.stripe.Webhook.construct_event')
+    def test_verify_webhook_real_stripe(self, mock_construct):
+        """Test verifying webhook with real Stripe (mocked)."""
+        from api.src.stripe_service import StripeService
+
+        mock_event = MagicMock()
+        mock_event.id = 'evt_123'
+        mock_event.type = 'customer.subscription.created'
+        mock_event.data.object = {'id': 'sub_123'}
+        mock_construct.return_value = mock_event
+
+        service = StripeService()
+        service.stripe_available = True
+        service.webhook_secret = 'whsec_test'
+
+        result = service.verify_webhook(b'payload', 'sig_123')
+
+        mock_construct.assert_called_once()
+        assert result['id'] == 'evt_123'
+        assert result['type'] == 'customer.subscription.created'
+
+    @patch('api.src.stripe_service.stripe.Webhook.construct_event')
+    def test_verify_webhook_invalid_signature(self, mock_construct):
+        """Test handling invalid webhook signature."""
+        from api.src.stripe_service import StripeService
+        import stripe
+
+        mock_construct.side_effect = stripe.error.SignatureVerificationError(
+            "Invalid signature", "sig"
+        )
+
+        service = StripeService()
+        service.stripe_available = True
+        service.webhook_secret = 'whsec_test'
+
+        result = service.verify_webhook(b'payload', 'invalid_sig')
+        assert result is None
+
+    @patch('api.src.stripe_service.stripe.Webhook.construct_event')
+    def test_verify_webhook_value_error(self, mock_construct):
+        """Test handling ValueError in webhook verification."""
+        from api.src.stripe_service import StripeService
+
+        mock_construct.side_effect = ValueError("Invalid payload")
+
+        service = StripeService()
+        service.stripe_available = True
+        service.webhook_secret = 'whsec_test'
+
+        result = service.verify_webhook(b'invalid', 'sig_123')
+        assert result is None
+
+
+class TestStripeServiceEdgeCases:
+    """Tests for edge cases and additional scenarios."""
+
+    def test_create_customer_without_name(self):
+        """Test creating customer without name."""
+        from api.src.stripe_service import StripeService
+        service = StripeService()
+        service.stripe_available = False
+
+        customer = service.create_customer(email='test@example.com')
+
+        assert customer['email'] == 'test@example.com'
+        assert customer['name'] is None
+
+    def test_create_customer_without_metadata(self):
+        """Test creating customer without metadata."""
+        from api.src.stripe_service import StripeService
+        service = StripeService()
+        service.stripe_available = False
+
+        customer = service.create_customer(email='test@example.com')
+
+        assert customer['metadata'] == {}
+
+    def test_create_checkout_session_with_metadata(self):
+        """Test creating checkout session with metadata."""
+        from api.src.stripe_service import StripeService
+        service = StripeService()
+        service.stripe_available = False
+
+        session = service.create_checkout_session(
+            customer_id='cus_123',
+            price_id='price_123',
+            success_url='https://example.com/success',
+            cancel_url='https://example.com/cancel',
+            metadata={'order_id': '123'}
+        )
+
+        assert session is not None
+
+    def test_handle_unknown_event_type(self):
+        """Test handling unknown event type."""
+        from api.src.stripe_service import StripeService
+        service = StripeService()
+
+        result = service.handle_subscription_event(
+            'unknown.event.type',
+            {'id': 'sub_123', 'customer': 'cus_456'}
+        )
+
+        assert result['success'] is True
+        assert result['action'] is None
+
+    def test_handle_subscription_event_empty_items(self):
+        """Test handling subscription event with empty items data."""
+        from api.src.stripe_service import StripeService
+        service = StripeService()
+
+        # When items data is empty, the code accesses [{}][0].get('price', {}).get('id')
+        # which gives None, and _get_tier_from_price returns 'free' for unknown price_id
+        subscription_data = {
+            'id': 'sub_123',
+            'customer': 'cus_456',
+            'items': {'data': [{}]},  # Empty item dict, not empty list
+            'current_period_end': 0
+        }
+
+        result = service.handle_subscription_event(
+            'customer.subscription.created',
+            subscription_data
+        )
+
+        assert result['success'] is True
+        assert result['tier'] == 'free'
+
+    def test_stripe_not_available_warning(self):
+        """Test that warning is logged when Stripe not available."""
+        from api.src.stripe_service import StripeService
+
+        # This tests the initialization path
+        service = StripeService()
+        # Just verify it doesn't raise
+        assert service is not None
+
+    def test_get_subscription_with_no_items(self):
+        """Test get_subscription handles subscription with no items."""
+        from api.src.stripe_service import StripeService
+
+        service = StripeService()
+        service.stripe_available = False
+
+        # In mock mode, just returns None
+        result = service.get_subscription('sub_123')
+        assert result is None
