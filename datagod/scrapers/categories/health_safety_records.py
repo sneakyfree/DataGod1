@@ -8,12 +8,17 @@ Free Public Sources:
 - Hospital Compare, Nursing Home Compare
 """
 
+import logging
+
 import asyncio
 import aiohttp
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from enum import Enum
+
+logger = logging.getLogger(__name__)
+
 
 
 class ProviderType(Enum):
@@ -514,8 +519,9 @@ class HealthSafetyRecordsScraper:
                         except (KeyError, ValueError, TypeError):
                             continue
 
-        except aiohttp.ClientError:
-            pass
+        except aiohttp.ClientError as e:
+            logger.error(f"NPPES API error in search_providers_npi: {e}")
+
 
         return results
 
@@ -598,8 +604,9 @@ class HealthSafetyRecordsScraper:
                         except (KeyError, ValueError, TypeError):
                             continue
 
-        except aiohttp.ClientError:
-            pass
+        except aiohttp.ClientError as e:
+            logger.error(f"CMS Data API error in search_nursing_homes: {e}")
+
 
         return results
 
@@ -678,8 +685,9 @@ class HealthSafetyRecordsScraper:
                         except (KeyError, ValueError, TypeError):
                             continue
 
-        except aiohttp.ClientError:
-            pass
+        except aiohttp.ClientError as e:
+            logger.error(f"CMS Data API error in search_hospitals: {e}")
+
 
         return results
 

@@ -70,6 +70,7 @@ class Jurisdiction(Base, TimestampMixin):
     # Relationships
     data_sources = relationship("DataSource", back_populates="jurisdiction", cascade="all, delete-orphan")
     records = relationship("Record", back_populates="jurisdiction", cascade="all, delete-orphan")
+    coverage = relationship("JurisdictionCoverage", back_populates="jurisdiction", cascade="all, delete-orphan")
 
     # Indexes
     __table_args__ = (
@@ -92,6 +93,7 @@ class DataSource(Base, TimestampMixin):
     jurisdiction_id = Column(Integer, ForeignKey('jurisdictions.id'), nullable=False)
     source_name = Column(String(255), nullable=False)
     source_type = Column(String(50), nullable=False)  # 'api', 'scraper', 'manual'
+    url = Column(String(1000), nullable=True)
     api_endpoint = Column(String(1000), nullable=True)
     api_key = Column(String(500), nullable=True)  # Encrypted in production
     status = Column(String(50), default='active')  # 'active', 'inactive', 'error'
@@ -181,6 +183,13 @@ class Record(Base, TimestampMixin):
     # Metadata
     tags = Column(JSON, nullable=True)          # Categorization tags
     record_metadata = Column(JSON, nullable=True)      # Additional record data
+
+    # Phase 1.2: Provenance columns for audit-grade tracking
+    source_system = Column(String(100), nullable=True, index=True)  # Canonical source system ID
+    collected_at = Column(DateTime, nullable=True, index=True)  # When data was collected from source
+    query_hash = Column(String(64), nullable=True, index=True)  # SHA-256 of query that produced this
+    source_snapshot_id = Column(String(100), nullable=True)  # Reference to point-in-time snapshot
+    data_version = Column(Integer, default=1, nullable=False)  # Version counter for changes
 
     # Relationships
     jurisdiction = relationship("Jurisdiction", back_populates="records")
@@ -688,3 +697,157 @@ try:
 except Exception as e:
     logger.warning(f"Could not create tables on import: {e}")
     logger.info("Tables may need to be created manually or database may not be available yet")
+
+
+class JurisdictionCoverage(Base, TimestampMixin):
+    __tablename__ = "jurisdiction_coverage"
+
+    id = Column(Integer, primary_key=True, index=True)
+    jurisdiction_id = Column(Integer, ForeignKey("jurisdictions.id", ondelete="CASCADE"), nullable=False)
+    data_category = Column(String(50), nullable=False, index=True)
+    coverage_status = Column(String(20), nullable=False, default='none', index=True)
+    record_count = Column(Integer, default=0)
+    last_scraped = Column(DateTime, nullable=True, index=True)
+    last_successful_scrape = Column(DateTime, nullable=True)
+    scrape_frequency_hours = Column(Integer, default=168)
+    source_url = Column(Text, nullable=True)
+    source_type = Column(String(20), nullable=True)
+    requires_auth = Column(Boolean, default=False)
+    data_quality_score = Column(Float, nullable=True)
+    completeness_score = Column(Float, nullable=True)
+    notes = Column(Text, nullable=True)
+    unavailable_reason = Column(String(100), nullable=True)
+    
+    # Relationships
+    jurisdiction = relationship("Jurisdiction", back_populates="coverage")
+
+    __table_args__ = (
+        Index('idx_coverage_jurisdiction', 'jurisdiction_id'),
+        Index('idx_coverage_category', 'data_category'),
+        Index('idx_coverage_status', 'coverage_status'),
+    )
+
+
+class ScraperRun(Base):
+    __tablename__ = "scraper_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    data_source_id = Column(Integer, ForeignKey("data_sources.id", ondelete="SET NULL"), nullable=True)
+    jurisdiction_id = Column(Integer, ForeignKey("jurisdictions.id", ondelete="SET NULL"), nullable=True)
+    data_category = Column(String(50), nullable=True, index=True)
+    scraper_module = Column(String(100), nullable=True)
+    started_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    completed_at = Column(DateTime, nullable=True)
+    status = Column(String(20), nullable=False, index=True)
+    records_found = Column(Integer, default=0)
+    records_new = Column(Integer, default=0)
+    records_updated = Column(Integer, default=0)
+    records_failed = Column(Integer, default=0)
+    error_message = Column(Text, nullable=True)
+    error_count = Column(Integer, default=0)
+    duration_seconds = Column(Integer, nullable=True)
+    requests_made = Column(Integer, nullable=True)
+
+    # Relationships
+    data_source = relationship("DataSource")
+    jurisdiction = relationship("Jurisdiction")
+
+
+class AuditLog(Base):
+    """
+    Immutable audit trail for compliance and reproducibility.
+    
+    WORM (Write-Once-Read-Many) - entries should never be updated or deleted.
+    Uses blockchain-style chaining with checksums for tamper detection.
+    """
+    __tablename__ = 'audit_log'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    
+    # Event identification
+    event_id = Column(String(36), unique=True, nullable=False, index=True)
+    event_type = Column(String(50), nullable=False, index=True)
+    event_timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    
+    # Actor information
+    actor_id = Column(Integer, nullable=True, index=True)
+    actor_type = Column(String(20), default='user', nullable=False)
+    actor_ip = Column(String(45), nullable=True)
+    actor_user_agent = Column(String(500), nullable=True)
+    
+    # Target of the action
+    target_type = Column(String(50), nullable=True, index=True)
+    target_id = Column(String(100), nullable=True, index=True)
+    
+    # Action details
+    action = Column(String(100), nullable=False, index=True)
+    action_data = Column(JSON, nullable=True)
+    
+    # Provenance
+    request_id = Column(String(36), nullable=True, index=True)
+    session_id = Column(String(64), nullable=True)
+    
+    # Response/Result
+    response_hash = Column(String(64), nullable=True)
+    success = Column(Boolean, default=True, nullable=False)
+    error_message = Column(Text, nullable=True)
+    
+    # Integrity (blockchain-style)
+    checksum = Column(String(64), nullable=False)
+    previous_checksum = Column(String(64), nullable=True)
+
+    __table_args__ = (
+        Index('idx_audit_actor_time', 'actor_id', 'event_timestamp'),
+        Index('idx_audit_target_time', 'target_type', 'target_id', 'event_timestamp'),
+    )
+
+    def __repr__(self):
+        return f"<AuditLog(id={self.id}, event_type='{self.event_type}', action='{self.action}')>"
+
+
+class SchemaVersion(Base):
+    """Track schema migrations with checksums for version pinning."""
+    __tablename__ = 'schema_version'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    version_id = Column(String(50), unique=True, nullable=False, index=True)
+    version_name = Column(String(255), nullable=True)
+    version_number = Column(Integer, nullable=False)
+    applied_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    applied_by = Column(String(100), nullable=True)
+    migration_checksum = Column(String(64), nullable=False)
+    schema_checksum = Column(String(64), nullable=True)
+    is_current = Column(Boolean, default=True, nullable=False)
+    rollback_possible = Column(Boolean, default=True, nullable=False)
+    notes = Column(Text, nullable=True)
+
+    def __repr__(self):
+        return f"<SchemaVersion(version_id='{self.version_id}', is_current={self.is_current})>"
+
+
+class DataSnapshot(Base):
+    """Store point-in-time snapshots for reproducibility."""
+    __tablename__ = 'data_snapshot'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    snapshot_id = Column(String(36), unique=True, nullable=False, index=True)
+    snapshot_type = Column(String(50), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=True)
+    target_type = Column(String(50), nullable=True)
+    target_id = Column(String(100), nullable=True)
+    data = Column(JSON, nullable=False)
+    data_checksum = Column(String(64), nullable=False)
+    query_params = Column(JSON, nullable=True)
+    schema_version = Column(String(50), nullable=True)
+    model_version = Column(String(50), nullable=True)
+    created_by_user_id = Column(Integer, nullable=True)
+    created_by_request_id = Column(String(36), nullable=True)
+
+    __table_args__ = (
+        Index('idx_snapshot_type_target', 'snapshot_type', 'target_type', 'target_id'),
+        Index('idx_snapshot_expires', 'expires_at'),
+    )
+
+    def __repr__(self):
+        return f"<DataSnapshot(snapshot_id='{self.snapshot_id}', type='{self.snapshot_type}')>"

@@ -22,6 +22,7 @@ from datagod.models.data_source import DataSource
 from datagod.models.record import Record
 from datagod.models.entity import Entity
 from datagod.models.relationship import Relationship
+from datagod.models.user import User
 
 target_metadata = Base.metadata
 

@@ -1,0 +1,121 @@
+# Prometheus Alert Rules for DataGod
+# Location: monitoring/alerts.yml
+
+groups:
+  - name: datagod_api_alerts
+    rules:
+      # API latency alert
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="datagod-api"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency detected"
+          description: "95th percentile API latency is above 2 seconds for 5+ minutes"
+
+      # API error rate alert
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{job="datagod-api",status=~"5.."}[5m]) / rate(http_requests_total{job="datagod-api"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High API error rate"
+          description: "API error rate is above 5% for 5+ minutes"
+
+      # API availability alert
+      - alert: APIDown
+        expr: up{job="datagod-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DataGod API is down"
+          description: "DataGod API has been unreachable for 1+ minutes"
+
+  - name: datagod_agent_alerts
+    rules:
+      # Agent low confidence alert
+      - alert: AgentLowConfidence
+        expr: avg(agent_output_confidence{job="datagod-api"}) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Agent confidence is low"
+          description: "Average agent confidence is below 0.5 for 10+ minutes"
+
+      # Agent high failure rate
+      - alert: AgentHighFailureRate
+        expr: rate(agent_task_failures_total{job="datagod-api"}[5m]) / rate(agent_tasks_total{job="datagod-api"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High agent failure rate"
+          description: "Agent failure rate is above 10% for 5+ minutes"
+
+  - name: datagod_rate_limit_alerts
+    rules:
+      # Rate limit violations
+      - alert: HighRateLimitViolations
+        expr: rate(rate_limit_exceeded_total{job="datagod-api"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate limit violations"
+          description: "More than 10 rate limit violations per second for 5+ minutes"
+
+  - name: datagod_infrastructure_alerts
+    rules:
+      # Redis connection issues
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache has been unreachable for 1+ minutes"
+
+      # PostgreSQL connection issues
+      - alert: PostgresDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database has been unreachable for 1+ minutes"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 90% for 5+ minutes"
+
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is above 90% for 5+ minutes"
+
+      # Disk space running low
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space"
+          description: "Less than 10% disk space remaining"

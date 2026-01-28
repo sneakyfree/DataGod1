@@ -195,8 +195,9 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
                 # Decode without verification just to get user ID for logging
                 payload = jwt.decode(token, options={"verify_signature": False})
                 user_id = payload.get('sub')
-            except:
-                pass
+            except Exception as e:
+                logger.debug(f"Failed to extract user_id from token: {e}")
+
 
         # Log request
         logger.info(

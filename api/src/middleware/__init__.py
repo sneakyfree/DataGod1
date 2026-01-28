@@ -5,6 +5,7 @@ Provides middleware components for:
 - Monitoring and metrics collection
 - Request logging
 - Health checks
+- Audit logging for compliance
 """
 
 from .monitoring import (
@@ -17,7 +18,16 @@ from .monitoring import (
     async_timed,
 )
 
+from .audit_middleware import (
+    AuditMiddleware,
+    AuditService,
+    audit_service,
+    audit_action,
+    setup_audit_middleware,
+)
+
 __all__ = [
+    # Monitoring
     'MonitoringMiddleware',
     'MetricsCollector',
     'HealthChecker',
@@ -25,4 +35,10 @@ __all__ = [
     'health_checker',
     'timed',
     'async_timed',
+    # Audit
+    'AuditMiddleware',
+    'AuditService',
+    'audit_service',
+    'audit_action',
+    'setup_audit_middleware',
 ]

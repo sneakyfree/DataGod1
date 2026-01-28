@@ -437,7 +437,8 @@ class CensusApiScraper:
                         elif isinstance(value, str) and value.replace('.', '').isdigit():
                             value = int(value) if '.' not in value else float(value)
                     except (ValueError, TypeError):
-                        pass
+                        logger.debug(f"Failed to convert value '{value}' in column {i}")
+
 
                 # Use friendly name if available
                 if variable_names and header in variable_names:

@@ -26,7 +26,6 @@ def upgrade() -> None:
     op.add_column('jurisdictions', sa.Column('fips_code', sa.String(5), nullable=True))
     op.add_column('jurisdictions', sa.Column('state_fips', sa.String(2), nullable=True))
     op.add_column('jurisdictions', sa.Column('county_fips', sa.String(3), nullable=True))
-    op.add_column('jurisdictions', sa.Column('population', sa.Integer(), nullable=True))
     op.add_column('jurisdictions', sa.Column('county_seat', sa.String(100), nullable=True))
     op.add_column('jurisdictions', sa.Column('land_area_sq_miles', sa.Float(), nullable=True))
     op.add_column('jurisdictions', sa.Column('priority_tier', sa.Integer(), nullable=True, default=3))
@@ -84,62 +83,6 @@ def upgrade() -> None:
     op.create_index('idx_coverage_status', 'jurisdiction_coverage', ['coverage_status'])
     op.create_index('idx_coverage_last_scraped', 'jurisdiction_coverage', ['last_scraped'])
 
-    # Create data_sources table for tracking available data sources
-    op.create_table(
-        'data_sources',
-        sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-
-        # Source identification
-        sa.Column('name', sa.String(200), nullable=False),
-        sa.Column('source_type', sa.String(20), nullable=False),  # 'federal', 'state', 'county', 'third_party'
-        sa.Column('data_category', sa.String(50), nullable=False),
-
-        # Scope
-        sa.Column('scope', sa.String(20), nullable=False),  # 'national', 'state', 'county'
-        sa.Column('state_code', sa.String(2), nullable=True),  # For state/county level sources
-        sa.Column('jurisdiction_id', sa.Integer(), nullable=True),  # For county level sources
-
-        # Access information
-        sa.Column('base_url', sa.Text(), nullable=True),
-        sa.Column('api_endpoint', sa.Text(), nullable=True),
-        sa.Column('auth_type', sa.String(20), nullable=True),  # 'none', 'api_key', 'oauth', 'session'
-        sa.Column('requires_registration', sa.Boolean(), default=False),
-        sa.Column('is_free', sa.Boolean(), default=True),
-        sa.Column('cost_per_query', sa.Float(), nullable=True),
-
-        # Rate limiting
-        sa.Column('rate_limit_requests', sa.Integer(), nullable=True),
-        sa.Column('rate_limit_period', sa.String(20), nullable=True),  # 'minute', 'hour', 'day'
-
-        # Status
-        sa.Column('is_active', sa.Boolean(), default=True),
-        sa.Column('last_verified', sa.DateTime(), nullable=True),
-        sa.Column('verification_status', sa.String(20), nullable=True),  # 'verified', 'broken', 'unknown'
-
-        # Scraper reference
-        sa.Column('scraper_module', sa.String(100), nullable=True),  # e.g., 'california_api'
-        sa.Column('scraper_config_path', sa.Text(), nullable=True),
-
-        # Notes
-        sa.Column('notes', sa.Text(), nullable=True),
-
-        # Timestamps
-        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
-        sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.func.now(), onupdate=sa.func.now()),
-
-        sa.PrimaryKeyConstraint('id'),
-        sa.ForeignKeyConstraint(['jurisdiction_id'], ['jurisdictions.id'], ondelete='SET NULL'),
-    )
-
-    # Create indexes for data_sources
-    op.create_index('idx_source_name', 'data_sources', ['name'])
-    op.create_index('idx_source_type', 'data_sources', ['source_type'])
-    op.create_index('idx_source_category', 'data_sources', ['data_category'])
-    op.create_index('idx_source_scope', 'data_sources', ['scope'])
-    op.create_index('idx_source_state', 'data_sources', ['state_code'])
-    op.create_index('idx_source_active', 'data_sources', ['is_active'])
-    op.create_index('idx_source_free', 'data_sources', ['is_free'])
-
     # Create scraper_runs table for tracking scraper execution history
     op.create_table(
         'scraper_runs',
@@ -192,15 +135,7 @@ def downgrade() -> None:
     op.drop_index('idx_run_source', table_name='scraper_runs')
     op.drop_table('scraper_runs')
 
-    # Drop data_sources table and indexes
-    op.drop_index('idx_source_free', table_name='data_sources')
-    op.drop_index('idx_source_active', table_name='data_sources')
-    op.drop_index('idx_source_state', table_name='data_sources')
-    op.drop_index('idx_source_scope', table_name='data_sources')
-    op.drop_index('idx_source_category', table_name='data_sources')
-    op.drop_index('idx_source_type', table_name='data_sources')
-    op.drop_index('idx_source_name', table_name='data_sources')
-    op.drop_table('data_sources')
+    op.drop_table('scraper_runs')
 
     # Drop jurisdiction_coverage table and indexes
     op.drop_index('idx_coverage_last_scraped', table_name='jurisdiction_coverage')
@@ -216,7 +151,6 @@ def downgrade() -> None:
     op.drop_column('jurisdictions', 'priority_tier')
     op.drop_column('jurisdictions', 'land_area_sq_miles')
     op.drop_column('jurisdictions', 'county_seat')
-    op.drop_column('jurisdictions', 'population')
     op.drop_column('jurisdictions', 'county_fips')
     op.drop_column('jurisdictions', 'state_fips')
     op.drop_column('jurisdictions', 'fips_code')

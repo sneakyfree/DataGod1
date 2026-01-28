@@ -1,3 +1,49 @@
+/* =============================================================================
+   DataGod Global CSS - Dark Mode Support
+   ============================================================================= */
+
+/* CSS Custom Properties for Theming */
+:root {
+  /* Light Mode (default) */
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #fafafa;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --border-color: rgba(0, 0, 0, 0.12);
+  --shadow-color: rgba(0, 0, 0, 0.08);
+  --accent-primary: #2a96f2;
+  --accent-secondary: #ee6fa7;
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #c1c1c1;
+  --scrollbar-thumb-hover: #a8a8a8;
+  --selection-bg: rgba(42, 150, 242, 0.2);
+
+  /* Color scheme for native elements */
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  /* Dark Mode */
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-tertiary: #2a2a2a;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-muted: #777777;
+  --border-color: rgba(255, 255, 255, 0.12);
+  --shadow-color: rgba(0, 0, 0, 0.4);
+  --accent-primary: #5eb8ff;
+  --accent-secondary: #ff9fd8;
+  --scrollbar-track: #2a2a2a;
+  --scrollbar-thumb: #555555;
+  --scrollbar-thumb-hover: #777777;
+  --selection-bg: rgba(94, 184, 255, 0.3);
+
+  color-scheme: dark;
+}
+
 /* Global CSS Reset and Base Styles */
 *,
 *::before,
@@ -16,14 +62,15 @@ html {
 body {
   font-family: 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif;
   line-height: 1.5;
-  color: #333;
-  background-color: #f5f5f5;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Focus styles for accessibility */
 :focus-visible {
-  outline: 2px solid #2a96f2;
+  outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
 }
 
@@ -31,6 +78,10 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+a:hover {
+  color: var(--accent-primary);
 }
 
 /* Image handling */
@@ -47,22 +98,29 @@ img {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--scrollbar-track);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 /* Selection styling */
 ::selection {
-  background-color: rgba(42, 150, 242, 0.2);
+  background-color: var(--selection-bg);
   color: inherit;
 }
 
@@ -79,8 +137,17 @@ img {
   border: 0;
 }
 
+/* Theme transition utilities */
+.theme-transition {
+  transition: background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -88,4 +155,235 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+[data-theme="dark"] img {
+  opacity: 0.95;
+}
+
+[data-theme="dark"] .MuiPaper-root {
+  background-image: none;
+}
+
+/* =============================================================================
+   Mobile Responsive Utilities
+   ============================================================================= */
+
+/* Safe area insets for notched devices */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+/* Touch-friendly tap targets */
+@media (pointer: coarse) {
+
+  button,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"],
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  a {
+    padding: 8px 4px;
+  }
+}
+
+/* Mobile container padding */
+.mobile-container {
+  padding-left: max(16px, var(--sal));
+  padding-right: max(16px, var(--sar));
+  padding-bottom: max(16px, var(--sab));
+}
+
+/* Responsive text utilities */
+.text-responsive {
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
+}
+
+.heading-responsive {
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
+}
+
+/* Mobile-first visibility utilities */
+.hide-mobile {
+  display: none;
+}
+
+.show-mobile {
+  display: block;
+}
+
+@media (min-width: 600px) {
+  .hide-mobile {
+    display: initial;
+  }
+
+  .show-mobile {
+    display: none;
+  }
+}
+
+/* Responsive grid helpers */
+.grid-responsive {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 600px) {
+  .grid-responsive {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .grid-responsive {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .grid-responsive {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Responsive spacing */
+.spacing-responsive {
+  padding: 12px;
+}
+
+@media (min-width: 600px) {
+  .spacing-responsive {
+    padding: 16px;
+  }
+}
+
+@media (min-width: 900px) {
+  .spacing-responsive {
+    padding: 24px;
+  }
+}
+
+/* Touch-optimized scrolling */
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Horizontal scroll container for mobile */
+.scroll-horizontal-mobile {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.scroll-horizontal-mobile::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mobile card stack */
+.card-stack-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 600px) {
+  .card-stack-mobile {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .card-stack-mobile>* {
+    flex: 1 1 calc(50% - 6px);
+  }
+}
+
+@media (min-width: 900px) {
+  .card-stack-mobile>* {
+    flex: 1 1 calc(33.333% - 8px);
+  }
+}
+
+/* Bottom navigation safe area */
+.bottom-nav-safe {
+  padding-bottom: calc(56px + var(--sab));
+}
+
+/* Fixed bottom bar with safe area */
+.fixed-bottom-safe {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding-bottom: var(--sab);
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  z-index: 1100;
+}
+
+/* Pull-to-refresh support */
+.pull-to-refresh {
+  overscroll-behavior-y: contain;
+}
+
+/* Responsive table (horizontal scroll on mobile) */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 599px) {
+  .table-responsive table {
+    min-width: 600px;
+  }
+}
+
+/* Mobile form inputs */
+@media (max-width: 599px) {
+
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+    /* Prevents iOS zoom */
+  }
+}
+
+/* Floating action button positioning */
+.fab-mobile {
+  position: fixed;
+  bottom: calc(16px + var(--sab));
+  right: 16px;
+  z-index: 1000;
+}
+
+/* Mobile bottom sheet animation */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.bottom-sheet {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
 }

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from db import engine, init_db
-from api_v2_simple import app as api_v2_app
+from api_v2 import app as api_v2_app
 
 # Import models from __init__.py to ensure they're registered with Base
 from datagod.models import Jurisdiction, DataSource, Record, Entity, Relationship

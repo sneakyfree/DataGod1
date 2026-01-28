@@ -20,6 +20,7 @@ import {
 import { Visibility, VisibilityOff, Email, Lock, AdminPanelSettings, Person, SupervisorAccount, Badge } from '@mui/icons-material';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
+import OAuthButtons from './OAuthButtons';
 
 // Quick login accounts for development
 const QUICK_LOGIN_ACCOUNTS = [
@@ -219,6 +220,9 @@ export const LoginForm = () => {
             </Typography>
           </Box>
         </form>
+
+        {/* OAuth SSO Options */}
+        <OAuthButtons mode="login" />
 
         {/* Quick Login Section */}
         <Divider sx={{ my: 2 }}>

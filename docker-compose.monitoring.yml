@@ -1,0 +1,92 @@
+version: '3.8'
+
+# Prometheus and Grafana monitoring stack
+# Usage: docker-compose -f docker-compose.monitoring.yml up -d
+
+services:
+  # Prometheus metrics collection
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: datagod-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    restart: unless-stopped
+    networks:
+      - datagod-network
+
+  # Grafana dashboards
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: datagod-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - datagod-network
+
+  # Node exporter for system metrics
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    container_name: datagod-node-exporter
+    command:
+      - '--path.rootfs=/host'
+    volumes:
+      - '/:/host:ro,rslave'
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+    networks:
+      - datagod-network
+
+  # Redis exporter for Redis metrics
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.54.0
+    container_name: datagod-redis-exporter
+    environment:
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_secure_password}
+    ports:
+      - "9121:9121"
+    restart: unless-stopped
+    networks:
+      - datagod-network
+
+  # Postgres exporter for database metrics
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.14.0
+    container_name: datagod-postgres-exporter
+    environment:
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER:-datagod}:${POSTGRES_PASSWORD:-datagod_secure_password}@db:5432/${POSTGRES_DB:-datagod}?sslmode=disable
+    ports:
+      - "9187:9187"
+    restart: unless-stopped
+    networks:
+      - datagod-network
+
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  datagod-network:
+    external: true
+    name: datagod1_datagod-network

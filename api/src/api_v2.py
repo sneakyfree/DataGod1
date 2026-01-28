@@ -2,7 +2,7 @@
 DataGod API v2 - Comprehensive API Layer for Mortgage Data Gathering Neural Network
 """
 
-from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Request, Query
+from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Request, Query, Path
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -15,17 +15,29 @@ from datetime import datetime, timedelta, date
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, asc, or_, and_, func, text
+from sqlalchemy import desc, asc, or_, and_, func, text, String
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql.expression import cast
-from datagod.models import Jurisdiction, DataSource, Record, Entity, Relationship, SavedSearch, UserFavorite, UserActivity, ShareLink
-from db import get_db, check_db_connection, SessionLocal
-from config import settings
+from datagod.models import Jurisdiction, DataSource, Record, Entity, Relationship, SavedSearch, UserFavorite, UserActivity, ShareLink, ScraperRun, JurisdictionCoverage
 import sys
 import os
+
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+try:
+    from api.src.db import get_db, check_db_connection, SessionLocal
+    from api.src.config import settings
+except ImportError:
+    # Fallback if running from within api/src
+    from db import get_db, check_db_connection, SessionLocal
+    from config import settings
+
 from db_manager import DatabaseManager, get_db_manager
+try:
+    from api.src.stripe_service import stripe_service
+except ImportError:
+    from stripe_service import stripe_service
 import redis
 import json
 import csv
@@ -152,360 +164,27 @@ def cache_response(expiration: int = 300):
     return decorator
 
 # Models
-class User(BaseModel):
-    username: str
-    email: str
-    full_name: Optional[str] = None
-    disabled: Optional[bool] = None
-    roles: List[str] = ["user"]
-
-class UserInDB(User):
-    hashed_password: str
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-    expires_in: int
-
-class TokenData(BaseModel):
-    username: Optional[str] = None
-    roles: List[str] = ["user"]
-
-class UserCreate(BaseModel):
-    username: str
-    email: str
-    password: str
-    full_name: Optional[str] = None
-    roles: List[str] = ["user"]
-
-class UserRegister(BaseModel):
-    """Model for public user registration with validation"""
-    username: str = Field(
-        ...,
-        min_length=3,
-        max_length=50,
-        pattern=r'^[a-zA-Z0-9_]+$',
-        description="Username must be 3-50 characters, alphanumeric and underscores only"
-    )
-    email: str = Field(
-        ...,
-        description="Valid email address"
-    )
-    password: str = Field(
-        ...,
-        min_length=8,
-        max_length=100,
-        description="Password must be at least 8 characters"
-    )
-    full_name: Optional[str] = Field(
-        None,
-        max_length=255,
-        description="Optional full name"
-    )
-
-    @validator('email')
-    def validate_email(cls, v):
-        import re
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        if not re.match(email_regex, v):
-            raise ValueError('Invalid email format')
-        return v.lower()
-
-    @validator('password')
-    def validate_password(cls, v):
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters')
-        # Check for at least one letter and one number
-        has_letter = any(c.isalpha() for c in v)
-        has_digit = any(c.isdigit() for c in v)
-        if not (has_letter and has_digit):
-            raise ValueError('Password must contain at least one letter and one number')
-        return v
-
-class PasswordResetRequest(BaseModel):
-    """Model for requesting password reset"""
-    email: str = Field(..., description="Email address for password reset")
-
-class PasswordResetConfirm(BaseModel):
-    """Model for confirming password reset"""
-    token: str = Field(..., description="Password reset token")
-    new_password: str = Field(
-        ...,
-        min_length=8,
-        max_length=100,
-        description="New password (at least 8 characters)"
-    )
-
-    @validator('new_password')
-    def validate_password(cls, v):
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters')
-        has_letter = any(c.isalpha() for c in v)
-        has_digit = any(c.isdigit() for c in v)
-        if not (has_letter and has_digit):
-            raise ValueError('Password must contain at least one letter and one number')
-        return v
-
-class UserUpdate(BaseModel):
-    email: Optional[str] = None
-    full_name: Optional[str] = None
-    password: Optional[str] = None
-    roles: Optional[List[str]] = None
-
-class JurisdictionCreate(BaseModel):
-    name: str
-    state: Optional[str] = None
-    county: Optional[str] = None
-    type: Optional[str] = None  # 'county', 'city', 'state', etc.
-    api_available: Optional[bool] = False
-    scraper_needed: Optional[bool] = True
-    population: Optional[int] = None
-    description: Optional[str] = None
-
-class JurisdictionUpdate(BaseModel):
-    name: Optional[str] = None
-    state: Optional[str] = None
-    county: Optional[str] = None
-    type: Optional[str] = None
-    api_available: Optional[bool] = None
-    scraper_needed: Optional[bool] = None
-    population: Optional[int] = None
-    description: Optional[str] = None
-
-class DataSourceCreate(BaseModel):
-    jurisdiction_id: int
-    source_name: str
-    source_type: str
-    url: Optional[str] = None
-    api_endpoint: Optional[str] = None
-    api_key: Optional[str] = None
-    status: str = "active"
-    description: Optional[str] = None
-
-class DataSourceUpdate(BaseModel):
-    source_name: Optional[str] = None
-    source_type: Optional[str] = None
-    url: Optional[str] = None
-    api_endpoint: Optional[str] = None
-    api_key: Optional[str] = None
-    status: Optional[str] = None
-    description: Optional[str] = None
-
-class RecordCreate(BaseModel):
-    jurisdiction_id: int
-    data_source_id: Optional[int] = None
-    record_type: str
-    title: str
-    description: Optional[str] = None
-    amount: Optional[float] = None
-    date: Optional[datetime] = None
-    raw_data: Optional[Dict[str, Any]] = None
-
-class RecordUpdate(BaseModel):
-    data_source_id: Optional[int] = None
-    record_type: Optional[str] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    amount: Optional[float] = None
-    date: Optional[datetime] = None
-    raw_data: Optional[Dict[str, Any]] = None
-
-class EntityCreate(BaseModel):
-    entity_name: str
-    entity_type: str
-    address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zip_code: Optional[str] = None
-    description: Optional[str] = None
-
-class EntityUpdate(BaseModel):
-    entity_name: Optional[str] = None
-    entity_type: Optional[str] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zip_code: Optional[str] = None
-    description: Optional[str] = None
-
-class RelationshipCreate(BaseModel):
-    entity1_id: int
-    entity2_id: int
-    relationship_type: str
-    record_id: Optional[int] = None
-    role1: Optional[str] = None
-    role2: Optional[str] = None
-    context: Optional[str] = None
-    evidence: Optional[Dict[str, Any]] = None
-    confidence_score: Optional[float] = None
-
-class RelationshipUpdate(BaseModel):
-    relationship_type: Optional[str] = None
-    record_id: Optional[int] = None
-    role1: Optional[str] = None
-    role2: Optional[str] = None
-    context: Optional[str] = None
-    evidence: Optional[Dict[str, Any]] = None
-    confidence_score: Optional[float] = None
-
-class SearchQuery(BaseModel):
-    query: Optional[str] = None
-    jurisdiction_ids: Optional[List[int]] = None
-    record_types: Optional[List[str]] = None
-    entity_types: Optional[List[str]] = None
-    date_from: Optional[date] = None
-    date_to: Optional[date] = None
-    amount_min: Optional[float] = None
-    amount_max: Optional[float] = None
-    sort_by: Optional[str] = "date"
-    sort_order: Optional[str] = "desc"
-    page: int = 1
-    page_size: int = 50
-
-class ExportRequest(BaseModel):
-    format: str = "json"
-    query: Optional[SearchQuery] = None
-    fields: Optional[List[str]] = None
+from datagod.schemas.auth import (
+    User, UserInDB, Token, TokenData, UserCreate, UserRegister,
+    PasswordResetRequest, PasswordResetConfirm, UserUpdate
+)
 
 
-# Coverage Tracking Models
-class CoverageStatus(str, Enum):
-    NONE = "none"
-    PARTIAL = "partial"
-    FULL = "full"
-    UNAVAILABLE = "unavailable"
+from datagod.schemas.core import (
+    RecordType, EntityType, CoverageStatus,
+    JurisdictionCreate, JurisdictionUpdate,
+    DataSourceCreate, DataSourceUpdate,
+    RecordCreate, RecordUpdate, RecordResponse,
+    EntityCreate, EntityUpdate,
+    RelationshipCreate, RelationshipUpdate,
+    SearchQuery, SearchResponse, ExportRequest,
+    CoverageSummaryResponse, StateCoverageResponse, CoverageGapResponse,
+    CoverageRefreshRequest, CoverageRefreshResponse,
+    SavedSearchCreate, SavedSearchUpdate, SavedSearchResponse,
+    FavoriteCreate, FavoriteUpdate, FavoriteResponse,
+    ScraperRunResponse, ScraperStatusResponse
+)
 
-
-class CoverageSummaryResponse(BaseModel):
-    total_jurisdictions: int
-    covered_jurisdictions: int
-    coverage_percentage: float
-    total_counties: int
-    covered_counties: int
-    total_states: int
-    covered_states: int
-    total_territories: int
-    covered_territories: int
-    data_categories: Dict[str, Dict[str, Any]]
-    tier_breakdown: Dict[str, Dict[str, Any]]
-    last_updated: str
-
-
-class StateCoverageResponse(BaseModel):
-    state_code: str
-    state_name: str
-    fips_code: str
-    tier: int
-    total_counties: int
-    covered_counties: int
-    coverage_percentage: float
-    data_categories: Dict[str, int]
-    record_count: int
-    last_scraped: Optional[str]
-
-
-class CoverageGapResponse(BaseModel):
-    fips_code: str
-    jurisdiction_name: str
-    state: str
-    county: Optional[str]
-    population: int
-    tier: int
-    missing_categories: List[str]
-    gap_reason: Optional[str]
-    priority_score: float
-
-
-class CoverageRefreshRequest(BaseModel):
-    data_categories: Optional[List[str]] = None
-    force_refresh: bool = False
-
-
-class CoverageRefreshResponse(BaseModel):
-    fips_code: str
-    status: str
-    message: str
-    categories_queued: List[str]
-    estimated_completion: Optional[str]
-
-
-class RecordType(str, Enum):
-    MORTGAGE = "mortgage"
-    PROPERTY = "property"
-    TAX = "tax"
-    LEGAL = "legal"
-    FINANCIAL = "financial"
-
-class EntityType(str, Enum):
-    PERSON = "person"
-    COMPANY = "company"
-    PROPERTY = "property"
-    GOVERNMENT = "government"
-
-
-# Saved Search Models
-class SavedSearchCreate(BaseModel):
-    name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    search_params: Dict[str, Any] = Field(..., description="Search parameters to save")
-    notify_on_new_results: bool = False
-    notification_frequency: Optional[str] = "daily"  # daily, weekly, immediate
-
-
-class SavedSearchUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    search_params: Optional[Dict[str, Any]] = None
-    notify_on_new_results: Optional[bool] = None
-    notification_frequency: Optional[str] = None
-
-
-class SavedSearchResponse(BaseModel):
-    id: int
-    name: str
-    description: Optional[str]
-    search_params: Dict[str, Any]
-    last_run: Optional[str]
-    run_count: int
-    notify_on_new_results: bool
-    notification_frequency: Optional[str]
-    last_result_count: int
-    created_at: str
-    updated_at: str
-
-
-# Favorites Models
-class FavoriteCreate(BaseModel):
-    record_id: Optional[int] = None
-    entity_id: Optional[int] = None
-    notes: Optional[str] = None
-    tags: Optional[List[str]] = None
-
-    @validator('entity_id', always=True)
-    def check_one_id_provided(cls, v, values):
-        record_id = values.get('record_id')
-        if not record_id and not v:
-            raise ValueError('Either record_id or entity_id must be provided')
-        if record_id and v:
-            raise ValueError('Only one of record_id or entity_id can be provided')
-        return v
-
-
-class FavoriteUpdate(BaseModel):
-    notes: Optional[str] = None
-    tags: Optional[List[str]] = None
-
-
-class FavoriteResponse(BaseModel):
-    id: int
-    favorite_type: str
-    record_id: Optional[int]
-    entity_id: Optional[int]
-    notes: Optional[str]
-    tags: Optional[List[str]]
-    created_at: str
-    record: Optional[Dict[str, Any]] = None
-    entity: Optional[Dict[str, Any]] = None
 
 
 # Activity Models
@@ -632,23 +311,22 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
-def has_role(required_roles: List[str]):
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(
-            request: Request,
-            current_user: User = Depends(get_current_active_user),
-            *args, **kwargs
-        ):
-            user_roles = current_user.roles
-            if not any(role in user_roles for role in required_roles):
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Operation not permitted"
-                )
-            return await func(request, current_user, *args, **kwargs)
-        return wrapper
-    return decorator
+class RoleChecker:
+    def __init__(self, allowed_roles: List[str]):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, user: User = Depends(get_current_active_user)):
+        # Handle case where user.roles might be None or list
+        user_roles = user.roles or []
+        if not any(role in user_roles for role in self.allowed_roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Operation not permitted"
+            )
+        return user
+
+# Helper for backward compatibility or easier migration (optional, but we are refactoring to Depends)
+# def has_role(roles): return Depends(RoleChecker(roles))
 
 # Health and monitoring endpoints
 @app.get("/health")
@@ -1262,8 +940,7 @@ async def update_notification_settings(
 
 
 # User management endpoints
-@app.post("/users", response_model=User)
-@has_role(["admin"])
+@app.post("/users", response_model=User, dependencies=[Depends(RoleChecker(["admin"]))])
 async def create_user(
     request: Request,
     user: UserCreate,
@@ -1306,8 +983,7 @@ async def create_user(
     created_user = user_db_manager.get_user_by_username(user.username)
     return User(**created_user)
 
-@app.get("/users", response_model=List[User])
-@has_role(["admin"])
+@app.get("/users", response_model=List[User], dependencies=[Depends(RoleChecker(["admin"]))])
 async def get_users(
     request: Request,
     current_user: User = Depends(get_current_active_user),
@@ -1318,8 +994,7 @@ async def get_users(
     users = user_db_manager.list_users(limit=limit, offset=offset)
     return [User(**user) for user in users]
 
-@app.get("/users/{username}", response_model=User)
-@has_role(["admin"])
+@app.get("/users/{username}", response_model=User, dependencies=[Depends(RoleChecker(["admin"]))])
 async def get_user_by_username(
     request: Request,
     username: str,
@@ -1335,8 +1010,7 @@ async def get_user_by_username(
     return User(**user_data)
 
 # Jurisdiction endpoints
-@app.post("/jurisdictions")
-@has_role(["admin", "user"])
+@app.post("/jurisdictions", dependencies=[Depends(RoleChecker(["admin", "user"]))])
 async def create_jurisdiction(
     jurisdiction: JurisdictionCreate,
     db: Session = Depends(get_db),
@@ -1407,8 +1081,7 @@ async def get_jurisdiction(
         )
     return jurisdiction
 
-@app.put("/jurisdictions/{jurisdiction_id}")
-@has_role(["admin", "user"])
+@app.put("/jurisdictions/{jurisdiction_id}", dependencies=[Depends(RoleChecker(["admin", "user"]))])
 async def update_jurisdiction(
     jurisdiction_id: int,
     jurisdiction_update: JurisdictionUpdate,
@@ -1430,8 +1103,7 @@ async def update_jurisdiction(
     db.refresh(jurisdiction)
     return jurisdiction
 
-@app.delete("/jurisdictions/{jurisdiction_id}", response_model=dict)
-@has_role(["admin"])
+@app.delete("/jurisdictions/{jurisdiction_id}", response_model=dict, dependencies=[Depends(RoleChecker(["admin"]))])
 async def delete_jurisdiction(
     jurisdiction_id: int,
     db: Session = Depends(get_db),
@@ -1450,8 +1122,7 @@ async def delete_jurisdiction(
     return {"message": "Jurisdiction deleted successfully"}
 
 # Data source endpoints
-@app.post("/data-sources")
-@has_role(["admin", "user"])
+@app.post("/data-sources", dependencies=[Depends(RoleChecker(["admin", "user"]))])
 async def create_data_source(
     data_source: DataSourceCreate,
     db: Session = Depends(get_db),
@@ -1469,7 +1140,7 @@ async def create_data_source(
                 detail="Jurisdiction not found"
             )
 
-        db_data_source = DataSource(**data_source.dict())
+        db_data_source = DataSource(**data_source.dict(by_alias=True))
         db.add(db_data_source)
         db.commit()
         db.refresh(db_data_source)
@@ -1533,8 +1204,7 @@ async def get_data_source(
     return data_source
 
 # Record endpoints
-@app.post("/records")
-@has_role(["admin", "user"])
+@app.post("/records", dependencies=[Depends(RoleChecker(["admin", "user"]))])
 async def create_record(
     record: RecordCreate,
     db: Session = Depends(get_db),
@@ -1639,8 +1309,7 @@ async def get_record(
     return record
 
 # Entity endpoints
-@app.post("/entities")
-@has_role(["admin", "user"])
+@app.post("/entities", dependencies=[Depends(RoleChecker(["admin", "user"]))])
 async def create_entity(
     entity: EntityCreate,
     db: Session = Depends(get_db),
@@ -2018,8 +1687,7 @@ async def quick_entity_search(
 
 
 # Relationship endpoints
-@app.post("/relationships")
-@has_role(["admin", "user"])
+@app.post("/relationships", dependencies=[Depends(RoleChecker(["admin", "user"]))])
 async def create_relationship(
     relationship: RelationshipCreate,
     db: Session = Depends(get_db),
@@ -2125,7 +1793,7 @@ async def advanced_search(
     search_query: SearchQuery,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
-):
+) -> SearchResponse:
     """Advanced search across all data types with full-text search"""
     query = db.query(Record)
 
@@ -2135,7 +1803,7 @@ async def advanced_search(
             or_(
                 Record.title.ilike(f"%{search_query.query}%"),
                 Record.description.ilike(f"%{search_query.query}%"),
-                cast(Record.metadata, String).ilike(f"%{search_query.query}%")
+                cast(Record.record_metadata, String).ilike(f"%{search_query.query}%")
             )
         )
 
@@ -2276,15 +1944,14 @@ async def export_data(
 
     else:  # JSON format
         return {
-            "records": records,
+            "records": [jsonable_encoder(RecordResponse.from_orm(r)) for r in records],
             "count": len(records),
             "format": "json",
             "timestamp": datetime.utcnow().isoformat()
         }
 
 # Integration endpoints
-@app.post("/integrate/neural-network", response_model=Dict[str, Any])
-@has_role(["admin", "user"])
+@app.post("/integrate/neural-network", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
 @rate_limit(max_requests=10, window=60)
 async def integrate_neural_network(
     request: Request,
@@ -2340,8 +2007,7 @@ async def integrate_neural_network(
         "status": "processing"
     }
 
-@app.post("/integrate/scraper", response_model=Dict[str, Any])
-@has_role(["admin", "user"])
+@app.post("/integrate/scraper", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
 @rate_limit(max_requests=10, window=60)
 async def integrate_scraper(
     request: Request,
@@ -2406,8 +2072,7 @@ async def integrate_scraper(
     }
 
 # Cache management endpoints
-@app.get("/cache/stats", response_model=Dict[str, Any])
-@has_role(["admin"])
+@app.get("/cache/stats", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin"]))])
 async def get_cache_stats():
     """Get cache statistics"""
     if not redis_client:
@@ -2427,8 +2092,7 @@ async def get_cache_stats():
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
-@app.delete("/cache/clear", response_model=Dict[str, Any])
-@has_role(["admin"])
+@app.delete("/cache/clear", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin"]))])
 async def clear_cache():
     """Clear all cache entries"""
     if not redis_client:
@@ -2451,6 +2115,31 @@ app.add_middleware(
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+
+# =============================================================================
+# GOAT DNA ROUTES (Phase 6)
+# =============================================================================
+try:
+    from routes import agents_router, intelligence_router, intake_router, reports_router, snapshots_router
+    from middleware.prometheus import PrometheusMiddleware, metrics_endpoint
+    
+    # Add Prometheus metrics middleware
+    app.add_middleware(PrometheusMiddleware)
+    
+    # Add GOAT API routers
+    app.include_router(agents_router, prefix="/api/v2", tags=["agents"])
+    app.include_router(intelligence_router, prefix="/api/v2", tags=["intelligence"])
+    app.include_router(intake_router, prefix="/api/v2", tags=["intake"])
+    app.include_router(reports_router, prefix="/api/v2", tags=["reports"])
+    app.include_router(snapshots_router, prefix="/api/v2", tags=["snapshots"])
+    
+    # Prometheus metrics endpoint
+    app.add_api_route("/metrics", metrics_endpoint, methods=["GET"], tags=["monitoring"])
+    
+    logger.info("✅ GOAT DNA routes loaded (agents, intelligence, intake, reports, snapshots)")
+except ImportError as e:
+    logger.warning(f"⚠️ GOAT DNA routes not available: {e}")
+
 
 # Add exception handlers
 @app.exception_handler(HTTPException)
@@ -3323,8 +3012,6 @@ async def get_share_stats(
 
 # ==================== SUBSCRIPTION ENDPOINTS ====================
 
-from stripe_service import stripe_service
-
 class SubscriptionRequest(BaseModel):
     """Subscription request model."""
     tier: str = Field(..., description="Subscription tier: basic, pro, or enterprise")
@@ -3461,6 +3148,91 @@ async def cancel_subscription(
     )
 
     return {"message": "Subscription cancelled", "tier": "free"}
+
+@app.post("/subscription/checkout")
+async def create_checkout_session(
+    tier: str = Query(..., pattern="^(basic|pro|enterprise)$"),
+    request: Request = None,
+    current_user: dict = Depends(get_current_user),
+    db_manager: DatabaseManager = Depends(get_db_manager)
+):
+    """
+    Create a Stripe Checkout session for subscription.
+    """
+    username = current_user.get("username") or current_user.get("sub")
+    user = db_manager.get_user_by_username(username)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Get Stripe price ID
+    price_id = stripe_service.get_price_id_for_tier(tier)
+    if not price_id:
+        raise HTTPException(status_code=400, detail=f"Invalid tier: {tier}")
+        
+    # Ensure user has a Stripe customer ID
+    if not user.get('stripe_customer_id'):
+        customer = stripe_service.create_customer(
+            email=user['email'],
+            name=user.get('full_name'),
+            metadata={'user_id': user['id']}
+        )
+        # Update user with customer ID
+        db_manager.update_user(
+            user['id'],
+            stripe_customer_id=customer['id']
+        )
+        customer_id = customer['id']
+    else:
+        customer_id = user['stripe_customer_id']
+        
+    # Create session
+    # Use request headers to determine success/cancel URLs if possible, or defaults
+    base_url = str(request.base_url) if request else "http://localhost:3000"
+    success_url = f"{base_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{base_url}/subscription/cancel"
+    
+    try:
+        session = stripe_service.create_checkout_session(
+            customer_id=customer_id,
+            price_id=price_id,
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={'user_id': user['id'], 'tier': tier}
+        )
+        return {"checkout_url": session['url']}
+    except Exception as e:
+        logger.error(f"Error creating checkout session: {e}")
+        raise HTTPException(status_code=500, detail="Could not create checkout session")
+
+@app.post("/subscription/portal")
+async def create_portal_session(
+    request: Request = None,
+    current_user: dict = Depends(get_current_user),
+    db_manager: DatabaseManager = Depends(get_db_manager)
+):
+    """
+    Create a Stripe Customer Portal session.
+    """
+    username = current_user.get("username") or current_user.get("sub")
+    user = db_manager.get_user_by_username(username)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    if not user.get('stripe_customer_id'):
+        raise HTTPException(status_code=400, detail="User has no billing account")
+        
+    base_url = str(request.base_url) if request else "http://localhost:3000"
+    return_url = f"{base_url}/settings"
+    
+    try:
+        session = stripe_service.create_portal_session(
+            customer_id=user['stripe_customer_id'],
+            return_url=return_url
+        )
+        return {"portal_url": session['url']}
+    except Exception as e:
+        logger.error(f"Error creating portal session: {e}")
+        raise HTTPException(status_code=500, detail="Could not create portal session")
 
 @app.post("/subscription/webhook")
 async def stripe_webhook(request: Request):
@@ -3734,8 +3506,9 @@ async def get_coverage_by_state(
                 ).scalar()
                 if last_record:
                     last_scraped = last_record.isoformat()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to fetch last scraped date for state {state_code}: {e}")
+
 
             coverage_pct = round((covered / max(total_counties, 1)) * 100, 2)
 
@@ -3893,7 +3666,7 @@ async def get_coverage_gaps(
 @rate_limit(max_requests=10, window=60)
 async def refresh_jurisdiction_coverage(
     request: Request,
-    fips: str = Path(..., regex=r"^\d{5}$", description="5-digit FIPS code"),
+    fips: str = Path(..., pattern=r"^\d{5}$", description="5-digit FIPS code"),
     refresh_request: CoverageRefreshRequest = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -4137,6 +3910,63 @@ async def get_quick_coverage_stats(
             "last_updated": datetime.utcnow().isoformat()
         }
 
+
+
+# Admin Scraper Endpoints
+@app.get("/admin/scrapers/runs", response_model=List[ScraperRunResponse], dependencies=[Depends(RoleChecker(["admin"]))])
+async def get_scraper_runs(
+    skip: int = 0,
+    limit: int = 50,
+    status: Optional[str] = None,
+    scraper_module: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get list of scraper runs (Admin only).
+    """
+    query = db.query(ScraperRun)
+    
+    if status:
+        query = query.filter(ScraperRun.status == status)
+    
+    if scraper_module:
+        query = query.filter(ScraperRun.scraper_module == scraper_module)
+        
+    runs = query.order_by(desc(ScraperRun.started_at)).offset(skip).limit(limit).all()
+    return runs
+
+@app.get("/admin/scrapers/status", response_model=ScraperStatusResponse, dependencies=[Depends(RoleChecker(["admin"]))])
+async def get_scraper_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get high-level status of scraper system (Admin only).
+    """
+    last_24h = datetime.utcnow() - timedelta(hours=24)
+    
+    total_runs = db.query(func.count(ScraperRun.id)).filter(ScraperRun.started_at >= last_24h).scalar() or 0
+    failed_runs = db.query(func.count(ScraperRun.id)).filter(
+        ScraperRun.started_at >= last_24h,
+        ScraperRun.status == 'failed'
+    ).scalar() or 0
+    
+    active_runs = db.query(func.count(ScraperRun.id)).filter(ScraperRun.status == 'running').scalar() or 0
+    
+    success_rate = 0.0
+    if total_runs > 0:
+        success_rate = (total_runs - failed_runs) / total_runs * 100.0
+        
+    recent_runs = db.query(ScraperRun).order_by(desc(ScraperRun.started_at)).limit(10).all()
+    
+    return {
+        "total_runs_24h": total_runs,
+        "success_rate_24h": success_rate,
+        "active_runs": active_runs,
+        "failed_runs_24h": failed_runs,
+        "recent_runs": recent_runs
+    }
 
 # Root endpoint
 @app.get("/")

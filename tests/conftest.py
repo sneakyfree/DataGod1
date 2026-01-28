@@ -64,7 +64,11 @@ def reset_api_manager():
 def engine():
     """Create test database engine"""
     from sqlalchemy import create_engine
-    engine = create_engine(TEST_DATABASE_URL, echo=False)
+    engine = create_engine(
+        TEST_DATABASE_URL, 
+        echo=False,
+        connect_args={"check_same_thread": False} if "sqlite" in TEST_DATABASE_URL else {}
+    )
     yield engine
     engine.dispose()
 

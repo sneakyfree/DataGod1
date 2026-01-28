@@ -13,6 +13,7 @@ Commands:
     stats       Show platform statistics
     seed        Seed sample data for testing
     export      Export data to file
+    migrate     Run database migrations
 """
 
 import sys
@@ -29,7 +30,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 def init_database(args):
     """Initialize the database and create all tables."""
     print("Initializing DataGod database...")
-
+    
+    # If using Alembic, we might prefer 'migrate' command, but this is good for dev/quickstart
     from db_manager import DatabaseManager
 
     db = DatabaseManager()
@@ -50,6 +52,25 @@ def init_database(args):
             sys.exit(1)
 
 
+def run_migrations(args):
+    """Run database migrations using Alembic."""
+    print("Running database migrations...")
+    try:
+        from alembic.config import Config
+        from alembic import command
+        
+        # Assume alembic.ini is in the current directory or project root
+        alembic_cfg = Config("alembic.ini")
+        if args.revision:
+            command.upgrade(alembic_cfg, args.revision)
+        else:
+            command.upgrade(alembic_cfg, "head")
+        print("Migrations applied successfully.")
+    except Exception as e:
+        print(f"Error running migrations: {e}")
+        sys.exit(1)
+
+
 def serve_api(args):
     """Start the FastAPI server."""
     print(f"Starting DataGod API server on {args.host}:{args.port}...")
@@ -57,7 +78,7 @@ def serve_api(args):
     try:
         import uvicorn
         uvicorn.run(
-            "api.src.api_v2_simple:app",
+            "api.src.main:main_app",
             host=args.host,
             port=args.port,
             reload=args.reload,
@@ -149,8 +170,20 @@ def run_scraper(args):
             scraper = scraper_class(jurisdiction_id=jid, config=config)
 
             # Perform search
-            limit = getattr(args, 'limit', 100) or 100
-            records = scraper.search_records({'limit': limit})
+            search_params = {
+                'limit': getattr(args, 'limit', 100) or 100
+            }
+            
+            if getattr(args, 'date_from', None):
+                search_params['date_from'] = args.date_from
+            if getattr(args, 'date_to', None):
+                search_params['date_to'] = args.date_to
+            if getattr(args, 'type', None):
+                search_params['record_type'] = args.type
+            if getattr(args, 'query', None):
+                search_params['query'] = args.query
+
+            records = scraper.search_records(search_params)
 
             if records:
                 saved_count = 0
@@ -584,6 +617,14 @@ Examples:
     scrape_parser.add_argument('--all', action='store_true', help='Scrape all jurisdictions')
     scrape_parser.add_argument('--dry-run', action='store_true', help='Preview without actually scraping')
     scrape_parser.add_argument('--limit', type=int, default=100, help='Maximum records per jurisdiction (default: 100)')
+    scrape_parser.add_argument('--date-from', help='Filter by start date (YYYY-MM-DD)')
+    scrape_parser.add_argument('--date-to', help='Filter by end date (YYYY-MM-DD)')
+    scrape_parser.add_argument('--type', help='Filter by record type')
+    scrape_parser.add_argument('--query', help='General search query param')
+
+    # migrate command
+    migrate_parser = subparsers.add_parser('migrate', help='Run database migrations')
+    migrate_parser.add_argument('--revision', help='Revision to upgrade to (default: head)')
 
     # search command
     search_parser = subparsers.add_parser('search', help='Search records')
@@ -636,7 +677,9 @@ Examples:
         'seed': seed_data,
         'export': export_data,
         'list-jurisdictions': list_jurisdictions,
-        'add-jurisdiction': add_jurisdiction
+        'list-jurisdictions': list_jurisdictions,
+        'add-jurisdiction': add_jurisdiction,
+        'migrate': run_migrations
     }
 
     if args.command in commands:

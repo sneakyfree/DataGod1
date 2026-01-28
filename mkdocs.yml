@@ -17,6 +17,7 @@ nav:
       - Quick Start: index.md#quick-start
   - Architecture:
       - System Overview: architecture.md
+      - Agentic System: architecture-agentic.md
       - Component Diagram: architecture.md#component-diagram
       - Data Flow: architecture.md#data-flow
   - API Documentation:

@@ -103,6 +103,11 @@ class BaseAPIIntegration(ABC):
 
         # Initialize HTTP session with retry strategy
         self.session = self._create_session()
+        
+        # Initialize Scraper Logger
+        from datagod.scrapers.logger import ScraperLogger
+        self.scraper_logger = ScraperLogger()
+        self.current_run_id = 0
 
         logger.info(f"Initialized {self.__class__.__name__} for jurisdiction {jurisdiction_id}")
 
@@ -179,6 +184,25 @@ class BaseAPIIntegration(ABC):
     def authenticate(self) -> bool:
         """Authenticate with the API"""
         pass
+
+    def start_run(self):
+        """Start a new scraper run logging session"""
+        self.current_run_id = self.scraper_logger.log_run_start(
+            scraper_name=self.__class__.__name__,
+            jurisdiction_id=self.jurisdiction_id
+        )
+        return self.current_run_id
+
+    def end_run(self, status: str = 'success', items_scraped: int = 0, error_message: str = None):
+        """End the current scraper run logging session"""
+        if self.current_run_id:
+            self.scraper_logger.log_run_end(
+                run_id=self.current_run_id,
+                status=status,
+                items_scraped=items_scraped,
+                error_message=error_message
+            )
+            self.current_run_id = 0
 
     @abstractmethod
     def search_records(self, query: Dict[str, Any], **kwargs) -> List[Dict[str, Any]]:

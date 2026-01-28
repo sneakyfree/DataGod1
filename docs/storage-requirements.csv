@@ -1,0 +1,39 @@
+Scenario,Records,Avg Size (KB),Total Storage (GB),Growth Period,Notes
+Conservative (1 year),10000000,2,20,12 months,Basic text records only
+Aggressive (1 year),1000000000,5,5000,12 months,Enhanced records with metadata
+Conservative (3 years),50000000,5,250,36 months,Includes some attachments
+Aggressive (3 years),5000000000,10,50000,36 months,Full records with attachments
+Conservative (5 years),100000000,10,1000,60 months,Mature dataset with media
+Aggressive (5 years),10000000000,20,200000,60 months,Enterprise-scale with full media
+
+Monthly Growth,Records/Month,Storage/Month (GB),Cumulative Storage (GB),Period
+Conservative Growth,100000,0.2,2.4,12 months
+Aggressive Growth,500000,2.5,30,12 months
+Conservative Growth (3yr),200000,1,30,36 months
+Aggressive Growth (3yr),1000000,10,360,36 months
+Conservative Growth (5yr),300000,3,180,60 months
+Aggressive Growth (5yr),2000000,40,2400,60 months
+
+Storage Type,Cost/GB/Month,Total Cost (Conservative),Total Cost (Aggressive),Provider
+SSD Storage,$0.10,$2.00,$500.00,Self-hosted
+SSD Storage,$0.12,$2.40,$600.00,AWS EBS
+SSD Storage,$0.15,$3.00,$750.00,Google Cloud
+SSD Storage,$0.14,$2.80,$700.00,Azure Disk
+
+Backup Storage,Retention (days),Storage Multiplier,Monthly Cost (Conservative),Monthly Cost (Aggressive)
+Daily Backups,30,1.5,$3.00,$750.00
+Weekly Backups,90,1.2,$2.40,$600.00
+Monthly Backups,365,1.1,$2.20,$550.00
+
+Infrastructure,Initial Cost,Monthly Cost,Scalability,Notes
+Self-hosted PostgreSQL,$500,$200,High,4 vCPU, 16GB RAM, 1TB SSD
+AWS RDS PostgreSQL,$0,$300,Very High,t3.large instance
+AWS Aurora PostgreSQL,$0,$400,Very High,Serverless v2
+Google Cloud SQL,$0,$350,Very High,Standard tier
+Azure PostgreSQL,$0,$320,Very High,General Purpose
+
+Connection Pooling,Connections,Cost/Month,Performance Impact
+Small Pool,20-50,$10-20,Minimal
+Medium Pool,50-100,$20-50,Low
+Large Pool,100-200,$50-100,Medium
+Enterprise Pool,200-500,$100-200,High

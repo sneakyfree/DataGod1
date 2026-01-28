@@ -8,12 +8,17 @@ Free Public Sources:
 - Public pension fund data
 """
 
+import logging
+
 import asyncio
 import aiohttp
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from enum import Enum
+
+logger = logging.getLogger(__name__)
+
 
 
 class AwardType(Enum):
@@ -574,8 +579,9 @@ class EmploymentRecordsScraper:
                         except (KeyError, ValueError, TypeError):
                             continue
 
-        except aiohttp.ClientError:
-            pass
+        except aiohttp.ClientError as e:
+            logger.error(f"USAspending API error in search_federal_awards: {e}")
+
 
         return results
 
@@ -590,8 +596,9 @@ class EmploymentRecordsScraper:
                 if response.status == 200:
                     return await response.json()
 
-        except aiohttp.ClientError:
-            pass
+        except aiohttp.ClientError as e:
+            logger.error(f"USAspending API error in get_recipient_profile: {e}")
+
 
         return None
 
@@ -626,8 +633,9 @@ class EmploymentRecordsScraper:
                         except (KeyError, ValueError):
                             continue
 
-        except aiohttp.ClientError:
-            pass
+        except aiohttp.ClientError as e:
+            logger.error(f"USAspending API error in search_agencies: {e}")
+
 
         return results
 
@@ -647,8 +655,9 @@ class EmploymentRecordsScraper:
                 if response.status == 200:
                     return await response.json()
 
-        except aiohttp.ClientError:
-            pass
+        except aiohttp.ClientError as e:
+            logger.error(f"USAspending API error in get_agency_spending: {e}")
+
 
         return None
 

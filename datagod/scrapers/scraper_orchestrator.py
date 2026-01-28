@@ -469,6 +469,10 @@ class ScraperOrchestrator:
                 **task.scraper_config
             )
             
+            # Start Logging Run
+            if hasattr(scraper, 'start_run'):
+                scraper.start_run(jurisdiction_id=task.jurisdiction_id)
+
             # Execute scraping
             records = scraper.scrape()
             metrics = scraper.get_metrics()
@@ -479,6 +483,10 @@ class ScraperOrchestrator:
                 saved_count = scraper.save_to_database(self.db_manager)
             else:
                 saved_count = len(records) if records else 0
+
+            # End Logging Run
+            if hasattr(scraper, 'end_run'):
+                scraper.end_run(status='success', items_scraped=len(records) if records else 0)
             
             # Update task
             task.status = TaskStatus.COMPLETED

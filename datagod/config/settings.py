@@ -21,7 +21,7 @@ CACHE_DIR.mkdir(exist_ok=True)
 # Database Configuration
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    f"sqlite:///{DATA_DIR}/datagod.db"
+    "postgresql://datagod:datagod@localhost:5432/datagod"
 )
 
 # Database connection pool settings

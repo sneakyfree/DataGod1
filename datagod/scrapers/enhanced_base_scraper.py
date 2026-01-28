@@ -301,6 +301,12 @@ class EnhancedBaseScraper(ABC):
         # Browser instance (lazy loaded)
         self._browser = None
         self._browser_context = None
+
+        # Initialize Scraper Logger
+        from datagod.scrapers.logger import ScraperLogger
+        self.scraper_logger = ScraperLogger()
+        self.current_run_id = 0
+        self._run_start_time = None
         
         logger.info(f"Initialized {self.__class__.__name__} for {base_url}")
     
@@ -660,6 +666,32 @@ class EnhancedBaseScraper(ABC):
     def clear_cache(self):
         """Clear the response cache"""
         self._cache.clear()
+
+    def start_run(self, jurisdiction_id: int = None):
+        """Start a new scraper run logging session"""
+        self._run_start_time = datetime.utcnow()
+        # Use provided ID or fall back to instance attribute if it exists
+        jid = jurisdiction_id
+        if jid is None and hasattr(self, 'jurisdiction_id'):
+            jid = self.jurisdiction_id
+            
+        self.current_run_id = self.scraper_logger.log_run_start(
+            scraper_name=self.__class__.__name__,
+            jurisdiction_id=jid
+        )
+        return self.current_run_id
+
+    def end_run(self, status: str = 'success', items_scraped: int = 0, error_message: str = None):
+        """End the current scraper run logging session"""
+        if self.current_run_id:
+            self.scraper_logger.log_run_end(
+                run_id=self.current_run_id,
+                status=status,
+                items_scraped=items_scraped,
+                error_message=error_message
+            )
+            self.current_run_id = 0
+            self._run_start_time = None
     
     def export_results(self, data: List[Dict[str, Any]], filepath: str, format: str = 'json'):
         """Export scraping results to file"""

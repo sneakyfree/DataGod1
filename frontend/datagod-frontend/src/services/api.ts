@@ -121,6 +121,23 @@ export const endpoints = {
 
 // API Methods
 export const apiService = {
+  // Generic HTTP methods
+  async get<T = any>(url: string, config?: any) {
+    return api.get<T>(url, config);
+  },
+
+  async post<T = any>(url: string, data?: any, config?: any) {
+    return api.post<T>(url, data, config);
+  },
+
+  async put<T = any>(url: string, data?: any, config?: any) {
+    return api.put<T>(url, data, config);
+  },
+
+  async delete<T = any>(url: string, config?: any) {
+    return api.delete<T>(url, config);
+  },
+
   // Authentication
   async login(credentials: { email: string; password: string }) {
     // OAuth2 expects form data with username field
