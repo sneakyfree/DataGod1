@@ -38,6 +38,8 @@ import { RelatedEntities } from '../../../components/records/RelatedEntities';
 import { RelatedRecords } from '../../../components/records/RelatedRecords';
 import { ShareModal } from '../../../components/data-sharing/ShareModal';
 import { FavoriteButton } from '../../../components/favorites/FavoriteButton';
+import CommentsPanel from '../../../components/data-sharing/CommentsPanel';
+import LivePresence from '../../../components/common/LivePresence';
 
 const recordTypeColors: Record<string, 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'error'> = {
   mortgage: 'primary',
@@ -111,10 +113,10 @@ function RecordDetailContent() {
   const recordType = record.record_type || record.type || 'document';
   const formattedDate = record.date
     ? new Date(record.date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
     : 'Unknown';
   const formattedAmount = record.amount
     ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(record.amount)
@@ -189,7 +191,8 @@ function RecordDetailContent() {
           </Box>
 
           {/* Actions */}
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <LivePresence roomId={`record:${recordId}`} />
             <FavoriteButton type="record" itemId={parseInt(recordId)} />
             <Tooltip title="Share record">
               <IconButton onClick={handleShare}>
@@ -231,6 +234,11 @@ function RecordDetailContent() {
           </Box>
         </Grid>
       </Grid>
+
+      {/* Comments Section */}
+      <Box sx={{ mt: 3 }}>
+        <CommentsPanel recordId={parseInt(recordId)} />
+      </Box>
 
       {/* Share Modal */}
       <ShareModal

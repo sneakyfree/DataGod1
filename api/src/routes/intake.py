@@ -5,6 +5,8 @@ FastAPI routes for guided intake wizard.
 """
 
 import logging
+import pickle
+import os
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, status
@@ -70,8 +72,53 @@ class ResolveContradictionRequest(BaseModel):
     resolution: Dict[str, Any]
 
 
-# Session storage (in production, use Redis or database)
-_sessions: Dict[str, Any] = {}
+# =============================================================================
+# SESSION STORAGE — Redis-backed with in-memory fallback
+# =============================================================================
+
+_SESSION_TTL = 3600  # 1 hour
+_fallback_sessions: Dict[str, Any] = {}
+
+
+def _get_redis():
+    """Get Redis connection for session storage."""
+    try:
+        import redis
+        return redis.Redis(
+            host=os.getenv("REDIS_HOST", "localhost"),
+            port=int(os.getenv("REDIS_PORT", 6379)),
+            password=os.getenv("REDIS_PASSWORD", None) or None,
+            db=1,  # Use DB 1 for sessions (DB 0 is cache)
+            decode_responses=False,
+            socket_connect_timeout=2,
+        )
+    except Exception:
+        return None
+
+
+def _save_session(session_id: str, wizard):
+    """Save wizard to Redis. Falls back to in-memory if Redis unavailable."""
+    r = _get_redis()
+    if r:
+        try:
+            r.setex(f"intake:{session_id}", _SESSION_TTL, pickle.dumps(wizard))
+            return
+        except Exception as e:
+            logger.warning(f"Redis save failed, using in-memory fallback: {e}")
+    _fallback_sessions[session_id] = wizard
+
+
+def _load_session(session_id: str):
+    """Load wizard from Redis. Falls back to in-memory if Redis unavailable."""
+    r = _get_redis()
+    if r:
+        try:
+            data = r.get(f"intake:{session_id}")
+            if data:
+                return pickle.loads(data)
+        except Exception as e:
+            logger.warning(f"Redis load failed, using in-memory fallback: {e}")
+    return _fallback_sessions.get(session_id)
 
 
 # =============================================================================
@@ -121,8 +168,8 @@ async def start_session(request: StartSessionRequest):
         wizard = GuidedIntakeWizard()
         session = wizard.start_session(request.schema_id)
         
-        # Store wizard instance for this session
-        _sessions[session["session_id"]] = wizard
+        # Store wizard instance in Redis-backed session store
+        _save_session(session["session_id"], wizard)
         
         return StartSessionResponse(
             session_id=session["session_id"],
@@ -154,7 +201,7 @@ async def submit_stage(session_id: str, request: SubmitStageRequest):
     Validates data, checks for contradictions, and returns next stage if applicable.
     """
     try:
-        wizard = _sessions.get(session_id)
+        wizard = _load_session(session_id)
         if not wizard:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -162,6 +209,9 @@ async def submit_stage(session_id: str, request: SubmitStageRequest):
             )
         
         result = wizard.submit_stage(session_id, request.data)
+        
+        # Persist updated wizard state after submission
+        _save_session(session_id, wizard)
         
         return SubmitStageResponse(
             session_id=result["session_id"],
@@ -197,7 +247,7 @@ async def get_session_summary(session_id: str):
     Get summary of an intake session.
     """
     try:
-        wizard = _sessions.get(session_id)
+        wizard = _load_session(session_id)
         if not wizard:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -232,7 +282,7 @@ async def resolve_contradiction(session_id: str, request: ResolveContradictionRe
     Resolve a detected contradiction.
     """
     try:
-        wizard = _sessions.get(session_id)
+        wizard = _load_session(session_id)
         if not wizard:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -244,6 +294,9 @@ async def resolve_contradiction(session_id: str, request: ResolveContradictionRe
             request.contradiction_index,
             request.resolution
         )
+        
+        # Persist updated wizard state after resolution
+        _save_session(session_id, wizard)
         
         return result
         

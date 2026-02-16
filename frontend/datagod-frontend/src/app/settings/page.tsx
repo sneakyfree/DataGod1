@@ -499,10 +499,10 @@ function SettingsContent() {
           <Typography variant="h6">Subscription</Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box>
             <Typography variant="subtitle1">
-              Current Plan: <strong>{user?.subscription_tier || 'Free'}</strong>
+              Current Plan: <strong style={{ textTransform: 'capitalize' }}>{user?.subscription_tier || 'Free'}</strong>
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {user?.subscription_tier && user.subscription_tier !== 'free'
@@ -512,10 +512,48 @@ function SettingsContent() {
           </Box>
           <Button variant="contained" color="primary" href="/pricing">
             {user?.subscription_tier && user.subscription_tier !== 'free'
-              ? 'Manage Subscription'
+              ? 'Change Plan'
               : 'Upgrade Plan'}
           </Button>
         </Box>
+
+        {user?.subscription_tier && user.subscription_tier !== 'free' && (
+          <>
+            <Divider sx={{ my: 2 }} />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={async () => {
+                  try {
+                    const res = await apiService.createPortalSession();
+                    if (res.data?.portal_url) {
+                      window.location.href = res.data.portal_url;
+                    }
+                  } catch {
+                    setLocalError('Could not open billing portal');
+                  }
+                }}
+              >
+                Manage Billing
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={async () => {
+                  if (!window.confirm('Are you sure you want to cancel your subscription? You will lose access to premium features.')) return;
+                  try {
+                    await apiService.cancelSubscription();
+                    window.location.reload();
+                  } catch {
+                    setLocalError('Could not cancel subscription');
+                  }
+                }}
+              >
+                Cancel Subscription
+              </Button>
+            </Box>
+          </>
+        )}
       </Paper>
 
       {/* Password Change Modal */}

@@ -2,7 +2,7 @@
 DataGod API v2 - Comprehensive API Layer for Mortgage Data Gathering Neural Network
 """
 
-from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Request, Query, Path
+from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Request, Query, Path, WebSocket
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -204,8 +204,27 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
-# Get database manager instance
-user_db_manager = get_db_manager()
+# Get database manager instance (injectable for testing)
+_user_db_manager = None
+
+def get_user_db_manager():
+    global _user_db_manager
+    if _user_db_manager is None:
+        _user_db_manager = get_db_manager()
+    return _user_db_manager
+
+def set_user_db_manager(manager):
+    global _user_db_manager
+    _user_db_manager = manager
+
+user_db_manager = None  # Will be set below
+
+class _UserDbProxy:
+    """Proxy that delegates to the injectable user_db_manager."""
+    def __getattr__(self, name):
+        return getattr(get_user_db_manager(), name)
+
+user_db_manager = _UserDbProxy()
 
 def get_user_from_db(username: str) -> Optional[UserInDB]:
     """Get user from database by username."""
@@ -234,13 +253,20 @@ def authenticate_user_from_db(username: str, password: str) -> Optional[UserInDB
     return user
 
 def ensure_demo_users_exist():
-    """Ensure demo users exist in the database (for development)."""
+    """Ensure demo users exist in the database (for development only)."""
+    if os.getenv("ENVIRONMENT", "development") != "development":
+        logger.info("Skipping demo user creation in non-development environment")
+        return
+
+    demo_admin_pw = os.getenv("DEMO_ADMIN_PASSWORD", "admin123")
+    demo_user_pw = os.getenv("DEMO_USER_PASSWORD", "user123")
+
     demo_users = [
         {
             "username": "admin",
             "email": "admin@datagod.com",
             "full_name": "DataGod Admin",
-            "password": "admin123",
+            "password": demo_admin_pw,
             "roles": ["admin", "user"],
             "disabled": False
         },
@@ -248,7 +274,7 @@ def ensure_demo_users_exist():
             "username": "user",
             "email": "user@datagod.com",
             "full_name": "DataGod User",
-            "password": "user123",
+            "password": demo_user_pw,
             "roles": ["user"],
             "disabled": False
         }
@@ -566,16 +592,24 @@ async def refresh_access_token(
             detail="Invalid token"
         )
 
-# Registration rate limiting storage (in production, use Redis)
-registration_attempts = {}
+# Registration rate limiting — Redis-backed with in-memory fallback
+registration_attempts = {}  # In-memory fallback
 
 def check_registration_rate_limit(ip: str, max_attempts: int = 5, window_hours: int = 1) -> bool:
-    """Check if IP has exceeded registration rate limit."""
+    """Check if IP has exceeded registration rate limit. Uses Redis if available."""
+    if redis_client:
+        try:
+            key = f"reg_limit:{ip}"
+            count = redis_client.get(key)
+            if count and int(count) >= max_attempts:
+                return False
+            return True
+        except Exception:
+            pass  # Fall through to in-memory
+    # Fallback to in-memory
     import time
     current_time = time.time()
     window_seconds = window_hours * 3600
-
-    # Clean up old entries
     registration_attempts_copy = dict(registration_attempts)
     for stored_ip, attempts in registration_attempts_copy.items():
         registration_attempts[stored_ip] = [
@@ -583,16 +617,22 @@ def check_registration_rate_limit(ip: str, max_attempts: int = 5, window_hours: 
         ]
         if not registration_attempts[stored_ip]:
             del registration_attempts[stored_ip]
-
-    # Check current IP
-    if ip in registration_attempts:
-        if len(registration_attempts[ip]) >= max_attempts:
-            return False
-
+    if ip in registration_attempts and len(registration_attempts[ip]) >= max_attempts:
+        return False
     return True
 
 def record_registration_attempt(ip: str):
-    """Record a registration attempt from an IP."""
+    """Record a registration attempt. Uses Redis if available."""
+    if redis_client:
+        try:
+            key = f"reg_limit:{ip}"
+            pipe = redis_client.pipeline()
+            pipe.incr(key)
+            pipe.expire(key, 3600)  # 1 hour TTL
+            pipe.execute()
+            return
+        except Exception:
+            pass  # Fall through to in-memory
     import time
     if ip not in registration_attempts:
         registration_attempts[ip] = []
@@ -1308,6 +1348,88 @@ async def get_record(
         )
     return record
 
+@app.put("/records/{record_id}", dependencies=[Depends(RoleChecker(["admin", "user"]))])
+@rate_limit(max_requests=20, window=60)
+async def update_record(
+    request: Request,
+    record_id: int,
+    record_update: RecordCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Update an existing record. Only the record creator or admin can update."""
+    record = db.query(Record).filter(Record.id == record_id).first()
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Record not found"
+        )
+
+    # Authorization: admin or record creator
+    user_data = user_db_manager.get_user_by_username(current_user.username)
+    is_admin = current_user.role == "admin" if hasattr(current_user, 'role') else False
+    if not is_admin and hasattr(record, 'created_by') and record.created_by != user_data.get('id'):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this record"
+        )
+
+    update_data = record_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        if hasattr(record, key):
+            setattr(record, key, value)
+
+    try:
+        db.commit()
+        db.refresh(record)
+        logger.info(f"Record {record_id} updated by user {current_user.username}")
+        return record
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error updating record {record_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Database error: {str(e)}"
+        )
+
+@app.delete("/records/{record_id}", dependencies=[Depends(RoleChecker(["admin", "user"]))])
+@rate_limit(max_requests=10, window=60)
+async def delete_record(
+    request: Request,
+    record_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Delete a record. Only the record creator or admin can delete."""
+    record = db.query(Record).filter(Record.id == record_id).first()
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Record not found"
+        )
+
+    # Authorization: admin or record creator
+    user_data = user_db_manager.get_user_by_username(current_user.username)
+    is_admin = current_user.role == "admin" if hasattr(current_user, 'role') else False
+    if not is_admin and hasattr(record, 'created_by') and record.created_by != user_data.get('id'):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this record"
+        )
+
+    try:
+        db.delete(record)
+        db.commit()
+        logger.info(f"Record {record_id} deleted by user {current_user.username}")
+        return {"message": f"Record {record_id} deleted successfully"}
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error deleting record {record_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Database error: {str(e)}"
+        )
+
 # Entity endpoints
 @app.post("/entities", dependencies=[Depends(RoleChecker(["admin", "user"]))])
 async def create_entity(
@@ -1391,6 +1513,32 @@ async def get_entity(
         )
     return entity
 
+
+@app.get("/entities/quick-search")
+@rate_limit(max_requests=60, window=60)
+@cache_response(expiration=60)
+async def quick_entity_search(
+    request: Request,
+    q: str = Query(..., min_length=2, max_length=200, description="Search query"),
+    limit: int = Query(10, ge=1, le=50),
+    db: Session = Depends(get_db)
+):
+    """
+    Quick entity search for typeahead/autocomplete.
+    Returns minimal fields (id, name, type) for fast rendering.
+    """
+    entities = (
+        db.query(Entity.id, Entity.entity_name, Entity.entity_type)
+        .filter(Entity.entity_name.ilike(f"%{q}%"))
+        .limit(limit)
+        .all()
+    )
+    return {
+        "suggestions": [
+            {"id": e.id, "name": e.entity_name, "type": e.entity_type}
+            for e in entities
+        ]
+    }
 
 # Entity Network endpoints for visualization
 @app.get("/entities/{entity_id}/network")
@@ -1785,6 +1933,253 @@ async def get_relationship(
         )
     return relationship
 
+# Typeahead/autocomplete endpoint
+@app.get("/search/typeahead", response_model=Dict[str, Any])
+@rate_limit(max_requests=60, window=60)
+async def search_typeahead(
+    request: Request,
+    q: str = "",
+    limit: int = 8,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Return fast autocomplete suggestions for the search bar"""
+    if not q or len(q) < 2:
+        return {"suggestions": []}
+
+    from datagod.utils.sanitize import sanitize_search_query
+    clean_q = sanitize_search_query(q)
+
+    # Search records
+    record_hits = db.query(Record.id, Record.title, Record.record_type).filter(
+        Record.title.ilike(f"%{clean_q}%")
+    ).limit(limit).all()
+
+    # Search entities
+    entity_hits = db.query(Entity.id, Entity.name, Entity.entity_type).filter(
+        Entity.name.ilike(f"%{clean_q}%")
+    ).limit(limit).all()
+
+    suggestions = []
+    for r in record_hits:
+        suggestions.append({"type": "record", "id": r.id, "text": r.title, "subtype": r.record_type})
+    for e in entity_hits:
+        suggestions.append({"type": "entity", "id": e.id, "text": e.name, "subtype": e.entity_type})
+
+    return {"suggestions": suggestions[:limit], "query": q}
+
+
+# Recent searches endpoint
+@app.get("/search/recent", response_model=Dict[str, Any])
+@rate_limit(max_requests=30, window=60)
+async def get_recent_searches(
+    request: Request,
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Return the user's most recent saved searches"""
+    from api.src.models import SavedSearch
+    recent = db.query(SavedSearch).filter(
+        SavedSearch.user_id == current_user.id
+    ).order_by(desc(SavedSearch.created_at)).limit(limit).all()
+
+    return {
+        "recent_searches": [
+            {
+                "id": s.id,
+                "name": s.name,
+                "query": s.query_params if hasattr(s, 'query_params') else s.query,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+            }
+            for s in recent
+        ]
+    }
+
+
+# ── Comment endpoints ────────────────────────────────────────────────
+@app.post("/comments", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
+@rate_limit(max_requests=20, window=60)
+async def create_comment(
+    request: Request,
+    record_id: Optional[int] = None,
+    entity_id: Optional[int] = None,
+    parent_id: Optional[int] = None,
+    text: str = "",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Create a new comment on a record or entity"""
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Comment text is required")
+    if not record_id and not entity_id:
+        raise HTTPException(status_code=400, detail="Must specify record_id or entity_id")
+
+    from datagod.utils.sanitize import sanitize_input
+    from datagod.models.comment import Comment
+
+    comment = Comment(
+        user_id=current_user.id,
+        record_id=record_id,
+        entity_id=entity_id,
+        parent_id=parent_id,
+        text=sanitize_input(text, max_length=5000),
+    )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+
+    return {
+        "id": comment.id,
+        "text": comment.text,
+        "user_id": comment.user_id,
+        "record_id": comment.record_id,
+        "entity_id": comment.entity_id,
+        "parent_id": comment.parent_id,
+        "created_at": comment.created_at.isoformat() if comment.created_at else None,
+    }
+
+
+@app.get("/comments", response_model=Dict[str, Any])
+@rate_limit(max_requests=30, window=60)
+async def get_comments(
+    request: Request,
+    record_id: Optional[int] = None,
+    entity_id: Optional[int] = None,
+    page: int = 1,
+    page_size: int = 25,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get comments for a record or entity (threaded)"""
+    from datagod.models.comment import Comment
+
+    query = db.query(Comment).filter(Comment.is_deleted == False)
+
+    if record_id:
+        query = query.filter(Comment.record_id == record_id)
+    elif entity_id:
+        query = query.filter(Comment.entity_id == entity_id)
+    else:
+        raise HTTPException(status_code=400, detail="Must specify record_id or entity_id")
+
+    # Top-level comments only (replies are nested)
+    query = query.filter(Comment.parent_id == None)
+    total = query.count()
+    comments = query.order_by(desc(Comment.created_at)).offset(
+        (page - 1) * page_size
+    ).limit(page_size).all()
+
+    return {
+        "comments": [
+            {
+                "id": c.id,
+                "text": c.text,
+                "user_id": c.user_id,
+                "parent_id": c.parent_id,
+                "created_at": c.created_at.isoformat() if c.created_at else None,
+            }
+            for c in comments
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+@app.delete("/comments/{comment_id}", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
+@rate_limit(max_requests=10, window=60)
+async def delete_comment(
+    request: Request,
+    comment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Soft-delete a comment (creator or admin only)"""
+    from datagod.models.comment import Comment
+
+    comment = db.query(Comment).filter(Comment.id == comment_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if comment.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to delete this comment")
+
+    comment.is_deleted = True
+    comment.text = "[deleted]"
+    db.commit()
+
+    return {"message": "Comment deleted", "id": comment_id}
+
+
+# =====================================================================
+# Saved Searches (FEAT-047)
+# =====================================================================
+
+@app.post("/saved-searches", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
+@rate_limit(max_requests=20, window=60)
+async def create_saved_search(
+    request: Request,
+    body: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Save a search for later reuse."""
+    from datagod.models import SavedSearch
+
+    saved = SavedSearch(
+        user_id=current_user.id,
+        name=body.get("name", "Untitled Search"),
+        description=body.get("description"),
+        search_params=body.get("filters", {}),
+    )
+    db.add(saved)
+    db.commit()
+    db.refresh(saved)
+    return saved.to_dict()
+
+
+@app.get("/saved-searches", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
+@rate_limit(max_requests=30, window=60)
+async def list_saved_searches(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """List saved searches for the current user."""
+    from datagod.models import SavedSearch
+
+    searches = (
+        db.query(SavedSearch)
+        .filter(SavedSearch.user_id == current_user.id)
+        .order_by(SavedSearch.updated_at.desc())
+        .all()
+    )
+    return {"saved_searches": [s.to_dict() for s in searches], "total": len(searches)}
+
+
+@app.delete("/saved-searches/{search_id}", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
+@rate_limit(max_requests=10, window=60)
+async def delete_saved_search(
+    request: Request,
+    search_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Delete a saved search."""
+    from datagod.models import SavedSearch
+
+    search = db.query(SavedSearch).filter(
+        SavedSearch.id == search_id,
+        SavedSearch.user_id == current_user.id
+    ).first()
+    if not search:
+        raise HTTPException(status_code=404, detail="Saved search not found")
+
+    db.delete(search)
+    db.commit()
+    return {"message": "Saved search deleted", "id": search_id}
+
+
 # Advanced search endpoint
 @app.post("/search", response_model=Dict[str, Any])
 @rate_limit(max_requests=30, window=60)
@@ -1940,6 +2335,28 @@ async def export_data(
             iter([output.getvalue()]),
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": "attachment; filename=export.xlsx"}
+        )
+
+    elif export_request.format == "xml":
+        # Create XML export
+        import xml.etree.ElementTree as ET
+        root = ET.Element("records")
+        root.set("count", str(len(records)))
+        root.set("exported_at", datetime.utcnow().isoformat())
+        for record in records:
+            rec_elem = ET.SubElement(root, "record")
+            ET.SubElement(rec_elem, "id").text = str(record.id)
+            ET.SubElement(rec_elem, "title").text = record.title or ""
+            ET.SubElement(rec_elem, "description").text = record.description or ""
+            ET.SubElement(rec_elem, "record_type").text = record.record_type or ""
+            ET.SubElement(rec_elem, "amount").text = str(record.amount) if record.amount else ""
+            ET.SubElement(rec_elem, "date").text = str(record.date) if record.date else ""
+            ET.SubElement(rec_elem, "jurisdiction_id").text = str(record.jurisdiction_id)
+        xml_string = ET.tostring(root, encoding="unicode", xml_declaration=True)
+        return StreamingResponse(
+            iter([xml_string]),
+            media_type="application/xml",
+            headers={"Content-Disposition": "attachment; filename=export.xml"}
         )
 
     else:  # JSON format
@@ -2104,10 +2521,225 @@ async def clear_cache():
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
+# =============================================================================
+# ANALYTICS ENDPOINTS (Phase 3: Data & ML)
+# =============================================================================
+
+@app.get("/analytics/time-series")
+@rate_limit(max_requests=30, window=60)
+@cache_response(expiration=3600)
+async def get_analytics_time_series(
+    request: Request,
+    period: str = Query("month", description="Group by: day, week, month"),
+    months: int = Query(12, ge=1, le=60, description="How many months back"),
+    db: Session = Depends(get_db)
+):
+    """Get record counts over time for charts and visualizations."""
+    from sqlalchemy import func, extract
+    from datetime import datetime, timedelta
+
+    cutoff = datetime.utcnow() - timedelta(days=months * 30)
+
+    if period == "day":
+        group_col = func.date(Record.date)
+    elif period == "week":
+        group_col = func.date_trunc('week', Record.date)
+    else:
+        group_col = func.date_trunc('month', Record.date)
+
+    try:
+        results = (
+            db.query(group_col.label("period"), func.count(Record.id).label("count"))
+            .filter(Record.date >= cutoff)
+            .group_by("period")
+            .order_by("period")
+            .all()
+        )
+        return {
+            "period": period,
+            "data": [
+                {"date": str(r.period), "count": r.count}
+                for r in results
+            ]
+        }
+    except Exception as e:
+        logger.warning(f"Analytics time-series fallback: {e}")
+        return {"period": period, "data": []}
+
+
+@app.get("/analytics/summary")
+@rate_limit(max_requests=30, window=60)
+@cache_response(expiration=1800)
+async def get_analytics_summary(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """Get analytics summary: record types, jurisdiction coverage, totals."""
+    from sqlalchemy import func
+
+    try:
+        total_records = db.query(func.count(Record.id)).scalar() or 0
+        total_jurisdictions = db.query(func.count(Jurisdiction.id)).scalar() or 0
+        total_entities = db.query(func.count(Entity.id)).scalar() or 0
+        total_amount = db.query(func.sum(Record.amount)).scalar() or 0
+
+        type_dist = (
+            db.query(Record.record_type, func.count(Record.id))
+            .group_by(Record.record_type)
+            .all()
+        )
+
+        return {
+            "totals": {
+                "records": total_records,
+                "jurisdictions": total_jurisdictions,
+                "entities": total_entities,
+                "total_amount": float(total_amount),
+            },
+            "record_type_distribution": {
+                t: c for t, c in type_dist if t
+            }
+        }
+    except Exception as e:
+        logger.warning(f"Analytics summary fallback: {e}")
+        return {"totals": {"records": 0, "jurisdictions": 0, "entities": 0, "total_amount": 0}, "record_type_distribution": {}}
+
+
+@app.get("/analytics/trends")
+@rate_limit(max_requests=20, window=60)
+@cache_response(expiration=3600)
+async def get_analytics_trends(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """Get trend analysis: week-over-week growth rates."""
+    from sqlalchemy import func
+    from datetime import datetime, timedelta
+
+    now = datetime.utcnow()
+    this_week = now - timedelta(days=7)
+    last_week = now - timedelta(days=14)
+
+    try:
+        current_count = db.query(func.count(Record.id)).filter(Record.date >= this_week).scalar() or 0
+        previous_count = db.query(func.count(Record.id)).filter(
+            Record.date >= last_week, Record.date < this_week
+        ).scalar() or 0
+
+        growth_rate = ((current_count - previous_count) / max(previous_count, 1)) * 100
+
+        return {
+            "current_week_records": current_count,
+            "previous_week_records": previous_count,
+            "growth_rate_percent": round(growth_rate, 1),
+            "trend": "up" if growth_rate > 0 else ("down" if growth_rate < 0 else "flat")
+        }
+    except Exception as e:
+        logger.warning(f"Analytics trends fallback: {e}")
+        return {"current_week_records": 0, "previous_week_records": 0, "growth_rate_percent": 0, "trend": "flat"}
+
+
+@app.get("/admin/scrapers/status", dependencies=[Depends(RoleChecker(["admin"]))])
+@rate_limit(max_requests=10, window=60)
+async def get_scraper_status(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get scraper health status per jurisdiction. Admin only."""
+    from sqlalchemy import func
+    from datetime import datetime, timedelta
+
+    try:
+        # Get record counts and last update per jurisdiction
+        jurisdiction_stats = (
+            db.query(
+                Jurisdiction.id,
+                Jurisdiction.name,
+                Jurisdiction.state_code,
+                func.count(Record.id).label("record_count"),
+                func.max(Record.date).label("last_record_date")
+            )
+            .outerjoin(Record, Record.jurisdiction_id == Jurisdiction.id)
+            .group_by(Jurisdiction.id, Jurisdiction.name, Jurisdiction.state_code)
+            .all()
+        )
+
+        stale_threshold = datetime.utcnow() - timedelta(days=30)
+
+        scrapers = []
+        for stat in jurisdiction_stats:
+            is_stale = stat.last_record_date is None or stat.last_record_date < stale_threshold
+            scrapers.append({
+                "jurisdiction_id": stat.id,
+                "jurisdiction_name": stat.name,
+                "state_code": stat.state_code,
+                "record_count": stat.record_count,
+                "last_updated": stat.last_record_date.isoformat() if stat.last_record_date else None,
+                "status": "stale" if is_stale else "active",
+                "health": "warning" if stat.record_count < 10 else ("healthy" if not is_stale else "stale")
+            })
+
+        return {
+            "total_jurisdictions": len(scrapers),
+            "active": sum(1 for s in scrapers if s["status"] == "active"),
+            "stale": sum(1 for s in scrapers if s["status"] == "stale"),
+            "scrapers": scrapers
+        }
+    except Exception as e:
+        logger.error(f"Scraper status error: {e}")
+        return {"total_jurisdictions": 0, "active": 0, "stale": 0, "scrapers": []}
+
+
+@app.get("/admin/data-quality", dependencies=[Depends(RoleChecker(["admin"]))])
+@rate_limit(max_requests=10, window=60)
+async def get_data_quality(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get data quality metrics: completeness per field across all records. Admin only."""
+    from sqlalchemy import func
+
+    try:
+        total = db.query(func.count(Record.id)).scalar() or 0
+        if total == 0:
+            return {"total_records": 0, "overall_quality_score": 0, "fields": []}
+
+        fields = [
+            ("title", Record.title),
+            ("description", Record.description),
+            ("amount", Record.amount),
+            ("date", Record.date),
+            ("record_type", Record.record_type),
+        ]
+
+        field_metrics = []
+        for name, col in fields:
+            non_null = db.query(func.count(Record.id)).filter(col.isnot(None)).scalar() or 0
+            completeness = round((non_null / total) * 100, 1)
+            field_metrics.append({
+                "field": name,
+                "populated": non_null,
+                "total": total,
+                "completeness_percent": completeness
+            })
+
+        avg_quality = round(sum(f["completeness_percent"] for f in field_metrics) / len(field_metrics), 1)
+
+        return {
+            "total_records": total,
+            "overall_quality_score": avg_quality,
+            "fields": field_metrics
+        }
+    except Exception as e:
+        logger.error(f"Data quality error: {e}")
+        return {"total_records": 0, "overall_quality_score": 0, "fields": []}
+
 # Add middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -2120,23 +2752,48 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 # GOAT DNA ROUTES (Phase 6)
 # =============================================================================
 try:
-    from routes import agents_router, intelligence_router, intake_router, reports_router, snapshots_router
+    from routes import agents_router, anomalies_router, intelligence_router, intake_router, reports_router, snapshots_router, whatif_router, explainability_router
     from middleware.prometheus import PrometheusMiddleware, metrics_endpoint
+    from middleware.monitoring import MonitoringMiddleware, health_checker
+    
+    # Add monitoring middleware (request ID tracking, structured logging, latency)
+    app.add_middleware(MonitoringMiddleware)
     
     # Add Prometheus metrics middleware
     app.add_middleware(PrometheusMiddleware)
     
     # Add GOAT API routers
     app.include_router(agents_router, prefix="/api/v2", tags=["agents"])
+    app.include_router(anomalies_router, prefix="/api/v2", tags=["anomalies"])
     app.include_router(intelligence_router, prefix="/api/v2", tags=["intelligence"])
     app.include_router(intake_router, prefix="/api/v2", tags=["intake"])
     app.include_router(reports_router, prefix="/api/v2", tags=["reports"])
     app.include_router(snapshots_router, prefix="/api/v2", tags=["snapshots"])
+    app.include_router(whatif_router, prefix="/api/v2", tags=["what-if"])
+    app.include_router(explainability_router, prefix="/api/v2", tags=["explainability"])
+    
+    # OAuth routes (Google, GitHub login)
+    try:
+        from auth.oauth import router as oauth_router
+        app.include_router(oauth_router, prefix="/api/v2", tags=["oauth"])
+        logger.info("✅ OAuth routes loaded")
+    except ImportError as oauth_err:
+        logger.warning(f"OAuth routes not loaded: {oauth_err}")
     
     # Prometheus metrics endpoint
     app.add_api_route("/metrics", metrics_endpoint, methods=["GET"], tags=["monitoring"])
     
-    logger.info("✅ GOAT DNA routes loaded (agents, intelligence, intake, reports, snapshots)")
+    # Health check endpoints (K8s liveness/readiness probes)
+    @app.get("/health/live", tags=["monitoring"])
+    async def liveness_check():
+        return health_checker.get_liveness()
+    
+    @app.get("/health/ready", tags=["monitoring"])
+    async def readiness_check():
+        return health_checker.get_readiness()
+    
+    logger.info("✅ GOAT DNA routes loaded (agents, anomalies, intelligence, intake, reports, snapshots)")
+    logger.info("✅ MonitoringMiddleware + health checks enabled")
 except ImportError as e:
     logger.warning(f"⚠️ GOAT DNA routes not available: {e}")
 
@@ -3967,6 +4624,119 @@ async def get_scraper_status(
         "failed_runs_24h": failed_runs,
         "recent_runs": recent_runs
     }
+
+
+# ── Notification endpoints ───────────────────────────────────────────
+@app.get("/notifications", response_model=Dict[str, Any])
+@rate_limit(max_requests=30, window=60)
+async def list_notifications(
+    request: Request,
+    unread_only: bool = False,
+    page: int = 1,
+    page_size: int = 25,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """List user's in-app notifications"""
+    from datagod.models.notification import Notification
+
+    query = db.query(Notification).filter(Notification.user_id == current_user.id)
+    if unread_only:
+        query = query.filter(Notification.read == False)
+
+    total = query.count()
+    unread_count = db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.read == False
+    ).count()
+
+    notifications = query.order_by(desc(Notification.created_at)).offset(
+        (page - 1) * page_size
+    ).limit(page_size).all()
+
+    return {
+        "notifications": [
+            {
+                "id": n.id,
+                "type": n.type,
+                "title": n.title,
+                "message": n.message,
+                "read": n.read,
+                "data": n.data,
+                "action_url": n.action_url,
+                "created_at": n.created_at.isoformat() if n.created_at else None,
+            }
+            for n in notifications
+        ],
+        "total": total,
+        "unread_count": unread_count,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+@app.put("/notifications/{notification_id}/read", response_model=Dict[str, Any])
+@rate_limit(max_requests=60, window=60)
+async def mark_notification_read(
+    request: Request,
+    notification_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Mark a notification as read"""
+    from datagod.models.notification import Notification
+
+    notification = db.query(Notification).filter(
+        Notification.id == notification_id,
+        Notification.user_id == current_user.id
+    ).first()
+
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+
+    notification.read = True
+    db.commit()
+
+    return {"message": "Notification marked as read", "id": notification_id}
+
+
+@app.put("/notifications/read-all", response_model=Dict[str, Any])
+@rate_limit(max_requests=10, window=60)
+async def mark_all_notifications_read(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Mark all notifications as read"""
+    from datagod.models.notification import Notification
+
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.read == False
+    ).update({"read": True})
+    db.commit()
+
+    return {"message": "All notifications marked as read"}
+
+
+# ── WebSocket endpoint ───────────────────────────────────────────────
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str):
+    """WebSocket connection for real-time events"""
+    from api.src.websocket_manager import ws_manager
+
+    await ws_manager.connect(websocket, user_id)
+    try:
+        while True:
+            data = await websocket.receive_json()
+            # Handle incoming messages (e.g., join rooms)
+            if data.get("action") == "join_room":
+                ws_manager.join_room(user_id, data.get("room", "general"))
+            elif data.get("action") == "leave_room":
+                ws_manager.leave_room(user_id, data.get("room", "general"))
+    except Exception:
+        ws_manager.disconnect(websocket, user_id)
+
 
 # Root endpoint
 @app.get("/")

@@ -390,9 +390,10 @@ class TestBaseScraperMakeRequest:
 
         scraper = TestScraper("https://example.com", delay=0.0)
 
-        with pytest.raises(ValueError) as excinfo:
-            scraper._make_request("https://example.com/api", method='DELETE')
-        assert "Unsupported HTTP method" in str(excinfo.value)
+        # _make_request catches ValueError internally and returns error dict
+        result = scraper._make_request("https://example.com/api", method='DELETE')
+        assert result["success"] is False
+        assert "Unsupported HTTP method" in result["error"]
 
     @patch('datagod.scrapers.base_scraper.time.sleep')
     def test_make_request_json_parse_error(self, mock_sleep):

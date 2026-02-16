@@ -353,8 +353,36 @@ The DataGod Team
         return self.send_email(to_email, subject, body_text)
 
 
-# Global instance (can be configured at startup)
-email_service = EmailService()
+# Global instance — auto-detect provider from env
+def _create_default_service() -> EmailService:
+    """Create email service from environment configuration."""
+    import os
+    smtp_host = os.getenv("SMTP_HOST", "")
+    smtp_user = os.getenv("SMTP_USERNAME", "")
+    smtp_pass = os.getenv("SMTP_PASSWORD", "")
+
+    if smtp_host and smtp_user and smtp_pass:
+        provider = "smtp"
+        logger.info("Email service configured with SMTP provider")
+    else:
+        provider = "stub"
+        logger.warning(
+            "Email service using STUB provider — emails will be logged, not sent. "
+            "Set SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD to enable."
+        )
+
+    return EmailService(
+        provider=provider,
+        smtp_host=smtp_host or None,
+        smtp_port=int(os.getenv("SMTP_PORT", "587")),
+        smtp_user=smtp_user or None,
+        smtp_password=smtp_pass or None,
+        from_email=os.getenv("FROM_EMAIL", "noreply@datagod.com"),
+        from_name=os.getenv("FROM_NAME", "DataGod"),
+    )
+
+
+email_service = _create_default_service()
 
 
 def get_email_service() -> EmailService:
@@ -367,3 +395,4 @@ def configure_email_service(**kwargs):
     global email_service
     email_service = EmailService(**kwargs)
     return email_service
+

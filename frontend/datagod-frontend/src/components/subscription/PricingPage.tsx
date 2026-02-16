@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Box, Typography, Paper, Button, Grid, Card, CardContent, CardActions, Divider, Chip, CircularProgress, Alert } from '@mui/material';
 import { Check, Close } from '@mui/icons-material';
-import { useMutation } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
 
 const subscriptionTiers = [
@@ -102,23 +101,10 @@ export const PricingPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // Subscription mutation
-  const subscriptionMutation = useMutation({
-    mutationFn: (tierId: string) =>
-      apiService.subscribe({ tier: tierId }),
-    onSuccess: () => {
-      setSuccess(true);
-      setLoading(false);
-    },
-    onError: (error: any) => {
-      setError(error.response?.data?.detail || 'Subscription failed. Please try again.');
-      setLoading(false);
-    }
-  });
+  const handleSubscribe = async (tierId: string) => {
+    if (tierId === 'free') return;
 
-  const handleSubscribe = (tierId: string) => {
     if (tierId === 'enterprise') {
-      // For enterprise, redirect to contact page
       window.location.href = '/contact';
       return;
     }
@@ -127,10 +113,25 @@ export const PricingPage = () => {
     setLoading(true);
     setError(null);
 
-    // Simulate subscription process
-    setTimeout(() => {
-      subscriptionMutation.mutate(tierId);
-    }, 1000);
+    try {
+      const res = await apiService.subscribe({ tier: tierId });
+      const data = res.data;
+
+      if (data.checkout_url) {
+        // Stripe mode — redirect to Stripe Checkout
+        window.location.href = data.checkout_url;
+      } else if (data.status === 'active') {
+        // Mock mode — subscription activated directly
+        setSuccess(true);
+        setLoading(false);
+        setTimeout(() => {
+          window.location.href = '/checkout/success?session_id=mock';
+        }, 1500);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Subscription failed. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (

@@ -1,5 +1,6 @@
 """Neural network model for mortgage data processing"""
 
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -85,7 +86,11 @@ class MortgageDataProcessor:
     
     def __init__(self, input_size: int = 2, hidden_size: int = 128, num_classes: int = 2):
         self.model = MortgageNeuralNetwork(input_size, hidden_size, num_classes)
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # Force CPU in test mode to avoid CUDA OOM errors
+        if os.environ.get('TESTING') == '1':
+            self.device = torch.device('cpu')
+        else:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model.to(self.device)
         
         # Initialize loss function and optimizer

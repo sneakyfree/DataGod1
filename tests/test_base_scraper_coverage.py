@@ -107,6 +107,7 @@ class TestMakeRequest:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"key": "value"}
+        mock_response.headers = {'Content-Type': 'application/json'}
         mock_response.raise_for_status = MagicMock()
 
         with patch.object(scraper.session, 'get', return_value=mock_response):
@@ -151,11 +152,13 @@ class TestMakeRequest:
 
     @patch('time.sleep')
     def test_make_request_unsupported_method(self, mock_sleep):
-        """Test unsupported HTTP method raises error"""
+        """Test unsupported HTTP method returns error dict"""
         scraper = self.get_concrete_scraper()
 
-        with pytest.raises(ValueError, match="Unsupported HTTP method"):
-            scraper._make_request("https://example.com", method='PATCH')
+        # _make_request catches ValueError internally and returns error dict
+        result = scraper._make_request("https://example.com", method='PATCH')
+        assert result["success"] is False
+        assert "Unsupported HTTP method" in result["error"]
 
     @patch('time.sleep')
     def test_make_request_request_exception(self, mock_sleep):

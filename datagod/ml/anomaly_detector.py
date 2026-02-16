@@ -39,6 +39,42 @@ class AnomalyType(str, Enum):
     VALUE_SPIKE = "value_spike"
     FREQUENCY_ANOMALY = "frequency_anomaly"
     RULE_VIOLATION = "rule_violation"
+    SPIKE = "spike"
+    DROP = "drop"
+    TREND_CHANGE = "trend_change"
+    SEASONALITY_BREAK = "seasonality_break"
+
+
+class DetectionMethod(str, Enum):
+    """Detection methods available."""
+    STATISTICAL = "statistical"
+    ISOLATION_FOREST = "isolation_forest"
+    RULE_BASED = "rule_based"
+    ALL = "all"
+
+
+@dataclass
+class AnomalyResult:
+    """Result from anomaly detection on time series or records."""
+    anomaly_type: AnomalyType
+    score: float  # 0-1, higher = more anomalous
+    value: float
+    data_index: int
+    expected_range: Tuple[float, float]
+    detection_method: DetectionMethod
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "anomaly_type": self.anomaly_type.value,
+            "score": self.score,
+            "value": self.value,
+            "data_index": self.data_index,
+            "expected_range": self.expected_range,
+            "detection_method": self.detection_method.value,
+            "metadata": self.metadata,
+        }
 
 
 @dataclass
@@ -136,6 +172,153 @@ class AnomalyDetector:
         self.rules: Dict[str, AnomalyRule] = {}
         self._detected_anomalies: Dict[str, Anomaly] = {}
         logger.info("AnomalyDetector initialized with config: %s", self.config)
+    
+    def detect_time_series_anomalies(
+        self,
+        data: List[float],
+        method: DetectionMethod = DetectionMethod.STATISTICAL,
+        threshold: float = None
+    ) -> List[AnomalyResult]:
+        """
+        Detect anomalies in time series data.
+        
+        Args:
+            data: List of numeric values (time series)
+            method: Detection method to use
+            threshold: Optional threshold for rule-based detection
+            
+        Returns:
+            List of AnomalyResult objects
+        """
+        if not data:
+            return []
+        
+        if len(data) < 2:
+            return []
+        
+        results = []
+        
+        if method == DetectionMethod.STATISTICAL or method == DetectionMethod.ALL:
+            results.extend(self._detect_statistical_ts(data))
+        
+        if method == DetectionMethod.ISOLATION_FOREST or method == DetectionMethod.ALL:
+            results.extend(self._detect_isolation_forest_ts(data))
+        
+        if method == DetectionMethod.RULE_BASED or method == DetectionMethod.ALL:
+            results.extend(self._detect_rule_based_ts(data, threshold))
+        
+        return results
+    
+    def _detect_statistical_ts(self, data: List[float]) -> List[AnomalyResult]:
+        """Statistical detection for time series."""
+        results = []
+        arr = np.array(data)
+        mean = np.mean(arr)
+        std = np.std(arr)
+        
+        if std == 0:
+            return results
+        
+        z_scores = np.abs((arr - mean) / std)
+        
+        for idx, (value, z) in enumerate(zip(data, z_scores)):
+            if z > self.config.z_score_threshold:
+                anomaly_type = AnomalyType.SPIKE if value > mean else AnomalyType.DROP
+                results.append(AnomalyResult(
+                    anomaly_type=anomaly_type,
+                    score=min(z / 10, 1.0),
+                    value=value,
+                    data_index=idx,
+                    expected_range=(mean - 2*std, mean + 2*std),
+                    detection_method=DetectionMethod.STATISTICAL,
+                    metadata={"z_score": float(z), "mean": float(mean), "std": float(std)}
+                ))
+        
+        return results
+    
+    def _detect_isolation_forest_ts(self, data: List[float]) -> List[AnomalyResult]:
+        """Isolation Forest detection for time series."""
+        try:
+            from sklearn.ensemble import IsolationForest
+        except ImportError:
+            return []
+        
+        results = []
+        arr = np.array(data).reshape(-1, 1)
+        
+        clf = IsolationForest(
+            contamination=self.config.isolation_forest_contamination,
+            random_state=42
+        )
+        predictions = clf.fit_predict(arr)
+        scores = clf.decision_function(arr)
+        
+        mean = np.mean(data)
+        std = np.std(data)
+        
+        for idx, (value, pred, score) in enumerate(zip(data, predictions, scores)):
+            if pred == -1:
+                results.append(AnomalyResult(
+                    anomaly_type=AnomalyType.OUTLIER,
+                    score=min(-score + 0.5, 1.0),
+                    value=value,
+                    data_index=idx,
+                    expected_range=(mean - 2*std, mean + 2*std),
+                    detection_method=DetectionMethod.ISOLATION_FOREST,
+                    metadata={"isolation_score": float(score)}
+                ))
+        
+        return results
+    
+    def _detect_rule_based_ts(self, data: List[float], threshold: float = None) -> List[AnomalyResult]:
+        """Rule-based detection for time series."""
+        results = []
+        
+        if threshold is None:
+            threshold = np.mean(data) + 2 * np.std(data)
+        
+        mean = np.mean(data)
+        std = np.std(data)
+        
+        for idx, value in enumerate(data):
+            if value > threshold:
+                results.append(AnomalyResult(
+                    anomaly_type=AnomalyType.SPIKE,
+                    score=min((value - threshold) / threshold, 1.0) if threshold > 0 else 0.8,
+                    value=value,
+                    data_index=idx,
+                    expected_range=(0, threshold),
+                    detection_method=DetectionMethod.RULE_BASED,
+                    metadata={"threshold": float(threshold)}
+                ))
+        
+        return results
+    
+    def detect_record_anomalies(
+        self,
+        records: List[Dict[str, Any]],
+        value_field: str = "value"
+    ) -> List[AnomalyResult]:
+        """
+        Detect anomalies in a list of records.
+        
+        Args:
+            records: List of record dictionaries
+            value_field: Field to analyze for anomalies
+            
+        Returns:
+            List of AnomalyResult objects
+        """
+        if not records:
+            return []
+        
+        values = [r.get(value_field, 0) for r in records if value_field in r]
+        
+        if not values:
+            return []
+        
+        return self.detect_time_series_anomalies(values, DetectionMethod.STATISTICAL)
+
     
     def detect_all(self, data: pd.DataFrame, data_source: str = "unknown") -> List[Anomaly]:
         """

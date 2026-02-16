@@ -6,6 +6,9 @@ Handles task decomposition, agent routing, result synthesis, and confidence asse
 """
 
 import logging
+import os
+import json
+import sqlite3
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 import uuid
@@ -77,13 +80,96 @@ class OrchestratorAgent:
         self.tool_registry = tool_registry or globals()['tool_registry']
         self.guardrail_engine = guardrail_engine or globals()['guardrail_engine']
         
-        # Task tracking
+        # Task tracking (in-memory for fast access)
         self._active_tasks: Dict[str, AgentTask] = {}
         self._task_outputs: Dict[str, List[AgentOutput]] = {}
         self._action_log: List[AgentAction] = []
         
+        # HITL persistence (SQLite for durability)
+        self._hitl_db = os.environ.get(
+            "HITL_DB",
+            os.path.join(os.path.dirname(__file__), "..", "..", "hitl_queue.db")
+        )
+        self._init_hitl_db()
+        
         # Initialize tool registry
         self.tool_registry.initialize_default_tools()
+
+    def _init_hitl_db(self):
+        """Initialize the HITL persistence database."""
+        try:
+            conn = sqlite3.connect(self._hitl_db)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS hitl_actions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    task_id TEXT NOT NULL,
+                    agent_id TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    inputs TEXT DEFAULT '{}',
+                    outputs TEXT DEFAULT '{}',
+                    success INTEGER DEFAULT 1,
+                    error TEXT,
+                    created_at TEXT NOT NULL
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS hitl_approvals (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    task_id TEXT NOT NULL UNIQUE,
+                    approved INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    approval_reason TEXT,
+                    decided_at TEXT NOT NULL
+                )
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_actions_task
+                ON hitl_actions(task_id)
+            """)
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logger.warning(f"HITL DB init failed (will use in-memory only): {e}")
+            self._hitl_db = None
+
+    def _persist_action(self, action_record: 'AgentAction'):
+        """Persist an action to the HITL database."""
+        if not self._hitl_db:
+            return
+        try:
+            conn = sqlite3.connect(self._hitl_db)
+            conn.execute(
+                "INSERT INTO hitl_actions (task_id, agent_id, action, inputs, outputs, success, error, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    action_record.task_id,
+                    action_record.agent_id,
+                    action_record.action,
+                    json.dumps(action_record.inputs, default=str),
+                    json.dumps(action_record.outputs, default=str),
+                    1 if action_record.success else 0,
+                    action_record.error,
+                    action_record.completed_at.isoformat() if action_record.completed_at else datetime.utcnow().isoformat(),
+                )
+            )
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logger.warning(f"Failed to persist action: {e}")
+
+    def _persist_approval(self, task_id: str, approved: bool, user_id: int, reason: str = None):
+        """Persist an approval decision to the HITL database."""
+        if not self._hitl_db:
+            return
+        try:
+            conn = sqlite3.connect(self._hitl_db)
+            conn.execute(
+                "INSERT OR REPLACE INTO hitl_approvals (task_id, approved, user_id, approval_reason, decided_at) VALUES (?, ?, ?, ?, ?)",
+                (task_id, 1 if approved else 0, user_id, reason, datetime.utcnow().isoformat())
+            )
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logger.warning(f"Failed to persist approval: {e}")
     
     async def process_query(
         self,
@@ -410,8 +496,8 @@ class OrchestratorAgent:
         )
         self._action_log.append(action_record)
         
-        # Optionally persist to database
-        # In production, this would write to the audit_log table
+        # Persist to HITL database for audit-grade traceability
+        self._persist_action(action_record)
         logger.debug(f"Action logged: {action} for task {task_id}")
     
     def get_task_status(self, task_id: str) -> Optional[AgentTask]:
@@ -459,6 +545,9 @@ class OrchestratorAgent:
                     action="approval_decision",
                     inputs={"approved": approved, "user_id": user_id}
                 )
+                
+                # Persist approval decision
+                self._persist_approval(task_id, approved, user_id)
                 
                 return True
         

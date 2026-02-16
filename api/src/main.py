@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from db import engine, init_db
+from config import settings
 from api_v2 import app as api_v2_app
 
 # Import models from __init__.py to ensure they're registered with Base
@@ -19,7 +20,7 @@ main_app = FastAPI(
 # Add CORS middleware
 main_app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=settings.cors_origins,  # Production-safe: reads from CORS_ORIGINS env var
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

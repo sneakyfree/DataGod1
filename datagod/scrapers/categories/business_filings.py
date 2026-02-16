@@ -284,6 +284,261 @@ class UCCFiling:
         }
 
 
+@dataclass
+class CorporateSearch:
+    """Search parameters for corporate entity search."""
+    entity_name: Optional[str] = None
+    entity_id: Optional[str] = None
+    state: Optional[str] = None
+    entity_type: Optional[EntityType] = None
+    status: Optional[EntityStatus] = None
+    include_inactive: bool = False
+    officer_name: Optional[str] = None
+    registered_agent_name: Optional[str] = None
+    date_from: Optional[date] = None
+    date_to: Optional[date] = None
+    exact_match: bool = False
+
+
+@dataclass
+class UCCSearch:
+    """Search parameters for UCC filings search."""
+    debtor_name: Optional[str] = None
+    secured_party: Optional[str] = None
+    filing_number: Optional[str] = None
+    state: Optional[str] = None
+    date_from: Optional[date] = None
+    date_to: Optional[date] = None
+    include_terminated: bool = False
+    exact_match: bool = False
+
+
+class BusinessFilingsScraper(ABC):
+    """Abstract base class for business filings scrapers."""
+    
+    def __init__(self, state_code: str, config: Dict[str, Any] = None):
+        self.state_code = state_code.upper()
+        self.config = config or {}
+        self.base_url = self.config.get('base_url', '')
+        self.api_key = self.config.get('api_key')
+        self._session: Optional[aiohttp.ClientSession] = None
+    
+    @abstractmethod
+    def search_entities(self, search: CorporateSearch) -> List[BusinessEntity]:
+        """Search for business entities."""
+        pass
+    
+    @abstractmethod
+    def get_entity_details(self, entity_id: str) -> Optional[BusinessEntity]:
+        """Get detailed information about a specific entity."""
+        pass
+    
+    @abstractmethod
+    def search_ucc_filings(self, search: UCCSearch) -> List[UCCFiling]:
+        """Search for UCC filings."""
+        pass
+    
+    @abstractmethod
+    def get_ucc_details(self, filing_number: str) -> Optional[UCCFiling]:
+        """Get detailed information about a specific UCC filing."""
+        pass
+    
+    def classify_entity_type(self, name: str) -> EntityType:
+        """Classify entity type based on name."""
+        name_lower = name.lower()
+        
+        if 'llc' in name_lower or 'l.l.c.' in name_lower or 'limited liability company' in name_lower:
+            return EntityType.LLC
+        elif 'llp' in name_lower or 'l.l.p.' in name_lower:
+            return EntityType.LLP
+        elif 'lp' in name_lower or 'l.p.' in name_lower or 'limited partnership' in name_lower:
+            return EntityType.LP
+        elif 'inc' in name_lower or 'corp' in name_lower or 'incorporated' in name_lower:
+            return EntityType.CORPORATION
+        elif 'nonprofit' in name_lower or 'non-profit' in name_lower:
+            return EntityType.NONPROFIT
+        elif 'trust' in name_lower:
+            return EntityType.TRUST
+        elif 'professional' in name_lower:
+            return EntityType.PROFESSIONAL_CORP
+        elif 'partnership' in name_lower:
+            return EntityType.PARTNERSHIP
+        else:
+            return EntityType.UNKNOWN
+    
+    def parse_entity_status(self, status_str: str) -> EntityStatus:
+        """Parse entity status from string."""
+        status_lower = status_str.lower()
+        
+        status_map = {
+            'dissolved': EntityStatus.DISSOLVED,
+            'suspended': EntityStatus.SUSPENDED,
+            'merged': EntityStatus.MERGED,
+            'converted': EntityStatus.CONVERTED,
+            'revoked': EntityStatus.REVOKED,
+            'withdrawn': EntityStatus.WITHDRAWN,
+            'forfeited': EntityStatus.FORFEITED,
+            'pending': EntityStatus.PENDING,
+            'inactive': EntityStatus.INACTIVE,
+            'active': EntityStatus.ACTIVE,
+            'good standing': EntityStatus.ACTIVE,
+            'current': EntityStatus.ACTIVE,
+        }
+        
+        for key, value in status_map.items():
+            if key in status_lower:
+                return value
+        
+        return EntityStatus.UNKNOWN
+    
+    def normalize_entity_name(self, name: str) -> str:
+        """Normalize entity name for comparison."""
+        import re
+        
+        # Remove common suffixes
+        suffixes = [
+            r'\binc\.?\b', r'\bcorp\.?\b', r'\bcorporation\b',
+            r'\bllc\.?\b', r'\bl\.l\.c\.?\b', r'\bllp\.?\b',
+            r'\bl\.l\.p\.?\b', r'\blp\.?\b', r'\bl\.p\.?\b',
+            r'\bltd\.?\b', r'\blimited\b', r'\bco\.?\b',
+        ]
+        
+        normalized = name.upper().strip()
+        
+        for suffix in suffixes:
+            normalized = re.sub(suffix, '', normalized, flags=re.IGNORECASE)
+        
+        # Remove special characters
+        normalized = re.sub(r'[^\w\s]', '', normalized)
+        
+        # Collapse whitespace
+        normalized = re.sub(r'\s+', ' ', normalized).strip()
+        
+        return normalized
+    
+    def parse_date(self, date_str: Optional[str]) -> Optional[date]:
+        """Parse date from various formats."""
+        if not date_str:
+            return None
+        
+        formats = [
+            '%Y-%m-%d',
+            '%m/%d/%Y',
+            '%m-%d-%Y',
+            '%d/%m/%Y',
+            '%Y%m%d',
+        ]
+        
+        for fmt in formats:
+            try:
+                return datetime.strptime(date_str, fmt).date()
+            except ValueError:
+                continue
+        
+        return None
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """Get scraper statistics."""
+        return {
+            'state': self.state_code,
+            'scraper_class': self.__class__.__name__,
+            'base_url': self.base_url,
+        }
+
+
+class StateSOSScraper(BusinessFilingsScraper):
+    """Concrete implementation for State Secretary of State scrapers."""
+    
+    def __init__(self, state_code: str, config: Dict[str, Any] = None):
+        """Initialize the State SOS scraper."""
+        super().__init__(state_code, config)
+    
+    def search_entities(self, search: CorporateSearch) -> List[BusinessEntity]:
+        """Search for business entities (placeholder implementation)."""
+        # In production, this would make actual API/scraping calls
+        return []
+    
+    def get_entity_details(self, entity_id: str) -> Optional[BusinessEntity]:
+        """Get entity details (placeholder implementation)."""
+        return None
+    
+    def search_ucc_filings(self, search: UCCSearch) -> List[UCCFiling]:
+        """Search for UCC filings (placeholder implementation)."""
+        return []
+    
+    def get_ucc_details(self, filing_number: str) -> Optional[UCCFiling]:
+        """Get UCC filing details (placeholder implementation)."""
+        return None
+
+
+def search_businesses(
+    entity_name: str = None,
+    states: List[str] = None,
+    include_inactive: bool = False,
+    **kwargs
+) -> List[BusinessEntity]:
+    """
+    Convenience function to search for businesses across multiple states.
+    
+    Args:
+        entity_name: Name to search for
+        states: List of state codes to search
+        include_inactive: Include inactive entities
+        **kwargs: Additional search parameters
+        
+    Returns:
+        List of matching business entities
+    """
+    results = []
+    search = CorporateSearch(
+        entity_name=entity_name,
+        include_inactive=include_inactive,
+        **{k: v for k, v in kwargs.items() if k in CorporateSearch.__annotations__}
+    )
+    
+    target_states = states or ['CA', 'TX', 'NY', 'FL']
+    
+    for state in target_states:
+        scraper = StateSOSScraper(state)
+        results.extend(scraper.search_entities(search))
+    
+    return results
+
+
+def search_ucc(
+    debtor_name: str = None,
+    secured_party: str = None,
+    states: List[str] = None,
+    **kwargs
+) -> List[UCCFiling]:
+    """
+    Convenience function to search for UCC filings across multiple states.
+    
+    Args:
+        debtor_name: Debtor name to search for
+        secured_party: Secured party name to search for
+        states: List of state codes to search
+        **kwargs: Additional search parameters
+        
+    Returns:
+        List of matching UCC filings
+    """
+    results = []
+    search = UCCSearch(
+        debtor_name=debtor_name,
+        secured_party=secured_party,
+        **{k: v for k, v in kwargs.items() if k in UCCSearch.__annotations__}
+    )
+    
+    target_states = states or ['CA', 'TX', 'NY', 'FL']
+    
+    for state in target_states:
+        scraper = StateSOSScraper(state)
+        results.extend(scraper.search_ucc_filings(search))
+    
+    return results
+
+
 # State Secretary of State configurations
 STATE_SOS_CONFIGS: Dict[str, Dict[str, Any]] = {
     'CA': {
@@ -1458,66 +1713,5 @@ def get_available_states() -> Dict[str, Any]:
         'coverage': api.get_coverage_stats(),
     }
 
-
-# ========== Legacy Abstract Base Class (for backwards compatibility) ==========
-
-class BusinessFilingsScraper(ABC):
-    """
-    Abstract base class for business filings scrapers.
-    Maintained for backwards compatibility.
-    """
-
-    CORP_KEYWORDS = ['corp', 'corporation', 'inc', 'incorporated']
-    LLC_KEYWORDS = ['llc', 'l.l.c.', 'limited liability company']
-    LLP_KEYWORDS = ['llp', 'l.l.p.', 'limited liability partnership']
-    LP_KEYWORDS = ['lp', 'l.p.', 'limited partnership']
-
-    def __init__(self, state_code: str, config: Dict[str, Any] = None):
-        self.state_code = state_code.upper()
-        self.config = config or {}
-        logger.info(f"Initialized BusinessFilingsScraper for {self.state_code}")
-
-    @abstractmethod
-    def search_entities(self, search: Any) -> List[BusinessEntity]:
-        pass
-
-    @abstractmethod
-    def get_entity_details(self, entity_id: str) -> Optional[BusinessEntity]:
-        pass
-
-    @abstractmethod
-    def search_ucc_filings(self, search: Any) -> List[UCCFiling]:
-        pass
-
-    @abstractmethod
-    def get_ucc_details(self, filing_number: str) -> Optional[UCCFiling]:
-        pass
-
-
-class StateSOSScraper(BusinessFilingsScraper):
-    """Legacy state SOS scraper - use BusinessFilingsAPI instead."""
-
-    def __init__(self, state_code: str, config: Dict[str, Any] = None):
-        super().__init__(state_code=state_code, config=config)
-        self._api = BusinessFilingsAPI()
-
-    def search_entities(self, search: Any) -> List[BusinessEntity]:
-        return asyncio.run(self._api.search_state(
-            state=self.state_code,
-            query=getattr(search, 'entity_name', '') or ''
-        ))
-
-    def get_entity_details(self, entity_id: str) -> Optional[BusinessEntity]:
-        return asyncio.run(self._api.get_company_details(
-            company_number=entity_id,
-            jurisdiction_code=self.state_code
-        ))
-
-    def search_ucc_filings(self, search: Any) -> List[UCCFiling]:
-        return asyncio.run(self._api.search_ucc_filings(
-            state=self.state_code,
-            debtor_name=getattr(search, 'debtor_name', '') or ''
-        ))
-
-    def get_ucc_details(self, filing_number: str) -> Optional[UCCFiling]:
-        return None
+# Legacy alias - points to the new class above
+# class BusinessFilingsScraper is defined above with utility methods

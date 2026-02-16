@@ -1,34 +1,46 @@
+"""
+Tests for Stripe subscription endpoints in api_v2.
+Uses proper function-level mocking to avoid sys.modules pollution.
+"""
 
 import sys
-from unittest.mock import MagicMock, patch
+import os
 import pytest
-from fastapi.testclient import TestClient
+from unittest.mock import MagicMock, patch
 
-# MOCK THE DB MODULE BEFORE IMPORTING API_V2
-# This prevents the "Failed to create database tables" error on import
-mock_db = MagicMock()
-mock_db.init_db = MagicMock()
-mock_db.get_db = MagicMock()
-mock_db.check_db_connection = MagicMock(return_value=True)
-mock_db.SessionLocal = MagicMock()
+# Ensure test environment
+os.environ["TESTING"] = "1"
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
-# Patch both potential import paths
-sys.modules['api.src.db'] = mock_db
-sys.modules['db'] = mock_db
 
-# Allow stripe_service import to work or be mocked
-sys.modules['api.src.stripe_service'] = MagicMock()
-from api.src import stripe_service as stripe_service_module
-stripe_service_module.stripe_service = MagicMock()
-stripe_service_module.stripe_service.get_price_id_for_tier.return_value = "price_mock"
-stripe_service_module.stripe_service.create_checkout_session.return_value = {"url": "http://mock-checkout.com"}
-stripe_service_module.stripe_service.create_portal_session.return_value = {"url": "http://mock-portal.com"}
-stripe_service_module.stripe_service.create_customer.return_value = {"id": "cus_mock"}
+def _get_app_and_client():
+    """Import app with mocked DB to avoid database initialization errors."""
+    # Mock the DB module if not already loaded with real module
+    mock_db = MagicMock()
+    mock_db.init_db = MagicMock()
+    mock_db.get_db = MagicMock()
+    mock_db.check_db_connection = MagicMock(return_value=True)
+    mock_db.SessionLocal = MagicMock()
 
-# Now import app
-from api.src.api_v2 import app, get_db_manager, get_current_user
+    saved = {}
+    keys_to_patch = ['api.src.db', 'db']
+    for k in keys_to_patch:
+        saved[k] = sys.modules.get(k)
+        if k not in sys.modules or isinstance(sys.modules[k], MagicMock):
+            sys.modules[k] = mock_db
 
-client = TestClient(app)
+    from api.src.api_v2 import app, get_db_manager, get_current_user
+    from fastapi.testclient import TestClient
+
+    # Restore patched modules
+    for k in keys_to_patch:
+        if saved[k] is None:
+            sys.modules.pop(k, None)
+        else:
+            sys.modules[k] = saved[k]
+
+    return app, TestClient(app), get_db_manager, get_current_user
+
 
 # Mock user dependency
 def mock_get_current_user():
@@ -40,6 +52,7 @@ def mock_get_current_user():
         "subscription_tier": "free",
         "stripe_customer_id": "cus_existing"
     }
+
 
 # Mock database manager
 class MockDBManager:
@@ -58,26 +71,38 @@ class MockDBManager:
     def update_user(self, user_id, **kwargs):
         return True
 
+
 def test_create_checkout_session():
+    app, client, get_db_manager, get_current_user = _get_app_and_client()
     app.dependency_overrides[get_current_user] = mock_get_current_user
     app.dependency_overrides[get_db_manager] = lambda: MockDBManager()
-    
-    # We need to ensure stripe_service usage in api_v2 uses our mock
-    # The import in api_v2 is: from stripe_service import stripe_service
-    # We patched usage via sys.modules above, but api_v2 might have imported it already if cached?
-    # No, we set sys.modules before import.
-    
-    response = client.post("/subscription/checkout?tier=pro")
-    
+
+    # Mock the stripe_service at the module level where api_v2 uses it
+    mock_stripe = MagicMock()
+    mock_stripe.get_price_id_for_tier.return_value = "price_mock"
+    mock_stripe.create_checkout_session.return_value = {"url": "http://mock-checkout.com"}
+
+    with patch("api.src.api_v2.stripe_service", mock_stripe):
+        response = client.post("/subscription/checkout?tier=pro")
+
     assert response.status_code == 200
     assert response.json() == {"checkout_url": "http://mock-checkout.com"}
 
+    app.dependency_overrides.clear()
+
+
 def test_create_portal_session():
+    app, client, get_db_manager, get_current_user = _get_app_and_client()
     app.dependency_overrides[get_current_user] = mock_get_current_user
     app.dependency_overrides[get_db_manager] = lambda: MockDBManager()
 
-    response = client.post("/subscription/portal")
-    
+    mock_stripe = MagicMock()
+    mock_stripe.create_portal_session.return_value = {"url": "http://mock-portal.com"}
+
+    with patch("api.src.api_v2.stripe_service", mock_stripe):
+        response = client.post("/subscription/portal")
+
     assert response.status_code == 200
     assert response.json() == {"portal_url": "http://mock-portal.com"}
 
+    app.dependency_overrides.clear()

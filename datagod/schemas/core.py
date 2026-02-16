@@ -40,7 +40,7 @@ class JurisdictionCreate(BaseModel):
     jurisdiction_metadata: Optional[Dict[str, Any]] = Field(None, alias="metadata")
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 class JurisdictionUpdate(BaseModel):
     name: Optional[str] = None
@@ -71,8 +71,8 @@ class JurisdictionResponse(BaseModel):
     jurisdiction_metadata: Optional[Dict[str, Any]] = Field(None, alias="metadata")
 
     class Config:
-        orm_mode = True
-        allow_population_by_field_name = True
+        from_attributes = True
+        populate_by_name = True
 
 # --- Data Source Schemas ---
 class DataSourceCreate(BaseModel):
@@ -86,7 +86,7 @@ class DataSourceCreate(BaseModel):
     description: Optional[str] = None
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 class DataSourceUpdate(BaseModel):
     source_name: Optional[str] = None
@@ -111,8 +111,8 @@ class DataSourceResponse(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
 
     class Config:
-        orm_mode = True
-        allow_population_by_field_name = True
+        from_attributes = True
+        populate_by_name = True
 
 # --- Record Schemas ---
 class RecordCreate(BaseModel):
@@ -134,7 +134,7 @@ class RecordCreate(BaseModel):
         return v
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 class RecordUpdate(BaseModel):
     data_source_id: Optional[int] = None
@@ -161,8 +161,8 @@ class RecordResponse(BaseModel):
     updated_at: Optional[datetime] = None
 
     class Config:
-        orm_mode = True
-        allow_population_by_field_name = True
+        from_attributes = True
+        populate_by_name = True
 
 # --- Entity Schemas ---
 class EntityCreate(BaseModel):
@@ -178,7 +178,7 @@ class EntityCreate(BaseModel):
 
     class Config:
         use_enum_values = True
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 class EntityUpdate(BaseModel):
     entity_name: Optional[str] = None
@@ -209,7 +209,7 @@ class RelationshipCreate(BaseModel):
         return v
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 class RelationshipUpdate(BaseModel):
     relationship_type: Optional[str] = None
@@ -354,7 +354,7 @@ class FavoriteResponse(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- Scraper Schemas ---
 class ScraperRunResponse(BaseModel):
@@ -374,7 +374,7 @@ class ScraperRunResponse(BaseModel):
     duration_seconds: Optional[int]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ScraperStatusResponse(BaseModel):
     total_runs_24h: int

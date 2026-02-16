@@ -68,6 +68,8 @@ class ScenarioResult:
     missing_data: List[str]
     recommended_actions: List[str]
     source_labels: List[Dict[str, str]]
+    confidence_interval_lower: float = 0.0  # CI lower bound
+    confidence_interval_upper: float = 1.0  # CI upper bound
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -475,7 +477,7 @@ class ScenarioUniverseBuilder:
                 })
         
         # Calculate confidence
-        confidence_score, confidence_level = self._calculate_confidence(
+        confidence_score, confidence_level, ci_lower, ci_upper = self._calculate_confidence(
             scenario_type, missing_data, available_indicators
         )
         
@@ -505,7 +507,9 @@ class ScenarioUniverseBuilder:
             evidence=evidence,
             missing_data=missing_data,
             recommended_actions=actions,
-            source_labels=source_labels
+            source_labels=source_labels,
+            confidence_interval_lower=ci_lower,
+            confidence_interval_upper=ci_upper,
         )
     
     def _flatten_data(self, nested_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -532,8 +536,8 @@ class ScenarioUniverseBuilder:
         scenario_type: ScenarioType,
         missing_data: List[str],
         available_indicators: List[str]
-    ) -> Tuple[float, ScenarioConfidence]:
-        """Calculate confidence score and level for a scenario."""
+    ) -> Tuple[float, ScenarioConfidence, float, float]:
+        """Calculate confidence score, level, and confidence interval."""
         
         total_required = len(scenario_type.required_data)
         total_indicators = len(scenario_type.indicators)
@@ -551,6 +555,18 @@ class ScenarioUniverseBuilder:
         
         final_score = data_score + indicator_score
         
+        # Confidence interval based on evidence count
+        n_evidence = len(available_indicators) + (total_required - len(missing_data))
+        total_possible = total_required + total_indicators
+        if total_possible > 0 and n_evidence > 0:
+            # Width narrows with more evidence (1/sqrt(n) heuristic)
+            import math
+            half_width = min(0.5 / math.sqrt(n_evidence), 0.4)
+        else:
+            half_width = 0.4
+        ci_lower = max(0.0, round(final_score - half_width, 4))
+        ci_upper = min(1.0, round(final_score + half_width, 4))
+        
         # Determine confidence level
         if final_score >= 0.8:
             level = ScenarioConfidence.CONFIRMED
@@ -563,7 +579,7 @@ class ScenarioUniverseBuilder:
         else:
             level = ScenarioConfidence.UNKNOWN
         
-        return round(final_score, 2), level
+        return round(final_score, 2), level, ci_lower, ci_upper
     
     def _generate_recommended_actions(
         self,

@@ -21,7 +21,7 @@ CACHE_DIR.mkdir(exist_ok=True)
 # Database Configuration
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://datagod:datagod@localhost:5432/datagod"
+    "postgresql://datagod:datagod@localhost:5433/datagod"
 )
 
 # Database connection pool settings

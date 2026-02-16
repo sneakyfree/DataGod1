@@ -24,17 +24,64 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for error handling
+// Response interceptor: auto-refresh on 401
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (v: any) => void; reject: (r: any) => void }> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((p) => {
+    if (token) p.resolve(token);
+    else p.reject(error);
+  });
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Skip refresh for the refresh endpoint itself
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/refresh-token')) {
+      if (isRefreshing) {
+        // Queue requests while refresh is in progress
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshResponse = await api.post('/refresh-token');
+        const newToken = refreshResponse.data.access_token;
+        localStorage.setItem('access_token', newToken);
+        processQueue(null, newToken);
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token');
       window.location.href = '/login';
     }
+
     return Promise.reject(error);
   }
 );
+
 
 // API Endpoints
 export const endpoints = {
@@ -49,6 +96,9 @@ export const endpoints = {
   // Subscription
   subscribe: '/subscription/subscribe',
   subscriptionStatus: '/subscription/status',
+  subscriptionCheckout: '/subscription/checkout',
+  subscriptionPortal: '/subscription/portal',
+  subscriptionCancel: '/subscription/cancel',
 
   // Dashboard
   dashboard: '/stats',
@@ -206,6 +256,18 @@ export const apiService = {
     return api.get(endpoints.subscriptionStatus);
   },
 
+  async createCheckoutSession(tier: string) {
+    return api.post(`${endpoints.subscriptionCheckout}?tier=${tier}`);
+  },
+
+  async createPortalSession() {
+    return api.post(endpoints.subscriptionPortal);
+  },
+
+  async cancelSubscription() {
+    return api.post(endpoints.subscriptionCancel);
+  },
+
   // Dashboard
   async getDashboardStats() {
     return api.get(endpoints.dashboard);
@@ -230,6 +292,21 @@ export const apiService = {
 
   async getRecord(id: string) {
     return api.get(endpoints.record(id));
+  },
+
+  async updateRecord(id: string, data: {
+    record_type?: string;
+    title?: string;
+    description?: string;
+    amount?: number;
+    date?: string;
+    raw_data?: Record<string, unknown>;
+  }) {
+    return api.put(endpoints.record(id), data);
+  },
+
+  async deleteRecord(id: string) {
+    return api.delete(endpoints.record(id));
   },
 
   // Search
@@ -279,6 +356,23 @@ export const apiService = {
     return api.get(endpoints.entity(id));
   },
 
+  async quickEntitySearch(query: string, limit: number = 10) {
+    return api.get('/entities/quick-search', { params: { q: query, limit } });
+  },
+
+  // Analytics
+  async getAnalyticsTimeSeries(period: 'day' | 'week' | 'month' = 'month', months: number = 12) {
+    return api.get('/analytics/time-series', { params: { period, months } });
+  },
+
+  async getAnalyticsSummary() {
+    return api.get('/analytics/summary');
+  },
+
+  async getAnalyticsTrends() {
+    return api.get('/analytics/trends');
+  },
+
   // Entity Network
   async getEntityNetwork(id: string, depth: number = 2) {
     return api.get(endpoints.entityNetwork(id), { params: { depth } });
@@ -316,6 +410,28 @@ export const apiService = {
   // Health
   async getHealth() {
     return api.get(endpoints.health);
+  },
+
+  // Comments (FEAT-094)
+  async createComment(data: { record_id: number; content: string; parent_id?: number }) {
+    return api.post('/comments', data);
+  },
+
+  async getComments(recordId: number, params?: { limit?: number; offset?: number }) {
+    return api.get('/comments', { params: { record_id: recordId, ...params } });
+  },
+
+  async deleteComment(commentId: number) {
+    return api.delete(`/comments/${commentId}`);
+  },
+
+  // Saved Searches (FEAT-047) — save & execute
+  async saveSearch(data: { name: string; query: string; filters?: Record<string, any> }) {
+    return api.post('/saved-searches', data);
+  },
+
+  async executeSavedSearch(searchId: number) {
+    return api.post(`/saved-searches/${searchId}/execute`);
   },
 
   // Sharing
@@ -471,6 +587,15 @@ export const apiService = {
   // Coverage Tracking (Admin)
   async getCoverageSummary() {
     return api.get(endpoints.coverageSummary);
+  },
+
+  // Admin: Scraper Monitoring & Data Quality
+  async getScraperStatus() {
+    return api.get('/admin/scrapers/status');
+  },
+
+  async getDataQuality() {
+    return api.get('/admin/data-quality');
   },
 
   async getCoverageByState(params?: {

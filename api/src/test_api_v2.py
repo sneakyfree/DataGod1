@@ -155,6 +155,13 @@ api_v2_app = api_v2_module.app
 mock_user_db = create_mock_user_db_manager()
 set_user_db_manager(mock_user_db)
 
+# Also load api_v2 module and set its mock user db manager
+api_v2_full_spec = importlib.util.spec_from_file_location("api_v2", api_src_path / "api_v2.py")
+api_v2_full_module = importlib.util.module_from_spec(api_v2_full_spec)
+sys.modules["api_v2"] = api_v2_full_module
+api_v2_full_spec.loader.exec_module(api_v2_full_module)
+api_v2_full_module.set_user_db_manager(mock_user_db)
+
 # Now load main module - it will use the already-loaded api_v2_simple with our mock
 main_spec = importlib.util.spec_from_file_location("main", api_src_path / "main.py")
 main_module = importlib.util.module_from_spec(main_spec)

@@ -32,6 +32,21 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'api', 'src'))
 
 
+def setup_module():
+    """Ensure fresh stripe_service import (not a MagicMock from another test)."""
+    import importlib
+    key = 'api.src.stripe_service'
+    if key in sys.modules:
+        mod = sys.modules[key]
+        # If another test file replaced the module with a MagicMock, remove it
+        if not hasattr(mod, '__file__') or isinstance(mod, MagicMock):
+            del sys.modules[key]
+            # Also remove any cached parent imports that reference the mock
+            for k in list(sys.modules):
+                if k.startswith('api.src') and isinstance(sys.modules.get(k), MagicMock):
+                    del sys.modules[k]
+
+
 class TestStripeServiceInitialization:
     """Tests for StripeService initialization."""
 

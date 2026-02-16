@@ -97,3 +97,9 @@ site/
 *.key
 credentials.json
 secrets.json
+.secrets/
+.env.production
+certbot/
+node_modules/
+.next/
+*.log

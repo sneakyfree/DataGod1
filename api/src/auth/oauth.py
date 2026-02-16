@@ -339,44 +339,61 @@ async def github_callback(
 
 async def _process_oauth_user(user_info: OAuthUserInfo) -> Dict[str, Any]:
     """
-    Process OAuth user info to create/update user and generate JWT.
+    Process OAuth user info — create or find user and generate JWT.
     
-    This function should be connected to your user database.
-    For now, it returns a mock response.
+    Integrates with the real user database via the api_v2 user manager.
     """
-    from jose import jwt
-    from datetime import datetime, timedelta
-    import os
+    import os, sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
     
-    SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
-    ALGORITHM = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+    try:
+        from api.src.api_v2 import get_user_db_manager, get_password_hash, create_access_token
+    except ImportError:
+        # Fallback if import path differs
+        from api_v2 import get_user_db_manager, get_password_hash, create_access_token
     
-    # TODO: Integrate with actual database
-    # Here you would:
-    # 1. Check if user exists by provider_id or email
-    # 2. Create new user if not exists
-    # 3. Update user info if exists
-    # 4. Generate JWT token
+    from datetime import timedelta
     
-    is_new_user = False  # Set based on database lookup
+    db_mgr = get_user_db_manager()
+    is_new_user = False
+    
+    # Check if user exists by email
+    existing = db_mgr.get_user_by_email(user_info.email)
+    
+    if not existing:
+        # Create new user from OAuth info
+        import secrets as _secrets
+        temp_password = _secrets.token_urlsafe(32)
+        username = (user_info.email.split("@")[0] + "_" + user_info.provider)[:50]
+        
+        db_mgr.create_user(
+            username=username,
+            email=user_info.email,
+            hashed_password=get_password_hash(temp_password),
+            full_name=user_info.name or user_info.email,
+            roles=["user"],
+            disabled=False,
+            email_verified=user_info.email_verified,
+        )
+        existing = db_mgr.get_user_by_email(user_info.email)
+        is_new_user = True
+        logger.info(f"Created new user via OAuth: {username} ({user_info.provider})")
     
     # Generate JWT token
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    token_data = {
-        "sub": user_info.email,
-        "provider": user_info.provider,
-        "provider_id": user_info.provider_id,
-        "exp": expire,
-    }
-    access_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+    access_token = create_access_token(
+        data={
+            "sub": existing["username"],
+            "roles": existing.get("roles", ["user"]),
+        },
+        expires_delta=timedelta(days=7),
+    )
     
     logger.info(f"OAuth login successful for {user_info.email} via {user_info.provider}")
     
     return {
         "access_token": access_token,
         "is_new_user": is_new_user,
-        "user": user_info
+        "user": user_info,
     }
 
 

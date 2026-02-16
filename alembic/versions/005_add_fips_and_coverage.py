@@ -135,8 +135,6 @@ def downgrade() -> None:
     op.drop_index('idx_run_source', table_name='scraper_runs')
     op.drop_table('scraper_runs')
 
-    op.drop_table('scraper_runs')
-
     # Drop jurisdiction_coverage table and indexes
     op.drop_index('idx_coverage_last_scraped', table_name='jurisdiction_coverage')
     op.drop_index('idx_coverage_status', table_name='jurisdiction_coverage')

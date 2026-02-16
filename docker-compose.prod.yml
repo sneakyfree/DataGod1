@@ -1,0 +1,157 @@
+# DataGod Production Docker Compose
+# Use: docker-compose --env-file .env.production -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Overrides development settings with production-safe defaults:
+# - No exposed database ports
+# - Resource limits
+# - Restart policies
+# - Celery workers included
+# - Docker secrets for sensitive values
+# - SSL/TLS via Let's Encrypt
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - CORS_ORIGINS=https://${DOMAIN},https://www.${DOMAIN}
+      - DATABASE_URL=postgresql+asyncpg://datagod:${DB_PASSWORD}@db:5432/datagod
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    secrets:
+      - db_password
+      - jwt_secret
+      - secret_key
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend/datagod-frontend
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: datagod
+      POSTGRES_USER: datagod
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+    # No exposed ports in production — only accessible within docker network
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data_prod:/data
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A datagod.tasks worker --loglevel=info --concurrency=4
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://datagod:${DB_PASSWORD}@db:5432/datagod
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+    depends_on:
+      - redis
+      - db
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A datagod.tasks beat --loglevel=info
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://datagod:${DB_PASSWORD}@db:5432/datagod
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+    depends_on:
+      - redis
+      - db
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.ssl.conf:/etc/nginx/nginx.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - api
+      - frontend
+    restart: always
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  pgdata_prod:
+  redis_data_prod:
+
+
+secrets:
+  db_password:
+    file: ./.secrets/db_password
+  jwt_secret:
+    file: ./.secrets/jwt_secret
+  secret_key:
+    file: ./.secrets/secret_key

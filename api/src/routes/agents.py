@@ -16,6 +16,18 @@ router = APIRouter(prefix="/agents", tags=["agents"])
 
 
 # =============================================================================
+# AUTH DEPENDENCY (lazy import to avoid circular deps)
+# =============================================================================
+
+def _get_current_user():
+    """Lazy import of auth dependency."""
+    import os, sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+    from api.src.api_v2 import get_current_active_user
+    return get_current_active_user
+
+
+# =============================================================================
 # REQUEST/RESPONSE MODELS
 # =============================================================================
 
@@ -70,14 +82,14 @@ class TaskStatusResponse(BaseModel):
 
 
 # =============================================================================
-# ROUTES
+# ROUTES (All require authentication)
 # =============================================================================
 
 @router.post("/query", response_model=AgentQueryResponse)
 async def submit_agent_query(
     request: AgentQueryRequest,
     background_tasks: BackgroundTasks,
-    # current_user: User = Depends(get_current_active_user)  # Add auth when wiring
+    current_user=Depends(_get_current_user()),
 ):
     """
     Submit a query to the GOAT orchestrator agent.
@@ -94,10 +106,13 @@ async def submit_agent_query(
         
         orchestrator = OrchestratorAgent()
         
+        # Extract user ID from authenticated user
+        user_id = getattr(current_user, "id", None) or (current_user.get("id", 1) if isinstance(current_user, dict) else 1)
+        
         result = await orchestrator.process_query(
             query=request.query,
             context=request.context,
-            user_id=1  # Replace with current_user.id when auth is wired
+            user_id=user_id
         )
         
         return AgentQueryResponse(
@@ -119,7 +134,10 @@ async def submit_agent_query(
 
 
 @router.get("/task/{task_id}", response_model=TaskStatusResponse)
-async def get_task_status(task_id: str):
+async def get_task_status(
+    task_id: str,
+    current_user=Depends(_get_current_user()),
+):
     """
     Get the status of an agent task.
     
@@ -134,7 +152,10 @@ async def get_task_status(task_id: str):
 
 
 @router.post("/property", response_model=AgentQueryResponse)
-async def property_research(request: PropertySearchRequest):
+async def property_research(
+    request: PropertySearchRequest,
+    current_user=Depends(_get_current_user()),
+):
     """
     Run property research using the PropertyResearchAgent.
     
@@ -179,7 +200,10 @@ async def property_research(request: PropertySearchRequest):
 
 
 @router.post("/entity", response_model=AgentQueryResponse)
-async def entity_research(request: EntitySearchRequest):
+async def entity_research(
+    request: EntitySearchRequest,
+    current_user=Depends(_get_current_user()),
+):
     """
     Run entity research using the EntityResolutionAgent.
     
@@ -223,7 +247,10 @@ async def entity_research(request: EntitySearchRequest):
 
 
 @router.post("/lien", response_model=AgentQueryResponse)
-async def lien_research(request: LienSearchRequest):
+async def lien_research(
+    request: LienSearchRequest,
+    current_user=Depends(_get_current_user()),
+):
     """
     Run lien research using the LienPriorityAgent.
     

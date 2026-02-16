@@ -32,7 +32,7 @@ describe('DashboardStats', () => {
   it('renders loading state initially', async () => {
     const { apiService } = require('../../src/services/api');
     // Return a pending promise to simulate loading
-    apiService.getDashboardStats.mockImplementation(() => new Promise(() => {}));
+    apiService.getDashboardStats.mockImplementation(() => new Promise(() => { }));
 
     render(<DashboardStats />, { wrapper: createWrapper() });
 
@@ -81,9 +81,9 @@ describe('DashboardStats', () => {
       expect(screen.getByText(/total records/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/jurisdictions/i)).toBeInTheDocument();
-    expect(screen.getByText(/data sources/i)).toBeInTheDocument();
-    expect(screen.getByText(/active scrapers/i)).toBeInTheDocument();
+    expect(screen.getByText(/coverage areas/i)).toBeInTheDocument();
+    expect(screen.getByText(/record sources/i)).toBeInTheDocument();
+    expect(screen.getByText(/live data feeds/i)).toBeInTheDocument();
   });
 
   it('calls the API on mount', async () => {
