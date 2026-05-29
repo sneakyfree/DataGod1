@@ -256,12 +256,6 @@ jobs:
           --cov-report=term-missing \
           --cov-fail-under=${{ env.MIN_COVERAGE }}
 
-    - name: Generate coverage badge
-      uses: cicirello/jacoco-badge-generator@v2
-      with:
-        badges-directory: badges
-        generate-coverage-badge: true
-        coverage-badge-filename: coverage.svg
 
   build:
     name: Build Package
