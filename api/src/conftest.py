@@ -140,9 +140,8 @@ def api_client():
     This fixture ensures proper setup of the API client
     with database initialization.
     """
-    from test_api_v2 import client, main_app
-
     from db import init_db
+    from test_api_v2 import client, main_app
 
     # Ensure database is initialized
     init_db()

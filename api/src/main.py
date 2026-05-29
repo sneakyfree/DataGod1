@@ -12,7 +12,6 @@ from fastapi.middleware.cors import CORSMiddleware
 try:  # CWD=api/src or api/src on PYTHONPATH
     from api_v2 import app as api_v2_app
     from config import settings
-
     from db import init_db
 except ImportError:  # imported as api.src.main from repo root
     from api.src.api_v2 import app as api_v2_app

@@ -4,4 +4,6 @@ extend-exclude = "datagod/scrapers/templates/"
 
 [tool.isort]
 profile = "black"
+known_first_party = ["datagod", "api", "api_v2", "api_v2_simple", "auth", "config", "db", "db_manager", "main", "middleware", "models", "routes", "stripe_service", "websocket_manager"]
+src_paths = [".", "api/src", "datagod"]
 skip_glob = ["*/templates/*", "*/node_modules/*", "*/.venv/*", "*/venv/*"]

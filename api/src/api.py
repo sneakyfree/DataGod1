@@ -5,7 +5,6 @@ from functools import wraps
 from typing import Any, Dict, List, Optional
 
 import redis
-from config import settings
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -15,6 +14,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from config import settings
 from datagod.models.data_source import DataSource
 from datagod.models.entity import Entity
 from datagod.models.jurisdiction import Jurisdiction

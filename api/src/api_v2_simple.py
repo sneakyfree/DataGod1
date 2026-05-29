@@ -16,7 +16,6 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import redis
-from config import settings
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,6 +24,17 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
+from passlib.context import CryptContext
+from pydantic import BaseModel
+from sqlalchemy import asc, desc, or_
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from config import settings
+from datagod.models import DataSource, Entity, Jurisdiction, Record, Relationship
+from datagod.models import User as UserModel
+from db import check_db_connection, get_db
+from db_manager import DatabaseManager
 from models import (
     APIInfoResponse,
     CacheStatsResponse,
@@ -63,16 +73,6 @@ from models import (
     UserResponse,
     UserUpdate,
 )
-from passlib.context import CryptContext
-from pydantic import BaseModel
-from sqlalchemy import asc, desc, or_
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
-
-from datagod.models import DataSource, Entity, Jurisdiction, Record, Relationship
-from datagod.models import User as UserModel
-from db import check_db_connection, get_db
-from db_manager import DatabaseManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
