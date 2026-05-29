@@ -1,15 +1,17 @@
 import os
+import sys
+from pathlib import Path
 from typing import Annotated, List
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
-from pathlib import Path
-import sys
 
 # Add project root to path to access datagod config
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from datagod.config.settings import DATABASE_URL, CORS_ORIGINS
+from datagod.config.settings import CORS_ORIGINS, DATABASE_URL
+
 
 class Settings(BaseSettings):
     # Database settings - integrate with existing DataGod config
@@ -18,11 +20,11 @@ class Settings(BaseSettings):
     # CORS settings
     cors_origins: Annotated[List[str], NoDecode] = CORS_ORIGINS
 
-    @field_validator('cors_origins', mode='before')
+    @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_cors(cls, v):
         if isinstance(v, str):
-            return [x.strip() for x in v.split(',') if x.strip()]
+            return [x.strip() for x in v.split(",") if x.strip()]
         return v
 
     # API settings
@@ -67,12 +69,14 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+
 settings = Settings()
 
 # Reject insecure defaults at startup
 _INSECURE_KEYS = {"", "your-secret-key-here", "your-jwt-secret-key-here"}
 if settings.secret_key in _INSECURE_KEYS or settings.jwt_secret_key in _INSECURE_KEYS:
     import warnings
+
     warnings.warn(
         "SECURITY: SECRET_KEY and/or JWT_SECRET_KEY are not set. "
         "Set them in .env or environment variables before production.",
@@ -81,4 +85,6 @@ if settings.secret_key in _INSECURE_KEYS or settings.jwt_secret_key in _INSECURE
     )
     # In non-dev environments, refuse to start
     if os.getenv("ENVIRONMENT", "development") != "development":
-        raise SystemExit("FATAL: SECRET_KEY and JWT_SECRET_KEY must be set in production.")
+        raise SystemExit(
+            "FATAL: SECRET_KEY and JWT_SECRET_KEY must be set in production."
+        )

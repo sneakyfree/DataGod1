@@ -36,22 +36,23 @@ import re
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 from .base import (
     CountyTreasurerBase,
-    TaxStatus,
     LienStatus,
-    TaxSaleType,
     PaymentMethod,
-    TaxBillItem,
-    TaxBill,
-    TaxPayment,
-    TaxLien,
-    TaxSaleProperty,
     PropertyTaxRecord,
+    TaxBill,
+    TaxBillItem,
+    TaxLien,
+    TaxPayment,
+    TaxSaleProperty,
+    TaxSaleType,
     TaxSearchCriteria,
     TaxSearchResult,
+    TaxStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -133,10 +134,7 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
 
         return apn  # Return as-is if doesn't match pattern
 
-    async def get_tax_record(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyTaxRecord]:
+    async def get_tax_record(self, parcel_id: str) -> Optional[PropertyTaxRecord]:
         """Get property tax record by APN."""
         formatted_apn = self._format_apn(parcel_id)
         detail_url = f"{self.API_BASE}parcel/{formatted_apn}"
@@ -157,10 +155,11 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> TaxSearchResult:
         """Search for tax records by property address."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}search/address"
@@ -208,12 +207,11 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
         )
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> TaxSearchResult:
         """Search for tax records by owner name."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}search/owner"
@@ -256,12 +254,11 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
         )
 
     async def get_delinquent_properties(
-        self,
-        min_amount: Optional[Decimal] = None,
-        max_results: int = 500
+        self, min_amount: Optional[Decimal] = None, max_results: int = 500
     ) -> TaxSearchResult:
         """Get list of delinquent properties."""
         import time
+
         start_time = time.time()
 
         delinquent_url = f"{self.API_BASE}delinquent"
@@ -298,7 +295,9 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
             page_number=1,
             page_size=max_results,
             has_more=json_response.get("hasMore", False),
-            search_criteria=TaxSearchCriteria(delinquent_only=True, min_amount_due=min_amount),
+            search_criteria=TaxSearchCriteria(
+                delinquent_only=True, min_amount_due=min_amount
+            ),
             search_time_ms=search_time,
             source_system=self.SYSTEM_NAME,
         )
@@ -307,7 +306,7 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
         self,
         sale_type: Optional[TaxSaleType] = None,
         upcoming_only: bool = True,
-        max_results: int = 500
+        max_results: int = 500,
     ) -> List[TaxSaleProperty]:
         """Get tax lien certificates available for sale."""
         sale_url = f"{self.API_BASE}taxsale"
@@ -338,7 +337,7 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
         self,
         parcel_id: Optional[str] = None,
         status: Optional[LienStatus] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> List[TaxLien]:
         """Get tax lien certificates."""
         liens_url = f"{self.API_BASE}liens"
@@ -365,10 +364,7 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
 
         return liens
 
-    async def get_otc_liens(
-        self,
-        max_results: int = 500
-    ) -> List[TaxLien]:
+    async def get_otc_liens(self, max_results: int = 500) -> List[TaxLien]:
         """Get over-the-counter (OTC) tax liens available for purchase."""
         otc_url = f"{self.API_BASE}otc"
 
@@ -399,14 +395,20 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
         formatted_apn = self._format_apn(apn)
 
         # Parse current tax info
-        current_tax = self._parse_decimal(str(item.get("totalTax", item.get("taxAmount", ""))))
-        balance_due = self._parse_decimal(str(item.get("balanceDue", item.get("amountDue", ""))))
+        current_tax = self._parse_decimal(
+            str(item.get("totalTax", item.get("taxAmount", "")))
+        )
+        balance_due = self._parse_decimal(
+            str(item.get("balanceDue", item.get("amountDue", "")))
+        )
         amount_paid = self._parse_decimal(str(item.get("amountPaid", "")))
 
         # Determine status
         status_str = item.get("status", item.get("paymentStatus", ""))
         tax_status = self._parse_tax_status(status_str)
-        is_delinquent = "DELINQUENT" in str(status_str).upper() or item.get("isDelinquent", False)
+        is_delinquent = "DELINQUENT" in str(status_str).upper() or item.get(
+            "isDelinquent", False
+        )
         has_lien = item.get("hasLien", item.get("hasCertificate", False))
 
         # Parse exemptions (Arizona exemptions)
@@ -436,17 +438,26 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
             county=self.COUNTY_NAME,
             owner_name=item.get("owner", item.get("ownerName")),
             owner_address=item.get("ownerAddress", item.get("mailingAddress")),
-            assessed_value=self._parse_decimal(str(item.get("assessedValue", item.get("limitedValue", "")))),
-            taxable_value=self._parse_decimal(str(item.get("taxableValue", item.get("netAssessed", "")))),
-            market_value=self._parse_decimal(str(item.get("fullCashValue", item.get("fcv", "")))),
+            assessed_value=self._parse_decimal(
+                str(item.get("assessedValue", item.get("limitedValue", "")))
+            ),
+            taxable_value=self._parse_decimal(
+                str(item.get("taxableValue", item.get("netAssessed", "")))
+            ),
+            market_value=self._parse_decimal(
+                str(item.get("fullCashValue", item.get("fcv", "")))
+            ),
             current_tax_year=self._parse_int(str(item.get("taxYear", ""))),
             current_tax_amount=current_tax,
             current_amount_paid=amount_paid,
             current_balance_due=balance_due,
             tax_status=tax_status,
             is_delinquent=is_delinquent,
-            years_delinquent=self._parse_int(str(item.get("yearsDelinquent", "0"))) or 0,
-            total_delinquent=self._parse_decimal(str(item.get("totalDelinquent", item.get("priorDue", "")))),
+            years_delinquent=self._parse_int(str(item.get("yearsDelinquent", "0")))
+            or 0,
+            total_delinquent=self._parse_decimal(
+                str(item.get("totalDelinquent", item.get("priorDue", "")))
+            ),
             exemptions=exemptions,
             exemption_amount=self._parse_decimal(str(item.get("exemptionAmount", ""))),
             has_tax_lien=has_lien,
@@ -468,7 +479,9 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
                 tax_bills.append(bill)
 
         # Sort bills by year (most recent first)
-        tax_bills.sort(key=lambda b: (b.tax_year, b.installment_number or 0), reverse=True)
+        tax_bills.sort(
+            key=lambda b: (b.tax_year, b.installment_number or 0), reverse=True
+        )
 
         # Parse payment history
         payment_history = []
@@ -512,10 +525,15 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
 
         # Parse special assessments
         special_assessments = []
-        for assess_data in data.get("specialAssessments", data.get("specialDistricts", [])):
+        for assess_data in data.get(
+            "specialAssessments", data.get("specialDistricts", [])
+        ):
             item = TaxBillItem(
-                description=assess_data.get("description", assess_data.get("name", "Special Assessment")),
-                amount=self._parse_decimal(str(assess_data.get("amount", ""))) or Decimal(0),
+                description=assess_data.get(
+                    "description", assess_data.get("name", "Special Assessment")
+                ),
+                amount=self._parse_decimal(str(assess_data.get("amount", "")))
+                or Decimal(0),
                 taxing_authority=assess_data.get("district", assess_data.get("entity")),
                 tax_rate=self._parse_decimal(str(assess_data.get("rate", ""))),
                 raw_data=assess_data,
@@ -523,15 +541,23 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
             special_assessments.append(item)
 
         # Calculate totals
-        current_tax = self._parse_decimal(str(data.get("totalTax", data.get("currentYearTax", ""))))
-        balance_due = self._parse_decimal(str(data.get("balanceDue", data.get("totalDue", ""))))
+        current_tax = self._parse_decimal(
+            str(data.get("totalTax", data.get("currentYearTax", "")))
+        )
+        balance_due = self._parse_decimal(
+            str(data.get("balanceDue", data.get("totalDue", "")))
+        )
         amount_paid = self._parse_decimal(str(data.get("amountPaid", "")))
-        total_delinquent = self._parse_decimal(str(data.get("totalDelinquent", data.get("priorYearsDue", ""))))
+        total_delinquent = self._parse_decimal(
+            str(data.get("totalDelinquent", data.get("priorYearsDue", "")))
+        )
 
         # Determine status
         status_str = data.get("status", data.get("paymentStatus", ""))
         tax_status = self._parse_tax_status(status_str)
-        is_delinquent = "DELINQUENT" in str(status_str).upper() or data.get("isDelinquent", False)
+        is_delinquent = "DELINQUENT" in str(status_str).upper() or data.get(
+            "isDelinquent", False
+        )
         has_lien = len(liens) > 0 or data.get("hasCertificate", False)
 
         if not is_delinquent and total_delinquent and total_delinquent > 0:
@@ -549,16 +575,23 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
             county=self.COUNTY_NAME,
             owner_name=data.get("owner", data.get("ownerName")),
             owner_address=data.get("ownerAddress", data.get("mailingAddress")),
-            assessed_value=self._parse_decimal(str(data.get("assessedValue", data.get("limitedValue", "")))),
-            taxable_value=self._parse_decimal(str(data.get("taxableValue", data.get("netAssessed", "")))),
-            market_value=self._parse_decimal(str(data.get("fullCashValue", data.get("fcv", "")))),
+            assessed_value=self._parse_decimal(
+                str(data.get("assessedValue", data.get("limitedValue", "")))
+            ),
+            taxable_value=self._parse_decimal(
+                str(data.get("taxableValue", data.get("netAssessed", "")))
+            ),
+            market_value=self._parse_decimal(
+                str(data.get("fullCashValue", data.get("fcv", "")))
+            ),
             current_tax_year=self._parse_int(str(data.get("taxYear", ""))),
             current_tax_amount=current_tax,
             current_amount_paid=amount_paid,
             current_balance_due=balance_due,
             tax_status=tax_status,
             is_delinquent=is_delinquent,
-            years_delinquent=self._parse_int(str(data.get("yearsDelinquent", "0"))) or 0,
+            years_delinquent=self._parse_int(str(data.get("yearsDelinquent", "0")))
+            or 0,
             total_delinquent=total_delinquent,
             exemptions=exemptions,
             exemption_amount=exemption_amount if exemption_amount > 0 else None,
@@ -581,16 +614,25 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
 
         # Parse line items (from different taxing entities)
         line_items = []
-        for item_data in data.get("lineItems", data.get("entities", data.get("taxingJurisdictions", []))):
+        for item_data in data.get(
+            "lineItems", data.get("entities", data.get("taxingJurisdictions", []))
+        ):
             entity_code = item_data.get("code", item_data.get("entityCode", ""))
-            entity_name = self.TAXING_ENTITIES.get(entity_code, item_data.get("name", item_data.get("jurisdiction", "")))
+            entity_name = self.TAXING_ENTITIES.get(
+                entity_code, item_data.get("name", item_data.get("jurisdiction", ""))
+            )
 
             item = TaxBillItem(
                 description=entity_name or item_data.get("description", ""),
-                amount=self._parse_decimal(str(item_data.get("amount", item_data.get("tax", "")))) or Decimal(0),
+                amount=self._parse_decimal(
+                    str(item_data.get("amount", item_data.get("tax", "")))
+                )
+                or Decimal(0),
                 taxing_authority=entity_name,
                 tax_rate=self._parse_decimal(str(item_data.get("rate", ""))),
-                assessed_value=self._parse_decimal(str(item_data.get("netAssessed", ""))),
+                assessed_value=self._parse_decimal(
+                    str(item_data.get("netAssessed", ""))
+                ),
                 raw_data=item_data,
             )
             line_items.append(item)
@@ -609,16 +651,28 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
             parcel_id=apn,
             property_address=data.get("address", data.get("situsAddress")),
             owner_name=data.get("owner", data.get("ownerName")),
-            assessed_value=self._parse_decimal(str(data.get("assessedValue", data.get("limitedValue", "")))),
-            taxable_value=self._parse_decimal(str(data.get("netAssessed", data.get("taxableValue", "")))),
-            tax_rate=self._parse_decimal(str(data.get("combinedRate", data.get("taxRate", "")))),
-            gross_tax=self._parse_decimal(str(data.get("grossTax", data.get("totalTax", "")))),
+            assessed_value=self._parse_decimal(
+                str(data.get("assessedValue", data.get("limitedValue", "")))
+            ),
+            taxable_value=self._parse_decimal(
+                str(data.get("netAssessed", data.get("taxableValue", "")))
+            ),
+            tax_rate=self._parse_decimal(
+                str(data.get("combinedRate", data.get("taxRate", "")))
+            ),
+            gross_tax=self._parse_decimal(
+                str(data.get("grossTax", data.get("totalTax", "")))
+            ),
             exemptions=self._parse_decimal(str(data.get("exemptions", ""))),
             net_tax=self._parse_decimal(str(data.get("netTax", ""))),
-            penalties=self._parse_decimal(str(data.get("penalty", data.get("interest", "")))),
+            penalties=self._parse_decimal(
+                str(data.get("penalty", data.get("interest", "")))
+            ),
             interest=self._parse_decimal(str(data.get("interest", ""))),
             fees=self._parse_decimal(str(data.get("costs", data.get("fees", "")))),
-            total_due=self._parse_decimal(str(data.get("totalDue", data.get("amountDue", "")))),
+            total_due=self._parse_decimal(
+                str(data.get("totalDue", data.get("amountDue", "")))
+            ),
             amount_paid=self._parse_decimal(str(data.get("amountPaid", ""))),
             balance_due=self._parse_decimal(str(data.get("balanceDue", ""))),
             payment_status=self._parse_tax_status(data.get("status", "")),
@@ -635,7 +689,9 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
     def _parse_payment(self, data: Dict[str, Any], apn: str) -> Optional[TaxPayment]:
         """Parse a payment record."""
         payment_date = self._parse_date(data.get("paymentDate", data.get("date", "")))
-        amount = self._parse_decimal(str(data.get("amount", data.get("paymentAmount", ""))))
+        amount = self._parse_decimal(
+            str(data.get("amount", data.get("paymentAmount", "")))
+        )
 
         if not amount:
             return None
@@ -659,26 +715,34 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
                 method = PaymentMethod.ONLINE
 
         return TaxPayment(
-            payment_id=data.get("paymentId", data.get("transactionId", data.get("receiptNumber"))),
+            payment_id=data.get(
+                "paymentId", data.get("transactionId", data.get("receiptNumber"))
+            ),
             parcel_id=apn,
             tax_year=self._parse_int(str(data.get("taxYear", ""))) or 0,
             payment_date=payment_date,
             payment_amount=amount,
             payment_method=method,
-            principal_paid=self._parse_decimal(str(data.get("principal", data.get("taxPaid", "")))),
+            principal_paid=self._parse_decimal(
+                str(data.get("principal", data.get("taxPaid", "")))
+            ),
             interest_paid=self._parse_decimal(str(data.get("interest", ""))),
             penalty_paid=self._parse_decimal(str(data.get("penalty", ""))),
             fees_paid=self._parse_decimal(str(data.get("costs", data.get("fees", "")))),
             receipt_number=data.get("receiptNumber", data.get("confirmationNumber")),
             check_number=data.get("checkNumber"),
             payer_name=data.get("payer", data.get("payerName")),
-            installment_number=self._parse_int(str(data.get("installment", data.get("half", "")))),
+            installment_number=self._parse_int(
+                str(data.get("installment", data.get("half", "")))
+            ),
             raw_data=data,
         )
 
     def _parse_tax_lien(self, data: Dict[str, Any]) -> Optional[TaxLien]:
         """Parse a tax lien certificate record."""
-        cert_number = data.get("certificateNumber", data.get("certNumber", data.get("lienNumber", "")))
+        cert_number = data.get(
+            "certificateNumber", data.get("certNumber", data.get("lienNumber", ""))
+        )
         apn = data.get("apn", data.get("parcelNumber", ""))
 
         if not cert_number and not apn:
@@ -689,7 +753,9 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
         # Parse tax years covered
         tax_years = data.get("taxYears", data.get("years", []))
         if isinstance(tax_years, str):
-            tax_years = [int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()]
+            tax_years = [
+                int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()
+            ]
         elif isinstance(tax_years, int):
             tax_years = [tax_years]
 
@@ -698,22 +764,34 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
         redemption_deadline = None
         if sale_date:
             from datetime import timedelta
+
             redemption_deadline = date(
                 sale_date.year + self.REDEMPTION_PERIOD_YEARS,
                 sale_date.month,
-                sale_date.day
+                sale_date.day,
             )
 
         return TaxLien(
             lien_number=str(cert_number) if cert_number else f"CERT-{formatted_apn}",
             parcel_id=formatted_apn,
             lien_date=sale_date,
-            lien_amount=self._parse_decimal(str(data.get("faceAmount", data.get("purchaseAmount", "")))),
-            face_value=self._parse_decimal(str(data.get("faceAmount", data.get("taxAmount", "")))),
-            interest_rate=self._parse_decimal(str(data.get("interestRate", data.get("bidRate", "")))) or self.LIEN_INTEREST_RATE,
+            lien_amount=self._parse_decimal(
+                str(data.get("faceAmount", data.get("purchaseAmount", "")))
+            ),
+            face_value=self._parse_decimal(
+                str(data.get("faceAmount", data.get("taxAmount", "")))
+            ),
+            interest_rate=self._parse_decimal(
+                str(data.get("interestRate", data.get("bidRate", "")))
+            )
+            or self.LIEN_INTEREST_RATE,
             accrued_interest=self._parse_decimal(str(data.get("accruedInterest", ""))),
-            penalties=self._parse_decimal(str(data.get("subTaxes", data.get("subsequentTaxes", "")))),
-            total_due=self._parse_decimal(str(data.get("redemptionAmount", data.get("totalDue", "")))),
+            penalties=self._parse_decimal(
+                str(data.get("subTaxes", data.get("subsequentTaxes", "")))
+            ),
+            total_due=self._parse_decimal(
+                str(data.get("redemptionAmount", data.get("totalDue", "")))
+            ),
             status=self._parse_lien_status(data.get("status", "")),
             property_address=data.get("address", data.get("situsAddress")),
             owner_name=data.get("owner", data.get("ownerName")),
@@ -723,18 +801,25 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
             holder_address=data.get("holderAddress", data.get("investorAddress")),
             assignment_date=self._parse_date(data.get("assignmentDate", "")),
             redemption_date=self._parse_date(data.get("redemptionDate", "")),
-            redemption_amount=self._parse_decimal(str(data.get("redemptionAmount", ""))),
-            redemption_deadline=redemption_deadline or self._parse_date(data.get("redemptionDeadline", "")),
+            redemption_amount=self._parse_decimal(
+                str(data.get("redemptionAmount", ""))
+            ),
+            redemption_deadline=redemption_deadline
+            or self._parse_date(data.get("redemptionDeadline", "")),
             sale_date=sale_date,
             sale_type=TaxSaleType.TAX_LIEN_SALE,  # Arizona is a lien state
-            sale_amount=self._parse_decimal(str(data.get("purchaseAmount", data.get("bidAmount", "")))),
+            sale_amount=self._parse_decimal(
+                str(data.get("purchaseAmount", data.get("bidAmount", "")))
+            ),
             county=self.COUNTY_NAME,
             state=self.STATE,
             source_url=f"{self.BASE_URL}certificate/{cert_number}",
             raw_data=data,
         )
 
-    def _parse_tax_sale_property(self, data: Dict[str, Any]) -> Optional[TaxSaleProperty]:
+    def _parse_tax_sale_property(
+        self, data: Dict[str, Any]
+    ) -> Optional[TaxSaleProperty]:
         """Parse a tax sale property listing (tax lien certificate)."""
         apn = data.get("apn", data.get("parcelNumber", ""))
         if not apn:
@@ -745,22 +830,30 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
         # Parse delinquent years
         tax_years = data.get("taxYears", data.get("years", []))
         if isinstance(tax_years, str):
-            tax_years = [int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()]
+            tax_years = [
+                int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()
+            ]
         elif isinstance(tax_years, int):
             tax_years = [tax_years]
 
         # Determine sale type
         is_otc = data.get("isOTC", data.get("overTheCounter", False))
-        sale_type = TaxSaleType.OVER_THE_COUNTER if is_otc else TaxSaleType.TAX_LIEN_SALE
+        sale_type = (
+            TaxSaleType.OVER_THE_COUNTER if is_otc else TaxSaleType.TAX_LIEN_SALE
+        )
 
         return TaxSaleProperty(
-            sale_id=data.get("saleId", data.get("certificateNumber", data.get("itemNumber"))),
+            sale_id=data.get(
+                "saleId", data.get("certificateNumber", data.get("itemNumber"))
+            ),
             parcel_id=formatted_apn,
             property_address=data.get("address", data.get("situsAddress")),
             city=data.get("city", data.get("situsCity")),
             zip_code=data.get("zip", data.get("situsZip")),
             legal_description=data.get("legalDescription"),
-            property_type=self.PROPERTY_CLASSES.get(str(data.get("propertyClass", "")), data.get("propertyType")),
+            property_type=self.PROPERTY_CLASSES.get(
+                str(data.get("propertyClass", "")), data.get("propertyType")
+            ),
             owner_name=data.get("owner", data.get("ownerName")),
             owner_address=data.get("ownerAddress", data.get("mailingAddress")),
             tax_years_delinquent=tax_years,
@@ -768,17 +861,29 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
             penalties_due=self._parse_decimal(str(data.get("interest", ""))),
             interest_due=self._parse_decimal(str(data.get("interest", ""))),
             fees_due=self._parse_decimal(str(data.get("costs", ""))),
-            total_amount_due=self._parse_decimal(str(data.get("faceAmount", data.get("openingBid", "")))),
+            total_amount_due=self._parse_decimal(
+                str(data.get("faceAmount", data.get("openingBid", "")))
+            ),
             sale_type=sale_type,
             sale_date=self._parse_date(data.get("saleDate", "")),
-            auction_date=self._parse_date(data.get("auctionDate", data.get("saleDate", ""))),
-            minimum_bid=self._parse_decimal(str(data.get("faceAmount", data.get("openingBid", "")))),
+            auction_date=self._parse_date(
+                data.get("auctionDate", data.get("saleDate", ""))
+            ),
+            minimum_bid=self._parse_decimal(
+                str(data.get("faceAmount", data.get("openingBid", "")))
+            ),
             opening_bid=self._parse_decimal(str(data.get("openingBid", ""))),
-            assessed_value=self._parse_decimal(str(data.get("assessedValue", data.get("limitedValue", "")))),
-            market_value=self._parse_decimal(str(data.get("fullCashValue", data.get("fcv", "")))),
+            assessed_value=self._parse_decimal(
+                str(data.get("assessedValue", data.get("limitedValue", "")))
+            ),
+            market_value=self._parse_decimal(
+                str(data.get("fullCashValue", data.get("fcv", "")))
+            ),
             status=data.get("status", ""),
             sold=data.get("sold", False),
-            winning_bid=self._parse_decimal(str(data.get("winningBid", data.get("purchaseAmount", "")))),
+            winning_bid=self._parse_decimal(
+                str(data.get("winningBid", data.get("purchaseAmount", "")))
+            ),
             winning_bidder=data.get("buyer", data.get("investor")),
             redemption_period_ends=self._parse_date(data.get("redemptionDeadline", "")),
             redeemable=True,  # Arizona liens are redeemable for 3 years
@@ -819,6 +924,7 @@ class MaricopaCountyTreasurer(CountyTreasurerBase):
 
 # Convenience functions
 
+
 def get_maricopa_county_tax_record(parcel_id: str) -> Optional[PropertyTaxRecord]:
     """Get Maricopa County tax record by APN."""
     treasurer = MaricopaCountyTreasurer()
@@ -826,6 +932,7 @@ def get_maricopa_county_tax_record(parcel_id: str) -> Optional[PropertyTaxRecord
     async def _get():
         async with treasurer:
             return await treasurer.get_tax_record(parcel_id)
+
     return asyncio.run(_get())
 
 
@@ -833,14 +940,17 @@ def search_maricopa_county_by_address(
     street_address: str,
     city: Optional[str] = None,
     zip_code: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> TaxSearchResult:
     """Search Maricopa County tax records by address."""
     treasurer = MaricopaCountyTreasurer()
 
     async def _search():
         async with treasurer:
-            return await treasurer.search_by_address(street_address, city, zip_code, **kwargs)
+            return await treasurer.search_by_address(
+                street_address, city, zip_code, **kwargs
+            )
+
     return asyncio.run(_search())
 
 
@@ -851,4 +961,5 @@ def search_maricopa_county_by_owner(owner_name: str, **kwargs) -> TaxSearchResul
     async def _search():
         async with treasurer:
             return await treasurer.search_by_owner(owner_name, **kwargs)
+
     return asyncio.run(_search())

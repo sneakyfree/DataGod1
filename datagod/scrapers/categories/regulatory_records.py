@@ -10,15 +10,17 @@ Free Public Sources:
 """
 
 import asyncio
-import aiohttp
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, List, Dict, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 
 
 class ViolationType(Enum):
     """Regulatory violation types."""
+
     SERIOUS = "serious"
     WILLFUL = "willful"
     REPEAT = "repeat"
@@ -29,6 +31,7 @@ class ViolationType(Enum):
 
 class InspectionType(Enum):
     """OSHA inspection types."""
+
     PROGRAMMED = "programmed"
     COMPLAINT = "complaint"
     REFERRAL = "referral"
@@ -39,6 +42,7 @@ class InspectionType(Enum):
 
 class SECFilingType(Enum):
     """SEC filing types."""
+
     FORM_10K = "10-K"
     FORM_10Q = "10-Q"
     FORM_8K = "8-K"
@@ -54,6 +58,7 @@ class SECFilingType(Enum):
 @dataclass
 class OSHAInspection:
     """OSHA workplace inspection record."""
+
     activity_number: str
     establishment_name: str
     site_address: str
@@ -80,6 +85,7 @@ class OSHAInspection:
 @dataclass
 class OSHAViolation:
     """OSHA violation detail."""
+
     citation_id: str
     activity_number: str
     violation_type: str
@@ -97,6 +103,7 @@ class OSHAViolation:
 @dataclass
 class MSHAInspection:
     """MSHA mine inspection record."""
+
     event_number: str
     mine_id: str
     mine_name: str
@@ -114,6 +121,7 @@ class MSHAInspection:
 @dataclass
 class SECFiling:
     """SEC EDGAR filing record."""
+
     accession_number: str
     cik: str
     company_name: str
@@ -134,6 +142,7 @@ class SECFiling:
 @dataclass
 class SECEnforcement:
     """SEC enforcement action."""
+
     action_id: str
     title: str
     action_date: Optional[datetime] = None
@@ -149,6 +158,7 @@ class SECEnforcement:
 @dataclass
 class ProductRecall:
     """CPSC product recall."""
+
     recall_id: str
     recall_number: str
     product_name: str
@@ -172,238 +182,211 @@ STATE_REGULATORY_URLS = {
     "AL": {
         "labor": "https://labor.alabama.gov/",
         "environment": "https://adem.alabama.gov/",
-        "insurance": "https://aldoi.gov/"
+        "insurance": "https://aldoi.gov/",
     },
     "AK": {
         "labor": "https://labor.alaska.gov/",
         "environment": "https://dec.alaska.gov/",
-        "commerce": "https://www.commerce.alaska.gov/"
+        "commerce": "https://www.commerce.alaska.gov/",
     },
     "AZ": {
         "labor": "https://www.azica.gov/",
         "environment": "https://azdeq.gov/",
-        "insurance": "https://difi.az.gov/"
+        "insurance": "https://difi.az.gov/",
     },
     "AR": {
         "labor": "https://www.labor.arkansas.gov/",
         "environment": "https://www.adeq.state.ar.us/",
-        "insurance": "https://insurance.arkansas.gov/"
+        "insurance": "https://insurance.arkansas.gov/",
     },
     "CA": {
         "labor": "https://www.dir.ca.gov/",
         "osha": "https://www.dir.ca.gov/dosh/",
         "environment": "https://calepa.ca.gov/",
-        "insurance": "https://www.insurance.ca.gov/"
+        "insurance": "https://www.insurance.ca.gov/",
     },
     "CO": {
         "labor": "https://cdle.colorado.gov/",
         "environment": "https://cdphe.colorado.gov/",
-        "insurance": "https://doi.colorado.gov/"
+        "insurance": "https://doi.colorado.gov/",
     },
     "CT": {
         "labor": "https://www.ctdol.state.ct.us/",
         "osha": "https://www.ctdol.state.ct.us/osha/osha.htm",
-        "environment": "https://portal.ct.gov/DEEP"
+        "environment": "https://portal.ct.gov/DEEP",
     },
     "DE": {
         "labor": "https://labor.delaware.gov/",
-        "environment": "https://dnrec.alpha.delaware.gov/"
+        "environment": "https://dnrec.alpha.delaware.gov/",
     },
-    "DC": {
-        "labor": "https://does.dc.gov/",
-        "environment": "https://doee.dc.gov/"
-    },
+    "DC": {"labor": "https://does.dc.gov/", "environment": "https://doee.dc.gov/"},
     "FL": {
         "labor": "https://www.floridajobs.org/",
         "environment": "https://floridadep.gov/",
-        "insurance": "https://www.myfloridacfo.com/"
+        "insurance": "https://www.myfloridacfo.com/",
     },
     "GA": {
         "labor": "https://dol.georgia.gov/",
         "environment": "https://epd.georgia.gov/",
-        "insurance": "https://oci.georgia.gov/"
+        "insurance": "https://oci.georgia.gov/",
     },
     "HI": {
         "labor": "https://labor.hawaii.gov/",
         "hiosh": "https://labor.hawaii.gov/hiosh/",
-        "environment": "https://health.hawaii.gov/"
+        "environment": "https://health.hawaii.gov/",
     },
     "ID": {
         "labor": "https://www.labor.idaho.gov/",
-        "environment": "https://www.deq.idaho.gov/"
+        "environment": "https://www.deq.idaho.gov/",
     },
     "IL": {
         "labor": "https://www.illinois.gov/idol/",
         "environment": "https://www2.illinois.gov/epa/",
-        "insurance": "https://insurance.illinois.gov/"
+        "insurance": "https://insurance.illinois.gov/",
     },
     "IN": {
         "labor": "https://www.in.gov/dol/",
         "iosha": "https://www.in.gov/dol/iosha/",
-        "environment": "https://www.in.gov/idem/"
+        "environment": "https://www.in.gov/idem/",
     },
     "IA": {
         "labor": "https://www.iowadivisionoflabor.gov/",
         "iosh": "https://www.iowaosha.gov/",
-        "environment": "https://www.iowadnr.gov/"
+        "environment": "https://www.iowadnr.gov/",
     },
     "KS": {
         "labor": "https://www.dol.ks.gov/",
-        "environment": "https://www.kdhe.ks.gov/"
+        "environment": "https://www.kdhe.ks.gov/",
     },
     "KY": {
         "labor": "https://labor.ky.gov/",
         "kyosh": "https://labor.ky.gov/standards/Pages/default.aspx",
-        "environment": "https://eec.ky.gov/"
+        "environment": "https://eec.ky.gov/",
     },
     "LA": {
         "labor": "https://www.laworks.net/",
-        "environment": "https://deq.louisiana.gov/"
+        "environment": "https://deq.louisiana.gov/",
     },
     "ME": {
         "labor": "https://www.maine.gov/labor/",
-        "environment": "https://www.maine.gov/dep/"
+        "environment": "https://www.maine.gov/dep/",
     },
     "MD": {
         "labor": "https://www.dllr.state.md.us/",
         "mosh": "https://www.dllr.state.md.us/labor/mosh/",
-        "environment": "https://mde.maryland.gov/"
+        "environment": "https://mde.maryland.gov/",
     },
     "MA": {
         "labor": "https://www.mass.gov/orgs/department-of-labor-standards",
-        "environment": "https://www.mass.gov/orgs/massachusetts-department-of-environmental-protection"
+        "environment": "https://www.mass.gov/orgs/massachusetts-department-of-environmental-protection",
     },
     "MI": {
         "labor": "https://www.michigan.gov/leo/",
         "miosha": "https://www.michigan.gov/leo/bureaus-agencies/miosha",
-        "environment": "https://www.michigan.gov/egle/"
+        "environment": "https://www.michigan.gov/egle/",
     },
     "MN": {
         "labor": "https://www.dli.mn.gov/",
         "mnosha": "https://www.dli.mn.gov/business/workplace-safety-and-health",
-        "environment": "https://www.pca.state.mn.us/"
+        "environment": "https://www.pca.state.mn.us/",
     },
-    "MS": {
-        "labor": "https://mdes.ms.gov/",
-        "environment": "https://www.mdeq.ms.gov/"
-    },
-    "MO": {
-        "labor": "https://labor.mo.gov/",
-        "environment": "https://dnr.mo.gov/"
-    },
-    "MT": {
-        "labor": "https://erd.dli.mt.gov/",
-        "environment": "https://deq.mt.gov/"
-    },
+    "MS": {"labor": "https://mdes.ms.gov/", "environment": "https://www.mdeq.ms.gov/"},
+    "MO": {"labor": "https://labor.mo.gov/", "environment": "https://dnr.mo.gov/"},
+    "MT": {"labor": "https://erd.dli.mt.gov/", "environment": "https://deq.mt.gov/"},
     "NE": {
         "labor": "https://dol.nebraska.gov/",
-        "environment": "http://www.deq.state.ne.us/"
+        "environment": "http://www.deq.state.ne.us/",
     },
     "NV": {
         "labor": "https://labor.nv.gov/",
         "nvosha": "https://dir.nv.gov/OSHA/Home/",
-        "environment": "https://ndep.nv.gov/"
+        "environment": "https://ndep.nv.gov/",
     },
     "NH": {
         "labor": "https://www.nh.gov/labor/",
-        "environment": "https://www.des.nh.gov/"
+        "environment": "https://www.des.nh.gov/",
     },
     "NJ": {
         "labor": "https://www.nj.gov/labor/",
         "peosh": "https://www.nj.gov/labor/safetyandhealth/",
-        "environment": "https://www.nj.gov/dep/"
+        "environment": "https://www.nj.gov/dep/",
     },
     "NM": {
         "labor": "https://www.dws.state.nm.us/",
-        "environment": "https://www.env.nm.gov/"
+        "environment": "https://www.env.nm.gov/",
     },
     "NY": {
         "labor": "https://dol.ny.gov/",
         "pesh": "https://dol.ny.gov/public-employee-safety-and-health-pesh",
-        "environment": "https://www.dec.ny.gov/"
+        "environment": "https://www.dec.ny.gov/",
     },
     "NC": {
         "labor": "https://www.labor.nc.gov/",
         "ncosha": "https://www.labor.nc.gov/safety-and-health",
-        "environment": "https://deq.nc.gov/"
+        "environment": "https://deq.nc.gov/",
     },
-    "ND": {
-        "labor": "https://www.nd.gov/labor/",
-        "environment": "https://deq.nd.gov/"
-    },
-    "OH": {
-        "labor": "https://com.ohio.gov/",
-        "environment": "https://epa.ohio.gov/"
-    },
+    "ND": {"labor": "https://www.nd.gov/labor/", "environment": "https://deq.nd.gov/"},
+    "OH": {"labor": "https://com.ohio.gov/", "environment": "https://epa.ohio.gov/"},
     "OK": {
         "labor": "https://oklahoma.gov/labor.html",
-        "environment": "https://www.deq.ok.gov/"
+        "environment": "https://www.deq.ok.gov/",
     },
     "OR": {
         "labor": "https://www.oregon.gov/boli/",
         "orosha": "https://osha.oregon.gov/",
-        "environment": "https://www.oregon.gov/deq/"
+        "environment": "https://www.oregon.gov/deq/",
     },
     "PA": {
         "labor": "https://www.dli.pa.gov/",
-        "environment": "https://www.dep.pa.gov/"
+        "environment": "https://www.dep.pa.gov/",
     },
-    "RI": {
-        "labor": "https://dlt.ri.gov/",
-        "environment": "http://www.dem.ri.gov/"
-    },
+    "RI": {"labor": "https://dlt.ri.gov/", "environment": "http://www.dem.ri.gov/"},
     "SC": {
         "labor": "https://llr.sc.gov/",
         "scosha": "https://llr.sc.gov/osha/",
-        "environment": "https://scdhec.gov/"
+        "environment": "https://scdhec.gov/",
     },
-    "SD": {
-        "labor": "https://dlr.sd.gov/",
-        "environment": "https://danr.sd.gov/"
-    },
+    "SD": {"labor": "https://dlr.sd.gov/", "environment": "https://danr.sd.gov/"},
     "TN": {
         "labor": "https://www.tn.gov/workforce.html",
         "tosha": "https://www.tn.gov/workforce/employees/safety-health.html",
-        "environment": "https://www.tn.gov/environment.html"
+        "environment": "https://www.tn.gov/environment.html",
     },
     "TX": {
         "labor": "https://www.twc.texas.gov/",
         "environment": "https://www.tceq.texas.gov/",
-        "insurance": "https://www.tdi.texas.gov/"
+        "insurance": "https://www.tdi.texas.gov/",
     },
     "UT": {
         "labor": "https://laborcommission.utah.gov/",
         "uosh": "https://laborcommission.utah.gov/divisions/uosh/",
-        "environment": "https://deq.utah.gov/"
+        "environment": "https://deq.utah.gov/",
     },
     "VT": {
         "labor": "https://labor.vermont.gov/",
         "vosha": "https://labor.vermont.gov/vosha",
-        "environment": "https://dec.vermont.gov/"
+        "environment": "https://dec.vermont.gov/",
     },
     "VA": {
         "labor": "https://www.doli.virginia.gov/",
         "vosh": "https://www.doli.virginia.gov/vosh/",
-        "environment": "https://www.deq.virginia.gov/"
+        "environment": "https://www.deq.virginia.gov/",
     },
     "WA": {
         "labor": "https://www.lni.wa.gov/",
         "dosh": "https://www.lni.wa.gov/safety-health/",
-        "environment": "https://ecology.wa.gov/"
+        "environment": "https://ecology.wa.gov/",
     },
-    "WV": {
-        "labor": "https://labor.wv.gov/",
-        "environment": "https://dep.wv.gov/"
-    },
+    "WV": {"labor": "https://labor.wv.gov/", "environment": "https://dep.wv.gov/"},
     "WI": {
         "labor": "https://dwd.wisconsin.gov/",
-        "environment": "https://dnr.wisconsin.gov/"
+        "environment": "https://dnr.wisconsin.gov/",
     },
     "WY": {
         "labor": "https://dws.wyo.gov/",
         "wyosha": "https://wyomingworkforce.org/businesses-and-employers/osha/",
-        "environment": "https://deq.wyoming.gov/"
-    }
+        "environment": "https://deq.wyoming.gov/",
+    },
 }
 
 
@@ -457,7 +440,7 @@ class RegulatoryRecordsScraper:
         naics: Optional[str] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[OSHAInspection]:
         """
         Search OSHA inspection records.
@@ -492,7 +475,9 @@ class RegulatoryRecordsScraper:
                 if response.status == 200:
                     data = await response.json()
 
-                    for item in data.get("results", data if isinstance(data, list) else []):
+                    for item in data.get(
+                        "results", data if isinstance(data, list) else []
+                    ):
                         try:
                             inspection = OSHAInspection(
                                 activity_number=str(item.get("activity_nr", "")),
@@ -503,17 +488,29 @@ class RegulatoryRecordsScraper:
                                 site_zip=item.get("site_zip", ""),
                                 naics_code=item.get("naics_code"),
                                 inspection_type=item.get("insp_type"),
-                                total_violations=int(item.get("total_violations", 0) or 0),
-                                serious_violations=int(item.get("serious_violations", 0) or 0),
-                                willful_violations=int(item.get("willful_violations", 0) or 0),
-                                repeat_violations=int(item.get("repeat_violations", 0) or 0),
-                                other_violations=int(item.get("other_violations", 0) or 0),
-                                total_penalties=float(item.get("total_penalties", 0) or 0),
+                                total_violations=int(
+                                    item.get("total_violations", 0) or 0
+                                ),
+                                serious_violations=int(
+                                    item.get("serious_violations", 0) or 0
+                                ),
+                                willful_violations=int(
+                                    item.get("willful_violations", 0) or 0
+                                ),
+                                repeat_violations=int(
+                                    item.get("repeat_violations", 0) or 0
+                                ),
+                                other_violations=int(
+                                    item.get("other_violations", 0) or 0
+                                ),
+                                total_penalties=float(
+                                    item.get("total_penalties", 0) or 0
+                                ),
                                 fatalities=int(item.get("nr_in_estab", 0) or 0),
                                 hospitalized=int(item.get("nr_exposed", 0) or 0),
                                 union_status=item.get("union_status"),
                                 sic_code=item.get("sic_code"),
-                                raw_data=item
+                                raw_data=item,
                             )
 
                             # Parse dates
@@ -542,10 +539,7 @@ class RegulatoryRecordsScraper:
 
         return results
 
-    async def get_osha_violations(
-        self,
-        activity_number: str
-    ) -> List[OSHAViolation]:
+    async def get_osha_violations(self, activity_number: str) -> List[OSHAViolation]:
         """Get violations for a specific OSHA inspection."""
         await self._ensure_session()
 
@@ -559,7 +553,9 @@ class RegulatoryRecordsScraper:
                 if response.status == 200:
                     data = await response.json()
 
-                    for item in data.get("results", data if isinstance(data, list) else []):
+                    for item in data.get(
+                        "results", data if isinstance(data, list) else []
+                    ):
                         try:
                             violation = OSHAViolation(
                                 citation_id=str(item.get("citation_id", "")),
@@ -567,11 +563,15 @@ class RegulatoryRecordsScraper:
                                 violation_type=item.get("viol_type", ""),
                                 standard_code=item.get("standard", ""),
                                 standard_description=item.get("standard_text"),
-                                penalty_amount=float(item.get("initial_penalty", 0) or 0),
-                                current_penalty=float(item.get("current_penalty", 0) or 0),
+                                penalty_amount=float(
+                                    item.get("initial_penalty", 0) or 0
+                                ),
+                                current_penalty=float(
+                                    item.get("current_penalty", 0) or 0
+                                ),
                                 gravity=item.get("gravity"),
                                 contested=bool(item.get("contested")),
-                                raw_data=item
+                                raw_data=item,
                             )
 
                             if item.get("abate_date"):
@@ -600,7 +600,7 @@ class RegulatoryRecordsScraper:
         form_type: Optional[str] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
-        limit: int = 40
+        limit: int = 40,
     ) -> List[SECFiling]:
         """
         Search SEC EDGAR filings.
@@ -628,7 +628,7 @@ class RegulatoryRecordsScraper:
                 "startdt": start_date or "2020-01-01",
                 "enddt": end_date or datetime.now().strftime("%Y-%m-%d"),
                 "from": 0,
-                "size": limit
+                "size": limit,
             }
 
             if cik:
@@ -636,15 +636,19 @@ class RegulatoryRecordsScraper:
 
             headers = {
                 "User-Agent": "DataGod Research contact@example.com",
-                "Accept": "application/json"
+                "Accept": "application/json",
             }
 
             # Alternative: use the submissions API for company filings
             if cik:
                 cik_padded = cik.zfill(10)
-                submissions_url = f"https://data.sec.gov/submissions/CIK{cik_padded}.json"
+                submissions_url = (
+                    f"https://data.sec.gov/submissions/CIK{cik_padded}.json"
+                )
 
-                async with self.session.get(submissions_url, headers=headers) as response:
+                async with self.session.get(
+                    submissions_url, headers=headers
+                ) as response:
                     if response.status == 200:
                         data = await response.json()
 
@@ -665,12 +669,18 @@ class RegulatoryRecordsScraper:
                                 cik=cik,
                                 company_name=company,
                                 form_type=form_types[i],
-                                primary_document=primary_docs[i] if i < len(primary_docs) else None,
+                                primary_document=(
+                                    primary_docs[i] if i < len(primary_docs) else None
+                                ),
                                 raw_data={
                                     "accessionNumber": accession_numbers[i],
                                     "form": form_types[i],
-                                    "filingDate": filing_dates[i] if i < len(filing_dates) else None
-                                }
+                                    "filingDate": (
+                                        filing_dates[i]
+                                        if i < len(filing_dates)
+                                        else None
+                                    ),
+                                },
                             )
 
                             if i < len(filing_dates):
@@ -698,7 +708,7 @@ class RegulatoryRecordsScraper:
 
             headers = {
                 "User-Agent": "DataGod Research contact@example.com",
-                "Accept": "application/json"
+                "Accept": "application/json",
             }
 
             async with self.session.get(url, headers=headers) as response:
@@ -718,7 +728,7 @@ class RegulatoryRecordsScraper:
         manufacturer: Optional[str] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[ProductRecall]:
         """
         Search CPSC product recalls.
@@ -759,7 +769,7 @@ class RegulatoryRecordsScraper:
                                 injuries=int(item.get("Injuries", 0) or 0),
                                 deaths=int(item.get("Deaths", 0) or 0),
                                 url=item.get("URL"),
-                                raw_data=item
+                                raw_data=item,
                             )
 
                             if item.get("RecallDate"):
@@ -773,21 +783,31 @@ class RegulatoryRecordsScraper:
                             # Get manufacturers
                             manufacturers = item.get("Manufacturers", [])
                             if manufacturers and isinstance(manufacturers, list):
-                                recall.manufacturer = ", ".join([
-                                    m.get("Name", "") for m in manufacturers if m.get("Name")
-                                ])
+                                recall.manufacturer = ", ".join(
+                                    [
+                                        m.get("Name", "")
+                                        for m in manufacturers
+                                        if m.get("Name")
+                                    ]
+                                )
 
                             # Get retailers
                             retailers = item.get("Retailers", [])
                             if retailers and isinstance(retailers, list):
-                                recall.retailer = ", ".join([
-                                    r.get("Name", "") for r in retailers if r.get("Name")
-                                ])
+                                recall.retailer = ", ".join(
+                                    [
+                                        r.get("Name", "")
+                                        for r in retailers
+                                        if r.get("Name")
+                                    ]
+                                )
 
                             # Get images
                             images = item.get("Images", [])
                             if images and isinstance(images, list):
-                                recall.images = [img.get("URL") for img in images if img.get("URL")]
+                                recall.images = [
+                                    img.get("URL") for img in images if img.get("URL")
+                                ]
 
                             results.append(recall)
                         except (KeyError, ValueError, TypeError):
@@ -812,18 +832,55 @@ class RegulatoryRecordsScraper:
         private sector workers.
         """
         state_plans = {
-            "AK", "AZ", "CA", "HI", "IN", "IA", "KY", "MD", "MI", "MN",
-            "NV", "NM", "NC", "OR", "SC", "TN", "UT", "VT", "VA", "WA", "WY"
+            "AK",
+            "AZ",
+            "CA",
+            "HI",
+            "IN",
+            "IA",
+            "KY",
+            "MD",
+            "MI",
+            "MN",
+            "NV",
+            "NM",
+            "NC",
+            "OR",
+            "SC",
+            "TN",
+            "UT",
+            "VT",
+            "VA",
+            "WA",
+            "WY",
         }
 
         state_upper = state.upper()
         if state_upper in state_plans:
             urls = STATE_REGULATORY_URLS.get(state_upper, {})
             # Return state OSHA URL if available
-            for key in ["osha", "dosh", "hiosh", "iosha", "iosh", "kyosh",
-                       "mosh", "miosha", "mnosha", "nvosha", "ncosha",
-                       "orosha", "scosha", "tosha", "uosh", "vosha", "vosh",
-                       "wyosha", "pesh", "peosh"]:
+            for key in [
+                "osha",
+                "dosh",
+                "hiosh",
+                "iosha",
+                "iosh",
+                "kyosh",
+                "mosh",
+                "miosha",
+                "mnosha",
+                "nvosha",
+                "ncosha",
+                "orosha",
+                "scosha",
+                "tosha",
+                "uosh",
+                "vosha",
+                "vosh",
+                "wyosha",
+                "pesh",
+                "peosh",
+            ]:
                 if key in urls:
                     return urls[key]
             return urls.get("labor")
@@ -840,17 +897,16 @@ def search_osha_inspections_sync(
     establishment_name: Optional[str] = None,
     state: Optional[str] = None,
     city: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> List[OSHAInspection]:
     """Synchronous wrapper for OSHA inspection search."""
+
     async def _search():
         async with RegulatoryRecordsScraper() as scraper:
             return await scraper.search_osha_inspections(
-                establishment_name=establishment_name,
-                state=state,
-                city=city,
-                **kwargs
+                establishment_name=establishment_name, state=state, city=city, **kwargs
             )
+
     return asyncio.run(_search())
 
 
@@ -858,33 +914,30 @@ def search_sec_filings_sync(
     company_name: Optional[str] = None,
     cik: Optional[str] = None,
     form_type: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> List[SECFiling]:
     """Synchronous wrapper for SEC filing search."""
+
     async def _search():
         async with RegulatoryRecordsScraper() as scraper:
             return await scraper.search_sec_filings(
-                company_name=company_name,
-                cik=cik,
-                form_type=form_type,
-                **kwargs
+                company_name=company_name, cik=cik, form_type=form_type, **kwargs
             )
+
     return asyncio.run(_search())
 
 
 def search_product_recalls_sync(
-    product_name: Optional[str] = None,
-    manufacturer: Optional[str] = None,
-    **kwargs
+    product_name: Optional[str] = None, manufacturer: Optional[str] = None, **kwargs
 ) -> List[ProductRecall]:
     """Synchronous wrapper for CPSC recall search."""
+
     async def _search():
         async with RegulatoryRecordsScraper() as scraper:
             return await scraper.search_product_recalls(
-                product_name=product_name,
-                manufacturer=manufacturer,
-                **kwargs
+                product_name=product_name, manufacturer=manufacturer, **kwargs
             )
+
     return asyncio.run(_search())
 
 

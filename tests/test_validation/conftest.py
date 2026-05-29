@@ -2,8 +2,9 @@
 Shared fixtures for validation tests.
 """
 
-import pytest
 from datetime import date, datetime
+
+import pytest
 
 
 @pytest.fixture

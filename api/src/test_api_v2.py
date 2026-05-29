@@ -2,14 +2,15 @@
 Test suite for DataGod API v2
 """
 
+import json
+import os
+import sys
+from datetime import date
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
-import json
-from datetime import date
-import sys
-import os
-from pathlib import Path
 from passlib.context import CryptContext
 
 # Add api/src to path FIRST (before project root) so that relative imports work correctly
@@ -45,7 +46,7 @@ class MockUserDbManager:
                 "api_calls_today": 0,
                 "exports_this_month": 0,
                 "created_at": "2024-01-01T00:00:00",
-                "updated_at": "2024-01-01T00:00:00"
+                "updated_at": "2024-01-01T00:00:00",
             },
             "user": {
                 "id": 2,
@@ -62,8 +63,8 @@ class MockUserDbManager:
                 "api_calls_today": 0,
                 "exports_this_month": 0,
                 "created_at": "2024-01-01T00:00:00",
-                "updated_at": "2024-01-01T00:00:00"
-            }
+                "updated_at": "2024-01-01T00:00:00",
+            },
         }
 
     def get_user_by_username(self, username):
@@ -84,7 +85,15 @@ class MockUserDbManager:
     def record_login(self, username, success=True):
         return True
 
-    def create_user(self, username, email, hashed_password, full_name=None, roles=None, disabled=False):
+    def create_user(
+        self,
+        username,
+        email,
+        hashed_password,
+        full_name=None,
+        roles=None,
+        disabled=False,
+    ):
         if username in self.demo_users:
             return None
         for user in self.demo_users.values():
@@ -105,7 +114,7 @@ class MockUserDbManager:
             "api_calls_today": 0,
             "exports_this_month": 0,
             "created_at": "2024-01-01T00:00:00",
-            "updated_at": "2024-01-01T00:00:00"
+            "updated_at": "2024-01-01T00:00:00",
         }
         return len(self.demo_users)
 
@@ -142,7 +151,9 @@ import importlib.util
 import types
 
 # Load api_v2_simple module directly to set up mock before main.py imports it
-api_v2_spec = importlib.util.spec_from_file_location("api_v2_simple", api_src_path / "api_v2_simple.py")
+api_v2_spec = importlib.util.spec_from_file_location(
+    "api_v2_simple", api_src_path / "api_v2_simple.py"
+)
 api_v2_module = importlib.util.module_from_spec(api_v2_spec)
 sys.modules["api_v2_simple"] = api_v2_module
 api_v2_spec.loader.exec_module(api_v2_module)
@@ -156,7 +167,9 @@ mock_user_db = create_mock_user_db_manager()
 set_user_db_manager(mock_user_db)
 
 # Also load api_v2 module and set its mock user db manager
-api_v2_full_spec = importlib.util.spec_from_file_location("api_v2", api_src_path / "api_v2.py")
+api_v2_full_spec = importlib.util.spec_from_file_location(
+    "api_v2", api_src_path / "api_v2.py"
+)
 api_v2_full_module = importlib.util.module_from_spec(api_v2_full_spec)
 sys.modules["api_v2"] = api_v2_full_module
 api_v2_full_spec.loader.exec_module(api_v2_full_module)
@@ -180,14 +193,17 @@ get_db = db_module.get_db
 SessionLocal = db_module.SessionLocal
 
 # Import config
-config_spec = importlib.util.spec_from_file_location("config", api_src_path / "config.py")
+config_spec = importlib.util.spec_from_file_location(
+    "config", api_src_path / "config.py"
+)
 config_module = importlib.util.module_from_spec(config_spec)
 sys.modules["config"] = config_module
 config_spec.loader.exec_module(config_module)
 
 settings = config_module.settings
 
-from datagod.models import Jurisdiction, DataSource, Record, Entity, Relationship
+from datagod.models import DataSource, Entity, Jurisdiction, Record, Relationship
+
 
 # Override database dependency for testing
 def override_get_db():
@@ -196,6 +212,7 @@ def override_get_db():
         yield db
     finally:
         db.close()
+
 
 # Apply dependency override to main_app and api_v2_app
 main_app.dependency_overrides[get_db] = override_get_db
@@ -209,7 +226,7 @@ TEST_JURISDICTION = {
     "name": "Test County",
     "state": "CA",
     "county": "Test",
-    "type": "county"
+    "type": "county",
 }
 
 TEST_DATA_SOURCE = {
@@ -217,7 +234,7 @@ TEST_DATA_SOURCE = {
     "source_name": "Test API",
     "source_type": "api",
     "api_endpoint": "https://test-api.example.com",
-    "status": "active"
+    "status": "active",
 }
 
 TEST_RECORD = {
@@ -227,13 +244,13 @@ TEST_RECORD = {
     "title": "Test Mortgage Record",
     "description": "This is a test mortgage record",
     "amount": 250000.0,
-    "date": "2023-01-15T00:00:00"
+    "date": "2023-01-15T00:00:00",
 }
 
 TEST_ENTITY = {
     "entity_name": "Test Person",
     "entity_type": "person",
-    "address": "123 Test St, Testville, CA"
+    "address": "123 Test St, Testville, CA",
 }
 
 TEST_RELATIONSHIP = {
@@ -242,17 +259,15 @@ TEST_RELATIONSHIP = {
     "record_id": 1,
     "relationship_type": "owner",
     "evidence": {"source": "Property records"},
-    "confidence_score": 0.95
+    "confidence_score": 0.95,
 }
 
 # Authentication test data
-TEST_USER_CREDENTIALS = {
-    "username": "admin",
-    "password": "admin123"
-}
+TEST_USER_CREDENTIALS = {"username": "admin", "password": "admin123"}
 
 # Test tokens
 access_token = None
+
 
 def test_root_endpoint():
     """Test root endpoint"""
@@ -262,6 +277,7 @@ def test_root_endpoint():
     assert data["message"] == "DataGod API is running"
     assert data["version"] == "2.0.0"
 
+
 def test_health_endpoint():
     """Test health endpoint"""
     response = client.get("/health")
@@ -270,6 +286,7 @@ def test_health_endpoint():
     assert data["status"] == "healthy"
     assert data["api_version"] == "2.0.0"
 
+
 def test_test_endpoint():
     """Test test endpoint"""
     response = client.get("/api/v2/test")
@@ -277,27 +294,25 @@ def test_test_endpoint():
     data = response.json()
     assert data["message"] == "API v2 is working correctly"
 
+
 def test_authentication():
     """Test authentication and token generation"""
     global access_token
 
     # Test invalid credentials
     response = client.post(
-        "/api/v2/token",
-        data={"username": "invalid", "password": "invalid"}
+        "/api/v2/token", data={"username": "invalid", "password": "invalid"}
     )
     assert response.status_code == 401
 
     # Test valid credentials
-    response = client.post(
-        "/api/v2/token",
-        data=TEST_USER_CREDENTIALS
-    )
+    response = client.post("/api/v2/token", data=TEST_USER_CREDENTIALS)
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data
     assert data["token_type"] == "bearer"
     access_token = data["access_token"]
+
 
 def test_get_current_user():
     """Test getting current user information"""
@@ -305,13 +320,13 @@ def test_get_current_user():
         test_authentication()
 
     response = client.get(
-        "/api/v2/users/me",
-        headers={"Authorization": f"Bearer {access_token}"}
+        "/api/v2/users/me", headers={"Authorization": f"Bearer {access_token}"}
     )
     assert response.status_code == 200
     data = response.json()
     assert data["username"] == "admin"
     assert data["email"] == "admin@datagod.com"
+
 
 def test_jurisdiction_crud():
     """Test jurisdiction CRUD operations"""
@@ -322,7 +337,7 @@ def test_jurisdiction_crud():
     response = client.post(
         "/api/v2/jurisdictions",
         json=TEST_JURISDICTION,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     if response.status_code != 200:
         print(f"Create jurisdiction failed: {response.status_code}")
@@ -350,7 +365,7 @@ def test_jurisdiction_crud():
     response = client.put(
         f"/api/v2/jurisdictions/{jurisdiction_id}",
         json=update_data,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -359,10 +374,11 @@ def test_jurisdiction_crud():
     # Delete jurisdiction (admin only)
     response = client.delete(
         f"/api/v2/jurisdictions/{jurisdiction_id}",
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     assert response.json()["message"] == "Jurisdiction deleted successfully"
+
 
 def test_data_source_crud():
     """Test data source CRUD operations"""
@@ -373,7 +389,7 @@ def test_data_source_crud():
     response = client.post(
         "/api/v2/jurisdictions",
         json=TEST_JURISDICTION,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     jurisdiction_id = response.json()["id"]
@@ -386,7 +402,7 @@ def test_data_source_crud():
     response = client.post(
         "/api/v2/data-sources",
         json=test_data_source,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     data_source_data = response.json()
@@ -409,9 +425,10 @@ def test_data_source_crud():
     # Clean up - delete jurisdiction (which will cascade to data sources)
     response = client.delete(
         f"/api/v2/jurisdictions/{jurisdiction_id}",
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
+
 
 def test_record_crud():
     """Test record CRUD operations"""
@@ -422,7 +439,7 @@ def test_record_crud():
     response = client.post(
         "/api/v2/jurisdictions",
         json=TEST_JURISDICTION,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     jurisdiction_id = response.json()["id"]
@@ -433,7 +450,7 @@ def test_record_crud():
     response = client.post(
         "/api/v2/data-sources",
         json=test_data_source,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     data_source_id = response.json()["id"]
@@ -447,7 +464,7 @@ def test_record_crud():
     response = client.post(
         "/api/v2/records",
         json=test_record,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     record_data = response.json()
@@ -468,9 +485,7 @@ def test_record_crud():
     assert data["title"] == test_record["title"]
 
     # Test filtering
-    response = client.get(
-        f"/api/v2/records?jurisdiction_id={jurisdiction_id}"
-    )
+    response = client.get(f"/api/v2/records?jurisdiction_id={jurisdiction_id}")
     assert response.status_code == 200
     filtered_records = response.json()
     assert len(filtered_records) >= 1
@@ -478,9 +493,10 @@ def test_record_crud():
     # Clean up - delete jurisdiction (which will cascade to records and data sources)
     response = client.delete(
         f"/api/v2/jurisdictions/{jurisdiction_id}",
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
+
 
 def test_entity_crud():
     """Test entity CRUD operations"""
@@ -491,7 +507,7 @@ def test_entity_crud():
     response = client.post(
         "/api/v2/entities",
         json=TEST_ENTITY,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     entity_data = response.json()
@@ -512,12 +528,11 @@ def test_entity_crud():
     assert data["entity_name"] == TEST_ENTITY["entity_name"]
 
     # Test filtering
-    response = client.get(
-        f"/api/v2/entities?entity_type={TEST_ENTITY['entity_type']}"
-    )
+    response = client.get(f"/api/v2/entities?entity_type={TEST_ENTITY['entity_type']}")
     assert response.status_code == 200
     filtered_entities = response.json()
     assert len(filtered_entities) >= 1
+
 
 def test_relationship_crud():
     """Test relationship CRUD operations"""
@@ -528,7 +543,7 @@ def test_relationship_crud():
     response = client.post(
         "/api/v2/jurisdictions",
         json=TEST_JURISDICTION,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     jurisdiction_id = response.json()["id"]
@@ -539,7 +554,7 @@ def test_relationship_crud():
     response = client.post(
         "/api/v2/data-sources",
         json=test_data_source,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     data_source_id = response.json()["id"]
@@ -551,7 +566,7 @@ def test_relationship_crud():
     response = client.post(
         "/api/v2/records",
         json=test_record,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     record_id = response.json()["id"]
@@ -560,7 +575,7 @@ def test_relationship_crud():
     response1 = client.post(
         "/api/v2/entities",
         json=TEST_ENTITY,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response1.status_code == 200
     entity1_id = response1.json()["id"]
@@ -572,7 +587,7 @@ def test_relationship_crud():
     response2 = client.post(
         "/api/v2/entities",
         json=entity2_data,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response2.status_code == 200
     entity2_id = response2.json()["id"]
@@ -587,11 +602,13 @@ def test_relationship_crud():
     response = client.post(
         "/api/v2/relationships",
         json=test_relationship,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     relationship_data = response.json()
-    assert relationship_data["relationship_type"] == test_relationship["relationship_type"]
+    assert (
+        relationship_data["relationship_type"] == test_relationship["relationship_type"]
+    )
     relationship_id = relationship_data["id"]
 
     # Get all relationships
@@ -610,8 +627,9 @@ def test_relationship_crud():
     # Clean up
     response = client.delete(
         f"/api/v2/jurisdictions/{jurisdiction_id}",
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
+
 
 def test_advanced_search():
     """Test advanced search functionality"""
@@ -622,7 +640,7 @@ def test_advanced_search():
     jurisdiction_response = client.post(
         "/api/v2/jurisdictions",
         json=TEST_JURISDICTION,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     jurisdiction_id = jurisdiction_response.json()["id"]
 
@@ -632,7 +650,7 @@ def test_advanced_search():
     ds_response = client.post(
         "/api/v2/data-sources",
         json=test_data_source,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert ds_response.status_code == 200
     data_source_id = ds_response.json()["id"]
@@ -643,7 +661,7 @@ def test_advanced_search():
     record_response = client.post(
         "/api/v2/records",
         json=record_data,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert record_response.status_code == 200
 
@@ -653,13 +671,13 @@ def test_advanced_search():
         "jurisdiction_ids": [jurisdiction_id],
         "record_types": ["mortgage"],
         "page": 1,
-        "page_size": 10
+        "page_size": 10,
     }
 
     response = client.post(
         "/api/v2/search",
         json=search_query,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -670,8 +688,9 @@ def test_advanced_search():
     # Clean up
     client.delete(
         f"/api/v2/jurisdictions/{jurisdiction_id}",
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
+
 
 def test_data_export():
     """Test data export functionality"""
@@ -682,7 +701,7 @@ def test_data_export():
     jurisdiction_response = client.post(
         "/api/v2/jurisdictions",
         json=TEST_JURISDICTION,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     jurisdiction_id = jurisdiction_response.json()["id"]
 
@@ -692,7 +711,7 @@ def test_data_export():
     ds_response = client.post(
         "/api/v2/data-sources",
         json=test_data_source,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert ds_response.status_code == 200
     data_source_id = ds_response.json()["id"]
@@ -703,22 +722,20 @@ def test_data_export():
     record_response = client.post(
         "/api/v2/records",
         json=record_data,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert record_response.status_code == 200
 
     # Test JSON export
     export_request = {
         "format": "json",
-        "query": {
-            "jurisdiction_ids": [jurisdiction_id]
-        }
+        "query": {"jurisdiction_ids": [jurisdiction_id]},
     }
 
     response = client.post(
         "/api/v2/export",
         json=export_request,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -730,7 +747,7 @@ def test_data_export():
     response = client.post(
         "/api/v2/export",
         json=export_request,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     assert "text/csv" in response.headers["content-type"]
@@ -738,8 +755,9 @@ def test_data_export():
     # Clean up
     client.delete(
         f"/api/v2/jurisdictions/{jurisdiction_id}",
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
+
 
 def test_integration_endpoints():
     """Test integration endpoints"""
@@ -750,7 +768,7 @@ def test_integration_endpoints():
     jurisdiction_response = client.post(
         "/api/v2/jurisdictions",
         json=TEST_JURISDICTION,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     jurisdiction_id = jurisdiction_response.json()["id"]
 
@@ -760,7 +778,7 @@ def test_integration_endpoints():
     ds_response = client.post(
         "/api/v2/data-sources",
         json=test_data_source,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert ds_response.status_code == 200
     data_source_id = ds_response.json()["id"]
@@ -771,29 +789,30 @@ def test_integration_endpoints():
     record_response = client.post(
         "/api/v2/records",
         json=record_data,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     record_id = record_response.json()["id"]
 
     # Test neural network integration
     response = client.post(
         f"/api/v2/integrate/neural-network?record_id={record_id}",
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code in [200, 400]  # 200 if enabled, 400 if disabled
 
     # Test scraper integration
     response = client.post(
         f"/api/v2/integrate/scraper?jurisdiction_id={jurisdiction_id}",
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code in [200, 400]  # 200 if enabled, 400 if disabled
 
     # Clean up
     client.delete(
         f"/api/v2/jurisdictions/{jurisdiction_id}",
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
+
 
 def test_cache_management():
     """Test cache management endpoints"""
@@ -802,8 +821,7 @@ def test_cache_management():
 
     # Test cache stats
     response = client.get(
-        "/api/v2/cache/stats",
-        headers={"Authorization": f"Bearer {access_token}"}
+        "/api/v2/cache/stats", headers={"Authorization": f"Bearer {access_token}"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -811,12 +829,12 @@ def test_cache_management():
 
     # Test cache clear
     response = client.delete(
-        "/api/v2/cache/clear",
-        headers={"Authorization": f"Bearer {access_token}"}
+        "/api/v2/cache/clear", headers={"Authorization": f"Bearer {access_token}"}
     )
     assert response.status_code == 200
     data = response.json()
     assert "message" in data
+
 
 def test_error_handling():
     """Test error handling"""
@@ -830,10 +848,10 @@ def test_error_handling():
 
     # Test invalid token
     response = client.get(
-        "/api/v2/users/me",
-        headers={"Authorization": "Bearer invalid_token"}
+        "/api/v2/users/me", headers={"Authorization": "Bearer invalid_token"}
     )
     assert response.status_code == 401
+
 
 def test_rate_limiting():
     """Test rate limiting functionality"""
@@ -843,6 +861,7 @@ def test_rate_limiting():
     # Test that rate limited endpoints work
     response = client.get("/api/v2/metrics")
     assert response.status_code == 200
+
 
 def test_user_registration():
     """Test user registration endpoint"""
@@ -854,7 +873,7 @@ def test_user_registration():
         "username": f"testuser_{unique_id}",
         "email": f"testuser_{unique_id}@example.com",
         "password": "TestPassword123!",
-        "full_name": "Test User"
+        "full_name": "Test User",
     }
 
     # Test successful registration
@@ -876,7 +895,7 @@ def test_user_registration():
         "username": f"testuser2_{unique_id}",
         "email": "invalid-email",
         "password": "TestPassword123!",
-        "full_name": "Test User 2"
+        "full_name": "Test User 2",
     }
     response = client.post("/api/v2/auth/register", json=invalid_email_user)
     assert response.status_code == 400
@@ -887,18 +906,18 @@ def test_user_registration():
         "username": "test@user!",
         "email": f"testuser3_{unique_id}@example.com",
         "password": "TestPassword123!",
-        "full_name": "Test User 3"
+        "full_name": "Test User 3",
     }
     response = client.post("/api/v2/auth/register", json=invalid_username_user)
     assert response.status_code == 400
     assert "username" in response.json()["detail"].lower()
 
+
 def test_json_login():
     """Test JSON-based login endpoint"""
     # Test valid login
     response = client.post(
-        "/api/v2/auth/login",
-        json={"username": "admin", "password": "admin123"}
+        "/api/v2/auth/login", json={"username": "admin", "password": "admin123"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -907,25 +926,23 @@ def test_json_login():
 
     # Test invalid login
     response = client.post(
-        "/api/v2/auth/login",
-        json={"username": "admin", "password": "wrongpassword"}
+        "/api/v2/auth/login", json={"username": "admin", "password": "wrongpassword"}
     )
     assert response.status_code == 401
+
 
 def test_password_reset_flow():
     """Test password reset flow"""
     # Test forgot password (always returns success for security)
     response = client.post(
-        "/api/v2/auth/forgot-password",
-        json={"email": "admin@datagod.com"}
+        "/api/v2/auth/forgot-password", json={"email": "admin@datagod.com"}
     )
     assert response.status_code == 200
     assert "message" in response.json()
 
     # Test forgot password with non-existent email (still returns success)
     response = client.post(
-        "/api/v2/auth/forgot-password",
-        json={"email": "nonexistent@example.com"}
+        "/api/v2/auth/forgot-password", json={"email": "nonexistent@example.com"}
     )
     assert response.status_code == 200
     assert "message" in response.json()
@@ -933,10 +950,11 @@ def test_password_reset_flow():
     # Test reset password with invalid token
     response = client.post(
         "/api/v2/auth/reset-password",
-        json={"token": "invalid-token", "new_password": "NewPassword123!"}
+        json={"token": "invalid-token", "new_password": "NewPassword123!"},
     )
     assert response.status_code == 400
     assert "invalid" in response.json()["detail"].lower()
+
 
 if __name__ == "__main__":
     # Run tests

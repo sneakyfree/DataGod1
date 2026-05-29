@@ -11,36 +11,57 @@ Provides SQLAlchemy models for specialized data categories:
 These models extend the base Record model with category-specific fields.
 """
 
-from sqlalchemy import Column, Integer, String, Text, Float, Date, DateTime, ForeignKey, JSON, Index, Boolean
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.orm import relationship
+
 from datagod.models.base import Base
 
 
 class TimestampMixin:
     """Mixin for created_at and updated_at timestamps"""
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
 
 # =============================================================================
 # Court Records
 # =============================================================================
 
+
 class CourtCaseRecord(Base, TimestampMixin):
     """
     Represents a court case record.
     Covers civil, criminal, family, probate, bankruptcy cases.
     """
-    __tablename__ = 'court_cases'
+
+    __tablename__ = "court_cases"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    jurisdiction_id = Column(Integer, ForeignKey('jurisdictions.id'), nullable=False)
-    data_source_id = Column(Integer, ForeignKey('data_sources.id'), nullable=True)
+    jurisdiction_id = Column(Integer, ForeignKey("jurisdictions.id"), nullable=False)
+    data_source_id = Column(Integer, ForeignKey("data_sources.id"), nullable=True)
 
     # Case identification
     case_number = Column(String(100), nullable=False, index=True)
-    case_type = Column(String(50), nullable=False, index=True)  # civil, criminal, family, etc.
+    case_type = Column(
+        String(50), nullable=False, index=True
+    )  # civil, criminal, family, etc.
     court_name = Column(String(255), nullable=True)
     case_title = Column(String(500), nullable=True)
 
@@ -49,7 +70,9 @@ class CourtCaseRecord(Base, TimestampMixin):
     disposition_date = Column(Date, nullable=True)
 
     # Status
-    status = Column(String(50), default='open')  # open, closed, pending, dismissed, etc.
+    status = Column(
+        String(50), default="open"
+    )  # open, closed, pending, dismissed, etc.
     disposition = Column(String(255), nullable=True)
 
     # Judge
@@ -74,11 +97,11 @@ class CourtCaseRecord(Base, TimestampMixin):
     raw_data = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index('idx_court_case_number', 'case_number'),
-        Index('idx_court_case_type', 'case_type'),
-        Index('idx_court_case_state_county', 'state', 'county'),
-        Index('idx_court_case_filing_date', 'filing_date'),
-        Index('idx_court_case_status', 'status'),
+        Index("idx_court_case_number", "case_number"),
+        Index("idx_court_case_type", "case_type"),
+        Index("idx_court_case_state_county", "state", "county"),
+        Index("idx_court_case_filing_date", "filing_date"),
+        Index("idx_court_case_status", "status"),
     )
 
     def __repr__(self):
@@ -89,24 +112,30 @@ class CourtCaseRecord(Base, TimestampMixin):
 # Business Filings
 # =============================================================================
 
+
 class BusinessEntityRecord(Base, TimestampMixin):
     """
     Represents a business entity record.
     Covers corporations, LLCs, partnerships, etc.
     """
-    __tablename__ = 'business_entities'
+
+    __tablename__ = "business_entities"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    jurisdiction_id = Column(Integer, ForeignKey('jurisdictions.id'), nullable=False)
-    data_source_id = Column(Integer, ForeignKey('data_sources.id'), nullable=True)
+    jurisdiction_id = Column(Integer, ForeignKey("jurisdictions.id"), nullable=False)
+    data_source_id = Column(Integer, ForeignKey("data_sources.id"), nullable=True)
 
     # Entity identification
     entity_id = Column(String(100), nullable=False, index=True)  # State filing number
     entity_name = Column(String(500), nullable=False, index=True)
-    entity_type = Column(String(50), nullable=False, index=True)  # corporation, llc, llp, etc.
+    entity_type = Column(
+        String(50), nullable=False, index=True
+    )  # corporation, llc, llp, etc.
 
     # Status
-    status = Column(String(50), default='active', index=True)  # active, inactive, dissolved, etc.
+    status = Column(
+        String(50), default="active", index=True
+    )  # active, inactive, dissolved, etc.
 
     # Dates
     formation_date = Column(Date, nullable=True, index=True)
@@ -137,11 +166,11 @@ class BusinessEntityRecord(Base, TimestampMixin):
     raw_data = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index('idx_business_entity_id', 'entity_id'),
-        Index('idx_business_entity_name', 'entity_name'),
-        Index('idx_business_entity_type', 'entity_type'),
-        Index('idx_business_entity_state', 'state'),
-        Index('idx_business_entity_status', 'status'),
+        Index("idx_business_entity_id", "entity_id"),
+        Index("idx_business_entity_name", "entity_name"),
+        Index("idx_business_entity_type", "entity_type"),
+        Index("idx_business_entity_state", "state"),
+        Index("idx_business_entity_status", "status"),
     )
 
     def __repr__(self):
@@ -152,15 +181,18 @@ class UCCFilingRecord(Base, TimestampMixin):
     """
     Represents a UCC (Uniform Commercial Code) filing.
     """
-    __tablename__ = 'ucc_filings'
+
+    __tablename__ = "ucc_filings"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    jurisdiction_id = Column(Integer, ForeignKey('jurisdictions.id'), nullable=False)
-    data_source_id = Column(Integer, ForeignKey('data_sources.id'), nullable=True)
+    jurisdiction_id = Column(Integer, ForeignKey("jurisdictions.id"), nullable=False)
+    data_source_id = Column(Integer, ForeignKey("data_sources.id"), nullable=True)
 
     # Filing identification
     filing_number = Column(String(100), nullable=False, index=True)
-    filing_type = Column(String(50), nullable=False)  # initial, amendment, termination, etc.
+    filing_type = Column(
+        String(50), nullable=False
+    )  # initial, amendment, termination, etc.
 
     # Dates
     filing_date = Column(Date, nullable=False, index=True)
@@ -185,11 +217,11 @@ class UCCFilingRecord(Base, TimestampMixin):
     raw_data = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index('idx_ucc_filing_number', 'filing_number'),
-        Index('idx_ucc_filing_date', 'filing_date'),
-        Index('idx_ucc_secured_party', 'secured_party'),
-        Index('idx_ucc_debtor', 'debtor_name'),
-        Index('idx_ucc_state', 'state'),
+        Index("idx_ucc_filing_number", "filing_number"),
+        Index("idx_ucc_filing_date", "filing_date"),
+        Index("idx_ucc_secured_party", "secured_party"),
+        Index("idx_ucc_debtor", "debtor_name"),
+        Index("idx_ucc_state", "state"),
     )
 
     def __repr__(self):
@@ -200,20 +232,24 @@ class UCCFilingRecord(Base, TimestampMixin):
 # Professional Licenses
 # =============================================================================
 
+
 class ProfessionalLicenseRecord(Base, TimestampMixin):
     """
     Represents a professional license record.
     Covers real estate, mortgage, attorneys, contractors, etc.
     """
-    __tablename__ = 'professional_licenses'
+
+    __tablename__ = "professional_licenses"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    jurisdiction_id = Column(Integer, ForeignKey('jurisdictions.id'), nullable=False)
-    data_source_id = Column(Integer, ForeignKey('data_sources.id'), nullable=True)
+    jurisdiction_id = Column(Integer, ForeignKey("jurisdictions.id"), nullable=False)
+    data_source_id = Column(Integer, ForeignKey("data_sources.id"), nullable=True)
 
     # License identification
     license_number = Column(String(100), nullable=False, index=True)
-    license_type = Column(String(100), nullable=False, index=True)  # real_estate_agent, attorney, etc.
+    license_type = Column(
+        String(100), nullable=False, index=True
+    )  # real_estate_agent, attorney, etc.
 
     # Licensee information
     licensee_name = Column(String(500), nullable=False, index=True)
@@ -222,7 +258,9 @@ class ProfessionalLicenseRecord(Base, TimestampMixin):
     last_name = Column(String(100), nullable=True, index=True)
 
     # Status
-    status = Column(String(50), default='active', index=True)  # active, inactive, suspended, etc.
+    status = Column(
+        String(50), default="active", index=True
+    )  # active, inactive, suspended, etc.
 
     # Dates
     issue_date = Column(Date, nullable=True)
@@ -242,7 +280,9 @@ class ProfessionalLicenseRecord(Base, TimestampMixin):
     specializations = Column(JSON, nullable=True)  # [specialty1, specialty2, ...]
 
     # Disciplinary actions (stored as JSON)
-    disciplinary_actions = Column(JSON, nullable=True)  # [{date, type, description, ...}, ...]
+    disciplinary_actions = Column(
+        JSON, nullable=True
+    )  # [{date, type, description, ...}, ...]
 
     # NMLS-specific (for mortgage professionals)
     nmls_id = Column(String(50), nullable=True, index=True)
@@ -251,13 +291,13 @@ class ProfessionalLicenseRecord(Base, TimestampMixin):
     raw_data = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index('idx_license_number', 'license_number'),
-        Index('idx_license_type', 'license_type'),
-        Index('idx_license_name', 'licensee_name'),
-        Index('idx_license_last_name', 'last_name'),
-        Index('idx_license_state', 'state'),
-        Index('idx_license_status', 'status'),
-        Index('idx_license_nmls', 'nmls_id'),
+        Index("idx_license_number", "license_number"),
+        Index("idx_license_type", "license_type"),
+        Index("idx_license_name", "licensee_name"),
+        Index("idx_license_last_name", "last_name"),
+        Index("idx_license_state", "state"),
+        Index("idx_license_status", "status"),
+        Index("idx_license_nmls", "nmls_id"),
     )
 
     def __repr__(self):
@@ -268,14 +308,16 @@ class ProfessionalLicenseRecord(Base, TimestampMixin):
 # Federal Data - USPTO
 # =============================================================================
 
+
 class TrademarkRecord(Base, TimestampMixin):
     """
     Represents a USPTO trademark record.
     """
-    __tablename__ = 'trademarks'
+
+    __tablename__ = "trademarks"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    data_source_id = Column(Integer, ForeignKey('data_sources.id'), nullable=True)
+    data_source_id = Column(Integer, ForeignKey("data_sources.id"), nullable=True)
 
     # Trademark identification
     serial_number = Column(String(50), nullable=False, unique=True, index=True)
@@ -286,7 +328,9 @@ class TrademarkRecord(Base, TimestampMixin):
     mark_description = Column(Text, nullable=True)
 
     # Status
-    status = Column(String(50), nullable=True, index=True)  # registered, pending, abandoned, etc.
+    status = Column(
+        String(50), nullable=True, index=True
+    )  # registered, pending, abandoned, etc.
 
     # Dates
     filing_date = Column(Date, nullable=True, index=True)
@@ -309,11 +353,11 @@ class TrademarkRecord(Base, TimestampMixin):
     raw_data = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index('idx_trademark_serial', 'serial_number'),
-        Index('idx_trademark_registration', 'registration_number'),
-        Index('idx_trademark_mark', 'mark_text'),
-        Index('idx_trademark_owner', 'owner_name'),
-        Index('idx_trademark_status', 'status'),
+        Index("idx_trademark_serial", "serial_number"),
+        Index("idx_trademark_registration", "registration_number"),
+        Index("idx_trademark_mark", "mark_text"),
+        Index("idx_trademark_owner", "owner_name"),
+        Index("idx_trademark_status", "status"),
     )
 
     def __repr__(self):
@@ -324,10 +368,11 @@ class PatentRecord(Base, TimestampMixin):
     """
     Represents a USPTO patent record.
     """
-    __tablename__ = 'patents'
+
+    __tablename__ = "patents"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    data_source_id = Column(Integer, ForeignKey('data_sources.id'), nullable=True)
+    data_source_id = Column(Integer, ForeignKey("data_sources.id"), nullable=True)
 
     # Patent identification
     patent_number = Column(String(50), nullable=False, unique=True, index=True)
@@ -339,7 +384,9 @@ class PatentRecord(Base, TimestampMixin):
     patent_type = Column(String(50), nullable=True)  # utility, design, plant, etc.
 
     # Status
-    status = Column(String(50), nullable=True, index=True)  # active, expired, pending, etc.
+    status = Column(
+        String(50), nullable=True, index=True
+    )  # active, expired, pending, etc.
 
     # Dates
     filing_date = Column(Date, nullable=True, index=True)
@@ -364,11 +411,11 @@ class PatentRecord(Base, TimestampMixin):
     raw_data = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index('idx_patent_number', 'patent_number'),
-        Index('idx_patent_application', 'application_number'),
-        Index('idx_patent_title', 'title'),
-        Index('idx_patent_assignee', 'assignee_name'),
-        Index('idx_patent_status', 'status'),
+        Index("idx_patent_number", "patent_number"),
+        Index("idx_patent_application", "application_number"),
+        Index("idx_patent_title", "title"),
+        Index("idx_patent_assignee", "assignee_name"),
+        Index("idx_patent_status", "status"),
     )
 
     def __repr__(self):
@@ -379,14 +426,16 @@ class PatentRecord(Base, TimestampMixin):
 # Federal Data - SEC
 # =============================================================================
 
+
 class SECFilingRecord(Base, TimestampMixin):
     """
     Represents an SEC EDGAR filing record.
     """
-    __tablename__ = 'sec_filings'
+
+    __tablename__ = "sec_filings"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    data_source_id = Column(Integer, ForeignKey('data_sources.id'), nullable=True)
+    data_source_id = Column(Integer, ForeignKey("data_sources.id"), nullable=True)
 
     # Filing identification
     accession_number = Column(String(50), nullable=False, unique=True, index=True)
@@ -416,37 +465,43 @@ class SECFilingRecord(Base, TimestampMixin):
     raw_data = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index('idx_sec_accession', 'accession_number'),
-        Index('idx_sec_form_type', 'form_type'),
-        Index('idx_sec_cik', 'cik'),
-        Index('idx_sec_company', 'company_name'),
-        Index('idx_sec_ticker', 'ticker'),
-        Index('idx_sec_filing_date', 'filing_date'),
+        Index("idx_sec_accession", "accession_number"),
+        Index("idx_sec_form_type", "form_type"),
+        Index("idx_sec_cik", "cik"),
+        Index("idx_sec_company", "company_name"),
+        Index("idx_sec_ticker", "ticker"),
+        Index("idx_sec_filing_date", "filing_date"),
     )
 
     def __repr__(self):
-        return f"<SECFiling(accession='{self.accession_number}', form='{self.form_type}')>"
+        return (
+            f"<SECFiling(accession='{self.accession_number}', form='{self.form_type}')>"
+        )
 
 
 # =============================================================================
 # Federal Data - FDIC
 # =============================================================================
 
+
 class BankRecord(Base, TimestampMixin):
     """
     Represents an FDIC-insured bank record.
     """
-    __tablename__ = 'banks'
+
+    __tablename__ = "banks"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    data_source_id = Column(Integer, ForeignKey('data_sources.id'), nullable=True)
+    data_source_id = Column(Integer, ForeignKey("data_sources.id"), nullable=True)
 
     # Bank identification
     fdic_cert = Column(String(20), nullable=False, unique=True, index=True)
     bank_name = Column(String(500), nullable=False, index=True)
 
     # Status
-    status = Column(String(50), default='active', index=True)  # active, inactive, failed, merged
+    status = Column(
+        String(50), default="active", index=True
+    )  # active, inactive, failed, merged
 
     # Charter
     charter_type = Column(String(50), nullable=True)
@@ -475,10 +530,10 @@ class BankRecord(Base, TimestampMixin):
     raw_data = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index('idx_bank_fdic_cert', 'fdic_cert'),
-        Index('idx_bank_name', 'bank_name'),
-        Index('idx_bank_state', 'headquarters_state'),
-        Index('idx_bank_status', 'status'),
+        Index("idx_bank_fdic_cert", "fdic_cert"),
+        Index("idx_bank_name", "bank_name"),
+        Index("idx_bank_state", "headquarters_state"),
+        Index("idx_bank_status", "status"),
     )
 
     def __repr__(self):
@@ -489,17 +544,21 @@ class BankRecord(Base, TimestampMixin):
 # News Articles
 # =============================================================================
 
+
 class NewsArticleRecord(Base, TimestampMixin):
     """
     Represents a news article record.
     """
-    __tablename__ = 'news_articles'
+
+    __tablename__ = "news_articles"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    data_source_id = Column(Integer, ForeignKey('data_sources.id'), nullable=True)
+    data_source_id = Column(Integer, ForeignKey("data_sources.id"), nullable=True)
 
     # Article identification
-    article_id = Column(String(255), nullable=False, index=True)  # External article ID or hash
+    article_id = Column(
+        String(255), nullable=False, index=True
+    )  # External article ID or hash
     url = Column(String(1000), nullable=True, unique=True)
 
     # Content
@@ -510,7 +569,9 @@ class NewsArticleRecord(Base, TimestampMixin):
 
     # Source
     source_name = Column(String(255), nullable=True, index=True)
-    source_type = Column(String(50), nullable=True)  # major_outlet, local_news, wire_service, etc.
+    source_type = Column(
+        String(50), nullable=True
+    )  # major_outlet, local_news, wire_service, etc.
 
     # Dates
     published_at = Column(DateTime, nullable=False, index=True)
@@ -520,7 +581,9 @@ class NewsArticleRecord(Base, TimestampMixin):
     city = Column(String(100), nullable=True)
 
     # Category and sentiment
-    category = Column(String(50), nullable=True, index=True)  # business, legal, real_estate, etc.
+    category = Column(
+        String(50), nullable=True, index=True
+    )  # business, legal, real_estate, etc.
     sentiment = Column(String(20), nullable=True)  # positive, negative, neutral
 
     # Extracted data
@@ -535,26 +598,29 @@ class NewsArticleRecord(Base, TimestampMixin):
     raw_data = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index('idx_news_article_id', 'article_id'),
-        Index('idx_news_title', 'title'),
-        Index('idx_news_source', 'source_name'),
-        Index('idx_news_published', 'published_at'),
-        Index('idx_news_state', 'state'),
-        Index('idx_news_category', 'category'),
+        Index("idx_news_article_id", "article_id"),
+        Index("idx_news_title", "title"),
+        Index("idx_news_source", "source_name"),
+        Index("idx_news_published", "published_at"),
+        Index("idx_news_state", "state"),
+        Index("idx_news_category", "category"),
     )
 
     def __repr__(self):
-        return f"<NewsArticle(title='{self.title[:50]}...', source='{self.source_name}')>"
+        return (
+            f"<NewsArticle(title='{self.title[:50]}...', source='{self.source_name}')>"
+        )
 
 
 class PressReleaseRecord(Base, TimestampMixin):
     """
     Represents a press release record.
     """
-    __tablename__ = 'press_releases'
+
+    __tablename__ = "press_releases"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    data_source_id = Column(Integer, ForeignKey('data_sources.id'), nullable=True)
+    data_source_id = Column(Integer, ForeignKey("data_sources.id"), nullable=True)
 
     # Release identification
     release_id = Column(String(255), nullable=False, index=True)
@@ -587,10 +653,10 @@ class PressReleaseRecord(Base, TimestampMixin):
     raw_data = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index('idx_press_release_id', 'release_id'),
-        Index('idx_press_headline', 'headline'),
-        Index('idx_press_company', 'source_company'),
-        Index('idx_press_published', 'published_at'),
+        Index("idx_press_release_id", "release_id"),
+        Index("idx_press_headline", "headline"),
+        Index("idx_press_company", "source_company"),
+        Index("idx_press_published", "published_at"),
     )
 
     def __repr__(self):

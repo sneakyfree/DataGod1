@@ -4,9 +4,10 @@ Comprehensive tests for datagod/neural_network module
 Tests for data_collection.py, integration.py, and model.py to achieve high coverage.
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 import torch
 
 
@@ -123,11 +124,13 @@ class TestMortgageDataCollector:
 
         # Mock data source as API
         mock_data_source = MagicMock()
-        mock_data_source.source_type = 'api'
+        mock_data_source.source_type = "api"
         mock_data_source.api_endpoint = "https://example.com/api"
         mock_data_source.name = "API Source"
 
-        mock_session.query.return_value.filter_by.return_value.all.return_value = [mock_data_source]
+        mock_session.query.return_value.filter_by.return_value.all.return_value = [
+            mock_data_source
+        ]
 
         records = collector.collect_mortgage_data(mock_jurisdiction)
 
@@ -144,11 +147,13 @@ class TestMortgageDataCollector:
         mock_jurisdiction.id = 1
 
         mock_data_source = MagicMock()
-        mock_data_source.source_type = 'scraper'
+        mock_data_source.source_type = "scraper"
         mock_data_source.url = "https://example.com"
         mock_data_source.name = "Scraper Source"
 
-        mock_session.query.return_value.filter_by.return_value.all.return_value = [mock_data_source]
+        mock_session.query.return_value.filter_by.return_value.all.return_value = [
+            mock_data_source
+        ]
 
         records = collector.collect_mortgage_data(mock_jurisdiction)
 
@@ -165,10 +170,12 @@ class TestMortgageDataCollector:
         mock_jurisdiction.id = 1
 
         mock_data_source = MagicMock()
-        mock_data_source.source_type = 'manual'
+        mock_data_source.source_type = "manual"
         mock_data_source.name = "Manual Source"
 
-        mock_session.query.return_value.filter_by.return_value.all.return_value = [mock_data_source]
+        mock_session.query.return_value.filter_by.return_value.all.return_value = [
+            mock_data_source
+        ]
 
         records = collector.collect_mortgage_data(mock_jurisdiction)
 
@@ -186,12 +193,16 @@ class TestMortgageDataCollector:
 
         # Multiple sources
         mock_sources = [
-            MagicMock(source_type='api', api_endpoint="https://api1.com", name="API1"),
-            MagicMock(source_type='scraper', url="https://scraper.com", name="Scraper1"),
-            MagicMock(source_type='manual', name="Manual1"),
+            MagicMock(source_type="api", api_endpoint="https://api1.com", name="API1"),
+            MagicMock(
+                source_type="scraper", url="https://scraper.com", name="Scraper1"
+            ),
+            MagicMock(source_type="manual", name="Manual1"),
         ]
 
-        mock_session.query.return_value.filter_by.return_value.all.return_value = mock_sources
+        mock_session.query.return_value.filter_by.return_value.all.return_value = (
+            mock_sources
+        )
 
         records = collector.collect_mortgage_data(mock_jurisdiction)
 
@@ -276,11 +287,15 @@ class TestNeuralNetworkIntegration:
         mock_jurisdiction.id = 1
         mock_jurisdiction.name = "Test County"
 
-        mock_session.query.return_value.filter_by.return_value.first.return_value = mock_jurisdiction
+        mock_session.query.return_value.filter_by.return_value.first.return_value = (
+            mock_jurisdiction
+        )
 
         # Mock data collector to return some records
         mock_records = [MagicMock(), MagicMock()]
-        integration.data_collector.collect_mortgage_data = MagicMock(return_value=mock_records)
+        integration.data_collector.collect_mortgage_data = MagicMock(
+            return_value=mock_records
+        )
 
         result = integration.gather_mortgage_data("Test County")
 
@@ -294,7 +309,9 @@ class TestNeuralNetworkIntegration:
         mock_session = MagicMock()
         integration = NeuralNetworkIntegration(mock_session)
 
-        mock_session.query.return_value.filter_by.return_value.first.side_effect = Exception("DB Error")
+        mock_session.query.return_value.filter_by.return_value.first.side_effect = (
+            Exception("DB Error")
+        )
 
         result = integration.gather_mortgage_data("Test County")
 
@@ -311,7 +328,9 @@ class TestNeuralNetworkIntegration:
         # Mock jurisdiction
         mock_jurisdiction = MagicMock()
         mock_jurisdiction.id = 1
-        mock_session.query.return_value.filter_by.return_value.first.return_value = mock_jurisdiction
+        mock_session.query.return_value.filter_by.return_value.first.return_value = (
+            mock_jurisdiction
+        )
         mock_session.query.return_value.filter_by.return_value.all.return_value = []
 
         # Processor is None, should initialize automatically
@@ -338,7 +357,9 @@ class TestNeuralNetworkIntegration:
         mock_session = MagicMock()
         integration = NeuralNetworkIntegration(mock_session)
 
-        mock_session.query.return_value.filter_by.return_value.first.side_effect = Exception("DB Error")
+        mock_session.query.return_value.filter_by.return_value.first.side_effect = (
+            Exception("DB Error")
+        )
 
         # Should not raise
         integration.process_mortgage_data("Test County")
@@ -352,7 +373,9 @@ class TestNeuralNetworkIntegration:
 
         mock_records = [MagicMock(), MagicMock()]
 
-        entities, relationships = integration.extract_entities_and_relationships(mock_records)
+        entities, relationships = integration.extract_entities_and_relationships(
+            mock_records
+        )
 
         assert isinstance(entities, list)
         assert isinstance(relationships, list)
@@ -536,8 +559,12 @@ class TestMortgageDataProcessor:
 
     def test_validate(self):
         """Test validation method"""
-        from datagod.neural_network.model import MortgageDataProcessor, MortgageDataDataset
         from torch.utils.data import DataLoader
+
+        from datagod.neural_network.model import (
+            MortgageDataDataset,
+            MortgageDataProcessor,
+        )
 
         # Create processor with num_classes=1 to match target shape
         processor = MortgageDataProcessor(input_size=2, num_classes=1)
@@ -549,8 +576,10 @@ class TestMortgageDataProcessor:
         class SimpleDataset:
             def __init__(self, data):
                 self.data = data
+
             def __len__(self):
                 return len(self.data)
+
             def __getitem__(self, idx):
                 return self.data[idx]
 
@@ -577,8 +606,9 @@ class TestMortgageDataProcessor:
 
     def test_train_single_epoch(self):
         """Test training for single epoch"""
-        from datagod.neural_network.model import MortgageDataProcessor
         from torch.utils.data import DataLoader
+
+        from datagod.neural_network.model import MortgageDataProcessor
 
         # Create processor with num_classes=1 to match target shape
         processor = MortgageDataProcessor(input_size=2, num_classes=1)
@@ -589,8 +619,10 @@ class TestMortgageDataProcessor:
         class SimpleDataset:
             def __init__(self, data):
                 self.data = data
+
             def __len__(self):
                 return len(self.data)
+
             def __getitem__(self, idx):
                 return self.data[idx]
 
@@ -608,11 +640,13 @@ class TestMortgageDataProcessor:
 class TestMainModule:
     """Tests for __main__ module"""
 
-    @patch('datagod.neural_network.__main__.create_engine')
-    @patch('datagod.neural_network.__main__.sessionmaker')
-    @patch('datagod.neural_network.__main__.NeuralNetworkIntegration')
-    @patch('datagod.neural_network.__main__.Base')
-    def test_main_exception_handling(self, mock_base, mock_nn, mock_session_maker, mock_engine):
+    @patch("datagod.neural_network.__main__.create_engine")
+    @patch("datagod.neural_network.__main__.sessionmaker")
+    @patch("datagod.neural_network.__main__.NeuralNetworkIntegration")
+    @patch("datagod.neural_network.__main__.Base")
+    def test_main_exception_handling(
+        self, mock_base, mock_nn, mock_session_maker, mock_engine
+    ):
         """Test main handles exceptions"""
         mock_session_instance = MagicMock()
         mock_session_maker.return_value = MagicMock(return_value=mock_session_instance)
@@ -631,11 +665,13 @@ class TestMainModule:
         except ImportError:
             pytest.skip("Module import issue")
 
-    @patch('datagod.neural_network.__main__.create_engine')
-    @patch('datagod.neural_network.__main__.sessionmaker')
-    @patch('datagod.neural_network.__main__.NeuralNetworkIntegration')
-    @patch('datagod.neural_network.__main__.Base')
-    def test_main_creates_tables(self, mock_base, mock_nn, mock_session_maker, mock_engine):
+    @patch("datagod.neural_network.__main__.create_engine")
+    @patch("datagod.neural_network.__main__.sessionmaker")
+    @patch("datagod.neural_network.__main__.NeuralNetworkIntegration")
+    @patch("datagod.neural_network.__main__.Base")
+    def test_main_creates_tables(
+        self, mock_base, mock_nn, mock_session_maker, mock_engine
+    ):
         """Test main creates database tables"""
         mock_session_instance = MagicMock()
         mock_session_maker.return_value = MagicMock(return_value=mock_session_instance)
@@ -644,6 +680,7 @@ class TestMainModule:
 
         try:
             from datagod.neural_network.__main__ import main
+
             main()
             mock_base.metadata.create_all.assert_called_once()
         except Exception:
@@ -662,7 +699,7 @@ class TestDeviceSelection:
         assert processor.device is not None
         # Device could be cpu, cuda, or cuda:N
         device_str = str(processor.device)
-        assert 'cpu' in device_str or 'cuda' in device_str
+        assert "cpu" in device_str or "cuda" in device_str
 
     def test_model_on_device(self):
         """Test model is on correct device"""
@@ -730,8 +767,9 @@ class TestTrainingMetrics:
 
     def test_accuracy_computation(self):
         """Test accuracy computation in validation"""
-        from datagod.neural_network.model import MortgageDataProcessor
         from torch.utils.data import DataLoader
+
+        from datagod.neural_network.model import MortgageDataProcessor
 
         # Create processor with num_classes=1 to match target shape
         processor = MortgageDataProcessor(input_size=2, num_classes=1)
@@ -742,8 +780,10 @@ class TestTrainingMetrics:
         class SimpleDataset:
             def __init__(self, data):
                 self.data = data
+
             def __len__(self):
                 return len(self.data)
+
             def __getitem__(self, idx):
                 return self.data[idx]
 

@@ -9,15 +9,17 @@ Free Public Sources:
 """
 
 import asyncio
-import aiohttp
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, List, Dict, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 
 
 class VehicleType(Enum):
     """Vehicle types."""
+
     PASSENGER = "passenger"
     TRUCK = "truck"
     MOTORCYCLE = "motorcycle"
@@ -29,6 +31,7 @@ class VehicleType(Enum):
 
 class RecallStatus(Enum):
     """Vehicle recall status."""
+
     OPEN = "open"
     CLOSED = "closed"
     INCOMPLETE = "incomplete"
@@ -36,6 +39,7 @@ class RecallStatus(Enum):
 
 class CDLClass(Enum):
     """Commercial driver's license classes."""
+
     CLASS_A = "A"  # Combination vehicles 26,001+ lbs
     CLASS_B = "B"  # Single vehicles 26,001+ lbs
     CLASS_C = "C"  # Vehicles for 16+ passengers or hazmat
@@ -43,6 +47,7 @@ class CDLClass(Enum):
 
 class CDLEndorsement(Enum):
     """CDL endorsement types."""
+
     H = "H"  # Hazardous Materials
     N = "N"  # Tank Vehicle
     P = "P"  # Passenger
@@ -54,6 +59,7 @@ class CDLEndorsement(Enum):
 @dataclass
 class VehicleRecall:
     """NHTSA vehicle recall record."""
+
     recall_id: str
     campaign_number: str
     manufacturer: str
@@ -75,6 +81,7 @@ class VehicleRecall:
 @dataclass
 class VehicleComplaint:
     """NHTSA vehicle complaint record."""
+
     complaint_id: str
     manufacturer: str
     make: str
@@ -95,6 +102,7 @@ class VehicleComplaint:
 @dataclass
 class VehicleSafetyRating:
     """NHTSA vehicle safety rating."""
+
     vehicle_id: str
     make: str
     model: str
@@ -117,6 +125,7 @@ class VehicleSafetyRating:
 @dataclass
 class VINDecodeResult:
     """VIN decode result."""
+
     vin: str
     make: Optional[str] = None
     manufacturer: Optional[str] = None
@@ -143,6 +152,7 @@ class VINDecodeResult:
 @dataclass
 class CDLHolder:
     """Commercial driver's license holder record."""
+
     license_number: str
     first_name: str
     last_name: str
@@ -163,215 +173,101 @@ class CDLHolder:
 STATE_DMV_URLS = {
     "AL": {
         "main": "https://www.alea.gov/dps/driver-license/driver-license-division",
-        "title_search": None
+        "title_search": None,
     },
-    "AK": {
-        "main": "https://doa.alaska.gov/dmv/",
-        "title_search": None
-    },
+    "AK": {"main": "https://doa.alaska.gov/dmv/", "title_search": None},
     "AZ": {
         "main": "https://azdot.gov/mvd",
-        "service_arizona": "https://servicearizona.com/"
+        "service_arizona": "https://servicearizona.com/",
     },
     "AR": {
         "main": "https://www.dfa.arkansas.gov/driver-services/",
-        "title_search": None
+        "title_search": None,
     },
     "CA": {
         "main": "https://www.dmv.ca.gov/",
-        "vehicle_search": "https://www.dmv.ca.gov/portal/vehicle-industry-services/"
+        "vehicle_search": "https://www.dmv.ca.gov/portal/vehicle-industry-services/",
     },
-    "CO": {
-        "main": "https://dmv.colorado.gov/",
-        "title_search": None
-    },
-    "CT": {
-        "main": "https://portal.ct.gov/DMV",
-        "title_search": None
-    },
-    "DE": {
-        "main": "https://www.dmv.de.gov/",
-        "title_search": None
-    },
-    "DC": {
-        "main": "https://dmv.dc.gov/",
-        "title_search": None
-    },
+    "CO": {"main": "https://dmv.colorado.gov/", "title_search": None},
+    "CT": {"main": "https://portal.ct.gov/DMV", "title_search": None},
+    "DE": {"main": "https://www.dmv.de.gov/", "title_search": None},
+    "DC": {"main": "https://dmv.dc.gov/", "title_search": None},
     "FL": {
         "main": "https://www.flhsmv.gov/",
-        "driver_check": "https://services.flhsmv.gov/DLCheck/"
+        "driver_check": "https://services.flhsmv.gov/DLCheck/",
     },
-    "GA": {
-        "main": "https://dds.georgia.gov/",
-        "title_search": None
-    },
+    "GA": {"main": "https://dds.georgia.gov/", "title_search": None},
     "HI": {
         "main": "https://hidot.hawaii.gov/highways/library/motor-vehicle/",
-        "title_search": None
+        "title_search": None,
     },
-    "ID": {
-        "main": "https://itd.idaho.gov/dmv/",
-        "title_search": None
-    },
-    "IL": {
-        "main": "https://www.ilsos.gov/departments/drivers/",
-        "title_search": None
-    },
-    "IN": {
-        "main": "https://www.in.gov/bmv/",
-        "title_search": None
-    },
-    "IA": {
-        "main": "https://iowadot.gov/mvd/",
-        "title_search": None
-    },
-    "KS": {
-        "main": "https://www.ksrevenue.gov/dovindex.html",
-        "title_search": None
-    },
-    "KY": {
-        "main": "https://drive.ky.gov/",
-        "title_search": None
-    },
-    "LA": {
-        "main": "https://expresslane.org/",
-        "title_search": None
-    },
-    "ME": {
-        "main": "https://www.maine.gov/sos/bmv/",
-        "title_search": None
-    },
-    "MD": {
-        "main": "https://mva.maryland.gov/",
-        "title_search": None
-    },
+    "ID": {"main": "https://itd.idaho.gov/dmv/", "title_search": None},
+    "IL": {"main": "https://www.ilsos.gov/departments/drivers/", "title_search": None},
+    "IN": {"main": "https://www.in.gov/bmv/", "title_search": None},
+    "IA": {"main": "https://iowadot.gov/mvd/", "title_search": None},
+    "KS": {"main": "https://www.ksrevenue.gov/dovindex.html", "title_search": None},
+    "KY": {"main": "https://drive.ky.gov/", "title_search": None},
+    "LA": {"main": "https://expresslane.org/", "title_search": None},
+    "ME": {"main": "https://www.maine.gov/sos/bmv/", "title_search": None},
+    "MD": {"main": "https://mva.maryland.gov/", "title_search": None},
     "MA": {
         "main": "https://www.mass.gov/orgs/registry-of-motor-vehicles",
-        "title_search": None
+        "title_search": None,
     },
-    "MI": {
-        "main": "https://www.michigan.gov/sos/",
-        "title_search": None
-    },
-    "MN": {
-        "main": "https://dps.mn.gov/divisions/dvs/",
-        "title_search": None
-    },
-    "MS": {
-        "main": "https://www.dps.state.ms.us/",
-        "title_search": None
-    },
-    "MO": {
-        "main": "https://dor.mo.gov/motor-vehicle/",
-        "title_search": None
-    },
-    "MT": {
-        "main": "https://dojmt.gov/driving/",
-        "title_search": None
-    },
-    "NE": {
-        "main": "https://dmv.nebraska.gov/",
-        "title_search": None
-    },
-    "NV": {
-        "main": "https://dmv.nv.gov/",
-        "title_search": None
-    },
-    "NH": {
-        "main": "https://www.nh.gov/safety/divisions/dmv/",
-        "title_search": None
-    },
-    "NJ": {
-        "main": "https://www.nj.gov/mvc/",
-        "title_search": None
-    },
-    "NM": {
-        "main": "https://www.mvd.newmexico.gov/",
-        "title_search": None
-    },
-    "NY": {
-        "main": "https://dmv.ny.gov/",
-        "title_search": None
-    },
-    "NC": {
-        "main": "https://www.ncdot.gov/dmv/",
-        "title_search": None
-    },
+    "MI": {"main": "https://www.michigan.gov/sos/", "title_search": None},
+    "MN": {"main": "https://dps.mn.gov/divisions/dvs/", "title_search": None},
+    "MS": {"main": "https://www.dps.state.ms.us/", "title_search": None},
+    "MO": {"main": "https://dor.mo.gov/motor-vehicle/", "title_search": None},
+    "MT": {"main": "https://dojmt.gov/driving/", "title_search": None},
+    "NE": {"main": "https://dmv.nebraska.gov/", "title_search": None},
+    "NV": {"main": "https://dmv.nv.gov/", "title_search": None},
+    "NH": {"main": "https://www.nh.gov/safety/divisions/dmv/", "title_search": None},
+    "NJ": {"main": "https://www.nj.gov/mvc/", "title_search": None},
+    "NM": {"main": "https://www.mvd.newmexico.gov/", "title_search": None},
+    "NY": {"main": "https://dmv.ny.gov/", "title_search": None},
+    "NC": {"main": "https://www.ncdot.gov/dmv/", "title_search": None},
     "ND": {
         "main": "https://www.dot.nd.gov/divisions/driverslicense/",
-        "title_search": None
+        "title_search": None,
     },
     "OH": {
         "main": "https://bmv.ohio.gov/",
-        "title_search": "https://bmv.ohio.gov/links/bmv-title.aspx"
+        "title_search": "https://bmv.ohio.gov/links/bmv-title.aspx",
     },
-    "OK": {
-        "main": "https://oklahoma.gov/dps.html",
-        "title_search": None
-    },
-    "OR": {
-        "main": "https://www.oregon.gov/odot/dmv/",
-        "title_search": None
-    },
-    "PA": {
-        "main": "https://www.dmv.pa.gov/",
-        "title_search": None
-    },
-    "RI": {
-        "main": "https://dmv.ri.gov/",
-        "title_search": None
-    },
-    "SC": {
-        "main": "https://www.scdmvonline.com/",
-        "title_search": None
-    },
-    "SD": {
-        "main": "https://dps.sd.gov/driver-licensing/",
-        "title_search": None
-    },
+    "OK": {"main": "https://oklahoma.gov/dps.html", "title_search": None},
+    "OR": {"main": "https://www.oregon.gov/odot/dmv/", "title_search": None},
+    "PA": {"main": "https://www.dmv.pa.gov/", "title_search": None},
+    "RI": {"main": "https://dmv.ri.gov/", "title_search": None},
+    "SC": {"main": "https://www.scdmvonline.com/", "title_search": None},
+    "SD": {"main": "https://dps.sd.gov/driver-licensing/", "title_search": None},
     "TN": {
         "main": "https://www.tn.gov/safety/driver-services.html",
-        "title_search": None
+        "title_search": None,
     },
     "TX": {
         "main": "https://www.txdmv.gov/",
-        "title_check": "https://www.txdmv.gov/motorists/buying-or-selling-a-vehicle/title-check"
+        "title_check": "https://www.txdmv.gov/motorists/buying-or-selling-a-vehicle/title-check",
     },
-    "UT": {
-        "main": "https://dmv.utah.gov/",
-        "title_search": None
-    },
-    "VT": {
-        "main": "https://dmv.vermont.gov/",
-        "title_search": None
-    },
-    "VA": {
-        "main": "https://www.dmv.virginia.gov/",
-        "title_search": None
-    },
-    "WA": {
-        "main": "https://www.dol.wa.gov/",
-        "title_search": None
-    },
-    "WV": {
-        "main": "https://transportation.wv.gov/DMV/",
-        "title_search": None
-    },
+    "UT": {"main": "https://dmv.utah.gov/", "title_search": None},
+    "VT": {"main": "https://dmv.vermont.gov/", "title_search": None},
+    "VA": {"main": "https://www.dmv.virginia.gov/", "title_search": None},
+    "WA": {"main": "https://www.dol.wa.gov/", "title_search": None},
+    "WV": {"main": "https://transportation.wv.gov/DMV/", "title_search": None},
     "WI": {
         "main": "https://wisconsindot.gov/Pages/dmv/default.aspx",
-        "title_search": None
+        "title_search": None,
     },
     "WY": {
         "main": "https://www.dot.state.wy.us/home/driver_license_records.html",
-        "title_search": None
-    }
+        "title_search": None,
+    },
 }
 
 # CDL verification resources
 CDL_VERIFICATION_RESOURCES = {
     "cdlis": "https://www.aamva.org/technology/systems/CDLIS-driver-history",
     "fmcsa_portal": "https://ai.fmcsa.dot.gov/SMS/",
-    "medical_cert": "https://www.fmcsa.dot.gov/registration/commercial-drivers-license/national-registry"
+    "medical_cert": "https://www.fmcsa.dot.gov/registration/commercial-drivers-license/national-registry",
 }
 
 
@@ -414,7 +310,9 @@ class TransportationRecordsScraper:
 
     # ==================== VIN Decoding ====================
 
-    async def decode_vin(self, vin: str, model_year: Optional[int] = None) -> Optional[VINDecodeResult]:
+    async def decode_vin(
+        self, vin: str, model_year: Optional[int] = None
+    ) -> Optional[VINDecodeResult]:
         """
         Decode a VIN using NHTSA vPIC API.
 
@@ -462,18 +360,26 @@ class TransportationRecordsScraper:
                             vehicle_type=item.get("VehicleType"),
                             drive_type=item.get("DriveType"),
                             fuel_type=item.get("FuelTypePrimary"),
-                            engine_cylinders=int(item.get("EngineCylinders", 0) or 0) if item.get("EngineCylinders") else None,
+                            engine_cylinders=(
+                                int(item.get("EngineCylinders", 0) or 0)
+                                if item.get("EngineCylinders")
+                                else None
+                            ),
                             engine_displacement=displacement,
                             engine_hp=hp,
                             transmission=item.get("TransmissionStyle"),
-                            doors=int(item.get("Doors", 0) or 0) if item.get("Doors") else None,
+                            doors=(
+                                int(item.get("Doors", 0) or 0)
+                                if item.get("Doors")
+                                else None
+                            ),
                             plant_city=item.get("PlantCity"),
                             plant_state=item.get("PlantState"),
                             plant_country=item.get("PlantCountry"),
                             series=item.get("Series"),
                             trim=item.get("Trim"),
                             gvwr=item.get("GVWR"),
-                            raw_data=item
+                            raw_data=item,
                         )
 
         except aiohttp.ClientError:
@@ -489,7 +395,7 @@ class TransportationRecordsScraper:
         model: Optional[str] = None,
         model_year: Optional[int] = None,
         campaign_number: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[VehicleRecall]:
         """
         Search vehicle recalls using NHTSA API.
@@ -532,8 +438,15 @@ class TransportationRecordsScraper:
                                 consequence=item.get("Consequence"),
                                 remedy=item.get("Remedy"),
                                 notes=item.get("Notes"),
-                                potentially_affected=int(item.get("PotentialNumberofUnitsAffected", 0) or 0) if item.get("PotentialNumberofUnitsAffected") else None,
-                                raw_data=item
+                                potentially_affected=(
+                                    int(
+                                        item.get("PotentialNumberofUnitsAffected", 0)
+                                        or 0
+                                    )
+                                    if item.get("PotentialNumberofUnitsAffected")
+                                    else None
+                                ),
+                                raw_data=item,
                             )
 
                             # Parse recall date
@@ -567,18 +480,14 @@ class TransportationRecordsScraper:
             return await self.search_recalls(
                 make=decoded.make,
                 model=decoded.model,
-                model_year=int(decoded.model_year)
+                model_year=int(decoded.model_year),
             )
         return []
 
     # ==================== Vehicle Complaints ====================
 
     async def search_complaints(
-        self,
-        make: str,
-        model: str,
-        model_year: Optional[int] = None,
-        limit: int = 100
+        self, make: str, model: str, model_year: Optional[int] = None, limit: int = 100
     ) -> List[VehicleComplaint]:
         """
         Search vehicle complaints using NHTSA API.
@@ -614,7 +523,7 @@ class TransportationRecordsScraper:
                                 injuries=int(item.get("numberOfInjuries", 0) or 0),
                                 deaths=int(item.get("numberOfDeaths", 0) or 0),
                                 vin=item.get("vin"),
-                                raw_data=item
+                                raw_data=item,
                             )
 
                             # Parse dates
@@ -646,10 +555,7 @@ class TransportationRecordsScraper:
     # ==================== Safety Ratings ====================
 
     async def get_safety_ratings(
-        self,
-        make: str,
-        model: str,
-        model_year: int
+        self, make: str, model: str, model_year: int
     ) -> Optional[VehicleSafetyRating]:
         """
         Get vehicle safety ratings from NHTSA 5-Star Safety Ratings program.
@@ -660,7 +566,9 @@ class TransportationRecordsScraper:
 
         try:
             # First get vehicle ID
-            url = f"{self.NHTSA_RATINGS}/modelyear/{model_year}/make/{make}/model/{model}"
+            url = (
+                f"{self.NHTSA_RATINGS}/modelyear/{model_year}/make/{make}/model/{model}"
+            )
             params = {"format": "json"}
 
             async with self.session.get(url, params=params) as response:
@@ -676,7 +584,9 @@ class TransportationRecordsScraper:
                         # Get detailed ratings
                         if vehicle_id:
                             detail_url = f"{self.NHTSA_RATINGS}/VehicleId/{vehicle_id}"
-                            async with self.session.get(detail_url, params=params) as detail_response:
+                            async with self.session.get(
+                                detail_url, params=params
+                            ) as detail_response:
                                 if detail_response.status == 200:
                                     detail_data = await detail_response.json()
                                     detail_results = detail_data.get("Results", [])
@@ -688,14 +598,58 @@ class TransportationRecordsScraper:
                                             make=make,
                                             model=model,
                                             model_year=str(model_year),
-                                            overall_rating=int(detail.get("OverallRating", 0) or 0) if detail.get("OverallRating") and detail.get("OverallRating") != "Not Rated" else None,
-                                            frontal_crash_rating=int(detail.get("OverallFrontCrashRating", 0) or 0) if detail.get("OverallFrontCrashRating") and detail.get("OverallFrontCrashRating") != "Not Rated" else None,
-                                            side_crash_rating=int(detail.get("OverallSideCrashRating", 0) or 0) if detail.get("OverallSideCrashRating") and detail.get("OverallSideCrashRating") != "Not Rated" else None,
-                                            rollover_rating=int(detail.get("RolloverRating", 0) or 0) if detail.get("RolloverRating") and detail.get("RolloverRating") != "Not Rated" else None,
-                                            complaints_count=int(detail.get("ComplaintsCount", 0) or 0),
-                                            recalls_count=int(detail.get("RecallsCount", 0) or 0),
-                                            investigation_count=int(detail.get("InvestigationCount", 0) or 0),
-                                            raw_data=detail
+                                            overall_rating=(
+                                                int(detail.get("OverallRating", 0) or 0)
+                                                if detail.get("OverallRating")
+                                                and detail.get("OverallRating")
+                                                != "Not Rated"
+                                                else None
+                                            ),
+                                            frontal_crash_rating=(
+                                                int(
+                                                    detail.get(
+                                                        "OverallFrontCrashRating", 0
+                                                    )
+                                                    or 0
+                                                )
+                                                if detail.get("OverallFrontCrashRating")
+                                                and detail.get(
+                                                    "OverallFrontCrashRating"
+                                                )
+                                                != "Not Rated"
+                                                else None
+                                            ),
+                                            side_crash_rating=(
+                                                int(
+                                                    detail.get(
+                                                        "OverallSideCrashRating", 0
+                                                    )
+                                                    or 0
+                                                )
+                                                if detail.get("OverallSideCrashRating")
+                                                and detail.get("OverallSideCrashRating")
+                                                != "Not Rated"
+                                                else None
+                                            ),
+                                            rollover_rating=(
+                                                int(
+                                                    detail.get("RolloverRating", 0) or 0
+                                                )
+                                                if detail.get("RolloverRating")
+                                                and detail.get("RolloverRating")
+                                                != "Not Rated"
+                                                else None
+                                            ),
+                                            complaints_count=int(
+                                                detail.get("ComplaintsCount", 0) or 0
+                                            ),
+                                            recalls_count=int(
+                                                detail.get("RecallsCount", 0) or 0
+                                            ),
+                                            investigation_count=int(
+                                                detail.get("InvestigationCount", 0) or 0
+                                            ),
+                                            raw_data=detail,
                                         )
 
         except aiohttp.ClientError:
@@ -726,7 +680,7 @@ class TransportationRecordsScraper:
             "recalls_search": "https://www.nhtsa.gov/recalls",
             "complaints_search": "https://www.nhtsa.gov/vehicle-safety-issues",
             "safety_ratings": "https://www.nhtsa.gov/ratings",
-            "investigations": "https://www.nhtsa.gov/vehicle-safety-issues"
+            "investigations": "https://www.nhtsa.gov/vehicle-safety-issues",
         }
 
     def get_vehicle_history_resources(self) -> Dict[str, str]:
@@ -735,16 +689,20 @@ class TransportationRecordsScraper:
             "nmvtis": "https://www.vehiclehistory.gov/",  # National Motor Vehicle Title Information System
             "carfax": "https://www.carfax.com/",  # Paid
             "autocheck": "https://www.autocheck.com/",  # Paid
-            "nicb_vincheck": "https://www.nicb.org/vincheck"  # Free - theft/salvage check
+            "nicb_vincheck": "https://www.nicb.org/vincheck",  # Free - theft/salvage check
         }
 
 
 # Synchronous wrapper functions
-def decode_vin_sync(vin: str, model_year: Optional[int] = None) -> Optional[VINDecodeResult]:
+def decode_vin_sync(
+    vin: str, model_year: Optional[int] = None
+) -> Optional[VINDecodeResult]:
     """Synchronous wrapper for VIN decoding."""
+
     async def _decode():
         async with TransportationRecordsScraper() as scraper:
             return await scraper.decode_vin(vin, model_year)
+
     return asyncio.run(_decode())
 
 
@@ -752,47 +710,42 @@ def search_recalls_sync(
     make: Optional[str] = None,
     model: Optional[str] = None,
     model_year: Optional[int] = None,
-    **kwargs
+    **kwargs,
 ) -> List[VehicleRecall]:
     """Synchronous wrapper for recall search."""
+
     async def _search():
         async with TransportationRecordsScraper() as scraper:
             return await scraper.search_recalls(
-                make=make,
-                model=model,
-                model_year=model_year,
-                **kwargs
+                make=make, model=model, model_year=model_year, **kwargs
             )
+
     return asyncio.run(_search())
 
 
 def search_complaints_sync(
-    make: str,
-    model: str,
-    model_year: Optional[int] = None,
-    **kwargs
+    make: str, model: str, model_year: Optional[int] = None, **kwargs
 ) -> List[VehicleComplaint]:
     """Synchronous wrapper for complaint search."""
+
     async def _search():
         async with TransportationRecordsScraper() as scraper:
             return await scraper.search_complaints(
-                make=make,
-                model=model,
-                model_year=model_year,
-                **kwargs
+                make=make, model=model, model_year=model_year, **kwargs
             )
+
     return asyncio.run(_search())
 
 
 def get_safety_ratings_sync(
-    make: str,
-    model: str,
-    model_year: int
+    make: str, model: str, model_year: int
 ) -> Optional[VehicleSafetyRating]:
     """Synchronous wrapper for safety ratings."""
+
     async def _get():
         async with TransportationRecordsScraper() as scraper:
             return await scraper.get_safety_ratings(make, model, model_year)
+
     return asyncio.run(_get())
 
 

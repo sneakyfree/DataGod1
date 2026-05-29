@@ -23,16 +23,16 @@ from bs4 import BeautifulSoup
 
 from .base_county_scraper import (
     BaseCountyScraper,
-    CountyConfig,
-    PropertyRecord,
-    DeedRecord,
-    MortgageRecord,
-    TaxRecord,
-    CourtCase,
-    LienRecord,
-    RecordType,
-    CaseType,
     CaseStatus,
+    CaseType,
+    CountyConfig,
+    CourtCase,
+    DeedRecord,
+    LienRecord,
+    MortgageRecord,
+    PropertyRecord,
+    RecordType,
+    TaxRecord,
 )
 
 logger = logging.getLogger(__name__)
@@ -72,7 +72,9 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
         self.pa_api = "https://www.miamidade.gov/pa/api/"
         self.pa_search = "https://www.miamidade.gov/pa/property_search.asp"
         self.clerk_api = "https://www.miami-dadeclerk.com/api/"
-        self.recorder_search = "https://www.miami-dadeclerk.com/officialrecords/search.aspx"
+        self.recorder_search = (
+            "https://www.miami-dadeclerk.com/officialrecords/search.aspx"
+        )
         self.court_search = "https://www.miami-dadeclerk.com/casesearch/"
         self.tax_api = "https://www.miamidade.gov/taxcollector/api/"
 
@@ -88,10 +90,7 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
     # ==================== Property Records ====================
 
     async def search_property_by_address(
-        self,
-        address: str,
-        city: Optional[str] = None,
-        zip_code: Optional[str] = None
+        self, address: str, city: Optional[str] = None, zip_code: Optional[str] = None
     ) -> List[PropertyRecord]:
         """
         Search Miami-Dade Property Appraiser by address.
@@ -125,7 +124,11 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                                     folio = cols[0].get_text(strip=True)
                                     prop_address = cols[1].get_text(strip=True)
                                     owner = cols[2].get_text(strip=True)
-                                    prop_city = cols[3].get_text(strip=True) if len(cols) > 3 else city
+                                    prop_city = (
+                                        cols[3].get_text(strip=True)
+                                        if len(cols) > 3
+                                        else city
+                                    )
 
                                     record = PropertyRecord(
                                         parcel_id=folio,
@@ -187,7 +190,9 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
 
         return results
 
-    async def search_property_by_parcel(self, parcel_id: str) -> Optional[PropertyRecord]:
+    async def search_property_by_parcel(
+        self, parcel_id: str
+    ) -> Optional[PropertyRecord]:
         """
         Get detailed property information by Folio Number.
 
@@ -212,10 +217,16 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                         owner_section = soup.find("div", {"id": "ownerInfo"})
                         if owner_section:
                             owner_name = owner_section.find("span", {"id": "ownerName"})
-                            details["owner"] = owner_name.get_text(strip=True) if owner_name else None
+                            details["owner"] = (
+                                owner_name.get_text(strip=True) if owner_name else None
+                            )
 
-                            mailing = owner_section.find("div", {"id": "mailingAddress"})
-                            details["mailing_address"] = mailing.get_text(strip=True) if mailing else None
+                            mailing = owner_section.find(
+                                "div", {"id": "mailingAddress"}
+                            )
+                            details["mailing_address"] = (
+                                mailing.get_text(strip=True) if mailing else None
+                            )
 
                         # Property address
                         addr_div = soup.find("div", {"id": "propertyAddress"})
@@ -228,13 +239,25 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                             bldg = value_section.find("span", {"id": "buildingValue"})
                             total = value_section.find("span", {"id": "totalValue"})
                             market = value_section.find("span", {"id": "marketValue"})
-                            assessed = value_section.find("span", {"id": "assessedValue"})
+                            assessed = value_section.find(
+                                "span", {"id": "assessedValue"}
+                            )
 
-                            details["land_value"] = self._parse_currency(land.get_text() if land else "0")
-                            details["building_value"] = self._parse_currency(bldg.get_text() if bldg else "0")
-                            details["total_value"] = self._parse_currency(total.get_text() if total else "0")
-                            details["market_value"] = self._parse_currency(market.get_text() if market else "0")
-                            details["assessed_value"] = self._parse_currency(assessed.get_text() if assessed else "0")
+                            details["land_value"] = self._parse_currency(
+                                land.get_text() if land else "0"
+                            )
+                            details["building_value"] = self._parse_currency(
+                                bldg.get_text() if bldg else "0"
+                            )
+                            details["total_value"] = self._parse_currency(
+                                total.get_text() if total else "0"
+                            )
+                            details["market_value"] = self._parse_currency(
+                                market.get_text() if market else "0"
+                            )
+                            details["assessed_value"] = self._parse_currency(
+                                assessed.get_text() if assessed else "0"
+                            )
 
                         # Property characteristics
                         char_section = soup.find("div", {"id": "propertyInfo"})
@@ -247,17 +270,33 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                             use = char_section.find("span", {"id": "useCode"})
                             zone = char_section.find("span", {"id": "zoning"})
 
-                            details["year_built"] = self._parse_int(year_built.get_text() if year_built else "0")
-                            details["sqft"] = self._parse_int(sqft.get_text() if sqft else "0")
-                            details["lot_sqft"] = self._parse_int(lot_size.get_text() if lot_size else "0")
-                            details["bedrooms"] = self._parse_int(beds.get_text() if beds else "0")
-                            details["bathrooms"] = float(baths.get_text()) if baths else None
-                            details["use_code"] = use.get_text(strip=True) if use else None
-                            details["zoning"] = zone.get_text(strip=True) if zone else None
+                            details["year_built"] = self._parse_int(
+                                year_built.get_text() if year_built else "0"
+                            )
+                            details["sqft"] = self._parse_int(
+                                sqft.get_text() if sqft else "0"
+                            )
+                            details["lot_sqft"] = self._parse_int(
+                                lot_size.get_text() if lot_size else "0"
+                            )
+                            details["bedrooms"] = self._parse_int(
+                                beds.get_text() if beds else "0"
+                            )
+                            details["bathrooms"] = (
+                                float(baths.get_text()) if baths else None
+                            )
+                            details["use_code"] = (
+                                use.get_text(strip=True) if use else None
+                            )
+                            details["zoning"] = (
+                                zone.get_text(strip=True) if zone else None
+                            )
 
                         # Legal description
                         legal_div = soup.find("div", {"id": "legalDescription"})
-                        details["legal_description"] = legal_div.get_text(strip=True) if legal_div else None
+                        details["legal_description"] = (
+                            legal_div.get_text(strip=True) if legal_div else None
+                        )
 
                         return PropertyRecord(
                             parcel_id=parcel_id,
@@ -296,7 +335,7 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         as_grantor: bool = True,
-        as_grantee: bool = True
+        as_grantee: bool = True,
     ) -> List[DeedRecord]:
         """
         Search Miami-Dade Clerk Official Records for deeds by party name.
@@ -331,12 +370,18 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                             for row in results_table.find_all("tr")[1:]:
                                 cols = row.find_all("td")
                                 if len(cols) >= 6:
-                                    cfn = cols[0].get_text(strip=True)  # Clerk File Number
+                                    cfn = cols[0].get_text(
+                                        strip=True
+                                    )  # Clerk File Number
                                     doc_type = cols[1].get_text(strip=True)
                                     rec_date = cols[2].get_text(strip=True)
                                     grantor = cols[3].get_text(strip=True)
                                     grantee = cols[4].get_text(strip=True)
-                                    consideration = cols[5].get_text(strip=True) if len(cols) > 5 else "0"
+                                    consideration = (
+                                        cols[5].get_text(strip=True)
+                                        if len(cols) > 5
+                                        else "0"
+                                    )
 
                                     record = DeedRecord(
                                         document_number=cfn,
@@ -344,7 +389,9 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                                         recording_date=self._parse_date(rec_date),
                                         grantor=grantor,
                                         grantee=grantee,
-                                        consideration=self._parse_currency(consideration),
+                                        consideration=self._parse_currency(
+                                            consideration
+                                        ),
                                         county="Miami-Dade",
                                         state="FL",
                                         source_url=f"{self.config.recorder_url}document.aspx?cfn={cfn}",
@@ -360,7 +407,7 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
         self,
         parcel_id: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[DeedRecord]:
         """Search recorder by folio number."""
         results = []
@@ -391,7 +438,9 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                                     record = DeedRecord(
                                         document_number=cols[0].get_text(strip=True),
                                         record_type=cols[1].get_text(strip=True),
-                                        recording_date=self._parse_date(cols[2].get_text(strip=True)),
+                                        recording_date=self._parse_date(
+                                            cols[2].get_text(strip=True)
+                                        ),
                                         grantor=cols[3].get_text(strip=True),
                                         grantee=cols[4].get_text(strip=True),
                                         parcel_id=parcel_id,
@@ -411,7 +460,7 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
         name: Optional[str] = None,
         parcel_id: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[MortgageRecord]:
         """Search for mortgage records (Florida uses Mortgages, not Deeds of Trust)."""
         results = []
@@ -446,10 +495,18 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                                     record = MortgageRecord(
                                         document_number=cols[0].get_text(strip=True),
                                         record_type="MORTGAGE",
-                                        recording_date=self._parse_date(cols[2].get_text(strip=True)),
-                                        mortgagor=cols[3].get_text(strip=True),  # Borrower
-                                        mortgagee=cols[4].get_text(strip=True),  # Lender
-                                        loan_amount=self._parse_currency(cols[5].get_text(strip=True)),
+                                        recording_date=self._parse_date(
+                                            cols[2].get_text(strip=True)
+                                        ),
+                                        mortgagor=cols[3].get_text(
+                                            strip=True
+                                        ),  # Borrower
+                                        mortgagee=cols[4].get_text(
+                                            strip=True
+                                        ),  # Lender
+                                        loan_amount=self._parse_currency(
+                                            cols[5].get_text(strip=True)
+                                        ),
                                         parcel_id=parcel_id,
                                         county="Miami-Dade",
                                         state="FL",
@@ -466,14 +523,20 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
         self,
         name: Optional[str] = None,
         parcel_id: Optional[str] = None,
-        lien_type: Optional[str] = None
+        lien_type: Optional[str] = None,
     ) -> List[LienRecord]:
         """Search for lien records."""
         results = []
 
         try:
             async with await self._create_session() as session:
-                lien_types = ["LIEN", "TAX LIEN", "CONSTRUCTION LIEN", "JUDGMENT", "LIS PENDENS"]
+                lien_types = [
+                    "LIEN",
+                    "TAX LIEN",
+                    "CONSTRUCTION LIEN",
+                    "JUDGMENT",
+                    "LIS PENDENS",
+                ]
 
                 for lt in lien_types:
                     if lien_type and lien_type.upper() not in lt:
@@ -498,12 +561,22 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                                     cols = row.find_all("td")
                                     if len(cols) >= 5:
                                         record = LienRecord(
-                                            document_number=cols[0].get_text(strip=True),
+                                            document_number=cols[0].get_text(
+                                                strip=True
+                                            ),
                                             lien_type=lt,
-                                            recording_date=self._parse_date(cols[2].get_text(strip=True)),
+                                            recording_date=self._parse_date(
+                                                cols[2].get_text(strip=True)
+                                            ),
                                             debtor=cols[3].get_text(strip=True),
                                             creditor=cols[4].get_text(strip=True),
-                                            amount=self._parse_currency(cols[5].get_text(strip=True)) if len(cols) > 5 else 0.0,
+                                            amount=(
+                                                self._parse_currency(
+                                                    cols[5].get_text(strip=True)
+                                                )
+                                                if len(cols) > 5
+                                                else 0.0
+                                            ),
                                             parcel_id=parcel_id,
                                             county="Miami-Dade",
                                             state="FL",
@@ -525,7 +598,7 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
         name: str,
         case_type: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """
         Search Miami-Dade Clerk court cases by party name.
@@ -571,11 +644,19 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                                     if " vs " in case_title.lower():
                                         parts = case_title.lower().split(" vs ")
                                         plaintiff = parts[0].strip().title()
-                                        defendant = parts[1].strip().title() if len(parts) > 1 else None
+                                        defendant = (
+                                            parts[1].strip().title()
+                                            if len(parts) > 1
+                                            else None
+                                        )
                                     elif " v " in case_title.lower():
                                         parts = case_title.lower().split(" v ")
                                         plaintiff = parts[0].strip().title()
-                                        defendant = parts[1].strip().title() if len(parts) > 1 else None
+                                        defendant = (
+                                            parts[1].strip().title()
+                                            if len(parts) > 1
+                                            else None
+                                        )
 
                                     record = CourtCase(
                                         case_number=case_number,
@@ -598,8 +679,7 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
         return results
 
     async def search_court_cases_by_case_number(
-        self,
-        case_number: str
+        self, case_number: str
     ) -> Optional[CourtCase]:
         """Get detailed case information by case number."""
         try:
@@ -616,7 +696,9 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
 
                         # Case header
                         case_title = soup.find("h1", class_="caseTitle")
-                        details["title"] = case_title.get_text(strip=True) if case_title else None
+                        details["title"] = (
+                            case_title.get_text(strip=True) if case_title else None
+                        )
 
                         # Case info
                         info_div = soup.find("div", {"id": "caseInfo"})
@@ -625,7 +707,12 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                                 label = row.find("span", class_="label")
                                 value = row.find("span", class_="value")
                                 if label and value:
-                                    key = label.get_text(strip=True).lower().replace(" ", "_").replace(":", "")
+                                    key = (
+                                        label.get_text(strip=True)
+                                        .lower()
+                                        .replace(" ", "_")
+                                        .replace(":", "")
+                                    )
                                     details[key] = value.get_text(strip=True)
 
                         # Parties
@@ -633,8 +720,12 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                         if parties_div:
                             plaintiff = parties_div.find("div", class_="plaintiff")
                             defendant = parties_div.find("div", class_="defendant")
-                            details["plaintiff"] = plaintiff.get_text(strip=True) if plaintiff else None
-                            details["defendant"] = defendant.get_text(strip=True) if defendant else None
+                            details["plaintiff"] = (
+                                plaintiff.get_text(strip=True) if plaintiff else None
+                            )
+                            details["defendant"] = (
+                                defendant.get_text(strip=True) if defendant else None
+                            )
 
                         # Docket
                         docket_entries = []
@@ -643,10 +734,12 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                             for row in docket_table.find_all("tr")[1:]:
                                 cols = row.find_all("td")
                                 if len(cols) >= 2:
-                                    docket_entries.append({
-                                        "date": cols[0].get_text(strip=True),
-                                        "entry": cols[1].get_text(strip=True),
-                                    })
+                                    docket_entries.append(
+                                        {
+                                            "date": cols[0].get_text(strip=True),
+                                            "entry": cols[1].get_text(strip=True),
+                                        }
+                                    )
 
                         return CourtCase(
                             case_number=case_number,
@@ -674,64 +767,59 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
         self,
         name: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """Search civil cases."""
         return await self.search_court_cases_by_name(
-            name=name,
-            case_type="CA",  # Civil
-            start_date=start_date,
-            end_date=end_date
+            name=name, case_type="CA", start_date=start_date, end_date=end_date  # Civil
         )
 
     async def search_family_cases(
         self,
         name: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """Search family court cases."""
         return await self.search_court_cases_by_name(
             name=name,
             case_type="DR",  # Domestic Relations
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
         )
 
     async def search_probate_cases(
         self,
         name: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """Search probate cases."""
         return await self.search_court_cases_by_name(
             name=name,
             case_type="CP",  # Probate
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
         )
 
     async def search_eviction_cases(
         self,
         name: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """Search eviction cases (Florida specific)."""
         return await self.search_court_cases_by_name(
             name=name,
             case_type="CC",  # County Civil (includes evictions)
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
         )
 
     # ==================== Tax Records ====================
 
     async def search_tax_records(
-        self,
-        parcel_id: str,
-        tax_year: Optional[int] = None
+        self, parcel_id: str, tax_year: Optional[int] = None
     ) -> List[TaxRecord]:
         """
         Search Miami-Dade Tax Collector for tax records.
@@ -763,11 +851,23 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
                                     record = TaxRecord(
                                         parcel_id=parcel_id,
                                         tax_year=year,
-                                        assessed_value=self._parse_currency(cols[1].get_text(strip=True)),
-                                        tax_amount=self._parse_currency(cols[2].get_text(strip=True)),
-                                        amount_paid=self._parse_currency(cols[3].get_text(strip=True)),
-                                        amount_due=self._parse_currency(cols[4].get_text(strip=True)),
-                                        status=cols[5].get_text(strip=True) if len(cols) > 5 else "",
+                                        assessed_value=self._parse_currency(
+                                            cols[1].get_text(strip=True)
+                                        ),
+                                        tax_amount=self._parse_currency(
+                                            cols[2].get_text(strip=True)
+                                        ),
+                                        amount_paid=self._parse_currency(
+                                            cols[3].get_text(strip=True)
+                                        ),
+                                        amount_due=self._parse_currency(
+                                            cols[4].get_text(strip=True)
+                                        ),
+                                        status=(
+                                            cols[5].get_text(strip=True)
+                                            if len(cols) > 5
+                                            else ""
+                                        ),
                                         county="Miami-Dade",
                                         state="FL",
                                         source_url=str(response.url),
@@ -824,9 +924,7 @@ class MiamiDadeCountyScraper(BaseCountyScraper):
 
 # Synchronous wrapper functions
 def search_property_by_address(
-    address: str,
-    city: Optional[str] = None,
-    zip_code: Optional[str] = None
+    address: str, city: Optional[str] = None, zip_code: Optional[str] = None
 ) -> List[PropertyRecord]:
     """Synchronous wrapper for property search by address."""
     scraper = MiamiDadeCountyScraper()
@@ -842,17 +940,14 @@ def search_property_by_owner(owner_name: str) -> List[PropertyRecord]:
 def search_deeds_by_name(
     name: str,
     start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None,
 ) -> List[DeedRecord]:
     """Synchronous wrapper for deed search."""
     scraper = MiamiDadeCountyScraper()
     return asyncio.run(scraper.search_deeds_by_name(name, start_date, end_date))
 
 
-def search_court_cases(
-    name: str,
-    case_type: Optional[str] = None
-) -> List[CourtCase]:
+def search_court_cases(name: str, case_type: Optional[str] = None) -> List[CourtCase]:
     """Synchronous wrapper for court case search."""
     scraper = MiamiDadeCountyScraper()
     return asyncio.run(scraper.search_court_cases_by_name(name, case_type))

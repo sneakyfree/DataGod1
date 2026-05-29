@@ -28,16 +28,17 @@ import logging
 import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Optional, List, Dict, Any
-from urllib.parse import urlencode, quote_plus
+from typing import Any, Dict, List, Optional
+from urllib.parse import quote_plus, urlencode
 
 logger = logging.getLogger(__name__)
 
 # Try to import aiohttp for async requests
 try:
     import aiohttp
+
     AIOHTTP_AVAILABLE = True
 except ImportError:
     AIOHTTP_AVAILABLE = False
@@ -46,6 +47,7 @@ except ImportError:
 
 class RecordType(Enum):
     """Vital record types"""
+
     DEATH = "death"
     MARRIAGE = "marriage"
     DIVORCE = "divorce"
@@ -56,6 +58,7 @@ class RecordType(Enum):
 
 class RecordSource(Enum):
     """Vital record sources"""
+
     SSDI = "Social Security Death Index"
     FAMILYSEARCH = "FamilySearch"
     FINDAGRAVE = "Find A Grave"
@@ -70,6 +73,7 @@ class RecordSource(Enum):
 @dataclass
 class DeathRecord:
     """Death record from public indices"""
+
     name: str
     death_date: Optional[date] = None
     birth_date: Optional[date] = None
@@ -88,27 +92,28 @@ class DeathRecord:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'name': self.name,
-            'death_date': self.death_date.isoformat() if self.death_date else None,
-            'birth_date': self.birth_date.isoformat() if self.birth_date else None,
-            'death_place': self.death_place,
-            'birth_place': self.birth_place,
-            'age_at_death': self.age_at_death,
-            'ssn_last_four': self.ssn_last_four,
-            'state_issued': self.state_issued,
-            'source': self.source.value if self.source else None,
-            'source_id': self.source_id,
-            'source_url': self.source_url,
-            'burial_location': self.burial_location,
-            'cemetery': self.cemetery,
-            'obituary_text': self.obituary_text,
-            'fetched_at': self.fetched_at.isoformat()
+            "name": self.name,
+            "death_date": self.death_date.isoformat() if self.death_date else None,
+            "birth_date": self.birth_date.isoformat() if self.birth_date else None,
+            "death_place": self.death_place,
+            "birth_place": self.birth_place,
+            "age_at_death": self.age_at_death,
+            "ssn_last_four": self.ssn_last_four,
+            "state_issued": self.state_issued,
+            "source": self.source.value if self.source else None,
+            "source_id": self.source_id,
+            "source_url": self.source_url,
+            "burial_location": self.burial_location,
+            "cemetery": self.cemetery,
+            "obituary_text": self.obituary_text,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class MarriageRecord:
     """Marriage record from public indices"""
+
     spouse1_name: str
     spouse2_name: str
     marriage_date: Optional[date] = None
@@ -124,24 +129,27 @@ class MarriageRecord:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'spouse1_name': self.spouse1_name,
-            'spouse2_name': self.spouse2_name,
-            'marriage_date': self.marriage_date.isoformat() if self.marriage_date else None,
-            'marriage_place': self.marriage_place,
-            'county': self.county,
-            'state': self.state,
-            'license_number': self.license_number,
-            'officiant': self.officiant,
-            'source': self.source.value if self.source else None,
-            'source_id': self.source_id,
-            'source_url': self.source_url,
-            'fetched_at': self.fetched_at.isoformat()
+            "spouse1_name": self.spouse1_name,
+            "spouse2_name": self.spouse2_name,
+            "marriage_date": (
+                self.marriage_date.isoformat() if self.marriage_date else None
+            ),
+            "marriage_place": self.marriage_place,
+            "county": self.county,
+            "state": self.state,
+            "license_number": self.license_number,
+            "officiant": self.officiant,
+            "source": self.source.value if self.source else None,
+            "source_id": self.source_id,
+            "source_url": self.source_url,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class DivorceRecord:
     """Divorce record from court records"""
+
     party1_name: str
     party2_name: str
     filing_date: Optional[date] = None
@@ -156,23 +164,24 @@ class DivorceRecord:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'party1_name': self.party1_name,
-            'party2_name': self.party2_name,
-            'filing_date': self.filing_date.isoformat() if self.filing_date else None,
-            'final_date': self.final_date.isoformat() if self.final_date else None,
-            'county': self.county,
-            'state': self.state,
-            'case_number': self.case_number,
-            'court': self.court,
-            'source': self.source.value if self.source else None,
-            'source_url': self.source_url,
-            'fetched_at': self.fetched_at.isoformat()
+            "party1_name": self.party1_name,
+            "party2_name": self.party2_name,
+            "filing_date": self.filing_date.isoformat() if self.filing_date else None,
+            "final_date": self.final_date.isoformat() if self.final_date else None,
+            "county": self.county,
+            "state": self.state,
+            "case_number": self.case_number,
+            "court": self.court,
+            "source": self.source.value if self.source else None,
+            "source_url": self.source_url,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class BurialRecord:
     """Cemetery/burial record"""
+
     name: str
     birth_date: Optional[date] = None
     death_date: Optional[date] = None
@@ -194,24 +203,24 @@ class BurialRecord:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'name': self.name,
-            'birth_date': self.birth_date.isoformat() if self.birth_date else None,
-            'death_date': self.death_date.isoformat() if self.death_date else None,
-            'cemetery_name': self.cemetery_name,
-            'cemetery_location': self.cemetery_location,
-            'city': self.city,
-            'state': self.state,
-            'country': self.country,
-            'plot_info': self.plot_info,
-            'headstone_inscription': self.headstone_inscription,
-            'photo_url': self.photo_url,
-            'memorial_url': self.memorial_url,
-            'source': self.source.value if self.source else None,
-            'source_id': self.source_id,
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'bio_text': self.bio_text,
-            'fetched_at': self.fetched_at.isoformat()
+            "name": self.name,
+            "birth_date": self.birth_date.isoformat() if self.birth_date else None,
+            "death_date": self.death_date.isoformat() if self.death_date else None,
+            "cemetery_name": self.cemetery_name,
+            "cemetery_location": self.cemetery_location,
+            "city": self.city,
+            "state": self.state,
+            "country": self.country,
+            "plot_info": self.plot_info,
+            "headstone_inscription": self.headstone_inscription,
+            "photo_url": self.photo_url,
+            "memorial_url": self.memorial_url,
+            "source": self.source.value if self.source else None,
+            "source_id": self.source_id,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "bio_text": self.bio_text,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
@@ -227,7 +236,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.alabamapublichealth.gov/vitalrecords/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1908, "death": 1908, "marriage": 1936, "divorce": 1950}
+        "years_on_file": {
+            "birth": 1908,
+            "death": 1908,
+            "marriage": 1936,
+            "divorce": 1950,
+        },
     },
     "AK": {
         "name": "Alaska Bureau of Vital Statistics",
@@ -236,7 +250,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://health.alaska.gov/dph/VitalStats/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1913, "death": 1913, "marriage": 1913, "divorce": 1950}
+        "years_on_file": {
+            "birth": 1913,
+            "death": 1913,
+            "marriage": 1913,
+            "divorce": 1950,
+        },
     },
     "AZ": {
         "name": "Arizona Office of Vital Records",
@@ -245,7 +264,7 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://azdhs.gov/vital-records/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage"],
-        "years_on_file": {"birth": 1909, "death": 1909, "marriage": 1909}
+        "years_on_file": {"birth": 1909, "death": 1909, "marriage": 1909},
     },
     "AR": {
         "name": "Arkansas Department of Health",
@@ -254,7 +273,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.healthy.arkansas.gov/programs-services/topics/certificates-background-checks",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1914, "death": 1914, "marriage": 1917, "divorce": 1923}
+        "years_on_file": {
+            "birth": 1914,
+            "death": 1914,
+            "marriage": 1917,
+            "divorce": 1923,
+        },
     },
     "CA": {
         "name": "California Department of Public Health",
@@ -263,8 +287,13 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.cdph.ca.gov/Programs/CHSI/Pages/Vital-Records.aspx",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1905, "death": 1905, "marriage": 1905, "divorce": 1962},
-        "notes": "Informational copies available to anyone; certified copies restricted"
+        "years_on_file": {
+            "birth": 1905,
+            "death": 1905,
+            "marriage": 1905,
+            "divorce": 1962,
+        },
+        "notes": "Informational copies available to anyone; certified copies restricted",
     },
     "CO": {
         "name": "Colorado Vital Records",
@@ -273,7 +302,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://cdphe.colorado.gov/vitalrecords",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1910, "death": 1910, "marriage": 1900, "divorce": 1900}
+        "years_on_file": {
+            "birth": 1910,
+            "death": 1910,
+            "marriage": 1900,
+            "divorce": 1900,
+        },
     },
     "CT": {
         "name": "Connecticut Vital Records",
@@ -282,7 +316,7 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://portal.ct.gov/DPH/Vital-Records/Vital-Records",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage"],
-        "years_on_file": {"birth": 1897, "death": 1897, "marriage": 1897}
+        "years_on_file": {"birth": 1897, "death": 1897, "marriage": 1897},
     },
     "DE": {
         "name": "Delaware Office of Vital Statistics",
@@ -291,7 +325,7 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://dhss.delaware.gov/dhss/dph/ss/vitalstats.html",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage"],
-        "years_on_file": {"birth": 1861, "death": 1881, "marriage": 1847}
+        "years_on_file": {"birth": 1861, "death": 1881, "marriage": 1847},
     },
     "FL": {
         "name": "Florida Office of Vital Statistics",
@@ -300,7 +334,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.floridahealth.gov/certificates/certificates/index.html",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1917, "death": 1917, "marriage": 1927, "divorce": 1927}
+        "years_on_file": {
+            "birth": 1917,
+            "death": 1917,
+            "marriage": 1927,
+            "divorce": 1927,
+        },
     },
     "GA": {
         "name": "Georgia Vital Records",
@@ -309,7 +348,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://dph.georgia.gov/VitalRecords",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1919, "death": 1919, "marriage": 1952, "divorce": 1952}
+        "years_on_file": {
+            "birth": 1919,
+            "death": 1919,
+            "marriage": 1952,
+            "divorce": 1952,
+        },
     },
     "HI": {
         "name": "Hawaii Office of Health Status Monitoring",
@@ -318,7 +362,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://health.hawaii.gov/vitalrecords/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1853, "death": 1853, "marriage": 1842, "divorce": 1951}
+        "years_on_file": {
+            "birth": 1853,
+            "death": 1853,
+            "marriage": 1842,
+            "divorce": 1951,
+        },
     },
     "ID": {
         "name": "Idaho Vital Records",
@@ -327,7 +376,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://healthandwelfare.idaho.gov/services-programs/vital-records",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1911, "death": 1911, "marriage": 1947, "divorce": 1947}
+        "years_on_file": {
+            "birth": 1911,
+            "death": 1911,
+            "marriage": 1947,
+            "divorce": 1947,
+        },
     },
     "IL": {
         "name": "Illinois Division of Vital Records",
@@ -336,7 +390,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://dph.illinois.gov/topics-services/birth-death-other-records/vital-records.html",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1916, "death": 1916, "marriage": 1962, "divorce": 1962}
+        "years_on_file": {
+            "birth": 1916,
+            "death": 1916,
+            "marriage": 1962,
+            "divorce": 1962,
+        },
     },
     "IN": {
         "name": "Indiana Vital Records",
@@ -345,7 +404,7 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.in.gov/health/vital-records/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage"],
-        "years_on_file": {"birth": 1907, "death": 1900, "marriage": 1958}
+        "years_on_file": {"birth": 1907, "death": 1900, "marriage": 1958},
     },
     "IA": {
         "name": "Iowa Vital Records",
@@ -354,7 +413,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://idph.iowa.gov/health-statistics/vital-records",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1880, "death": 1880, "marriage": 1880, "divorce": 1906}
+        "years_on_file": {
+            "birth": 1880,
+            "death": 1880,
+            "marriage": 1880,
+            "divorce": 1906,
+        },
     },
     "KS": {
         "name": "Kansas Office of Vital Statistics",
@@ -363,7 +427,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.kdheks.gov/vital/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1911, "death": 1911, "marriage": 1913, "divorce": 1951}
+        "years_on_file": {
+            "birth": 1911,
+            "death": 1911,
+            "marriage": 1913,
+            "divorce": 1951,
+        },
     },
     "KY": {
         "name": "Kentucky Office of Vital Statistics",
@@ -372,7 +441,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://chfs.ky.gov/agencies/dph/dehp/vsb/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1911, "death": 1911, "marriage": 1958, "divorce": 1958}
+        "years_on_file": {
+            "birth": 1911,
+            "death": 1911,
+            "marriage": 1958,
+            "divorce": 1958,
+        },
     },
     "LA": {
         "name": "Louisiana Vital Records Registry",
@@ -382,7 +456,7 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage"],
         "years_on_file": {"birth": 1914, "death": 1914, "marriage": 1946},
-        "notes": "Orleans Parish records from 1790"
+        "notes": "Orleans Parish records from 1790",
     },
     "ME": {
         "name": "Maine Office of Vital Records",
@@ -391,7 +465,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.maine.gov/dhhs/mecdc/public-health-systems/data-research/vital-records/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1923, "death": 1923, "marriage": 1892, "divorce": 1892}
+        "years_on_file": {
+            "birth": 1923,
+            "death": 1923,
+            "marriage": 1892,
+            "divorce": 1892,
+        },
     },
     "MD": {
         "name": "Maryland Division of Vital Records",
@@ -400,7 +479,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://health.maryland.gov/vsa/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1898, "death": 1898, "marriage": 1951, "divorce": 1961}
+        "years_on_file": {
+            "birth": 1898,
+            "death": 1898,
+            "marriage": 1951,
+            "divorce": 1961,
+        },
     },
     "MA": {
         "name": "Massachusetts Registry of Vital Records",
@@ -409,7 +493,7 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.mass.gov/orgs/registry-of-vital-records-and-statistics",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage"],
-        "years_on_file": {"birth": 1841, "death": 1841, "marriage": 1841}
+        "years_on_file": {"birth": 1841, "death": 1841, "marriage": 1841},
     },
     "MI": {
         "name": "Michigan Vital Records",
@@ -418,7 +502,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.michigan.gov/mdhhs/assistance-programs/vital-records",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1867, "death": 1867, "marriage": 1867, "divorce": 1897}
+        "years_on_file": {
+            "birth": 1867,
+            "death": 1867,
+            "marriage": 1867,
+            "divorce": 1897,
+        },
     },
     "MN": {
         "name": "Minnesota Office of Vital Records",
@@ -427,7 +516,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.health.state.mn.us/people/vitalrecords/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1900, "death": 1908, "marriage": 1958, "divorce": 1970}
+        "years_on_file": {
+            "birth": 1900,
+            "death": 1908,
+            "marriage": 1958,
+            "divorce": 1970,
+        },
     },
     "MS": {
         "name": "Mississippi Vital Records",
@@ -436,7 +530,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://msdh.ms.gov/page/30,0,109.html",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1912, "death": 1912, "marriage": 1926, "divorce": 1926}
+        "years_on_file": {
+            "birth": 1912,
+            "death": 1912,
+            "marriage": 1926,
+            "divorce": 1926,
+        },
     },
     "MO": {
         "name": "Missouri Bureau of Vital Records",
@@ -445,7 +544,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://health.mo.gov/data/vitalrecords/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1910, "death": 1910, "marriage": 1948, "divorce": 1948}
+        "years_on_file": {
+            "birth": 1910,
+            "death": 1910,
+            "marriage": 1948,
+            "divorce": 1948,
+        },
     },
     "MT": {
         "name": "Montana Office of Vital Statistics",
@@ -454,7 +558,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://dphhs.mt.gov/vitalrecords",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1907, "death": 1907, "marriage": 1943, "divorce": 1943}
+        "years_on_file": {
+            "birth": 1907,
+            "death": 1907,
+            "marriage": 1943,
+            "divorce": 1943,
+        },
     },
     "NE": {
         "name": "Nebraska Vital Records",
@@ -463,7 +572,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://dhhs.ne.gov/Pages/Vital-Records.aspx",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1904, "death": 1904, "marriage": 1909, "divorce": 1909}
+        "years_on_file": {
+            "birth": 1904,
+            "death": 1904,
+            "marriage": 1909,
+            "divorce": 1909,
+        },
     },
     "NV": {
         "name": "Nevada Office of Vital Records",
@@ -472,7 +586,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://dpbh.nv.gov/Programs/Vital_Records/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1911, "death": 1911, "marriage": 1968, "divorce": 1968}
+        "years_on_file": {
+            "birth": 1911,
+            "death": 1911,
+            "marriage": 1968,
+            "divorce": 1968,
+        },
     },
     "NH": {
         "name": "New Hampshire Division of Vital Records",
@@ -481,7 +600,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.dhhs.nh.gov/programs-services/vital-records",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1640, "death": 1640, "marriage": 1640, "divorce": 1808}
+        "years_on_file": {
+            "birth": 1640,
+            "death": 1640,
+            "marriage": 1640,
+            "divorce": 1808,
+        },
     },
     "NJ": {
         "name": "New Jersey Office of Vital Statistics",
@@ -490,7 +614,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.nj.gov/health/vital/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1878, "death": 1878, "marriage": 1848, "divorce": 1948}
+        "years_on_file": {
+            "birth": 1878,
+            "death": 1878,
+            "marriage": 1848,
+            "divorce": 1948,
+        },
     },
     "NM": {
         "name": "New Mexico Vital Records",
@@ -499,7 +628,7 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.nmhealth.org/about/erd/bvrhs/vrb/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage"],
-        "years_on_file": {"birth": 1920, "death": 1920, "marriage": 1920}
+        "years_on_file": {"birth": 1920, "death": 1920, "marriage": 1920},
     },
     "NY": {
         "name": "New York State Vital Records",
@@ -508,8 +637,13 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.health.ny.gov/vital_records/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1881, "death": 1880, "marriage": 1880, "divorce": 1963},
-        "notes": "NYC has separate office - NYC records not included"
+        "years_on_file": {
+            "birth": 1881,
+            "death": 1880,
+            "marriage": 1880,
+            "divorce": 1963,
+        },
+        "notes": "NYC has separate office - NYC records not included",
     },
     "NC": {
         "name": "North Carolina Vital Records",
@@ -518,7 +652,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://vitalrecords.nc.gov/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1913, "death": 1913, "marriage": 1962, "divorce": 1958}
+        "years_on_file": {
+            "birth": 1913,
+            "death": 1913,
+            "marriage": 1962,
+            "divorce": 1958,
+        },
     },
     "ND": {
         "name": "North Dakota Vital Records",
@@ -527,7 +666,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.health.nd.gov/vital",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1907, "death": 1907, "marriage": 1925, "divorce": 1949}
+        "years_on_file": {
+            "birth": 1907,
+            "death": 1907,
+            "marriage": 1925,
+            "divorce": 1949,
+        },
     },
     "OH": {
         "name": "Ohio Office of Vital Statistics",
@@ -536,7 +680,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://odh.ohio.gov/know-our-programs/vital-statistics/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1908, "death": 1908, "marriage": 1949, "divorce": 1948}
+        "years_on_file": {
+            "birth": 1908,
+            "death": 1908,
+            "marriage": 1949,
+            "divorce": 1948,
+        },
     },
     "OK": {
         "name": "Oklahoma Vital Records",
@@ -545,7 +694,7 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://oklahoma.gov/health/services/vital-records.html",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage"],
-        "years_on_file": {"birth": 1908, "death": 1908, "marriage": 1951}
+        "years_on_file": {"birth": 1908, "death": 1908, "marriage": 1951},
     },
     "OR": {
         "name": "Oregon Vital Records",
@@ -554,7 +703,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.oregon.gov/oha/PH/BIRTHDEATHCERTIFICATES/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1903, "death": 1903, "marriage": 1906, "divorce": 1925}
+        "years_on_file": {
+            "birth": 1903,
+            "death": 1903,
+            "marriage": 1906,
+            "divorce": 1925,
+        },
     },
     "PA": {
         "name": "Pennsylvania Division of Vital Records",
@@ -563,7 +717,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.health.pa.gov/topics/certificates/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1906, "death": 1906, "marriage": 1906, "divorce": 1946}
+        "years_on_file": {
+            "birth": 1906,
+            "death": 1906,
+            "marriage": 1906,
+            "divorce": 1946,
+        },
     },
     "RI": {
         "name": "Rhode Island Office of Vital Records",
@@ -572,7 +731,7 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://health.ri.gov/records/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage"],
-        "years_on_file": {"birth": 1853, "death": 1853, "marriage": 1853}
+        "years_on_file": {"birth": 1853, "death": 1853, "marriage": 1853},
     },
     "SC": {
         "name": "South Carolina Vital Records",
@@ -581,7 +740,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://scdhec.gov/vital-records",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1915, "death": 1915, "marriage": 1950, "divorce": 1962}
+        "years_on_file": {
+            "birth": 1915,
+            "death": 1915,
+            "marriage": 1950,
+            "divorce": 1962,
+        },
     },
     "SD": {
         "name": "South Dakota Vital Records",
@@ -590,7 +754,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://doh.sd.gov/records/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1905, "death": 1905, "marriage": 1905, "divorce": 1905}
+        "years_on_file": {
+            "birth": 1905,
+            "death": 1905,
+            "marriage": 1905,
+            "divorce": 1905,
+        },
     },
     "TN": {
         "name": "Tennessee Office of Vital Records",
@@ -599,7 +768,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.tn.gov/health/health-program-areas/vital-records.html",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1914, "death": 1914, "marriage": 1945, "divorce": 1945}
+        "years_on_file": {
+            "birth": 1914,
+            "death": 1914,
+            "marriage": 1945,
+            "divorce": 1945,
+        },
     },
     "TX": {
         "name": "Texas Vital Statistics",
@@ -608,7 +782,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.dshs.texas.gov/vital-statistics",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1903, "death": 1903, "marriage": 1966, "divorce": 1968}
+        "years_on_file": {
+            "birth": 1903,
+            "death": 1903,
+            "marriage": 1966,
+            "divorce": 1968,
+        },
     },
     "UT": {
         "name": "Utah Office of Vital Records",
@@ -617,7 +796,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://vitalrecords.utah.gov/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1905, "death": 1905, "marriage": 1978, "divorce": 1978}
+        "years_on_file": {
+            "birth": 1905,
+            "death": 1905,
+            "marriage": 1978,
+            "divorce": 1978,
+        },
     },
     "VT": {
         "name": "Vermont Vital Records",
@@ -626,7 +810,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.healthvermont.gov/vital-records",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1760, "death": 1760, "marriage": 1760, "divorce": 1968}
+        "years_on_file": {
+            "birth": 1760,
+            "death": 1760,
+            "marriage": 1760,
+            "divorce": 1968,
+        },
     },
     "VA": {
         "name": "Virginia Division of Vital Records",
@@ -635,7 +824,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.vdh.virginia.gov/vital-records/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1912, "death": 1912, "marriage": 1936, "divorce": 1918}
+        "years_on_file": {
+            "birth": 1912,
+            "death": 1912,
+            "marriage": 1936,
+            "divorce": 1918,
+        },
     },
     "WA": {
         "name": "Washington Center for Health Statistics",
@@ -644,7 +838,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.doh.wa.gov/LicensesPermitsandCertificates/BirthDeathMarriageandDivorce",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1907, "death": 1907, "marriage": 1968, "divorce": 1968}
+        "years_on_file": {
+            "birth": 1907,
+            "death": 1907,
+            "marriage": 1968,
+            "divorce": 1968,
+        },
     },
     "WV": {
         "name": "West Virginia Vital Registration Office",
@@ -653,7 +852,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://dhhr.wv.gov/vitalreg/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1917, "death": 1917, "marriage": 1964, "divorce": 1968}
+        "years_on_file": {
+            "birth": 1917,
+            "death": 1917,
+            "marriage": 1964,
+            "divorce": 1968,
+        },
     },
     "WI": {
         "name": "Wisconsin Vital Records",
@@ -662,7 +866,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://www.dhs.wisconsin.gov/vitalrecords/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1907, "death": 1907, "marriage": 1907, "divorce": 1907}
+        "years_on_file": {
+            "birth": 1907,
+            "death": 1907,
+            "marriage": 1907,
+            "divorce": 1907,
+        },
     },
     "WY": {
         "name": "Wyoming Vital Statistics Services",
@@ -671,7 +880,12 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://health.wyo.gov/admin/vitalstatistics/",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1909, "death": 1909, "marriage": 1941, "divorce": 1941}
+        "years_on_file": {
+            "birth": 1909,
+            "death": 1909,
+            "marriage": 1941,
+            "divorce": 1941,
+        },
     },
     "DC": {
         "name": "DC Vital Records Division",
@@ -680,14 +894,20 @@ STATE_VITAL_RECORDS_OFFICES: Dict[str, Dict[str, Any]] = {
         "url": "https://dchealth.dc.gov/service/vital-records",
         "online_ordering": True,
         "records_available": ["birth", "death", "marriage", "divorce"],
-        "years_on_file": {"birth": 1874, "death": 1874, "marriage": 1811, "divorce": 1956}
-    }
+        "years_on_file": {
+            "birth": 1874,
+            "death": 1874,
+            "marriage": 1811,
+            "divorce": 1956,
+        },
+    },
 }
 
 
 # =============================================================================
 # Vital Records API (Main Implementation)
 # =============================================================================
+
 
 class VitalRecordsAPI:
     """
@@ -730,8 +950,8 @@ class VitalRecordsAPI:
                 timeout=timeout,
                 headers={
                     "User-Agent": "DataGod/1.0 (Public Records Research)",
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-                }
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                },
             )
         return self._session
 
@@ -756,8 +976,14 @@ class VitalRecordsAPI:
         date_str = date_str.strip()
 
         formats = [
-            "%Y-%m-%d", "%m/%d/%Y", "%d %b %Y", "%B %d, %Y",
-            "%Y", "%b %d, %Y", "%d-%m-%Y", "%m-%d-%Y"
+            "%Y-%m-%d",
+            "%m/%d/%Y",
+            "%d %b %Y",
+            "%B %d, %Y",
+            "%Y",
+            "%b %d, %Y",
+            "%d-%m-%Y",
+            "%m-%d-%Y",
         ]
 
         for fmt in formats:
@@ -767,7 +993,7 @@ class VitalRecordsAPI:
                 continue
 
         # Try to extract just year
-        year_match = re.search(r'(\d{4})', date_str)
+        year_match = re.search(r"(\d{4})", date_str)
         if year_match:
             try:
                 return date(int(year_match.group(1)), 1, 1)
@@ -791,13 +1017,16 @@ class VitalRecordsAPI:
             Office contact information including URL, phone, records available
         """
         state = state.upper()
-        return STATE_VITAL_RECORDS_OFFICES.get(state, {
-            "name": f"{state} Vital Records Office",
-            "url": f"https://www.google.com/search?q={state}+vital+records+office",
-            "online_ordering": False,
-            "records_available": ["birth", "death", "marriage", "divorce"],
-            "notes": "State not found in database - please verify contact information"
-        })
+        return STATE_VITAL_RECORDS_OFFICES.get(
+            state,
+            {
+                "name": f"{state} Vital Records Office",
+                "url": f"https://www.google.com/search?q={state}+vital+records+office",
+                "online_ordering": False,
+                "records_available": ["birth", "death", "marriage", "divorce"],
+                "notes": "State not found in database - please verify contact information",
+            },
+        )
 
     def get_all_state_offices(self) -> Dict[str, Dict[str, Any]]:
         """Get all state vital records offices."""
@@ -817,7 +1046,7 @@ class VitalRecordsAPI:
         city: str = "",
         state: str = "",
         country: str = "US",
-        limit: int = 50
+        limit: int = 50,
     ) -> List[BurialRecord]:
         """
         Search Find A Grave for burial/cemetery records.
@@ -854,7 +1083,7 @@ class VitalRecordsAPI:
             "firstname": firstname,
             "lastname": lastname,
             "orderby": "r",  # Relevance
-            "page": 1
+            "page": 1,
         }
 
         if birth_year:
@@ -897,17 +1126,17 @@ class VitalRecordsAPI:
         # Pattern for memorial cards
         memorial_pattern = re.compile(
             r'<a[^>]*href="/memorial/(\d+)/([^"]*)"[^>]*>.*?'
-            r'<h2[^>]*>([^<]+)</h2>.*?'
-            r'(?:Birth:?\s*([^<]*?))?(?:Death:?\s*([^<]*?))?'
-            r'(?:Cemetery:?\s*([^<]*?))?',
-            re.DOTALL | re.IGNORECASE
+            r"<h2[^>]*>([^<]+)</h2>.*?"
+            r"(?:Birth:?\s*([^<]*?))?(?:Death:?\s*([^<]*?))?"
+            r"(?:Cemetery:?\s*([^<]*?))?",
+            re.DOTALL | re.IGNORECASE,
         )
 
         # Simplified pattern for basic memorial links
         simple_pattern = re.compile(
             r'href="/memorial/(\d+)/([^"]*)"[^>]*class="[^"]*memorial-item[^"]*"[^>]*>'
             r'.*?<[^>]*class="[^"]*name[^"]*"[^>]*>([^<]+)<',
-            re.DOTALL | re.IGNORECASE
+            re.DOTALL | re.IGNORECASE,
         )
 
         # Try to find memorial entries
@@ -923,8 +1152,8 @@ class VitalRecordsAPI:
                     name = match[2].strip() if len(match) > 2 else ""
 
                     # Clean up name - remove HTML entities
-                    name = re.sub(r'&[^;]+;', ' ', name)
-                    name = ' '.join(name.split())
+                    name = re.sub(r"&[^;]+;", " ", name)
+                    name = " ".join(name.split())
 
                     if not name:
                         continue
@@ -947,7 +1176,7 @@ class VitalRecordsAPI:
                         cemetery_name=cemetery,
                         source=RecordSource.FINDAGRAVE,
                         source_id=memorial_id,
-                        memorial_url=f"https://www.findagrave.com/memorial/{memorial_id}/{memorial_slug}"
+                        memorial_url=f"https://www.findagrave.com/memorial/{memorial_id}/{memorial_slug}",
                     )
                     records.append(record)
 
@@ -959,7 +1188,9 @@ class VitalRecordsAPI:
         if not records:
             # Check if there are any results indicated
             if "results found" in html.lower() or "memorial" in html.lower():
-                logger.info("Find A Grave returned results but parsing failed - providing search URL")
+                logger.info(
+                    "Find A Grave returned results but parsing failed - providing search URL"
+                )
 
         return records
 
@@ -994,37 +1225,38 @@ class VitalRecordsAPI:
             return None
 
     def _parse_findagrave_memorial(
-        self,
-        html: str,
-        memorial_id: str,
-        url: str
+        self, html: str, memorial_id: str, url: str
     ) -> Optional[BurialRecord]:
         """Parse a Find A Grave memorial page."""
         try:
             # Extract name
             name_match = re.search(r'<h1[^>]*id="bio-name"[^>]*>([^<]+)</h1>', html)
             if not name_match:
-                name_match = re.search(r'<title>([^<|]+)', html)
+                name_match = re.search(r"<title>([^<|]+)", html)
             name = name_match.group(1).strip() if name_match else "Unknown"
 
             # Extract dates
-            birth_match = re.search(r'Birth:?\s*</dt>\s*<dd[^>]*>([^<]+)', html, re.IGNORECASE)
-            death_match = re.search(r'Death:?\s*</dt>\s*<dd[^>]*>([^<]+)', html, re.IGNORECASE)
+            birth_match = re.search(
+                r"Birth:?\s*</dt>\s*<dd[^>]*>([^<]+)", html, re.IGNORECASE
+            )
+            death_match = re.search(
+                r"Death:?\s*</dt>\s*<dd[^>]*>([^<]+)", html, re.IGNORECASE
+            )
 
             birth_date = self._parse_date(birth_match.group(1)) if birth_match else None
             death_date = self._parse_date(death_match.group(1)) if death_match else None
 
             # Extract cemetery info
             cemetery_match = re.search(
-                r'Cemetery:?\s*</dt>\s*<dd[^>]*>\s*<a[^>]*>([^<]+)</a>',
-                html, re.IGNORECASE
+                r"Cemetery:?\s*</dt>\s*<dd[^>]*>\s*<a[^>]*>([^<]+)</a>",
+                html,
+                re.IGNORECASE,
             )
             cemetery_name = cemetery_match.group(1).strip() if cemetery_match else None
 
             # Extract location
             location_match = re.search(
-                r'<span[^>]*class="[^"]*location[^"]*"[^>]*>([^<]+)</span>',
-                html
+                r'<span[^>]*class="[^"]*location[^"]*"[^>]*>([^<]+)</span>', html
             )
             location = location_match.group(1).strip() if location_match else None
 
@@ -1032,25 +1264,23 @@ class VitalRecordsAPI:
             city = None
             state = None
             if location:
-                parts = [p.strip() for p in location.split(',')]
+                parts = [p.strip() for p in location.split(",")]
                 if len(parts) >= 2:
                     city = parts[0]
                     state = parts[-2] if len(parts) > 2 else parts[-1]
 
             # Extract bio/inscription
             bio_match = re.search(
-                r'<div[^>]*id="bio"[^>]*>(.*?)</div>',
-                html, re.DOTALL
+                r'<div[^>]*id="bio"[^>]*>(.*?)</div>', html, re.DOTALL
             )
             bio_text = None
             if bio_match:
-                bio_text = re.sub(r'<[^>]+>', '', bio_match.group(1)).strip()
-                bio_text = ' '.join(bio_text.split())[:1000]  # Limit length
+                bio_text = re.sub(r"<[^>]+>", "", bio_match.group(1)).strip()
+                bio_text = " ".join(bio_text.split())[:1000]  # Limit length
 
             # Extract photo URL
             photo_match = re.search(
-                r'<img[^>]*class="[^"]*memorial-photo[^"]*"[^>]*src="([^"]+)"',
-                html
+                r'<img[^>]*class="[^"]*memorial-photo[^"]*"[^>]*src="([^"]+)"', html
             )
             photo_url = photo_match.group(1) if photo_match else None
 
@@ -1061,7 +1291,9 @@ class VitalRecordsAPI:
             longitude = float(lng_match.group(1)) if lng_match else None
 
             # Extract plot info
-            plot_match = re.search(r'Plot:?\s*</dt>\s*<dd[^>]*>([^<]+)', html, re.IGNORECASE)
+            plot_match = re.search(
+                r"Plot:?\s*</dt>\s*<dd[^>]*>([^<]+)", html, re.IGNORECASE
+            )
             plot_info = plot_match.group(1).strip() if plot_match else None
 
             return BurialRecord(
@@ -1080,7 +1312,7 @@ class VitalRecordsAPI:
                 source_id=memorial_id,
                 latitude=latitude,
                 longitude=longitude,
-                bio_text=bio_text
+                bio_text=bio_text,
             )
 
         except Exception as e:
@@ -1099,7 +1331,7 @@ class VitalRecordsAPI:
         death_year: int = None,
         birth_place: str = "",
         death_place: str = "",
-        record_type: str = ""
+        record_type: str = "",
     ) -> str:
         """
         Generate a FamilySearch search URL.
@@ -1140,7 +1372,7 @@ class VitalRecordsAPI:
         collection_filters = {
             "deaths": "m.defaultFacets=on&m.queryRequireDefault=on&m.facetNestCollectionInCategory=on&f.collectionId=1202535",
             "marriages": "f.collectionId=1803970",
-            "ssdi": "f.collectionId=1202535"  # Social Security Death Index
+            "ssdi": "f.collectionId=1202535",  # Social Security Death Index
         }
 
         base_url = self.FAMILYSEARCH_SEARCH_URL
@@ -1162,7 +1394,7 @@ class VitalRecordsAPI:
         birth_year: int = None,
         death_year: int = None,
         state: str = "",
-        limit: int = 50
+        limit: int = 50,
     ) -> List[DeathRecord]:
         """
         Search for death records across multiple free sources.
@@ -1195,7 +1427,7 @@ class VitalRecordsAPI:
             birth_year=birth_year,
             death_year=death_year,
             state=state,
-            limit=limit
+            limit=limit,
         )
 
         # Convert burial records to death records
@@ -1209,7 +1441,7 @@ class VitalRecordsAPI:
                 cemetery=burial.cemetery_name,
                 source=RecordSource.FINDAGRAVE,
                 source_id=burial.source_id,
-                source_url=burial.memorial_url
+                source_url=burial.memorial_url,
             )
             results.append(death_record)
 
@@ -1219,7 +1451,7 @@ class VitalRecordsAPI:
             lastname=lastname,
             birth_year=birth_year,
             death_year=death_year,
-            record_type="ssdi"
+            record_type="ssdi",
         )
 
         # Add a guidance record pointing to FamilySearch
@@ -1228,7 +1460,7 @@ class VitalRecordsAPI:
                 name=f"{firstname} {lastname}".strip() if firstname else lastname,
                 source=RecordSource.FAMILYSEARCH,
                 source_url=familysearch_url,
-                obituary_text="Search FamilySearch for Social Security Death Index records (free account required)"
+                obituary_text="Search FamilySearch for Social Security Death Index records (free account required)",
             )
             results.append(guidance_record)
 
@@ -1246,7 +1478,7 @@ class VitalRecordsAPI:
         year_to: int = None,
         state: str = "",
         county: str = "",
-        limit: int = 50
+        limit: int = 50,
     ) -> List[MarriageRecord]:
         """
         Search for marriage records.
@@ -1274,34 +1506,40 @@ class VitalRecordsAPI:
         # Parse names
         name_parts = spouse_name.split()
         firstname = name_parts[0] if name_parts else ""
-        lastname = name_parts[-1] if len(name_parts) > 1 else name_parts[0] if name_parts else ""
+        lastname = (
+            name_parts[-1]
+            if len(name_parts) > 1
+            else name_parts[0] if name_parts else ""
+        )
 
         # Generate FamilySearch URL for historical marriage records
         familysearch_url = self.get_familysearch_search_url(
-            firstname=firstname,
-            lastname=lastname,
-            record_type="marriages"
+            firstname=firstname, lastname=lastname, record_type="marriages"
         )
 
         # Add FamilySearch guidance
-        results.append(MarriageRecord(
-            spouse1_name=spouse_name,
-            spouse2_name=other_spouse or "Unknown",
-            state=state or "US",
-            source=RecordSource.FAMILYSEARCH,
-            source_url=familysearch_url
-        ))
+        results.append(
+            MarriageRecord(
+                spouse1_name=spouse_name,
+                spouse2_name=other_spouse or "Unknown",
+                state=state or "US",
+                source=RecordSource.FAMILYSEARCH,
+                source_url=familysearch_url,
+            )
+        )
 
         # Add state vital records office info
         if state:
             office = self.get_state_vital_records_office(state)
-            results.append(MarriageRecord(
-                spouse1_name=spouse_name,
-                spouse2_name=other_spouse or "Unknown",
-                state=state,
-                source=RecordSource.STATE_RECORDS,
-                source_url=office.get("url", "")
-            ))
+            results.append(
+                MarriageRecord(
+                    spouse1_name=spouse_name,
+                    spouse2_name=other_spouse or "Unknown",
+                    state=state,
+                    source=RecordSource.STATE_RECORDS,
+                    source_url=office.get("url", ""),
+                )
+            )
 
         return results[:limit]
 
@@ -1317,7 +1555,7 @@ class VitalRecordsAPI:
         year_to: int = None,
         state: str = "",
         county: str = "",
-        limit: int = 50
+        limit: int = 50,
     ) -> List[DivorceRecord]:
         """
         Search for divorce records.
@@ -1345,29 +1583,35 @@ class VitalRecordsAPI:
             office = self.get_state_vital_records_office(state)
             years = office.get("years_on_file", {})
 
-            results.append(DivorceRecord(
-                party1_name=party_name,
-                party2_name=other_party or "Unknown",
-                state=state,
-                court=office.get("name", f"{state} Vital Records"),
-                source=RecordSource.STATE_RECORDS,
-                source_url=office.get("url", "")
-            ))
+            results.append(
+                DivorceRecord(
+                    party1_name=party_name,
+                    party2_name=other_party or "Unknown",
+                    state=state,
+                    court=office.get("name", f"{state} Vital Records"),
+                    source=RecordSource.STATE_RECORDS,
+                    source_url=office.get("url", ""),
+                )
+            )
 
         # Generate court records search URL
         if state and county:
             search_query = f"{county} county {state} divorce records"
-            court_search_url = f"https://www.google.com/search?q={quote_plus(search_query)}"
+            court_search_url = (
+                f"https://www.google.com/search?q={quote_plus(search_query)}"
+            )
 
-            results.append(DivorceRecord(
-                party1_name=party_name,
-                party2_name=other_party or "Unknown",
-                state=state,
-                county=county,
-                court=f"{county} County Court",
-                source=RecordSource.COUNTY_RECORDS,
-                source_url=court_search_url
-            ))
+            results.append(
+                DivorceRecord(
+                    party1_name=party_name,
+                    party2_name=other_party or "Unknown",
+                    state=state,
+                    county=county,
+                    court=f"{county} County Court",
+                    source=RecordSource.COUNTY_RECORDS,
+                    source_url=court_search_url,
+                )
+            )
 
         return results[:limit]
 
@@ -1381,7 +1625,7 @@ class VitalRecordsAPI:
         cemetery: str = "",
         city: str = "",
         state: str = "",
-        limit: int = 50
+        limit: int = 50,
     ) -> List[BurialRecord]:
         """
         Search cemetery/burial records.
@@ -1401,7 +1645,11 @@ class VitalRecordsAPI:
         # Parse name
         name_parts = name.split()
         firstname = name_parts[0] if name_parts else ""
-        lastname = name_parts[-1] if len(name_parts) > 1 else name_parts[0] if name_parts else ""
+        lastname = (
+            name_parts[-1]
+            if len(name_parts) > 1
+            else name_parts[0] if name_parts else ""
+        )
 
         results = await self.search_find_a_grave(
             firstname=firstname,
@@ -1409,7 +1657,7 @@ class VitalRecordsAPI:
             cemetery_name=cemetery,
             city=city,
             state=state,
-            limit=limit
+            limit=limit,
         )
 
         # If no results, add BillionGraves search guidance
@@ -1418,12 +1666,14 @@ class VitalRecordsAPI:
             if state:
                 billiongraves_url += f"&state={quote_plus(state)}"
 
-            results.append(BurialRecord(
-                name=name,
-                source=RecordSource.BILLIONGRAVES,
-                memorial_url=billiongraves_url,
-                bio_text="Search BillionGraves for additional cemetery records"
-            ))
+            results.append(
+                BurialRecord(
+                    name=name,
+                    source=RecordSource.BILLIONGRAVES,
+                    memorial_url=billiongraves_url,
+                    bio_text="Search BillionGraves for additional cemetery records",
+                )
+            )
 
         return results
 
@@ -1431,15 +1681,18 @@ class VitalRecordsAPI:
         """Get API usage statistics."""
         return {
             "request_count": self.request_count,
-            "last_request_time": self.last_request_time.isoformat() if self.last_request_time else None,
+            "last_request_time": (
+                self.last_request_time.isoformat() if self.last_request_time else None
+            ),
             "states_configured": len(STATE_VITAL_RECORDS_OFFICES),
-            "supported_sources": [s.value for s in RecordSource]
+            "supported_sources": [s.value for s in RecordSource],
         }
 
 
 # =============================================================================
 # Synchronous Wrappers
 # =============================================================================
+
 
 def get_vital_records_office(state: str) -> Dict[str, Any]:
     """
@@ -1468,7 +1721,7 @@ def search_death_records_sync(
     birth_year: int = None,
     death_year: int = None,
     state: str = "",
-    limit: int = 50
+    limit: int = 50,
 ) -> List[DeathRecord]:
     """
     Search death records synchronously.
@@ -1494,7 +1747,7 @@ def search_death_records_sync(
                 birth_year=birth_year,
                 death_year=death_year,
                 state=state,
-                limit=limit
+                limit=limit,
             )
         finally:
             await api.close()
@@ -1512,11 +1765,7 @@ def search_death_records_sync(
 
 
 def search_burial_records_sync(
-    name: str,
-    cemetery: str = "",
-    city: str = "",
-    state: str = "",
-    limit: int = 50
+    name: str, cemetery: str = "", city: str = "", state: str = "", limit: int = 50
 ) -> List[BurialRecord]:
     """
     Search burial/cemetery records synchronously.
@@ -1536,11 +1785,7 @@ def search_burial_records_sync(
     async def _search():
         try:
             return await api.search_cemetery_records(
-                name=name,
-                cemetery=cemetery,
-                city=city,
-                state=state,
-                limit=limit
+                name=name, cemetery=cemetery, city=city, state=state, limit=limit
             )
         finally:
             await api.close()
@@ -1558,10 +1803,7 @@ def search_burial_records_sync(
 
 
 def search_marriage_records_sync(
-    spouse_name: str,
-    other_spouse: str = "",
-    state: str = "",
-    limit: int = 50
+    spouse_name: str, other_spouse: str = "", state: str = "", limit: int = 50
 ) -> List[MarriageRecord]:
     """
     Search marriage records synchronously.
@@ -1583,7 +1825,7 @@ def search_marriage_records_sync(
                 spouse_name=spouse_name,
                 other_spouse=other_spouse,
                 state=state,
-                limit=limit
+                limit=limit,
             )
         finally:
             await api.close()
@@ -1605,7 +1847,7 @@ def get_familysearch_url(
     lastname: str = "",
     birth_year: int = None,
     death_year: int = None,
-    record_type: str = "deaths"
+    record_type: str = "deaths",
 ) -> str:
     """
     Get a FamilySearch search URL.
@@ -1628,13 +1870,14 @@ def get_familysearch_url(
         lastname=lastname,
         birth_year=birth_year,
         death_year=death_year,
-        record_type=record_type
+        record_type=record_type,
     )
 
 
 # =============================================================================
 # Legacy Class (for backward compatibility)
 # =============================================================================
+
 
 class VitalRecordsScraper:
     """
@@ -1670,7 +1913,7 @@ class VitalRecordsScraper:
         birth_year: Optional[int] = None,
         death_year: Optional[int] = None,
         state: Optional[str] = None,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[DeathRecord]:
         return await self._api.search_death_records(
             lastname=last_name,
@@ -1678,7 +1921,7 @@ class VitalRecordsScraper:
             birth_year=birth_year,
             death_year=death_year,
             state=state or "",
-            limit=limit
+            limit=limit,
         )
 
     async def search_marriage_indices(
@@ -1689,7 +1932,7 @@ class VitalRecordsScraper:
         year_to: Optional[int] = None,
         state: Optional[str] = None,
         county: Optional[str] = None,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[MarriageRecord]:
         return await self._api.search_marriage_records(
             spouse_name=spouse_name,
@@ -1698,7 +1941,7 @@ class VitalRecordsScraper:
             year_to=year_to,
             state=state or "",
             county=county or "",
-            limit=limit
+            limit=limit,
         )
 
     async def search_divorce_records(
@@ -1709,7 +1952,7 @@ class VitalRecordsScraper:
         year_to: Optional[int] = None,
         state: Optional[str] = None,
         county: Optional[str] = None,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[DivorceRecord]:
         return await self._api.search_divorce_records(
             party_name=party_name,
@@ -1718,7 +1961,7 @@ class VitalRecordsScraper:
             year_to=year_to,
             state=state or "",
             county=county or "",
-            limit=limit
+            limit=limit,
         )
 
     async def search_cemetery_records(
@@ -1727,12 +1970,12 @@ class VitalRecordsScraper:
         cemetery: Optional[str] = None,
         city: Optional[str] = None,
         state: Optional[str] = None,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[BurialRecord]:
         return await self._api.search_cemetery_records(
             name=name,
             cemetery=cemetery or "",
             city=city or "",
             state=state or "",
-            limit=limit
+            limit=limit,
         )

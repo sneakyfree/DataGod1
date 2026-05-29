@@ -5,10 +5,11 @@ Tests for MortgageDataScraper class covering scraping, processing,
 and neural network integration.
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime
 import sys
+from datetime import datetime
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 
 # We need to mock the neural network import before importing the scraper
@@ -24,33 +25,39 @@ def mock_neural_network():
 
     mock_data_point = MagicMock()
     mock_data_point.__dict__ = {
-        'property_id': 'PROP-1001',
-        'borrower_name': 'John Smith',
-        'lender_name': 'Bank of America',
-        'loan_amount': 350000.0,
-        'loan_type': 'Conventional',
-        'interest_rate': 4.25,
-        'loan_term': 30,
-        'loan_date': '2023-05-15',
-        'property_address': '123 Main St',
-        'property_value': 400000.0,
-        'status': 'active',
-        'data_source': 'sample_data',
-        'scraped_at': '2023-05-15T00:00:00'
+        "property_id": "PROP-1001",
+        "borrower_name": "John Smith",
+        "lender_name": "Bank of America",
+        "loan_amount": 350000.0,
+        "loan_type": "Conventional",
+        "interest_rate": 4.25,
+        "loan_term": 30,
+        "loan_date": "2023-05-15",
+        "property_address": "123 Main St",
+        "property_value": 400000.0,
+        "status": "active",
+        "data_source": "sample_data",
+        "scraped_at": "2023-05-15T00:00:00",
     }
 
-    with patch.dict('sys.modules', {'datagod.ml.mortgage': MagicMock()}), \
-         patch.dict('sys.modules', {'datagod.ml.mortgage.neural_network': MagicMock()}), \
-         patch('datagod.ml.mortgage.neural_network.MortgageDataGatheringNeuralNetwork', return_value=mock_nn), \
-         patch('datagod.ml.mortgage.neural_network.MortgageDataPoint', return_value=mock_data_point):
+    with patch.dict("sys.modules", {"datagod.ml.mortgage": MagicMock()}), patch.dict(
+        "sys.modules", {"datagod.ml.mortgage.neural_network": MagicMock()}
+    ), patch(
+        "datagod.ml.mortgage.neural_network.MortgageDataGatheringNeuralNetwork",
+        return_value=mock_nn,
+    ), patch(
+        "datagod.ml.mortgage.neural_network.MortgageDataPoint",
+        return_value=mock_data_point,
+    ):
         yield mock_nn
 
 
 @pytest.fixture
 def scraper_class():
     """Get the MortgageDataScraper class with mocked dependencies"""
-    with patch.dict('sys.modules', {'datagod.ml.mortgage': MagicMock()}), \
-         patch.dict('sys.modules', {'datagod.ml.mortgage.neural_network': MagicMock()}):
+    with patch.dict("sys.modules", {"datagod.ml.mortgage": MagicMock()}), patch.dict(
+        "sys.modules", {"datagod.ml.mortgage.neural_network": MagicMock()}
+    ):
         # Need to import after mocking
         from datagod.scrapers.base_scraper import BaseScraper
 
@@ -81,15 +88,17 @@ def scraper_class():
                         "loan_date": "2023-05-15",
                         "property_address": "123 Main St, Anytown, CA 12345",
                         "property_value": 400000.00,
-                        "status": "active"
+                        "status": "active",
                     }
                 ]
 
                 mortgage_data = []
                 for data_point in sample_data:
                     if self.neural_network.validate_mortgage_data(data_point):
-                        quality_score = self.neural_network.get_data_quality_score(data_point)
-                        data_point['quality_score'] = quality_score
+                        quality_score = self.neural_network.get_data_quality_score(
+                            data_point
+                        )
+                        data_point["quality_score"] = quality_score
                         mortgage_data.append(data_point)
                         self.scraped_count += 1
 
@@ -102,7 +111,7 @@ def scraper_class():
                     "mortgage_history": [{"loan_number": f"LOAN-{property_id}-001"}],
                     "borrower_info": {"name": "John Smith"},
                     "lender_info": {"name": "Bank of America"},
-                    "scraped_at": self._get_current_timestamp()
+                    "scraped_at": self._get_current_timestamp(),
                 }
 
             def _get_current_timestamp(self):
@@ -120,10 +129,12 @@ def scraper_class():
                     try:
                         db.add(MagicMock())
                         db.commit()
-                        processed_records.append({
-                            "record_id": 1,
-                            "property_id": data_point.get('property_id')
-                        })
+                        processed_records.append(
+                            {
+                                "record_id": 1,
+                                "property_id": data_point.get("property_id"),
+                            }
+                        )
                     except Exception:
                         db.rollback()
                 return processed_records
@@ -153,11 +164,7 @@ class TestMortgageDataScraperInit:
 
     def test_init_custom_params(self, scraper_class):
         """Test initialization with custom parameters"""
-        scraper = scraper_class(
-            base_url="https://custom.com",
-            delay=2.0,
-            timeout=60
-        )
+        scraper = scraper_class(base_url="https://custom.com", delay=2.0, timeout=60)
 
         assert scraper.base_url == "https://custom.com"
         assert scraper.delay == 2.0
@@ -197,11 +204,11 @@ class TestMortgageDataScraperScrapeMethods:
         result = scraper.scrape_property_mortgage_details("PROP-1001")
 
         assert isinstance(result, dict)
-        assert result['property_id'] == "PROP-1001"
-        assert 'mortgage_history' in result
-        assert 'borrower_info' in result
-        assert 'lender_info' in result
-        assert 'scraped_at' in result
+        assert result["property_id"] == "PROP-1001"
+        assert "mortgage_history" in result
+        assert "borrower_info" in result
+        assert "lender_info" in result
+        assert "scraped_at" in result
 
     def test_scrape_main_method(self, scraper_class):
         """Test main scrape method"""
@@ -225,10 +232,10 @@ class TestMortgageDataScraperProcessing:
 
         raw_data = [
             {
-                'property_id': 'PROP-1001',
-                'loan_amount': 350000.00,
-                'loan_date': '2023-05-15',
-                'status': 'active'
+                "property_id": "PROP-1001",
+                "loan_amount": 350000.00,
+                "loan_date": "2023-05-15",
+                "status": "active",
             }
         ]
 
@@ -246,7 +253,7 @@ class TestMortgageDataScraperProcessing:
         mock_db = MagicMock()
         mock_db.commit.side_effect = Exception("Database error")
 
-        raw_data = [{'property_id': 'PROP-1001', 'loan_amount': 350000.00}]
+        raw_data = [{"property_id": "PROP-1001", "loan_amount": 350000.00}]
 
         result = scraper.process_and_store_data(mock_db, 1, raw_data)
 
@@ -274,19 +281,19 @@ class TestMortgageDataScraperLearning:
 
         training_data = [
             {
-                'property_id': 'PROP-1001',
-                'borrower_name': 'John Smith',
-                'lender_name': 'Bank of America',
-                'loan_amount': 350000.00,
-                'loan_type': 'Conventional',
-                'interest_rate': 4.25,
-                'loan_term': 30,
-                'loan_date': '2023-05-15',
-                'property_address': '123 Main St',
-                'property_value': 400000.00,
-                'status': 'active',
-                'data_source': 'test',
-                'scraped_at': '2023-01-01T00:00:00'
+                "property_id": "PROP-1001",
+                "borrower_name": "John Smith",
+                "lender_name": "Bank of America",
+                "loan_amount": 350000.00,
+                "loan_type": "Conventional",
+                "interest_rate": 4.25,
+                "loan_term": 30,
+                "loan_date": "2023-05-15",
+                "property_address": "123 Main St",
+                "property_value": 400000.00,
+                "status": "active",
+                "data_source": "test",
+                "scraped_at": "2023-01-01T00:00:00",
             }
         ]
 
@@ -301,7 +308,7 @@ class TestMortgageDataScraperLearning:
         # Training data with missing fields
         training_data = [
             {
-                'property_id': 'PROP-1001',
+                "property_id": "PROP-1001",
                 # Missing most fields
             }
         ]
@@ -332,7 +339,7 @@ class TestMortgageDataScraperHelpers:
 
         assert isinstance(timestamp, str)
         # Should be ISO format
-        assert 'T' in timestamp
+        assert "T" in timestamp
 
 
 class TestMortgageDataScraperIntegration:
@@ -349,8 +356,8 @@ class TestMortgageDataScraperIntegration:
 
         # Check data structure
         for record in mortgage_data:
-            assert 'property_id' in record
-            assert 'quality_score' in record
+            assert "property_id" in record
+            assert "quality_score" in record
 
     def test_scrape_and_learn_workflow(self, scraper_class):
         """Test scrape and learning workflow"""
@@ -371,12 +378,12 @@ class TestMortgageDataScraperAttributes:
     def test_scraper_has_neural_network(self, scraper_class):
         """Test that scraper has neural_network attribute"""
         scraper = scraper_class(base_url="https://example.com")
-        assert hasattr(scraper, 'neural_network')
+        assert hasattr(scraper, "neural_network")
 
     def test_scraper_has_scraped_count(self, scraper_class):
         """Test that scraper has scraped_count attribute"""
         scraper = scraper_class(base_url="https://example.com")
-        assert hasattr(scraper, 'scraped_count')
+        assert hasattr(scraper, "scraped_count")
         assert scraper.scraped_count == 0
 
     def test_scraper_count_increments(self, scraper_class):
@@ -392,7 +399,7 @@ class TestMortgageDataScraperAttributes:
         """Test that scraper has BaseScraper attributes"""
         scraper = scraper_class(base_url="https://example.com")
         # Check for BaseScraper-like attributes
-        assert hasattr(scraper, 'base_url')
-        assert hasattr(scraper, 'delay')
-        assert hasattr(scraper, 'timeout')
-        assert hasattr(scraper, 'scrape')
+        assert hasattr(scraper, "base_url")
+        assert hasattr(scraper, "delay")
+        assert hasattr(scraper, "timeout")
+        assert hasattr(scraper, "scrape")

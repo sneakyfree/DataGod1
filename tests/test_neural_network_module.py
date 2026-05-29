@@ -2,9 +2,10 @@
 Tests for datagod/neural_network module.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
 from datetime import datetime
+from unittest.mock import MagicMock, patch
+
+import pytest
 import torch
 
 
@@ -127,7 +128,7 @@ class TestMortgageDataCollector:
         mock_session = MagicMock()
 
         mock_data_source = MagicMock()
-        mock_data_source.source_type = 'api'
+        mock_data_source.source_type = "api"
         mock_data_source.api_endpoint = "https://example.com/api"
         mock_data_source.name = "API Source"
 
@@ -150,7 +151,7 @@ class TestMortgageDataCollector:
         mock_session = MagicMock()
 
         mock_data_source = MagicMock()
-        mock_data_source.source_type = 'scraper'
+        mock_data_source.source_type = "scraper"
         mock_data_source.url = "https://example.com"
         mock_data_source.name = "Scraper Source"
 
@@ -173,7 +174,7 @@ class TestMortgageDataCollector:
         mock_session = MagicMock()
 
         mock_data_source = MagicMock()
-        mock_data_source.source_type = 'manual'
+        mock_data_source.source_type = "manual"
         mock_data_source.name = "Manual Source"
 
         mock_query = MagicMock()
@@ -249,7 +250,7 @@ class TestNeuralNetworkIntegration:
         # First query returns jurisdiction, second returns empty data sources
         def mock_query_side_effect(model):
             query = MagicMock()
-            if hasattr(model, '__name__') and model.__name__ == 'Jurisdiction':
+            if hasattr(model, "__name__") and model.__name__ == "Jurisdiction":
                 query.filter_by.return_value.first.return_value = mock_jurisdiction
             else:
                 query.filter_by.return_value.all.return_value = []
@@ -328,7 +329,9 @@ class TestNeuralNetworkIntegration:
 
         mock_records = [MagicMock(), MagicMock(), MagicMock()]
 
-        entities, relationships = integration.extract_entities_and_relationships(mock_records)
+        entities, relationships = integration.extract_entities_and_relationships(
+            mock_records
+        )
         assert isinstance(entities, list)
         assert isinstance(relationships, list)
 
@@ -493,8 +496,12 @@ class TestMortgageDataProcessor:
 
     def test_processor_validate(self):
         """Test validation."""
-        from datagod.neural_network.model import MortgageDataProcessor, MortgageDataDataset
         from torch.utils.data import DataLoader
+
+        from datagod.neural_network.model import (
+            MortgageDataDataset,
+            MortgageDataProcessor,
+        )
 
         processor = MortgageDataProcessor(input_size=2, hidden_size=64, num_classes=1)
 
@@ -520,8 +527,12 @@ class TestMortgageNeuralNetworkTraining:
 
     def test_train_single_epoch(self):
         """Test training for a single epoch."""
-        from datagod.neural_network.model import MortgageDataProcessor, MortgageDataDataset
         from torch.utils.data import DataLoader
+
+        from datagod.neural_network.model import (
+            MortgageDataDataset,
+            MortgageDataProcessor,
+        )
 
         processor = MortgageDataProcessor(input_size=2, hidden_size=32, num_classes=1)
 
@@ -551,7 +562,7 @@ class TestMortgageDataProcessorDevice:
 
         processor = MortgageDataProcessor()
         # Should either be 'cuda' or 'cpu'
-        assert processor.device.type in ['cuda', 'cpu']
+        assert processor.device.type in ["cuda", "cpu"]
 
     def test_model_on_device(self):
         """Test that model is moved to device."""

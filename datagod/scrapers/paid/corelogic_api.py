@@ -16,15 +16,15 @@ API Documentation: https://developer.corelogic.com/
 Note: Requires enterprise API credentials. Contact CoreLogic for access.
 """
 
-import logging
 import hashlib
 import hmac
+import logging
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
 
 logger = logging.getLogger(__name__)
@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 class PropertyType(Enum):
     """CoreLogic property types"""
+
     SINGLE_FAMILY = "SFR"
     CONDO = "CONDO"
     TOWNHOUSE = "TOWNHOUSE"
@@ -46,6 +47,7 @@ class PropertyType(Enum):
 
 class TransactionType(Enum):
     """Types of property transactions"""
+
     SALE = "sale"
     REFINANCE = "refinance"
     FORECLOSURE = "foreclosure"
@@ -58,6 +60,7 @@ class TransactionType(Enum):
 
 class ForeclosureStatus(Enum):
     """Foreclosure process status"""
+
     PRE_FORECLOSURE = "pre_foreclosure"
     AUCTION_SCHEDULED = "auction_scheduled"
     AUCTION_COMPLETED = "auction_completed"
@@ -70,6 +73,7 @@ class ForeclosureStatus(Enum):
 @dataclass
 class PropertyCharacteristics:
     """Property physical characteristics from CoreLogic"""
+
     property_id: str
     address: str
     city: str
@@ -127,36 +131,37 @@ class PropertyCharacteristics:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'property_id': self.property_id,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'zip_code': self.zip_code,
-            'county': self.county,
-            'apn': self.apn,
-            'property_type': self.property_type.value,
-            'property_use': self.property_use,
-            'lot_size_sqft': self.lot_size_sqft,
-            'lot_size_acres': self.lot_size_acres,
-            'building_sqft': self.building_sqft,
-            'living_sqft': self.living_sqft,
-            'bedrooms': self.bedrooms,
-            'bathrooms': self.bathrooms,
-            'total_rooms': self.total_rooms,
-            'year_built': self.year_built,
-            'stories': self.stories,
-            'units': self.units,
-            'pool': self.pool,
-            'garage_spaces': self.garage_spaces,
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'fetched_at': self.fetched_at.isoformat()
+            "property_id": self.property_id,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "zip_code": self.zip_code,
+            "county": self.county,
+            "apn": self.apn,
+            "property_type": self.property_type.value,
+            "property_use": self.property_use,
+            "lot_size_sqft": self.lot_size_sqft,
+            "lot_size_acres": self.lot_size_acres,
+            "building_sqft": self.building_sqft,
+            "living_sqft": self.living_sqft,
+            "bedrooms": self.bedrooms,
+            "bathrooms": self.bathrooms,
+            "total_rooms": self.total_rooms,
+            "year_built": self.year_built,
+            "stories": self.stories,
+            "units": self.units,
+            "pool": self.pool,
+            "garage_spaces": self.garage_spaces,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class TaxAssessment:
     """Property tax assessment data"""
+
     property_id: str
     tax_year: int
 
@@ -186,23 +191,24 @@ class TaxAssessment:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'property_id': self.property_id,
-            'tax_year': self.tax_year,
-            'assessed_value_total': self.assessed_value_total,
-            'assessed_value_land': self.assessed_value_land,
-            'assessed_value_improvement': self.assessed_value_improvement,
-            'market_value_total': self.market_value_total,
-            'tax_amount': self.tax_amount,
-            'tax_rate': self.tax_rate,
-            'tax_delinquent': self.tax_delinquent,
-            'exemption_homestead': self.exemption_homestead,
-            'fetched_at': self.fetched_at.isoformat()
+            "property_id": self.property_id,
+            "tax_year": self.tax_year,
+            "assessed_value_total": self.assessed_value_total,
+            "assessed_value_land": self.assessed_value_land,
+            "assessed_value_improvement": self.assessed_value_improvement,
+            "market_value_total": self.market_value_total,
+            "tax_amount": self.tax_amount,
+            "tax_rate": self.tax_rate,
+            "tax_delinquent": self.tax_delinquent,
+            "exemption_homestead": self.exemption_homestead,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class SaleTransaction:
     """Property sale transaction record"""
+
     property_id: str
     transaction_id: str
 
@@ -238,26 +244,29 @@ class SaleTransaction:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'property_id': self.property_id,
-            'transaction_id': self.transaction_id,
-            'transaction_type': self.transaction_type.value,
-            'sale_date': self.sale_date.isoformat() if self.sale_date else None,
-            'recording_date': self.recording_date.isoformat() if self.recording_date else None,
-            'sale_price': self.sale_price,
-            'document_number': self.document_number,
-            'buyer_names': self.buyer_names,
-            'seller_names': self.seller_names,
-            'loan_amount': self.loan_amount,
-            'lender_name': self.lender_name,
-            'arms_length': self.arms_length,
-            'distressed_sale': self.distressed_sale,
-            'fetched_at': self.fetched_at.isoformat()
+            "property_id": self.property_id,
+            "transaction_id": self.transaction_id,
+            "transaction_type": self.transaction_type.value,
+            "sale_date": self.sale_date.isoformat() if self.sale_date else None,
+            "recording_date": (
+                self.recording_date.isoformat() if self.recording_date else None
+            ),
+            "sale_price": self.sale_price,
+            "document_number": self.document_number,
+            "buyer_names": self.buyer_names,
+            "seller_names": self.seller_names,
+            "loan_amount": self.loan_amount,
+            "lender_name": self.lender_name,
+            "arms_length": self.arms_length,
+            "distressed_sale": self.distressed_sale,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class MortgageRecord:
     """Mortgage/deed of trust record"""
+
     property_id: str
     mortgage_id: str
 
@@ -293,24 +302,27 @@ class MortgageRecord:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'property_id': self.property_id,
-            'mortgage_id': self.mortgage_id,
-            'loan_amount': self.loan_amount,
-            'loan_type': self.loan_type,
-            'interest_rate': self.interest_rate,
-            'interest_rate_type': self.interest_rate_type,
-            'loan_term_months': self.loan_term_months,
-            'origination_date': self.origination_date.isoformat() if self.origination_date else None,
-            'borrower_names': self.borrower_names,
-            'lender_name': self.lender_name,
-            'lien_position': self.lien_position,
-            'fetched_at': self.fetched_at.isoformat()
+            "property_id": self.property_id,
+            "mortgage_id": self.mortgage_id,
+            "loan_amount": self.loan_amount,
+            "loan_type": self.loan_type,
+            "interest_rate": self.interest_rate,
+            "interest_rate_type": self.interest_rate_type,
+            "loan_term_months": self.loan_term_months,
+            "origination_date": (
+                self.origination_date.isoformat() if self.origination_date else None
+            ),
+            "borrower_names": self.borrower_names,
+            "lender_name": self.lender_name,
+            "lien_position": self.lien_position,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class ForeclosureRecord:
     """Foreclosure/default record"""
+
     property_id: str
     foreclosure_id: str
 
@@ -346,22 +358,27 @@ class ForeclosureRecord:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'property_id': self.property_id,
-            'foreclosure_id': self.foreclosure_id,
-            'status': self.status.value,
-            'default_date': self.default_date.isoformat() if self.default_date else None,
-            'auction_date': self.auction_date.isoformat() if self.auction_date else None,
-            'default_amount': self.default_amount,
-            'unpaid_balance': self.unpaid_balance,
-            'borrower_names': self.borrower_names,
-            'lender_name': self.lender_name,
-            'fetched_at': self.fetched_at.isoformat()
+            "property_id": self.property_id,
+            "foreclosure_id": self.foreclosure_id,
+            "status": self.status.value,
+            "default_date": (
+                self.default_date.isoformat() if self.default_date else None
+            ),
+            "auction_date": (
+                self.auction_date.isoformat() if self.auction_date else None
+            ),
+            "default_amount": self.default_amount,
+            "unpaid_balance": self.unpaid_balance,
+            "borrower_names": self.borrower_names,
+            "lender_name": self.lender_name,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class AVMResult:
     """Automated Valuation Model result"""
+
     property_id: str
     valuation_date: date
 
@@ -386,21 +403,22 @@ class AVMResult:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'property_id': self.property_id,
-            'valuation_date': self.valuation_date.isoformat(),
-            'estimated_value': self.estimated_value,
-            'value_low': self.value_low,
-            'value_high': self.value_high,
-            'confidence_score': self.confidence_score,
-            'comparable_count': self.comparable_count,
-            'model_version': self.model_version,
-            'fetched_at': self.fetched_at.isoformat()
+            "property_id": self.property_id,
+            "valuation_date": self.valuation_date.isoformat(),
+            "estimated_value": self.estimated_value,
+            "value_low": self.value_low,
+            "value_high": self.value_high,
+            "confidence_score": self.confidence_score,
+            "comparable_count": self.comparable_count,
+            "model_version": self.model_version,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class PropertySearch:
     """Search parameters for CoreLogic property searches"""
+
     # Address search
     address: Optional[str] = None
     city: Optional[str] = None
@@ -447,10 +465,7 @@ class CoreLogicAPI(ABC):
 
     BASE_URL = "https://api-prod.corelogic.com"
 
-    def __init__(self,
-                 api_key: str,
-                 api_secret: str,
-                 config: Dict[str, Any] = None):
+    def __init__(self, api_key: str, api_secret: str, config: Dict[str, Any] = None):
         """
         Initialize CoreLogic API client.
 
@@ -467,13 +482,13 @@ class CoreLogicAPI(ABC):
 
         logger.info("Initialized CoreLogicAPI")
 
-    def _generate_signature(self, timestamp: str, method: str, path: str, body: str = "") -> str:
+    def _generate_signature(
+        self, timestamp: str, method: str, path: str, body: str = ""
+    ) -> str:
         """Generate HMAC signature for API request."""
         message = f"{timestamp}{method}{path}{body}"
         signature = hmac.new(
-            self.api_secret.encode('utf-8'),
-            message.encode('utf-8'),
-            hashlib.sha256
+            self.api_secret.encode("utf-8"), message.encode("utf-8"), hashlib.sha256
         ).hexdigest()
         return signature
 
@@ -483,15 +498,17 @@ class CoreLogicAPI(ABC):
         signature = self._generate_signature(timestamp, method, path, body)
 
         return {
-            'X-Api-Key': self.api_key,
-            'X-Timestamp': timestamp,
-            'X-Signature': signature,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            "X-Api-Key": self.api_key,
+            "X-Timestamp": timestamp,
+            "X-Signature": signature,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
         }
 
     @abstractmethod
-    def search_properties(self, search: PropertySearch) -> List[PropertyCharacteristics]:
+    def search_properties(
+        self, search: PropertySearch
+    ) -> List[PropertyCharacteristics]:
         """
         Search for properties.
 
@@ -504,7 +521,9 @@ class CoreLogicAPI(ABC):
         pass
 
     @abstractmethod
-    def get_property_details(self, property_id: str) -> Optional[PropertyCharacteristics]:
+    def get_property_details(
+        self, property_id: str
+    ) -> Optional[PropertyCharacteristics]:
         """
         Get detailed property characteristics.
 
@@ -517,11 +536,9 @@ class CoreLogicAPI(ABC):
         pass
 
     @abstractmethod
-    def get_property_by_address(self,
-                                address: str,
-                                city: str,
-                                state: str,
-                                zip_code: str = None) -> Optional[PropertyCharacteristics]:
+    def get_property_by_address(
+        self, address: str, city: str, state: str, zip_code: str = None
+    ) -> Optional[PropertyCharacteristics]:
         """
         Get property by address.
 
@@ -603,12 +620,14 @@ class CoreLogicAPI(ABC):
         pass
 
     @abstractmethod
-    def search_foreclosures(self,
-                           state: str,
-                           county: str = None,
-                           status: ForeclosureStatus = None,
-                           date_from: date = None,
-                           date_to: date = None) -> List[ForeclosureRecord]:
+    def search_foreclosures(
+        self,
+        state: str,
+        county: str = None,
+        status: ForeclosureStatus = None,
+        date_from: date = None,
+        date_to: date = None,
+    ) -> List[ForeclosureRecord]:
         """
         Search for foreclosure properties.
 
@@ -627,15 +646,15 @@ class CoreLogicAPI(ABC):
     def parse_property_type(self, type_code: str) -> PropertyType:
         """Parse CoreLogic property type code."""
         type_mapping = {
-            'SFR': PropertyType.SINGLE_FAMILY,
-            'CONDO': PropertyType.CONDO,
-            'TOWNHOUSE': PropertyType.TOWNHOUSE,
-            'MFR': PropertyType.MULTI_FAMILY,
-            'MOBILE': PropertyType.MOBILE_HOME,
-            'LAND': PropertyType.VACANT_LAND,
-            'COMMERCIAL': PropertyType.COMMERCIAL,
-            'INDUSTRIAL': PropertyType.INDUSTRIAL,
-            'AGRICULTURAL': PropertyType.AGRICULTURAL,
+            "SFR": PropertyType.SINGLE_FAMILY,
+            "CONDO": PropertyType.CONDO,
+            "TOWNHOUSE": PropertyType.TOWNHOUSE,
+            "MFR": PropertyType.MULTI_FAMILY,
+            "MOBILE": PropertyType.MOBILE_HOME,
+            "LAND": PropertyType.VACANT_LAND,
+            "COMMERCIAL": PropertyType.COMMERCIAL,
+            "INDUSTRIAL": PropertyType.INDUSTRIAL,
+            "AGRICULTURAL": PropertyType.AGRICULTURAL,
         }
         return type_mapping.get(type_code.upper(), PropertyType.UNKNOWN)
 
@@ -648,25 +667,31 @@ class CoreLogicAPIClient(CoreLogicAPI):
     require valid CoreLogic enterprise credentials.
     """
 
-    def search_properties(self, search: PropertySearch) -> List[PropertyCharacteristics]:
+    def search_properties(
+        self, search: PropertySearch
+    ) -> List[PropertyCharacteristics]:
         """Search for properties."""
-        logger.info(f"Searching CoreLogic properties: {search.address or search.owner_name}")
+        logger.info(
+            f"Searching CoreLogic properties: {search.address or search.owner_name}"
+        )
         # Placeholder - actual implementation would make API calls
         return []
 
-    def get_property_details(self, property_id: str) -> Optional[PropertyCharacteristics]:
+    def get_property_details(
+        self, property_id: str
+    ) -> Optional[PropertyCharacteristics]:
         """Get detailed property characteristics."""
         logger.info(f"Getting CoreLogic property details: {property_id}")
         # Placeholder
         return None
 
-    def get_property_by_address(self,
-                                address: str,
-                                city: str,
-                                state: str,
-                                zip_code: str = None) -> Optional[PropertyCharacteristics]:
+    def get_property_by_address(
+        self, address: str, city: str, state: str, zip_code: str = None
+    ) -> Optional[PropertyCharacteristics]:
         """Get property by address."""
-        logger.info(f"Getting CoreLogic property by address: {address}, {city}, {state}")
+        logger.info(
+            f"Getting CoreLogic property by address: {address}, {city}, {state}"
+        )
         # Placeholder
         return None
 
@@ -700,12 +725,14 @@ class CoreLogicAPIClient(CoreLogicAPI):
         # Placeholder
         return None
 
-    def search_foreclosures(self,
-                           state: str,
-                           county: str = None,
-                           status: ForeclosureStatus = None,
-                           date_from: date = None,
-                           date_to: date = None) -> List[ForeclosureRecord]:
+    def search_foreclosures(
+        self,
+        state: str,
+        county: str = None,
+        status: ForeclosureStatus = None,
+        date_from: date = None,
+        date_to: date = None,
+    ) -> List[ForeclosureRecord]:
         """Search for foreclosure properties."""
         logger.info(f"Searching CoreLogic foreclosures: {state}, {county}")
         # Placeholder
@@ -713,6 +740,8 @@ class CoreLogicAPIClient(CoreLogicAPI):
 
 
 # Factory function
-def create_corelogic_client(api_key: str, api_secret: str, config: Dict[str, Any] = None) -> CoreLogicAPIClient:
+def create_corelogic_client(
+    api_key: str, api_secret: str, config: Dict[str, Any] = None
+) -> CoreLogicAPIClient:
     """Create a CoreLogic API client instance."""
     return CoreLogicAPIClient(api_key=api_key, api_secret=api_secret, config=config)

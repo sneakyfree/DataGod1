@@ -2,9 +2,10 @@
 """
 Tests for datagod.db_manager module - uses string parameters, not models
 """
-import unittest
 import os
 import tempfile
+import unittest
+
 from datagod.db_manager import DatabaseManager
 
 
@@ -13,7 +14,7 @@ class TestDatabaseManager(unittest.TestCase):
 
     def setUp(self):
         # Create a temporary database for testing
-        self.temp_db = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
+        self.temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         self.temp_db.close()
         self.db_manager = DatabaseManager(self.temp_db.name)
 
@@ -26,9 +27,7 @@ class TestDatabaseManager(unittest.TestCase):
         """Test creating a jurisdiction using string parameters"""
         # The actual API takes strings, not model objects
         jurisdiction_id = self.db_manager.create_jurisdiction(
-            name="Test Jurisdiction",
-            state="Test State",
-            country="Test Country"
+            name="Test Jurisdiction", state="Test State", country="Test Country"
         )
         self.assertIsInstance(jurisdiction_id, int)
         self.assertGreater(jurisdiction_id, 0)
@@ -36,25 +35,23 @@ class TestDatabaseManager(unittest.TestCase):
     def test_get_jurisdiction(self):
         """Test getting a jurisdiction by ID"""
         jurisdiction_id = self.db_manager.create_jurisdiction(
-            name="Test Jurisdiction Get",
-            state="Test State",
-            country="Test Country"
+            name="Test Jurisdiction Get", state="Test State", country="Test Country"
         )
 
         retrieved_jurisdiction = self.db_manager.get_jurisdiction(jurisdiction_id)
 
         self.assertIsNotNone(retrieved_jurisdiction)
         # Returns a dict or Row object
-        self.assertEqual(retrieved_jurisdiction['name'], "Test Jurisdiction Get")
-        self.assertEqual(retrieved_jurisdiction['state'], "Test State")
-        self.assertEqual(retrieved_jurisdiction['country'], "Test Country")
+        self.assertEqual(retrieved_jurisdiction["name"], "Test Jurisdiction Get")
+        self.assertEqual(retrieved_jurisdiction["state"], "Test State")
+        self.assertEqual(retrieved_jurisdiction["country"], "Test Country")
 
     def test_create_data_source(self):
         """Test creating a data source using string parameters"""
         data_source_id = self.db_manager.create_data_source(
             name="Test Data Source",
             url="http://example.com",
-            description="Test description"
+            description="Test description",
         )
         self.assertIsInstance(data_source_id, int)
         self.assertGreater(data_source_id, 0)
@@ -63,15 +60,13 @@ class TestDatabaseManager(unittest.TestCase):
         """Test creating a record"""
         # First create jurisdiction and data source
         jurisdiction_id = self.db_manager.create_jurisdiction(
-            name="Test Jurisdiction Record",
-            state="Test State",
-            country="Test Country"
+            name="Test Jurisdiction Record", state="Test State", country="Test Country"
         )
 
         data_source_id = self.db_manager.create_data_source(
             name="Test Data Source Record",
             url="http://example.com",
-            description="Test description"
+            description="Test description",
         )
 
         # Create record using string parameters
@@ -82,7 +77,7 @@ class TestDatabaseManager(unittest.TestCase):
             description="Test description",
             amount=1000.0,
             date="2023-01-01",
-            url="http://example.com/record"
+            url="http://example.com/record",
         )
         self.assertIsInstance(record_id, int)
         self.assertGreater(record_id, 0)
@@ -94,38 +89,68 @@ class TestDatabaseManager(unittest.TestCase):
 
         with self.db_manager.get_connection() as conn:
             # Create jurisdiction
-            conn.execute('''
+            conn.execute(
+                """
                 INSERT INTO jurisdictions (name, state, country)
                 VALUES (?, ?, ?)
-            ''', ("Test Jurisdiction Search", "Test State", "Test Country"))
+            """,
+                ("Test Jurisdiction Search", "Test State", "Test Country"),
+            )
 
             # Create data source
-            conn.execute('''
+            conn.execute(
+                """
                 INSERT INTO data_sources (name, url, description)
                 VALUES (?, ?, ?)
-            ''', ("Test Data Source Search", "http://example.com", "Test description"))
+            """,
+                ("Test Data Source Search", "http://example.com", "Test description"),
+            )
 
             # Get the IDs
-            cursor = conn.execute("SELECT id FROM jurisdictions WHERE name = ?",
-                                  ("Test Jurisdiction Search",))
+            cursor = conn.execute(
+                "SELECT id FROM jurisdictions WHERE name = ?",
+                ("Test Jurisdiction Search",),
+            )
             jurisdiction_id = cursor.fetchone()[0]
 
-            cursor = conn.execute("SELECT id FROM data_sources WHERE name = ?",
-                                  ("Test Data Source Search",))
+            cursor = conn.execute(
+                "SELECT id FROM data_sources WHERE name = ?",
+                ("Test Data Source Search",),
+            )
             data_source_id = cursor.fetchone()[0]
 
             # Create records
-            conn.execute('''
+            conn.execute(
+                """
                 INSERT INTO records (jurisdiction_id, data_source_id, title, description, amount, date, url)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (jurisdiction_id, data_source_id, "Searchable Record One",
-                  "Test description one", 1000.0, "2023-01-01", "http://example.com/record1"))
+            """,
+                (
+                    jurisdiction_id,
+                    data_source_id,
+                    "Searchable Record One",
+                    "Test description one",
+                    1000.0,
+                    "2023-01-01",
+                    "http://example.com/record1",
+                ),
+            )
 
-            conn.execute('''
+            conn.execute(
+                """
                 INSERT INTO records (jurisdiction_id, data_source_id, title, description, amount, date, url)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (jurisdiction_id, data_source_id, "Searchable Record Two",
-                  "Another test description", 2000.0, "2023-01-02", "http://example.com/record2"))
+            """,
+                (
+                    jurisdiction_id,
+                    data_source_id,
+                    "Searchable Record Two",
+                    "Another test description",
+                    2000.0,
+                    "2023-01-02",
+                    "http://example.com/record2",
+                ),
+            )
 
             conn.commit()
 
@@ -144,16 +169,12 @@ class TestDatabaseManager(unittest.TestCase):
     def test_create_duplicate_jurisdiction(self):
         """Test creating duplicate jurisdiction returns existing ID"""
         jurisdiction_id1 = self.db_manager.create_jurisdiction(
-            name="Duplicate Test",
-            state="TX",
-            country="USA"
+            name="Duplicate Test", state="TX", country="USA"
         )
 
         # Creating same jurisdiction should return the existing ID
         jurisdiction_id2 = self.db_manager.create_jurisdiction(
-            name="Duplicate Test",
-            state="TX",
-            country="USA"
+            name="Duplicate Test", state="TX", country="USA"
         )
 
         self.assertEqual(jurisdiction_id1, jurisdiction_id2)
@@ -168,5 +189,5 @@ class TestDatabaseManager(unittest.TestCase):
             self.assertEqual(result[0], 1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

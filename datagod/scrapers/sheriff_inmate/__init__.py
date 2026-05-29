@@ -24,47 +24,46 @@ information to basic booking data only.
 """
 
 from .base import (
-    SheriffInmateBase,
-    InmateStatus,
-    ChargeType,
-    ChargeSeverity,
-    BondType,
-    ReleaseType,
-    InmateRecord,
-    BookingRecord,
-    InmateCharge,
-    BondInformation,
-    VisitationInfo,
     ArrestRecord,
-    WarrantRecord,
+    BondInformation,
+    BondType,
+    BookingRecord,
+    ChargeSeverity,
+    ChargeType,
+    InmateCharge,
+    InmateRecord,
     InmateSearchCriteria,
     InmateSearchResult,
+    InmateStatus,
+    ReleaseType,
+    SheriffInmateBase,
+    VisitationInfo,
+    WarrantRecord,
 )
-
 from .cook_county_il import (
     CookCountySheriff,
-    search_cook_county_inmates,
     get_cook_county_inmate,
-)
-from .los_angeles_ca import (
-    LosAngelesCountySheriff,
-    search_la_county_inmates,
-    get_la_county_inmate,
+    search_cook_county_inmates,
 )
 from .harris_county_tx import (
     HarrisCountySheriff,
-    search_harris_county_inmates,
     get_harris_county_inmate,
+    search_harris_county_inmates,
+)
+from .los_angeles_ca import (
+    LosAngelesCountySheriff,
+    get_la_county_inmate,
+    search_la_county_inmates,
 )
 from .maricopa_county_az import (
     MaricopaCountySheriff,
-    search_maricopa_county_inmates,
     get_maricopa_county_inmate,
+    search_maricopa_county_inmates,
 )
 from .miami_dade_fl import (
     MiamiDadeCorrections,
-    search_miami_dade_inmates,
     get_miami_dade_inmate,
+    search_miami_dade_inmates,
 )
 
 __all__ = [

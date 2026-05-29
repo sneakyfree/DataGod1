@@ -14,26 +14,26 @@ Note: Cook County has relatively good online systems with some API-like endpoint
 """
 
 import asyncio
-import aiohttp
-import re
 import json
+import re
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 from bs4 import BeautifulSoup
 
 from .base_county_scraper import (
     BaseCountyScraper,
-    CountyConfig,
-    PropertyRecord,
-    DeedRecord,
-    MortgageRecord,
-    TaxRecord,
-    CourtCase,
-    LienRecord,
-    RecordType,
     CaseType,
+    CountyConfig,
+    CourtCase,
+    DeedRecord,
+    LienRecord,
+    MortgageRecord,
+    PropertyRecord,
+    RecordType,
+    TaxRecord,
 )
-
 
 # Cook County Configuration
 COOK_COUNTY_CONFIG = CountyConfig(
@@ -76,10 +76,7 @@ class CookCountyScraper(BaseCountyScraper):
     # ==================== Property/Assessor Methods ====================
 
     async def search_property_by_address(
-        self,
-        address: str,
-        city: Optional[str] = None,
-        zip_code: Optional[str] = None
+        self, address: str, city: Optional[str] = None, zip_code: Optional[str] = None
     ) -> List[PropertyRecord]:
         """
         Search Cook County Assessor by address.
@@ -109,7 +106,9 @@ class CookCountyScraper(BaseCountyScraper):
                 if response.status == 200:
                     data = await response.json()
 
-                    for item in data.get("results", data if isinstance(data, list) else []):
+                    for item in data.get(
+                        "results", data if isinstance(data, list) else []
+                    ):
                         try:
                             pin = item.get("pin", item.get("PIN", ""))
                             if not pin:
@@ -117,16 +116,26 @@ class CookCountyScraper(BaseCountyScraper):
 
                             record = PropertyRecord(
                                 parcel_id=str(pin),
-                                address=item.get("address", item.get("property_address")),
+                                address=item.get(
+                                    "address", item.get("property_address")
+                                ),
                                 city=item.get("city", "Chicago"),
                                 state="IL",
                                 zip_code=item.get("zip"),
                                 owner_name=item.get("owner_name"),
-                                property_class=item.get("class", item.get("property_class")),
-                                assessed_value=self._parse_currency(item.get("assessed_value")),
-                                market_value=self._parse_currency(item.get("market_value")),
+                                property_class=item.get(
+                                    "class", item.get("property_class")
+                                ),
+                                assessed_value=self._parse_currency(
+                                    item.get("assessed_value")
+                                ),
+                                market_value=self._parse_currency(
+                                    item.get("market_value")
+                                ),
                                 land_value=self._parse_currency(item.get("land_value")),
-                                improvement_value=self._parse_currency(item.get("building_value")),
+                                improvement_value=self._parse_currency(
+                                    item.get("building_value")
+                                ),
                                 tax_year=item.get("tax_year"),
                                 square_feet=int(item.get("land_sqft", 0) or 0),
                                 building_sqft=int(item.get("building_sqft", 0) or 0),
@@ -150,10 +159,7 @@ class CookCountyScraper(BaseCountyScraper):
         return results
 
     async def _search_assessor_scrape(
-        self,
-        address: str,
-        city: Optional[str] = None,
-        zip_code: Optional[str] = None
+        self, address: str, city: Optional[str] = None, zip_code: Optional[str] = None
     ) -> List[PropertyRecord]:
         """Fallback: scrape assessor search results page."""
         results = []
@@ -166,18 +172,18 @@ class CookCountyScraper(BaseCountyScraper):
             if not html:
                 return results
 
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
 
             # Look for property cards/results
-            for card in soup.select('.property-card, .search-result, tr.property-row'):
+            for card in soup.select(".property-card, .search-result, tr.property-row"):
                 try:
-                    pin = card.select_one('.pin, [data-pin], .parcel-number')
-                    addr = card.select_one('.address, .property-address')
+                    pin = card.select_one(".pin, [data-pin], .parcel-number")
+                    addr = card.select_one(".address, .property-address")
 
                     if not pin:
                         continue
 
-                    pin_text = pin.get_text(strip=True) or pin.get('data-pin', '')
+                    pin_text = pin.get_text(strip=True) or pin.get("data-pin", "")
 
                     record = PropertyRecord(
                         parcel_id=pin_text,
@@ -196,10 +202,7 @@ class CookCountyScraper(BaseCountyScraper):
 
         return results
 
-    async def search_property_by_owner(
-        self,
-        owner_name: str
-    ) -> List[PropertyRecord]:
+    async def search_property_by_owner(self, owner_name: str) -> List[PropertyRecord]:
         """
         Search Cook County Assessor by owner name.
         """
@@ -219,7 +222,9 @@ class CookCountyScraper(BaseCountyScraper):
                 if response.status == 200:
                     data = await response.json()
 
-                    for item in data.get("results", data if isinstance(data, list) else []):
+                    for item in data.get(
+                        "results", data if isinstance(data, list) else []
+                    ):
                         try:
                             pin = item.get("pin", item.get("PIN", ""))
                             if not pin:
@@ -231,8 +236,12 @@ class CookCountyScraper(BaseCountyScraper):
                                 city=item.get("city", "Chicago"),
                                 state="IL",
                                 owner_name=item.get("owner_name", owner_name),
-                                assessed_value=self._parse_currency(item.get("assessed_value")),
-                                market_value=self._parse_currency(item.get("market_value")),
+                                assessed_value=self._parse_currency(
+                                    item.get("assessed_value")
+                                ),
+                                market_value=self._parse_currency(
+                                    item.get("market_value")
+                                ),
                                 property_class=item.get("class"),
                                 township=item.get("township"),
                                 county="Cook County",
@@ -249,8 +258,7 @@ class CookCountyScraper(BaseCountyScraper):
         return results
 
     async def search_property_by_parcel(
-        self,
-        parcel_id: str
+        self, parcel_id: str
     ) -> Optional[PropertyRecord]:
         """
         Get property details by PIN (Property Index Number).
@@ -260,7 +268,7 @@ class CookCountyScraper(BaseCountyScraper):
         await self._ensure_session()
 
         # Clean PIN - remove dashes if present
-        pin = re.sub(r'[^0-9]', '', parcel_id)
+        pin = re.sub(r"[^0-9]", "", parcel_id)
 
         try:
             # Direct PIN lookup
@@ -270,7 +278,7 @@ class CookCountyScraper(BaseCountyScraper):
             if not html:
                 return None
 
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
 
             # Extract property details from page
             record = PropertyRecord(
@@ -281,30 +289,30 @@ class CookCountyScraper(BaseCountyScraper):
             )
 
             # Try to find data in JSON-LD or structured data
-            scripts = soup.find_all('script', type='application/ld+json')
+            scripts = soup.find_all("script", type="application/ld+json")
             for script in scripts:
                 try:
                     data = json.loads(script.string)
-                    if data.get('@type') == 'RealEstateListing':
-                        record.address = data.get('address', {}).get('streetAddress')
-                        record.city = data.get('address', {}).get('addressLocality')
-                        record.zip_code = data.get('address', {}).get('postalCode')
+                    if data.get("@type") == "RealEstateListing":
+                        record.address = data.get("address", {}).get("streetAddress")
+                        record.city = data.get("address", {}).get("addressLocality")
+                        record.zip_code = data.get("address", {}).get("postalCode")
                 except (json.JSONDecodeError, TypeError):
                     continue
 
             # Parse from HTML structure
-            address_el = soup.select_one('.property-address, .address, h1')
+            address_el = soup.select_one(".property-address, .address, h1")
             if address_el:
                 record.address = address_el.get_text(strip=True)
 
-            owner_el = soup.select_one('.owner-name, .taxpayer')
+            owner_el = soup.select_one(".owner-name, .taxpayer")
             if owner_el:
                 record.owner_name = self._clean_name(owner_el.get_text(strip=True))
 
             # Look for property characteristics table
-            for row in soup.select('tr, .detail-row'):
-                label = row.select_one('th, .label, td:first-child')
-                value = row.select_one('td:last-child, .value')
+            for row in soup.select("tr, .detail-row"):
+                label = row.select_one("th, .label, td:first-child")
+                value = row.select_one("td:last-child, .value")
 
                 if not label or not value:
                     continue
@@ -312,26 +320,26 @@ class CookCountyScraper(BaseCountyScraper):
                 label_text = label.get_text(strip=True).lower()
                 value_text = value.get_text(strip=True)
 
-                if 'assessed' in label_text and 'value' in label_text:
+                if "assessed" in label_text and "value" in label_text:
                     record.assessed_value = self._parse_currency(value_text)
-                elif 'market' in label_text and 'value' in label_text:
+                elif "market" in label_text and "value" in label_text:
                     record.market_value = self._parse_currency(value_text)
-                elif 'land' in label_text and 'value' in label_text:
+                elif "land" in label_text and "value" in label_text:
                     record.land_value = self._parse_currency(value_text)
-                elif 'building' in label_text and 'value' in label_text:
+                elif "building" in label_text and "value" in label_text:
                     record.improvement_value = self._parse_currency(value_text)
-                elif 'class' in label_text:
+                elif "class" in label_text:
                     record.property_class = value_text
-                elif 'township' in label_text:
+                elif "township" in label_text:
                     record.township = value_text
-                elif 'year built' in label_text:
+                elif "year built" in label_text:
                     try:
                         record.year_built = int(value_text)
                     except ValueError:
                         pass
-                elif 'sq' in label_text and 'ft' in label_text:
+                elif "sq" in label_text and "ft" in label_text:
                     try:
-                        record.building_sqft = int(re.sub(r'[^0-9]', '', value_text))
+                        record.building_sqft = int(re.sub(r"[^0-9]", "", value_text))
                     except ValueError:
                         pass
 
@@ -350,7 +358,7 @@ class CookCountyScraper(BaseCountyScraper):
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         as_grantor: bool = True,
-        as_grantee: bool = True
+        as_grantee: bool = True,
     ) -> List[DeedRecord]:
         """
         Search Cook County Recorder by party name.
@@ -366,7 +374,11 @@ class CookCountyScraper(BaseCountyScraper):
 
             # Format dates
             start = start_date.strftime("%m/%d/%Y") if start_date else "01/01/1985"
-            end = end_date.strftime("%m/%d/%Y") if end_date else datetime.now().strftime("%m/%d/%Y")
+            end = (
+                end_date.strftime("%m/%d/%Y")
+                if end_date
+                else datetime.now().strftime("%m/%d/%Y")
+            )
 
             # Build search parameters
             search_data = {
@@ -399,8 +411,8 @@ class CookCountyScraper(BaseCountyScraper):
                         results.append(record)
             except json.JSONDecodeError:
                 # Parse HTML results
-                soup = BeautifulSoup(html, 'html.parser')
-                for row in soup.select('tr.result-row, .document-result'):
+                soup = BeautifulSoup(html, "html.parser")
+                for row in soup.select("tr.result-row, .document-result"):
                     record = self._parse_recorder_html_row(row)
                     if record:
                         results.append(record)
@@ -434,8 +446,12 @@ class CookCountyScraper(BaseCountyScraper):
             )
 
             # Parse dates
-            record.recording_date = self._parse_date(item.get("recordingDate", item.get("rec_date")))
-            record.document_date = self._parse_date(item.get("documentDate", item.get("doc_date")))
+            record.recording_date = self._parse_date(
+                item.get("recordingDate", item.get("rec_date"))
+            )
+            record.document_date = self._parse_date(
+                item.get("documentDate", item.get("doc_date"))
+            )
 
             return record
         except (KeyError, ValueError):
@@ -444,7 +460,7 @@ class CookCountyScraper(BaseCountyScraper):
     def _parse_recorder_html_row(self, row) -> Optional[DeedRecord]:
         """Parse a recorder search result from HTML row."""
         try:
-            cells = row.select('td')
+            cells = row.select("td")
             if len(cells) < 4:
                 return None
 
@@ -454,11 +470,21 @@ class CookCountyScraper(BaseCountyScraper):
 
             record = DeedRecord(
                 document_number=doc_num,
-                record_type=cells[1].get_text(strip=True) if len(cells) > 1 else "Unknown",
-                recording_date=self._parse_date(cells[2].get_text(strip=True)) if len(cells) > 2 else None,
+                record_type=(
+                    cells[1].get_text(strip=True) if len(cells) > 1 else "Unknown"
+                ),
+                recording_date=(
+                    self._parse_date(cells[2].get_text(strip=True))
+                    if len(cells) > 2
+                    else None
+                ),
                 grantor=cells[3].get_text(strip=True) if len(cells) > 3 else None,
                 grantee=cells[4].get_text(strip=True) if len(cells) > 4 else None,
-                consideration=self._parse_currency(cells[5].get_text(strip=True)) if len(cells) > 5 else 0.0,
+                consideration=(
+                    self._parse_currency(cells[5].get_text(strip=True))
+                    if len(cells) > 5
+                    else 0.0
+                ),
                 county="Cook County",
                 state="IL",
                 fips_code="17031",
@@ -472,7 +498,7 @@ class CookCountyScraper(BaseCountyScraper):
         self,
         parcel_id: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[DeedRecord]:
         """
         Search Cook County Recorder by PIN.
@@ -481,13 +507,17 @@ class CookCountyScraper(BaseCountyScraper):
         results = []
 
         # Clean PIN
-        pin = re.sub(r'[^0-9]', '', parcel_id)
+        pin = re.sub(r"[^0-9]", "", parcel_id)
 
         try:
             search_url = "https://recorder.cookcounty.gov/recordersearch/Search/Search"
 
             start = start_date.strftime("%m/%d/%Y") if start_date else "01/01/1985"
-            end = end_date.strftime("%m/%d/%Y") if end_date else datetime.now().strftime("%m/%d/%Y")
+            end = (
+                end_date.strftime("%m/%d/%Y")
+                if end_date
+                else datetime.now().strftime("%m/%d/%Y")
+            )
 
             search_data = {
                 "SearchType": "PIN",
@@ -511,8 +541,8 @@ class CookCountyScraper(BaseCountyScraper):
                     if record:
                         results.append(record)
             except json.JSONDecodeError:
-                soup = BeautifulSoup(html, 'html.parser')
-                for row in soup.select('tr.result-row, .document-result'):
+                soup = BeautifulSoup(html, "html.parser")
+                for row in soup.select("tr.result-row, .document-result"):
                     record = self._parse_recorder_html_row(row)
                     if record:
                         results.append(record)
@@ -529,7 +559,7 @@ class CookCountyScraper(BaseCountyScraper):
         name: str,
         case_type: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """
         Search Cook County court cases by party name.
@@ -558,33 +588,47 @@ class CookCountyScraper(BaseCountyScraper):
             if not html:
                 return results
 
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
 
             # Parse case results
-            for row in soup.select('tr.case-row, .case-result, tbody tr'):
+            for row in soup.select("tr.case-row, .case-result, tbody tr"):
                 try:
-                    cells = row.select('td')
+                    cells = row.select("td")
                     if len(cells) < 3:
                         continue
 
                     case_num = cells[0].get_text(strip=True)
-                    if not case_num or case_num.lower() == 'case number':
+                    if not case_num or case_num.lower() == "case number":
                         continue
 
                     case = CourtCase(
                         case_number=case_num,
-                        case_type=cells[1].get_text(strip=True) if len(cells) > 1 else "Unknown",
-                        case_title=cells[2].get_text(strip=True) if len(cells) > 2 else None,
-                        filing_date=self._parse_date(cells[3].get_text(strip=True)) if len(cells) > 3 else None,
-                        status=cells[4].get_text(strip=True) if len(cells) > 4 else None,
+                        case_type=(
+                            cells[1].get_text(strip=True)
+                            if len(cells) > 1
+                            else "Unknown"
+                        ),
+                        case_title=(
+                            cells[2].get_text(strip=True) if len(cells) > 2 else None
+                        ),
+                        filing_date=(
+                            self._parse_date(cells[3].get_text(strip=True))
+                            if len(cells) > 3
+                            else None
+                        ),
+                        status=(
+                            cells[4].get_text(strip=True) if len(cells) > 4 else None
+                        ),
                         county="Cook County",
                         state="IL",
                         fips_code="17031",
                     )
 
                     # Try to extract parties from case title
-                    if case.case_title and ' vs ' in case.case_title.lower():
-                        parts = re.split(r'\s+v[s.]?\s+', case.case_title, flags=re.IGNORECASE)
+                    if case.case_title and " vs " in case.case_title.lower():
+                        parts = re.split(
+                            r"\s+v[s.]?\s+", case.case_title, flags=re.IGNORECASE
+                        )
                         if len(parts) >= 2:
                             case.plaintiff = self._clean_name(parts[0])
                             case.defendant = self._clean_name(parts[1])
@@ -600,8 +644,7 @@ class CookCountyScraper(BaseCountyScraper):
         return results
 
     async def search_court_cases_by_number(
-        self,
-        case_number: str
+        self, case_number: str
     ) -> Optional[CourtCase]:
         """
         Get Cook County court case by case number.
@@ -616,7 +659,7 @@ class CookCountyScraper(BaseCountyScraper):
             if not html:
                 return None
 
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
 
             case = CourtCase(
                 case_number=case_number,
@@ -627,9 +670,9 @@ class CookCountyScraper(BaseCountyScraper):
             )
 
             # Parse case details
-            for row in soup.select('.detail-row, tr'):
-                label = row.select_one('.label, th, td:first-child')
-                value = row.select_one('.value, td:last-child')
+            for row in soup.select(".detail-row, tr"):
+                label = row.select_one(".label, th, td:first-child")
+                value = row.select_one(".value, td:last-child")
 
                 if not label or not value:
                     continue
@@ -637,42 +680,46 @@ class CookCountyScraper(BaseCountyScraper):
                 label_text = label.get_text(strip=True).lower()
                 value_text = value.get_text(strip=True)
 
-                if 'case type' in label_text or 'division' in label_text:
+                if "case type" in label_text or "division" in label_text:
                     case.case_type = value_text
-                elif 'status' in label_text:
+                elif "status" in label_text:
                     case.status = value_text
-                elif 'filing date' in label_text:
+                elif "filing date" in label_text:
                     case.filing_date = self._parse_date(value_text)
-                elif 'judge' in label_text:
+                elif "judge" in label_text:
                     case.judge = value_text
-                elif 'plaintiff' in label_text:
+                elif "plaintiff" in label_text:
                     case.plaintiff = self._clean_name(value_text)
-                elif 'defendant' in label_text:
+                elif "defendant" in label_text:
                     case.defendant = self._clean_name(value_text)
 
             # Parse parties table
-            parties_table = soup.select_one('.parties-table, #parties')
+            parties_table = soup.select_one(".parties-table, #parties")
             if parties_table:
-                for party_row in parties_table.select('tr'):
-                    cells = party_row.select('td')
+                for party_row in parties_table.select("tr"):
+                    cells = party_row.select("td")
                     if len(cells) >= 2:
                         party_type = cells[0].get_text(strip=True)
                         party_name = cells[1].get_text(strip=True)
-                        case.parties.append({
-                            "type": party_type,
-                            "name": self._clean_name(party_name),
-                        })
+                        case.parties.append(
+                            {
+                                "type": party_type,
+                                "name": self._clean_name(party_name),
+                            }
+                        )
 
             # Parse docket entries
-            docket_table = soup.select_one('.docket-table, #docket')
+            docket_table = soup.select_one(".docket-table, #docket")
             if docket_table:
-                for entry_row in docket_table.select('tr'):
-                    cells = entry_row.select('td')
+                for entry_row in docket_table.select("tr"):
+                    cells = entry_row.select("td")
                     if len(cells) >= 2:
-                        case.docket_entries.append({
-                            "date": cells[0].get_text(strip=True),
-                            "entry": cells[1].get_text(strip=True),
-                        })
+                        case.docket_entries.append(
+                            {
+                                "date": cells[0].get_text(strip=True),
+                                "entry": cells[1].get_text(strip=True),
+                            }
+                        )
 
             return case
 
@@ -690,7 +737,7 @@ class CookCountyScraper(BaseCountyScraper):
         await self._ensure_session()
 
         # Clean PIN
-        pin = re.sub(r'[^0-9]', '', parcel_id)
+        pin = re.sub(r"[^0-9]", "", parcel_id)
 
         try:
             search_url = f"https://www.cookcountytreasurer.com/setsearchparameters.aspx?pin={pin}"
@@ -699,7 +746,7 @@ class CookCountyScraper(BaseCountyScraper):
             if not html:
                 return None
 
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
 
             record = TaxRecord(
                 parcel_id=pin,
@@ -710,9 +757,9 @@ class CookCountyScraper(BaseCountyScraper):
             )
 
             # Parse tax info
-            for row in soup.select('tr, .tax-row'):
-                label = row.select_one('th, .label, td:first-child')
-                value = row.select_one('td:last-child, .value')
+            for row in soup.select("tr, .tax-row"):
+                label = row.select_one("th, .label, td:first-child")
+                value = row.select_one("td:last-child, .value")
 
                 if not label or not value:
                     continue
@@ -720,28 +767,28 @@ class CookCountyScraper(BaseCountyScraper):
                 label_text = label.get_text(strip=True).lower()
                 value_text = value.get_text(strip=True)
 
-                if 'taxpayer' in label_text or 'owner' in label_text:
+                if "taxpayer" in label_text or "owner" in label_text:
                     record.owner_name = self._clean_name(value_text)
-                elif 'property' in label_text and 'address' in label_text:
+                elif "property" in label_text and "address" in label_text:
                     record.property_address = value_text
-                elif 'assessed' in label_text:
+                elif "assessed" in label_text:
                     record.assessed_value = self._parse_currency(value_text)
-                elif 'tax amount' in label_text or 'total tax' in label_text:
+                elif "tax amount" in label_text or "total tax" in label_text:
                     record.tax_amount = self._parse_currency(value_text)
-                elif 'amount due' in label_text or 'balance' in label_text:
+                elif "amount due" in label_text or "balance" in label_text:
                     record.amount_due = self._parse_currency(value_text)
-                elif 'amount paid' in label_text:
+                elif "amount paid" in label_text:
                     record.amount_paid = self._parse_currency(value_text)
-                elif 'status' in label_text:
+                elif "status" in label_text:
                     record.status = value_text
-                elif 'tax year' in label_text:
+                elif "tax year" in label_text:
                     try:
                         record.tax_year = int(value_text)
                     except ValueError:
                         pass
 
             # Check for exemptions
-            exemptions = soup.select('.exemption, [data-exemption]')
+            exemptions = soup.select(".exemption, [data-exemption]")
             for ex in exemptions:
                 record.exemptions.append(ex.get_text(strip=True))
 
@@ -759,7 +806,7 @@ class CookCountyScraper(BaseCountyScraper):
         address: Optional[str] = None,
         owner: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """
         Search Cook County foreclosure cases.
@@ -782,7 +829,10 @@ class CookCountyScraper(BaseCountyScraper):
                 case_type_lower = (case.case_type or "").lower()
                 case_title_lower = (case.case_title or "").lower()
 
-                if 'foreclosure' in case_type_lower or 'foreclosure' in case_title_lower:
+                if (
+                    "foreclosure" in case_type_lower
+                    or "foreclosure" in case_title_lower
+                ):
                     results.append(case)
 
         return results
@@ -793,7 +843,7 @@ class CookCountyScraper(BaseCountyScraper):
         tenant: Optional[str] = None,
         landlord: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """
         Search Cook County eviction cases.
@@ -817,7 +867,7 @@ class CookCountyScraper(BaseCountyScraper):
                 case_type_lower = (case.case_type or "").lower()
                 case_title_lower = (case.case_title or "").lower()
 
-                if 'eviction' in case_type_lower or 'forcible' in case_title_lower:
+                if "eviction" in case_type_lower or "forcible" in case_title_lower:
                     results.append(case)
 
         return results
@@ -827,9 +877,10 @@ class CookCountyScraper(BaseCountyScraper):
 def search_cook_county_property_sync(
     address: Optional[str] = None,
     owner: Optional[str] = None,
-    pin: Optional[str] = None
+    pin: Optional[str] = None,
 ) -> List[PropertyRecord]:
     """Synchronous wrapper for Cook County property search."""
+
     async def _search():
         async with CookCountyScraper() as scraper:
             if pin:
@@ -840,14 +891,15 @@ def search_cook_county_property_sync(
             elif address:
                 return await scraper.search_property_by_address(address)
             return []
+
     return asyncio.run(_search())
 
 
 def search_cook_county_deeds_sync(
-    name: Optional[str] = None,
-    parcel_id: Optional[str] = None
+    name: Optional[str] = None, parcel_id: Optional[str] = None
 ) -> List[DeedRecord]:
     """Synchronous wrapper for Cook County deed search."""
+
     async def _search():
         async with CookCountyScraper() as scraper:
             if parcel_id:
@@ -855,14 +907,15 @@ def search_cook_county_deeds_sync(
             elif name:
                 return await scraper.search_deeds_by_name(name)
             return []
+
     return asyncio.run(_search())
 
 
 def search_cook_county_cases_sync(
-    name: Optional[str] = None,
-    case_number: Optional[str] = None
+    name: Optional[str] = None, case_number: Optional[str] = None
 ) -> List[CourtCase]:
     """Synchronous wrapper for Cook County court case search."""
+
     async def _search():
         async with CookCountyScraper() as scraper:
             if case_number:
@@ -871,6 +924,7 @@ def search_cook_county_cases_sync(
             elif name:
                 return await scraper.search_court_cases_by_name(name)
             return []
+
     return asyncio.run(_search())
 
 

@@ -32,22 +32,23 @@ import re
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 from .base import (
     CountyTreasurerBase,
-    TaxStatus,
     LienStatus,
-    TaxSaleType,
     PaymentMethod,
-    TaxBillItem,
-    TaxBill,
-    TaxPayment,
-    TaxLien,
-    TaxSaleProperty,
     PropertyTaxRecord,
+    TaxBill,
+    TaxBillItem,
+    TaxLien,
+    TaxPayment,
+    TaxSaleProperty,
+    TaxSaleType,
     TaxSearchCriteria,
     TaxSearchResult,
+    TaxStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -78,12 +79,12 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
 
     # Penalty schedule (Texas)
     PENALTY_SCHEDULE = {
-        2: Decimal("0.06"),   # February: 6%
-        3: Decimal("0.07"),   # March: 7%
-        4: Decimal("0.08"),   # April: 8%
-        5: Decimal("0.09"),   # May: 9%
-        6: Decimal("0.10"),   # June: 10%
-        7: Decimal("0.12"),   # July+: 12% + attorney fees
+        2: Decimal("0.06"),  # February: 6%
+        3: Decimal("0.07"),  # March: 7%
+        4: Decimal("0.08"),  # April: 8%
+        5: Decimal("0.09"),  # May: 9%
+        6: Decimal("0.10"),  # June: 10%
+        7: Decimal("0.12"),  # July+: 12% + attorney fees
     }
 
     # Major taxing entities in Harris County
@@ -134,10 +135,7 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
 
         return account  # Return as-is if not 12 digits
 
-    async def get_tax_record(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyTaxRecord]:
+    async def get_tax_record(self, parcel_id: str) -> Optional[PropertyTaxRecord]:
         """Get property tax record by account number."""
         formatted_account = self._format_account(parcel_id)
         detail_url = f"{self.API_BASE}account/{formatted_account}"
@@ -158,10 +156,11 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> TaxSearchResult:
         """Search for tax records by property address."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}search/address"
@@ -209,12 +208,11 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
         )
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> TaxSearchResult:
         """Search for tax records by owner name."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}search/owner"
@@ -257,12 +255,11 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
         )
 
     async def get_delinquent_properties(
-        self,
-        min_amount: Optional[Decimal] = None,
-        max_results: int = 500
+        self, min_amount: Optional[Decimal] = None, max_results: int = 500
     ) -> TaxSearchResult:
         """Get list of delinquent properties."""
         import time
+
         start_time = time.time()
 
         delinquent_url = f"{self.API_BASE}delinquent"
@@ -299,7 +296,9 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
             page_number=1,
             page_size=max_results,
             has_more=json_response.get("hasMore", False),
-            search_criteria=TaxSearchCriteria(delinquent_only=True, min_amount_due=min_amount),
+            search_criteria=TaxSearchCriteria(
+                delinquent_only=True, min_amount_due=min_amount
+            ),
             search_time_ms=search_time,
             source_system=self.SYSTEM_NAME,
         )
@@ -308,7 +307,7 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
         self,
         sale_type: Optional[TaxSaleType] = None,
         upcoming_only: bool = True,
-        max_results: int = 500
+        max_results: int = 500,
     ) -> List[TaxSaleProperty]:
         """Get properties scheduled for tax sale (sheriff sale)."""
         sale_url = f"{self.API_BASE}taxsale"
@@ -333,10 +332,7 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
 
         return properties
 
-    async def get_tax_certificate(
-        self,
-        parcel_id: str
-    ) -> Optional[Dict[str, Any]]:
+    async def get_tax_certificate(self, parcel_id: str) -> Optional[Dict[str, Any]]:
         """Get tax certificate for a property (shows taxes due to all entities)."""
         formatted_account = self._format_account(parcel_id)
         cert_url = f"{self.API_BASE}certificate/{formatted_account}"
@@ -365,14 +361,20 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
         formatted_account = self._format_account(account)
 
         # Parse current tax info
-        current_tax = self._parse_decimal(str(item.get("totalTax", item.get("taxAmount", ""))))
-        balance_due = self._parse_decimal(str(item.get("balanceDue", item.get("amountDue", ""))))
+        current_tax = self._parse_decimal(
+            str(item.get("totalTax", item.get("taxAmount", "")))
+        )
+        balance_due = self._parse_decimal(
+            str(item.get("balanceDue", item.get("amountDue", "")))
+        )
         amount_paid = self._parse_decimal(str(item.get("amountPaid", "")))
 
         # Determine status
         status_str = item.get("status", item.get("paymentStatus", ""))
         tax_status = self._parse_tax_status(status_str)
-        is_delinquent = "DELINQUENT" in str(status_str).upper() or item.get("isDelinquent", False)
+        is_delinquent = "DELINQUENT" in str(status_str).upper() or item.get(
+            "isDelinquent", False
+        )
 
         # Parse exemptions (Texas exemptions)
         exemptions = []
@@ -392,24 +394,33 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
 
         return PropertyTaxRecord(
             parcel_id=formatted_account,
-            property_address=item.get("address", item.get("propertyAddress", item.get("situs"))),
+            property_address=item.get(
+                "address", item.get("propertyAddress", item.get("situs"))
+            ),
             city=item.get("city"),
             state=self.STATE,
             zip_code=item.get("zip", item.get("zipCode")),
             county=self.COUNTY_NAME,
             owner_name=item.get("owner", item.get("ownerName")),
             owner_address=item.get("ownerAddress", item.get("mailingAddress")),
-            assessed_value=self._parse_decimal(str(item.get("assessedValue", item.get("appraised", "")))),
+            assessed_value=self._parse_decimal(
+                str(item.get("assessedValue", item.get("appraised", "")))
+            ),
             taxable_value=self._parse_decimal(str(item.get("taxableValue", ""))),
-            market_value=self._parse_decimal(str(item.get("marketValue", item.get("appraised", "")))),
+            market_value=self._parse_decimal(
+                str(item.get("marketValue", item.get("appraised", "")))
+            ),
             current_tax_year=self._parse_int(str(item.get("taxYear", ""))),
             current_tax_amount=current_tax,
             current_amount_paid=amount_paid,
             current_balance_due=balance_due,
             tax_status=tax_status,
             is_delinquent=is_delinquent,
-            years_delinquent=self._parse_int(str(item.get("yearsDelinquent", "0"))) or 0,
-            total_delinquent=self._parse_decimal(str(item.get("totalDelinquent", item.get("priorDue", "")))),
+            years_delinquent=self._parse_int(str(item.get("yearsDelinquent", "0")))
+            or 0,
+            total_delinquent=self._parse_decimal(
+                str(item.get("totalDelinquent", item.get("priorDue", "")))
+            ),
             exemptions=exemptions,
             exemption_amount=self._parse_decimal(str(item.get("exemptionAmount", ""))),
             has_tax_lien=item.get("hasLien", item.get("inSuit", False)),
@@ -476,8 +487,11 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
         special_assessments = []
         for assess_data in data.get("specialAssessments", data.get("mudCharges", [])):
             item = TaxBillItem(
-                description=assess_data.get("description", assess_data.get("name", "Special Assessment")),
-                amount=self._parse_decimal(str(assess_data.get("amount", ""))) or Decimal(0),
+                description=assess_data.get(
+                    "description", assess_data.get("name", "Special Assessment")
+                ),
+                amount=self._parse_decimal(str(assess_data.get("amount", "")))
+                or Decimal(0),
                 taxing_authority=assess_data.get("entity", assess_data.get("district")),
                 tax_rate=self._parse_decimal(str(assess_data.get("rate", ""))),
                 raw_data=assess_data,
@@ -485,15 +499,23 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
             special_assessments.append(item)
 
         # Calculate totals
-        current_tax = self._parse_decimal(str(data.get("totalTax", data.get("currentYearTax", ""))))
-        balance_due = self._parse_decimal(str(data.get("balanceDue", data.get("totalDue", ""))))
+        current_tax = self._parse_decimal(
+            str(data.get("totalTax", data.get("currentYearTax", "")))
+        )
+        balance_due = self._parse_decimal(
+            str(data.get("balanceDue", data.get("totalDue", "")))
+        )
         amount_paid = self._parse_decimal(str(data.get("amountPaid", "")))
-        total_delinquent = self._parse_decimal(str(data.get("totalDelinquent", data.get("priorYearsDue", ""))))
+        total_delinquent = self._parse_decimal(
+            str(data.get("totalDelinquent", data.get("priorYearsDue", "")))
+        )
 
         # Determine status
         status_str = data.get("status", data.get("paymentStatus", ""))
         tax_status = self._parse_tax_status(status_str)
-        is_delinquent = "DELINQUENT" in str(status_str).upper() or data.get("isDelinquent", False)
+        is_delinquent = "DELINQUENT" in str(status_str).upper() or data.get(
+            "isDelinquent", False
+        )
 
         if not is_delinquent and total_delinquent and total_delinquent > 0:
             is_delinquent = True
@@ -503,23 +525,30 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
 
         return PropertyTaxRecord(
             parcel_id=formatted_account,
-            property_address=data.get("address", data.get("propertyAddress", data.get("situs"))),
+            property_address=data.get(
+                "address", data.get("propertyAddress", data.get("situs"))
+            ),
             city=data.get("city"),
             state=self.STATE,
             zip_code=data.get("zip", data.get("zipCode")),
             county=self.COUNTY_NAME,
             owner_name=data.get("owner", data.get("ownerName")),
             owner_address=data.get("ownerAddress", data.get("mailingAddress")),
-            assessed_value=self._parse_decimal(str(data.get("assessedValue", data.get("appraised", "")))),
+            assessed_value=self._parse_decimal(
+                str(data.get("assessedValue", data.get("appraised", "")))
+            ),
             taxable_value=self._parse_decimal(str(data.get("taxableValue", ""))),
-            market_value=self._parse_decimal(str(data.get("marketValue", data.get("appraised", "")))),
+            market_value=self._parse_decimal(
+                str(data.get("marketValue", data.get("appraised", "")))
+            ),
             current_tax_year=self._parse_int(str(data.get("taxYear", ""))),
             current_tax_amount=current_tax,
             current_amount_paid=amount_paid,
             current_balance_due=balance_due,
             tax_status=tax_status,
             is_delinquent=is_delinquent,
-            years_delinquent=self._parse_int(str(data.get("yearsDelinquent", "0"))) or 0,
+            years_delinquent=self._parse_int(str(data.get("yearsDelinquent", "0")))
+            or 0,
             total_delinquent=total_delinquent,
             exemptions=exemptions,
             exemption_amount=exemption_amount if exemption_amount > 0 else None,
@@ -542,16 +571,25 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
 
         # Parse line items (from different taxing entities)
         line_items = []
-        for item_data in data.get("lineItems", data.get("entities", data.get("taxingUnits", []))):
+        for item_data in data.get(
+            "lineItems", data.get("entities", data.get("taxingUnits", []))
+        ):
             entity_code = item_data.get("code", item_data.get("entityCode", ""))
-            entity_name = self.TAXING_ENTITIES.get(entity_code, item_data.get("name", item_data.get("entity", "")))
+            entity_name = self.TAXING_ENTITIES.get(
+                entity_code, item_data.get("name", item_data.get("entity", ""))
+            )
 
             item = TaxBillItem(
                 description=entity_name or item_data.get("description", ""),
-                amount=self._parse_decimal(str(item_data.get("amount", item_data.get("tax", "")))) or Decimal(0),
+                amount=self._parse_decimal(
+                    str(item_data.get("amount", item_data.get("tax", "")))
+                )
+                or Decimal(0),
                 taxing_authority=entity_name,
                 tax_rate=self._parse_decimal(str(item_data.get("rate", ""))),
-                assessed_value=self._parse_decimal(str(item_data.get("taxableValue", ""))),
+                assessed_value=self._parse_decimal(
+                    str(item_data.get("taxableValue", ""))
+                ),
                 raw_data=item_data,
             )
             line_items.append(item)
@@ -562,20 +600,36 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
             parcel_id=account,
             property_address=data.get("address", data.get("situs")),
             owner_name=data.get("owner", data.get("ownerName")),
-            assessed_value=self._parse_decimal(str(data.get("assessedValue", data.get("appraised", "")))),
+            assessed_value=self._parse_decimal(
+                str(data.get("assessedValue", data.get("appraised", "")))
+            ),
             taxable_value=self._parse_decimal(str(data.get("taxableValue", ""))),
-            tax_rate=self._parse_decimal(str(data.get("combinedRate", data.get("taxRate", "")))),
-            gross_tax=self._parse_decimal(str(data.get("grossTax", data.get("baseTax", "")))),
+            tax_rate=self._parse_decimal(
+                str(data.get("combinedRate", data.get("taxRate", "")))
+            ),
+            gross_tax=self._parse_decimal(
+                str(data.get("grossTax", data.get("baseTax", "")))
+            ),
             exemptions=self._parse_decimal(str(data.get("exemptionSavings", ""))),
-            net_tax=self._parse_decimal(str(data.get("netTax", data.get("totalTax", "")))),
-            penalties=self._parse_decimal(str(data.get("penalty", data.get("penalties", "")))),
+            net_tax=self._parse_decimal(
+                str(data.get("netTax", data.get("totalTax", "")))
+            ),
+            penalties=self._parse_decimal(
+                str(data.get("penalty", data.get("penalties", "")))
+            ),
             interest=self._parse_decimal(str(data.get("interest", ""))),
-            fees=self._parse_decimal(str(data.get("attorneyFees", data.get("costs", "")))),
-            total_due=self._parse_decimal(str(data.get("totalDue", data.get("amountDue", "")))),
+            fees=self._parse_decimal(
+                str(data.get("attorneyFees", data.get("costs", "")))
+            ),
+            total_due=self._parse_decimal(
+                str(data.get("totalDue", data.get("amountDue", "")))
+            ),
             amount_paid=self._parse_decimal(str(data.get("amountPaid", ""))),
             balance_due=self._parse_decimal(str(data.get("balanceDue", ""))),
             payment_status=self._parse_tax_status(data.get("status", "")),
-            bill_date=self._parse_date(data.get("billDate", data.get("statementDate", ""))),
+            bill_date=self._parse_date(
+                data.get("billDate", data.get("statementDate", ""))
+            ),
             due_date=self._parse_date(data.get("dueDate", "")),
             delinquent_date=self._parse_date(data.get("delinquentDate", "")),
             installment_number=1,  # Texas is single payment (no installments)
@@ -585,10 +639,14 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
             raw_data=data,
         )
 
-    def _parse_payment(self, data: Dict[str, Any], account: str) -> Optional[TaxPayment]:
+    def _parse_payment(
+        self, data: Dict[str, Any], account: str
+    ) -> Optional[TaxPayment]:
         """Parse a payment record."""
         payment_date = self._parse_date(data.get("paymentDate", data.get("date", "")))
-        amount = self._parse_decimal(str(data.get("amount", data.get("paymentAmount", ""))))
+        amount = self._parse_decimal(
+            str(data.get("amount", data.get("paymentAmount", "")))
+        )
 
         if not amount:
             return None
@@ -612,16 +670,22 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
                 method = PaymentMethod.ONLINE
 
         return TaxPayment(
-            payment_id=data.get("paymentId", data.get("transactionId", data.get("receiptNumber"))),
+            payment_id=data.get(
+                "paymentId", data.get("transactionId", data.get("receiptNumber"))
+            ),
             parcel_id=account,
             tax_year=self._parse_int(str(data.get("taxYear", ""))) or 0,
             payment_date=payment_date,
             payment_amount=amount,
             payment_method=method,
-            principal_paid=self._parse_decimal(str(data.get("baseTax", data.get("principal", "")))),
+            principal_paid=self._parse_decimal(
+                str(data.get("baseTax", data.get("principal", "")))
+            ),
             interest_paid=self._parse_decimal(str(data.get("interest", ""))),
             penalty_paid=self._parse_decimal(str(data.get("penalty", ""))),
-            fees_paid=self._parse_decimal(str(data.get("attorneyFees", data.get("costs", "")))),
+            fees_paid=self._parse_decimal(
+                str(data.get("attorneyFees", data.get("costs", "")))
+            ),
             receipt_number=data.get("receiptNumber", data.get("confirmationNumber")),
             check_number=data.get("checkNumber"),
             payer_name=data.get("payer", data.get("payerName")),
@@ -630,7 +694,9 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
 
     def _parse_tax_lien(self, data: Dict[str, Any]) -> Optional[TaxLien]:
         """Parse a tax lien record (Texas uses suit/judgment system)."""
-        lien_number = data.get("suitNumber", data.get("causeNumber", data.get("lienNumber", "")))
+        lien_number = data.get(
+            "suitNumber", data.get("causeNumber", data.get("lienNumber", ""))
+        )
         account = data.get("accountNumber", data.get("account", ""))
 
         if not lien_number and not account:
@@ -641,20 +707,32 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
         # Parse tax years covered
         tax_years = data.get("taxYears", [])
         if isinstance(tax_years, str):
-            tax_years = [int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()]
+            tax_years = [
+                int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()
+            ]
         elif isinstance(tax_years, int):
             tax_years = [tax_years]
 
         return TaxLien(
-            lien_number=str(lien_number) if lien_number else f"SUIT-{formatted_account}",
+            lien_number=(
+                str(lien_number) if lien_number else f"SUIT-{formatted_account}"
+            ),
             parcel_id=formatted_account,
-            lien_date=self._parse_date(data.get("suitDate", data.get("filingDate", ""))),
-            lien_amount=self._parse_decimal(str(data.get("judgmentAmount", data.get("lienAmount", "")))),
-            face_value=self._parse_decimal(str(data.get("baseTaxes", data.get("taxAmount", "")))),
+            lien_date=self._parse_date(
+                data.get("suitDate", data.get("filingDate", ""))
+            ),
+            lien_amount=self._parse_decimal(
+                str(data.get("judgmentAmount", data.get("lienAmount", "")))
+            ),
+            face_value=self._parse_decimal(
+                str(data.get("baseTaxes", data.get("taxAmount", "")))
+            ),
             interest_rate=self._parse_decimal(str(data.get("interestRate", ""))),
             accrued_interest=self._parse_decimal(str(data.get("interest", ""))),
             penalties=self._parse_decimal(str(data.get("penalty", ""))),
-            total_due=self._parse_decimal(str(data.get("totalDue", data.get("redemptionAmount", "")))),
+            total_due=self._parse_decimal(
+                str(data.get("totalDue", data.get("redemptionAmount", "")))
+            ),
             status=self._parse_lien_status(data.get("status", "")),
             property_address=data.get("address", data.get("situs")),
             owner_name=data.get("owner", data.get("defendant")),
@@ -662,7 +740,9 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
             tax_years=tax_years,
             holder_name=data.get("plaintiff", "Harris County et al."),
             redemption_date=self._parse_date(data.get("redemptionDate", "")),
-            redemption_amount=self._parse_decimal(str(data.get("redemptionAmount", ""))),
+            redemption_amount=self._parse_decimal(
+                str(data.get("redemptionAmount", ""))
+            ),
             redemption_deadline=self._parse_date(data.get("redemptionDeadline", "")),
             sale_date=self._parse_date(data.get("saleDate", "")),
             sale_type=TaxSaleType.TAX_DEED_SALE,  # Texas uses deed sales
@@ -673,7 +753,9 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
             raw_data=data,
         )
 
-    def _parse_tax_sale_property(self, data: Dict[str, Any]) -> Optional[TaxSaleProperty]:
+    def _parse_tax_sale_property(
+        self, data: Dict[str, Any]
+    ) -> Optional[TaxSaleProperty]:
         """Parse a tax sale property listing (sheriff sale)."""
         account = data.get("accountNumber", data.get("account", ""))
         if not account:
@@ -684,7 +766,9 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
         # Parse delinquent years
         tax_years = data.get("taxYears", data.get("yearsDelinquent", []))
         if isinstance(tax_years, str):
-            tax_years = [int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()]
+            tax_years = [
+                int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()
+            ]
         elif isinstance(tax_years, int):
             tax_years = [tax_years]
 
@@ -702,18 +786,32 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
             total_taxes_due=self._parse_decimal(str(data.get("taxesDue", ""))),
             penalties_due=self._parse_decimal(str(data.get("penalty", ""))),
             interest_due=self._parse_decimal(str(data.get("interest", ""))),
-            fees_due=self._parse_decimal(str(data.get("attorneyFees", data.get("costs", "")))),
-            total_amount_due=self._parse_decimal(str(data.get("judgmentAmount", data.get("minimumBid", "")))),
+            fees_due=self._parse_decimal(
+                str(data.get("attorneyFees", data.get("costs", "")))
+            ),
+            total_amount_due=self._parse_decimal(
+                str(data.get("judgmentAmount", data.get("minimumBid", "")))
+            ),
             sale_type=TaxSaleType.TAX_DEED_SALE,  # Texas sheriff sales convey deed
             sale_date=self._parse_date(data.get("saleDate", "")),
-            auction_date=self._parse_date(data.get("auctionDate", data.get("saleDate", ""))),
-            minimum_bid=self._parse_decimal(str(data.get("minimumBid", data.get("judgmentAmount", "")))),
+            auction_date=self._parse_date(
+                data.get("auctionDate", data.get("saleDate", ""))
+            ),
+            minimum_bid=self._parse_decimal(
+                str(data.get("minimumBid", data.get("judgmentAmount", "")))
+            ),
             opening_bid=self._parse_decimal(str(data.get("openingBid", ""))),
-            assessed_value=self._parse_decimal(str(data.get("assessedValue", data.get("appraised", "")))),
-            market_value=self._parse_decimal(str(data.get("marketValue", data.get("appraised", "")))),
+            assessed_value=self._parse_decimal(
+                str(data.get("assessedValue", data.get("appraised", "")))
+            ),
+            market_value=self._parse_decimal(
+                str(data.get("marketValue", data.get("appraised", "")))
+            ),
             status=data.get("status", ""),
             sold=data.get("sold", False),
-            winning_bid=self._parse_decimal(str(data.get("winningBid", data.get("salePrice", "")))),
+            winning_bid=self._parse_decimal(
+                str(data.get("winningBid", data.get("salePrice", "")))
+            ),
             winning_bidder=data.get("buyer", data.get("purchaser")),
             redemption_period_ends=self._parse_date(data.get("redemptionDeadline", "")),
             redeemable=data.get("redeemable", True),
@@ -754,6 +852,7 @@ class HarrisCountyTreasurer(CountyTreasurerBase):
 
 # Convenience functions
 
+
 def get_harris_county_tax_record(parcel_id: str) -> Optional[PropertyTaxRecord]:
     """Get Harris County tax record by account number."""
     treasurer = HarrisCountyTreasurer()
@@ -761,6 +860,7 @@ def get_harris_county_tax_record(parcel_id: str) -> Optional[PropertyTaxRecord]:
     async def _get():
         async with treasurer:
             return await treasurer.get_tax_record(parcel_id)
+
     return asyncio.run(_get())
 
 
@@ -768,14 +868,17 @@ def search_harris_county_by_address(
     street_address: str,
     city: Optional[str] = None,
     zip_code: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> TaxSearchResult:
     """Search Harris County tax records by address."""
     treasurer = HarrisCountyTreasurer()
 
     async def _search():
         async with treasurer:
-            return await treasurer.search_by_address(street_address, city, zip_code, **kwargs)
+            return await treasurer.search_by_address(
+                street_address, city, zip_code, **kwargs
+            )
+
     return asyncio.run(_search())
 
 
@@ -786,4 +889,5 @@ def search_harris_county_by_owner(owner_name: str, **kwargs) -> TaxSearchResult:
     async def _search():
         async with treasurer:
             return await treasurer.search_by_owner(owner_name, **kwargs)
+
     return asyncio.run(_search())

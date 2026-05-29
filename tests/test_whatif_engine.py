@@ -2,14 +2,16 @@
 Tests for What-If / Counterfactual Simulation Engine (Gap P1)
 """
 
-import pytest
 import asyncio
+
+import pytest
+
 from datagod.intelligence.whatif_engine import (
-    WhatIfEngine,
     ParameterCategory,
     ParameterDefinition,
     SimulationDelta,
     SimulationResult,
+    WhatIfEngine,
 )
 
 
@@ -30,8 +32,13 @@ class TestParameterDefinition:
 
     def test_parameter_to_dict(self):
         p = ParameterDefinition(
-            id="val", name="Value", category=ParameterCategory.FINANCIAL,
-            description="desc", data_type="numeric", min_value=0, max_value=1000000,
+            id="val",
+            name="Value",
+            category=ParameterCategory.FINANCIAL,
+            description="desc",
+            data_type="numeric",
+            min_value=0,
+            max_value=1000000,
         )
         d = p.to_dict()
         assert d["id"] == "val"
@@ -41,8 +48,11 @@ class TestParameterDefinition:
 
     def test_parameter_with_allowed_values(self):
         p = ParameterDefinition(
-            id="status", name="Status", category=ParameterCategory.PROPERTY,
-            description="desc", data_type="string",
+            id="status",
+            name="Status",
+            category=ParameterCategory.PROPERTY,
+            description="desc",
+            data_type="string",
             allowed_values=["active", "inactive"],
         )
         d = p.to_dict()

@@ -12,16 +12,17 @@ Collects property-related public records including:
 """
 
 import logging
-from typing import Dict, List, Any, Optional
-from datetime import datetime
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class PropertyRecordType(Enum):
     """Types of property records available."""
+
     ASSESSMENT = "assessment"
     DEED = "deed"
     MORTGAGE = "mortgage"
@@ -37,6 +38,7 @@ class PropertyRecordType(Enum):
 @dataclass
 class PropertyRecord:
     """Property record data structure."""
+
     parcel_id: str
     address: str
     city: str
@@ -68,231 +70,233 @@ class PropertyRecord:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'parcel_id': self.parcel_id,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'zip_code': self.zip_code,
-            'county': self.county,
-            'record_type': self.record_type.value,
-            'owner_name': self.owner_name,
-            'assessed_value': self.assessed_value,
-            'market_value': self.market_value,
-            'land_value': self.land_value,
-            'improvement_value': self.improvement_value,
-            'tax_amount': self.tax_amount,
-            'property_class': self.property_class,
-            'acreage': self.acreage,
-            'year_built': self.year_built,
-            'square_feet': self.square_feet,
-            'bedrooms': self.bedrooms,
-            'bathrooms': self.bathrooms,
-            'zoning_code': self.zoning_code,
-            'legal_description': self.legal_description,
-            'recording_date': self.recording_date.isoformat() if self.recording_date else None,
-            'sale_date': self.sale_date.isoformat() if self.sale_date else None,
-            'sale_price': self.sale_price,
-            'document_number': self.document_number,
-            'source_url': self.source_url,
+            "parcel_id": self.parcel_id,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "zip_code": self.zip_code,
+            "county": self.county,
+            "record_type": self.record_type.value,
+            "owner_name": self.owner_name,
+            "assessed_value": self.assessed_value,
+            "market_value": self.market_value,
+            "land_value": self.land_value,
+            "improvement_value": self.improvement_value,
+            "tax_amount": self.tax_amount,
+            "property_class": self.property_class,
+            "acreage": self.acreage,
+            "year_built": self.year_built,
+            "square_feet": self.square_feet,
+            "bedrooms": self.bedrooms,
+            "bathrooms": self.bathrooms,
+            "zoning_code": self.zoning_code,
+            "legal_description": self.legal_description,
+            "recording_date": (
+                self.recording_date.isoformat() if self.recording_date else None
+            ),
+            "sale_date": self.sale_date.isoformat() if self.sale_date else None,
+            "sale_price": self.sale_price,
+            "document_number": self.document_number,
+            "source_url": self.source_url,
         }
 
 
 # Free public property data sources by state
 STATE_PROPERTY_SOURCES: Dict[str, Dict[str, str]] = {
-    'AL': {
-        'assessor': 'https://www.revenue.alabama.gov/property-tax/',
-        'gis': 'https://www.alabamagis.com/',
+    "AL": {
+        "assessor": "https://www.revenue.alabama.gov/property-tax/",
+        "gis": "https://www.alabamagis.com/",
     },
-    'AK': {
-        'assessor': 'https://www.commerce.alaska.gov/web/dcra/Officeofthe StateAssessor.aspx',
+    "AK": {
+        "assessor": "https://www.commerce.alaska.gov/web/dcra/Officeofthe StateAssessor.aspx",
     },
-    'AZ': {
-        'assessor': 'https://www.maricopa.gov/Assessor',
-        'recorder': 'https://recorder.maricopa.gov/',
+    "AZ": {
+        "assessor": "https://www.maricopa.gov/Assessor",
+        "recorder": "https://recorder.maricopa.gov/",
     },
-    'AR': {
-        'assessor': 'https://www.arcountydata.com/',
+    "AR": {
+        "assessor": "https://www.arcountydata.com/",
     },
-    'CA': {
-        'assessor': 'https://assessor.lacounty.gov/',
-        'recorder': 'https://www.lavote.net/home/records/property-document-recording',
+    "CA": {
+        "assessor": "https://assessor.lacounty.gov/",
+        "recorder": "https://www.lavote.net/home/records/property-document-recording",
     },
-    'CO': {
-        'assessor': 'https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Department-of-Finance/Our-Divisions/Assessors-Office',
+    "CO": {
+        "assessor": "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Department-of-Finance/Our-Divisions/Assessors-Office",
     },
-    'CT': {
-        'assessor': 'https://portal.ct.gov/OPM/IGPP/Grants/Property-Tax-Exempt-Data',
+    "CT": {
+        "assessor": "https://portal.ct.gov/OPM/IGPP/Grants/Property-Tax-Exempt-Data",
     },
-    'DE': {
-        'assessor': 'https://www.nccde.org/169/Assessment',
+    "DE": {
+        "assessor": "https://www.nccde.org/169/Assessment",
     },
-    'FL': {
-        'assessor': 'https://www.miamidade.gov/pa/',
-        'recorder': 'https://www.miami-dadeclerk.com/official_records.asp',
+    "FL": {
+        "assessor": "https://www.miamidade.gov/pa/",
+        "recorder": "https://www.miami-dadeclerk.com/official_records.asp",
     },
-    'GA': {
-        'assessor': 'https://qpublic.schneidercorp.com/',
+    "GA": {
+        "assessor": "https://qpublic.schneidercorp.com/",
     },
-    'HI': {
-        'assessor': 'https://www.realpropertyhonolulu.com/',
+    "HI": {
+        "assessor": "https://www.realpropertyhonolulu.com/",
     },
-    'ID': {
-        'assessor': 'https://www.adacountyassessor.org/',
+    "ID": {
+        "assessor": "https://www.adacountyassessor.org/",
     },
-    'IL': {
-        'assessor': 'https://www.cookcountyassessor.com/',
-        'recorder': 'https://www.cookcountyrecorder.com/',
+    "IL": {
+        "assessor": "https://www.cookcountyassessor.com/",
+        "recorder": "https://www.cookcountyrecorder.com/",
     },
-    'IN': {
-        'assessor': 'https://www.indy.gov/agency/assessor',
+    "IN": {
+        "assessor": "https://www.indy.gov/agency/assessor",
     },
-    'IA': {
-        'assessor': 'https://beacon.schneidercorp.com/',
+    "IA": {
+        "assessor": "https://beacon.schneidercorp.com/",
     },
-    'KS': {
-        'assessor': 'https://www.sedgwickcounty.org/appraiser/',
+    "KS": {
+        "assessor": "https://www.sedgwickcounty.org/appraiser/",
     },
-    'KY': {
-        'assessor': 'https://revenue.ky.gov/Property/Pages/default.aspx',
+    "KY": {
+        "assessor": "https://revenue.ky.gov/Property/Pages/default.aspx",
     },
-    'LA': {
-        'assessor': 'https://www.nolaassessor.com/',
+    "LA": {
+        "assessor": "https://www.nolaassessor.com/",
     },
-    'ME': {
-        'assessor': 'https://www.maine.gov/revenue/taxes/property-tax',
+    "ME": {
+        "assessor": "https://www.maine.gov/revenue/taxes/property-tax",
     },
-    'MD': {
-        'assessor': 'https://sdat.dat.maryland.gov/RealProperty/Pages/default.aspx',
+    "MD": {
+        "assessor": "https://sdat.dat.maryland.gov/RealProperty/Pages/default.aspx",
     },
-    'MA': {
-        'assessor': 'https://www.mass.gov/topics/property-taxes',
+    "MA": {
+        "assessor": "https://www.mass.gov/topics/property-taxes",
     },
-    'MI': {
-        'assessor': 'https://www.michigan.gov/treasury/local/assessor',
+    "MI": {
+        "assessor": "https://www.michigan.gov/treasury/local/assessor",
     },
-    'MN': {
-        'assessor': 'https://www.hennepin.us/residents/property/property-information',
+    "MN": {
+        "assessor": "https://www.hennepin.us/residents/property/property-information",
     },
-    'MS': {
-        'assessor': 'https://www.dor.ms.gov/property-tax',
+    "MS": {
+        "assessor": "https://www.dor.ms.gov/property-tax",
     },
-    'MO': {
-        'assessor': 'https://www.stlouis-mo.gov/government/departments/assessor/',
+    "MO": {
+        "assessor": "https://www.stlouis-mo.gov/government/departments/assessor/",
     },
-    'MT': {
-        'assessor': 'https://mtrevenue.gov/property/',
+    "MT": {
+        "assessor": "https://mtrevenue.gov/property/",
     },
-    'NE': {
-        'assessor': 'https://www.revenue.nebraska.gov/PAD',
+    "NE": {
+        "assessor": "https://www.revenue.nebraska.gov/PAD",
     },
-    'NV': {
-        'assessor': 'https://www.clarkcountynv.gov/government/elected_officials/assessor/index.php',
+    "NV": {
+        "assessor": "https://www.clarkcountynv.gov/government/elected_officials/assessor/index.php",
     },
-    'NH': {
-        'assessor': 'https://www.nh.gov/btla/',
+    "NH": {
+        "assessor": "https://www.nh.gov/btla/",
     },
-    'NJ': {
-        'assessor': 'https://www.state.nj.us/treasury/taxation/lpt/localtax.shtml',
+    "NJ": {
+        "assessor": "https://www.state.nj.us/treasury/taxation/lpt/localtax.shtml",
     },
-    'NM': {
-        'assessor': 'https://www.bernco.gov/assessor/',
+    "NM": {
+        "assessor": "https://www.bernco.gov/assessor/",
     },
-    'NY': {
-        'assessor': 'https://www1.nyc.gov/site/finance/taxes/property.page',
-        'acris': 'https://a836-acris.nyc.gov/DS/DocumentSearch/BBL',
+    "NY": {
+        "assessor": "https://www1.nyc.gov/site/finance/taxes/property.page",
+        "acris": "https://a836-acris.nyc.gov/DS/DocumentSearch/BBL",
     },
-    'NC': {
-        'assessor': 'https://www.wakegov.com/departments-government/tax-administration',
+    "NC": {
+        "assessor": "https://www.wakegov.com/departments-government/tax-administration",
     },
-    'ND': {
-        'assessor': 'https://www.nd.gov/tax/property/',
+    "ND": {
+        "assessor": "https://www.nd.gov/tax/property/",
     },
-    'OH': {
-        'assessor': 'https://fiscalofficer.cuyahogacounty.us/',
+    "OH": {
+        "assessor": "https://fiscalofficer.cuyahogacounty.us/",
     },
-    'OK': {
-        'assessor': 'https://www.oklahomacounty.org/assessor/',
+    "OK": {
+        "assessor": "https://www.oklahomacounty.org/assessor/",
     },
-    'OR': {
-        'assessor': 'https://www.multco.us/assessment-taxation',
+    "OR": {
+        "assessor": "https://www.multco.us/assessment-taxation",
     },
-    'PA': {
-        'assessor': 'https://property.phila.gov/',
+    "PA": {
+        "assessor": "https://property.phila.gov/",
     },
-    'RI': {
-        'assessor': 'https://www.providenceri.gov/tax-assessors-office/',
+    "RI": {
+        "assessor": "https://www.providenceri.gov/tax-assessors-office/",
     },
-    'SC': {
-        'assessor': 'https://www.richlandcountysc.gov/Government/Departments/Assessor',
+    "SC": {
+        "assessor": "https://www.richlandcountysc.gov/Government/Departments/Assessor",
     },
-    'SD': {
-        'assessor': 'https://dor.sd.gov/businesses/property-taxes/',
+    "SD": {
+        "assessor": "https://dor.sd.gov/businesses/property-taxes/",
     },
-    'TN': {
-        'assessor': 'https://www.padctn.org/',
+    "TN": {
+        "assessor": "https://www.padctn.org/",
     },
-    'TX': {
-        'assessor': 'https://www.hcad.org/',
-        'comptroller': 'https://comptroller.texas.gov/taxes/property-tax/',
+    "TX": {
+        "assessor": "https://www.hcad.org/",
+        "comptroller": "https://comptroller.texas.gov/taxes/property-tax/",
     },
-    'UT': {
-        'assessor': 'https://slco.org/assessor/',
+    "UT": {
+        "assessor": "https://slco.org/assessor/",
     },
-    'VT': {
-        'assessor': 'https://tax.vermont.gov/property-owners',
+    "VT": {
+        "assessor": "https://tax.vermont.gov/property-owners",
     },
-    'VA': {
-        'assessor': 'https://www.fairfaxcounty.gov/taxes/real-estate',
+    "VA": {
+        "assessor": "https://www.fairfaxcounty.gov/taxes/real-estate",
     },
-    'WA': {
-        'assessor': 'https://www.kingcounty.gov/depts/assessor.aspx',
-        'parcel': 'https://www.kingcounty.gov/services/gis/Maps/parcel-viewer.aspx',
+    "WA": {
+        "assessor": "https://www.kingcounty.gov/depts/assessor.aspx",
+        "parcel": "https://www.kingcounty.gov/services/gis/Maps/parcel-viewer.aspx",
     },
-    'WV': {
-        'assessor': 'https://tax.wv.gov/Property/Pages/PropertyTax.aspx',
+    "WV": {
+        "assessor": "https://tax.wv.gov/Property/Pages/PropertyTax.aspx",
     },
-    'WI': {
-        'assessor': 'https://www.revenue.wi.gov/pages/FAQS/pcs-property.aspx',
+    "WI": {
+        "assessor": "https://www.revenue.wi.gov/pages/FAQS/pcs-property.aspx",
     },
-    'WY': {
-        'assessor': 'https://revenue.wyo.gov/property-tax-division',
+    "WY": {
+        "assessor": "https://revenue.wyo.gov/property-tax-division",
     },
-    'DC': {
-        'assessor': 'https://otr.cfo.dc.gov/page/real-property-tax-database-search',
+    "DC": {
+        "assessor": "https://otr.cfo.dc.gov/page/real-property-tax-database-search",
     },
 }
 
 # Federal property data sources
 FEDERAL_PROPERTY_SOURCES = {
-    'hud': {
-        'name': 'HUD Property Data',
-        'url': 'https://www.hud.gov/program_offices/housing/sfh/reo',
-        'description': 'HUD real estate owned properties',
+    "hud": {
+        "name": "HUD Property Data",
+        "url": "https://www.hud.gov/program_offices/housing/sfh/reo",
+        "description": "HUD real estate owned properties",
     },
-    'usda': {
-        'name': 'USDA Property Programs',
-        'url': 'https://www.rd.usda.gov/programs-services/all-programs',
-        'description': 'Rural development property programs',
+    "usda": {
+        "name": "USDA Property Programs",
+        "url": "https://www.rd.usda.gov/programs-services/all-programs",
+        "description": "Rural development property programs",
     },
-    'fannie_mae': {
-        'name': 'Fannie Mae HomePath',
-        'url': 'https://www.homepath.com/',
-        'description': 'Fannie Mae owned properties',
+    "fannie_mae": {
+        "name": "Fannie Mae HomePath",
+        "url": "https://www.homepath.com/",
+        "description": "Fannie Mae owned properties",
     },
-    'freddie_mac': {
-        'name': 'Freddie Mac HomeSteps',
-        'url': 'https://www.homesteps.com/',
-        'description': 'Freddie Mac owned properties',
+    "freddie_mac": {
+        "name": "Freddie Mac HomeSteps",
+        "url": "https://www.homesteps.com/",
+        "description": "Freddie Mac owned properties",
     },
-    'va': {
-        'name': 'VA Property Management',
-        'url': 'https://www.benefits.va.gov/HOMELOANS/realestate.asp',
-        'description': 'VA acquired properties',
+    "va": {
+        "name": "VA Property Management",
+        "url": "https://www.benefits.va.gov/HOMELOANS/realestate.asp",
+        "description": "VA acquired properties",
     },
-    'gsa': {
-        'name': 'GSA Property Sales',
-        'url': 'https://realestatesales.gov/',
-        'description': 'Federal government property sales',
+    "gsa": {
+        "name": "GSA Property Sales",
+        "url": "https://realestatesales.gov/",
+        "description": "Federal government property sales",
     },
 }
 
@@ -327,11 +331,7 @@ class PropertyRecordsScraper:
         return self.state_sources.get(state.upper(), {})
 
     def search_by_address(
-        self,
-        address: str,
-        city: str,
-        state: str,
-        zip_code: str = ""
+        self, address: str, city: str, state: str, zip_code: str = ""
     ) -> List[PropertyRecord]:
         """
         Search for property records by address.
@@ -354,10 +354,7 @@ class PropertyRecordsScraper:
         return results
 
     def search_by_parcel(
-        self,
-        parcel_id: str,
-        state: str,
-        county: str = ""
+        self, parcel_id: str, state: str, county: str = ""
     ) -> Optional[PropertyRecord]:
         """
         Search for property record by parcel ID.
@@ -376,10 +373,7 @@ class PropertyRecordsScraper:
         return None
 
     def search_by_owner(
-        self,
-        owner_name: str,
-        state: str,
-        county: str = ""
+        self, owner_name: str, state: str, county: str = ""
     ) -> List[PropertyRecord]:
         """
         Search for properties by owner name.
@@ -399,10 +393,7 @@ class PropertyRecordsScraper:
         return results
 
     def get_assessment_history(
-        self,
-        parcel_id: str,
-        state: str,
-        years: int = 5
+        self, parcel_id: str, state: str, years: int = 5
     ) -> List[Dict[str, Any]]:
         """
         Get assessment history for a parcel.
@@ -426,7 +417,7 @@ class PropertyRecordsScraper:
         parcel_id: str,
         state: str,
         start_date: datetime = None,
-        end_date: datetime = None
+        end_date: datetime = None,
     ) -> List[PropertyRecord]:
         """
         Get deed records for a parcel.
@@ -446,11 +437,7 @@ class PropertyRecordsScraper:
         # Would implement actual deed search
         return deeds
 
-    def get_mortgage_records(
-        self,
-        parcel_id: str,
-        state: str
-    ) -> List[PropertyRecord]:
+    def get_mortgage_records(self, parcel_id: str, state: str) -> List[PropertyRecord]:
         """
         Get mortgage records for a parcel.
 
@@ -468,10 +455,7 @@ class PropertyRecordsScraper:
         return mortgages
 
     def get_foreclosures(
-        self,
-        state: str,
-        county: str = "",
-        status: str = "all"
+        self, state: str, county: str = "", status: str = "all"
     ) -> List[PropertyRecord]:
         """
         Get foreclosure listings.
@@ -491,10 +475,7 @@ class PropertyRecordsScraper:
         return foreclosures
 
     def get_federal_properties(
-        self,
-        source: str,
-        state: str = "",
-        property_type: str = ""
+        self, source: str, state: str = "", property_type: str = ""
     ) -> List[PropertyRecord]:
         """
         Get federal agency owned properties.
@@ -520,13 +501,13 @@ class PropertyRecordsScraper:
     def get_coverage_stats(self) -> Dict[str, Any]:
         """Get coverage statistics for property records."""
         return {
-            'category': self.CATEGORY,
-            'display_name': self.DISPLAY_NAME,
-            'states_covered': len(self.state_sources),
-            'states': list(self.state_sources.keys()),
-            'federal_sources': len(self.federal_sources),
-            'federal_source_names': [s['name'] for s in self.federal_sources.values()],
-            'record_types': [t.value for t in PropertyRecordType],
+            "category": self.CATEGORY,
+            "display_name": self.DISPLAY_NAME,
+            "states_covered": len(self.state_sources),
+            "states": list(self.state_sources.keys()),
+            "federal_sources": len(self.federal_sources),
+            "federal_source_names": [s["name"] for s in self.federal_sources.values()],
+            "record_types": [t.value for t in PropertyRecordType],
         }
 
 
@@ -537,10 +518,7 @@ def get_property_scraper() -> PropertyRecordsScraper:
 
 
 def search_property(
-    address: str,
-    city: str,
-    state: str,
-    zip_code: str = ""
+    address: str, city: str, state: str, zip_code: str = ""
 ) -> List[Dict[str, Any]]:
     """Search for property records by address."""
     scraper = get_property_scraper()
@@ -551,6 +529,6 @@ def search_property(
 def get_available_sources() -> Dict[str, Any]:
     """Get all available property record sources."""
     return {
-        'state_sources': STATE_PROPERTY_SOURCES,
-        'federal_sources': FEDERAL_PROPERTY_SOURCES,
+        "state_sources": STATE_PROPERTY_SOURCES,
+        "federal_sources": FEDERAL_PROPERTY_SOURCES,
     }

@@ -10,14 +10,11 @@ Tests cover:
 - Entity management operations
 """
 
-import pytest
 from datetime import datetime
-from datagod.services.entity_linker import (
-    EntityType,
-    Entity,
-    EntityMatch,
-    EntityLinker,
-)
+
+import pytest
+
+from datagod.services.entity_linker import Entity, EntityLinker, EntityMatch, EntityType
 
 
 class TestEntityTypeEnum:
@@ -46,7 +43,7 @@ class TestEntity:
         entity = Entity(
             entity_id="E123456",
             entity_type=EntityType.PERSON,
-            primary_name="John Smith"
+            primary_name="John Smith",
         )
         assert entity.entity_id == "E123456"
         assert entity.entity_type == EntityType.PERSON
@@ -61,11 +58,8 @@ class TestEntity:
             entity_type=EntityType.PERSON,
             primary_name="John Smith",
             aliases=["Johnny Smith", "J. Smith"],
-            identifiers={
-                "ssn_last4": "1234",
-                "dob": "1980-01-15"
-            },
-            addresses=[{"street": "123 Main St", "city": "Houston", "state": "TX"}]
+            identifiers={"ssn_last4": "1234", "dob": "1980-01-15"},
+            addresses=[{"street": "123 Main St", "city": "Houston", "state": "TX"}],
         )
         assert entity.primary_name == "John Smith"
         assert len(entity.aliases) == 2
@@ -79,10 +73,7 @@ class TestEntity:
             entity_type=EntityType.COMPANY,
             primary_name="Acme Corporation",
             aliases=["Acme Corp", "ACME Inc"],
-            identifiers={
-                "ein": "12-3456789",
-                "state": "TX"
-            }
+            identifiers={"ein": "12-3456789", "state": "TX"},
         )
         assert entity.entity_type == EntityType.COMPANY
         assert entity.identifiers["ein"] == "12-3456789"
@@ -93,10 +84,7 @@ class TestEntity:
             entity_id="PR123456",
             entity_type=EntityType.PROPERTY,
             primary_name="123 Main Street, Houston, TX 77001",
-            identifiers={
-                "parcel_id": "1234567890",
-                "county": "Harris"
-            }
+            identifiers={"parcel_id": "1234567890", "county": "Harris"},
         )
         assert entity.entity_type == EntityType.PROPERTY
         assert entity.identifiers["parcel_id"] == "1234567890"
@@ -108,22 +96,22 @@ class TestEntity:
             entity_type=EntityType.PERSON,
             primary_name="John Smith",
             aliases=["Johnny"],
-            identifiers={"dob": "1980-01-15"}
+            identifiers={"dob": "1980-01-15"},
         )
         result = entity.to_dict()
-        assert result['entity_id'] == "E123456"
-        assert result['entity_type'] == "person"
-        assert result['primary_name'] == "John Smith"
-        assert result['aliases'] == ["Johnny"]
-        assert result['identifiers']['dob'] == "1980-01-15"
-        assert 'created_at' in result
+        assert result["entity_id"] == "E123456"
+        assert result["entity_type"] == "person"
+        assert result["primary_name"] == "John Smith"
+        assert result["aliases"] == ["Johnny"]
+        assert result["identifiers"]["dob"] == "1980-01-15"
+        assert "created_at" in result
 
     def test_entity_default_timestamps(self):
         """Test entity has default timestamp values"""
         entity = Entity(
             entity_id="E123456",
             entity_type=EntityType.PERSON,
-            primary_name="John Smith"
+            primary_name="John Smith",
         )
         assert entity.created_at is not None
         assert isinstance(entity.created_at, datetime)
@@ -139,7 +127,7 @@ class TestEntityMatch:
             entity2_id="E002",
             confidence=0.95,
             match_factors={"name": 0.98, "address": 0.92},
-            recommended_action="merge"
+            recommended_action="merge",
         )
         assert match.entity1_id == "E001"
         assert match.entity2_id == "E002"
@@ -154,7 +142,7 @@ class TestEntityMatch:
             entity2_id="E002",
             confidence=0.99,
             match_factors={"name": 0.99},
-            recommended_action="merge"
+            recommended_action="merge",
         )
         assert match_high.confidence >= 0.9
 
@@ -164,7 +152,7 @@ class TestEntityMatch:
             entity2_id="E002",
             confidence=0.5,
             match_factors={"name": 0.5},
-            recommended_action="review"
+            recommended_action="review",
         )
         assert match_low.confidence < 0.9
 
@@ -194,7 +182,7 @@ class TestEntityLinker:
         entity = Entity(
             entity_id="E123456",
             entity_type=EntityType.PERSON,
-            primary_name="John Smith"
+            primary_name="John Smith",
         )
         entity_id = linker.add_entity(entity)
         assert entity_id == "E123456"
@@ -204,7 +192,7 @@ class TestEntityLinker:
         entity = Entity(
             entity_id="E123456",
             entity_type=EntityType.PERSON,
-            primary_name="John Smith"
+            primary_name="John Smith",
         )
         linker.add_entity(entity)
         retrieved = linker.get_entity("E123456")
@@ -221,7 +209,7 @@ class TestEntityLinker:
         entity = Entity(
             entity_id="E123456",
             entity_type=EntityType.PERSON,
-            primary_name="John Smith"
+            primary_name="John Smith",
         )
         linker.add_entity(entity)
         removed = linker.remove_entity("E123456")
@@ -243,70 +231,70 @@ class TestEntityLinkerLinking:
         linker = EntityLinker(merge_threshold=0.9, review_threshold=0.7)
 
         # Add person entities
-        linker.add_entity(Entity(
-            entity_id="P001",
-            entity_type=EntityType.PERSON,
-            primary_name="John Smith",
-            identifiers={"dob": "1980-01-15"},
-            addresses=[{"street": "123 Main St", "city": "Houston", "state": "TX"}]
-        ))
-        linker.add_entity(Entity(
-            entity_id="P002",
-            entity_type=EntityType.PERSON,
-            primary_name="Jane Doe",
-            identifiers={"dob": "1985-05-20"},
-            addresses=[{"street": "456 Oak Ave", "city": "Dallas", "state": "TX"}]
-        ))
+        linker.add_entity(
+            Entity(
+                entity_id="P001",
+                entity_type=EntityType.PERSON,
+                primary_name="John Smith",
+                identifiers={"dob": "1980-01-15"},
+                addresses=[{"street": "123 Main St", "city": "Houston", "state": "TX"}],
+            )
+        )
+        linker.add_entity(
+            Entity(
+                entity_id="P002",
+                entity_type=EntityType.PERSON,
+                primary_name="Jane Doe",
+                identifiers={"dob": "1985-05-20"},
+                addresses=[{"street": "456 Oak Ave", "city": "Dallas", "state": "TX"}],
+            )
+        )
 
         # Add company entities
-        linker.add_entity(Entity(
-            entity_id="C001",
-            entity_type=EntityType.COMPANY,
-            primary_name="Acme Corporation",
-            identifiers={"ein": "12-3456789", "state": "TX"}
-        ))
+        linker.add_entity(
+            Entity(
+                entity_id="C001",
+                entity_type=EntityType.COMPANY,
+                primary_name="Acme Corporation",
+                identifiers={"ein": "12-3456789", "state": "TX"},
+            )
+        )
 
         # Add property entities
-        linker.add_entity(Entity(
-            entity_id="PR001",
-            entity_type=EntityType.PROPERTY,
-            primary_name="123 Main Street, Houston, TX 77001",
-            identifiers={"parcel_id": "1234567890", "county": "Harris"}
-        ))
+        linker.add_entity(
+            Entity(
+                entity_id="PR001",
+                entity_type=EntityType.PROPERTY,
+                primary_name="123 Main Street, Houston, TX 77001",
+                identifiers={"parcel_id": "1234567890", "county": "Harris"},
+            )
+        )
 
         return linker
 
     def test_link_person_exact_match(self, linker_with_entities):
         """Test linking person with exact match"""
-        result = linker_with_entities.link_person(
-            name="John Smith",
-            dob="1980-01-15"
-        )
+        result = linker_with_entities.link_person(name="John Smith", dob="1980-01-15")
         # Result may be tuple (entity, matches) or just matches
         assert result is not None
 
     def test_link_person_no_match(self, linker_with_entities):
         """Test linking person with no matches"""
-        result = linker_with_entities.link_person(
-            name="Nobody Known",
-            dob="2000-01-01"
-        )
+        result = linker_with_entities.link_person(name="Nobody Known", dob="2000-01-01")
         # Should return None or empty matches for unknown person
         assert result is not None or result is None
 
     def test_link_company_exact_match(self, linker_with_entities):
         """Test linking company with exact match"""
         result = linker_with_entities.link_company(
-            name="Acme Corporation",
-            ein="12-3456789"
+            name="Acme Corporation", ein="12-3456789"
         )
         assert result is not None
 
     def test_link_property_exact_match(self, linker_with_entities):
         """Test linking property with exact match"""
         result = linker_with_entities.link_property(
-            address="123 Main Street, Houston, TX 77001",
-            parcel_id="1234567890"
+            address="123 Main Street, Houston, TX 77001", parcel_id="1234567890"
         )
         assert result is not None
 
@@ -393,16 +381,14 @@ class TestEntityLinkerSimilarity:
     def test_calculate_address_similarity(self, linker):
         """Test address similarity calculation"""
         score = linker._calculate_address_similarity(
-            "123 Main Street, Houston, TX",
-            "123 Main St, Houston, TX"
+            "123 Main Street, Houston, TX", "123 Main St, Houston, TX"
         )
         assert score > 0.7
 
     def test_calculate_address_similarity_different(self, linker):
         """Test address similarity with different addresses"""
         score = linker._calculate_address_similarity(
-            "123 Main Street, Houston, TX",
-            "456 Oak Avenue, Dallas, TX"
+            "123 Main Street, Houston, TX", "456 Oak Avenue, Dallas, TX"
         )
         assert score < 0.7
 
@@ -421,13 +407,13 @@ class TestEntityLinkerMerge:
             entity_id="E001",
             entity_type=EntityType.PERSON,
             primary_name="John Smith",
-            identifiers={"dob": "1980-01-15"}
+            identifiers={"dob": "1980-01-15"},
         )
         entity2 = Entity(
             entity_id="E002",
             entity_type=EntityType.PERSON,
             primary_name="John A. Smith",
-            addresses=[{"street": "123 Main St"}]
+            addresses=[{"street": "123 Main St"}],
         )
         linker.add_entity(entity1)
         linker.add_entity(entity2)
@@ -439,9 +425,7 @@ class TestEntityLinkerMerge:
     def test_merge_entities_nonexistent(self, linker):
         """Test merging with non-existent entity"""
         entity1 = Entity(
-            entity_id="E001",
-            entity_type=EntityType.PERSON,
-            primary_name="John Smith"
+            entity_id="E001", entity_type=EntityType.PERSON, primary_name="John Smith"
         )
         linker.add_entity(entity1)
 
@@ -456,31 +440,35 @@ class TestEntityLinkerStatistics:
     def linker_with_entities(self):
         """Create EntityLinker with entities"""
         linker = EntityLinker()
-        linker.add_entity(Entity(
-            entity_id="P001",
-            entity_type=EntityType.PERSON,
-            primary_name="John Smith"
-        ))
-        linker.add_entity(Entity(
-            entity_id="P002",
-            entity_type=EntityType.PERSON,
-            primary_name="Jane Doe"
-        ))
-        linker.add_entity(Entity(
-            entity_id="C001",
-            entity_type=EntityType.COMPANY,
-            primary_name="Acme Corp"
-        ))
+        linker.add_entity(
+            Entity(
+                entity_id="P001",
+                entity_type=EntityType.PERSON,
+                primary_name="John Smith",
+            )
+        )
+        linker.add_entity(
+            Entity(
+                entity_id="P002", entity_type=EntityType.PERSON, primary_name="Jane Doe"
+            )
+        )
+        linker.add_entity(
+            Entity(
+                entity_id="C001",
+                entity_type=EntityType.COMPANY,
+                primary_name="Acme Corp",
+            )
+        )
         return linker
 
     def test_get_statistics(self, linker_with_entities):
         """Test getting linker statistics"""
         stats = linker_with_entities.get_statistics()
-        assert 'total_entities' in stats
-        assert stats['total_entities'] == 3
-        assert 'entities_by_type' in stats
-        assert stats['entities_by_type']['person'] == 2
-        assert stats['entities_by_type']['company'] == 1
+        assert "total_entities" in stats
+        assert stats["total_entities"] == 3
+        assert "entities_by_type" in stats
+        assert stats["entities_by_type"]["person"] == 2
+        assert stats["entities_by_type"]["company"] == 1
 
 
 class TestEntityLinkerEdgeCases:
@@ -499,22 +487,26 @@ class TestEntityLinkerEdgeCases:
 
     def test_link_company_with_special_characters(self, linker):
         """Test linking company with special characters"""
-        linker.add_entity(Entity(
-            entity_id="C001",
-            entity_type=EntityType.COMPANY,
-            primary_name="A & B Company, Inc."
-        ))
+        linker.add_entity(
+            Entity(
+                entity_id="C001",
+                entity_type=EntityType.COMPANY,
+                primary_name="A & B Company, Inc.",
+            )
+        )
         result = linker.link_company(name="A & B Company, Inc.")
         # Should not crash
         assert True
 
     def test_link_property_with_partial_address(self, linker):
         """Test linking property with partial address"""
-        linker.add_entity(Entity(
-            entity_id="PR001",
-            entity_type=EntityType.PROPERTY,
-            primary_name="123 Main Street, Houston, TX 77001"
-        ))
+        linker.add_entity(
+            Entity(
+                entity_id="PR001",
+                entity_type=EntityType.PROPERTY,
+                primary_name="123 Main Street, Houston, TX 77001",
+            )
+        )
         result = linker.link_property(address="123 Main St")
         # Should not crash
         assert True
@@ -522,9 +514,7 @@ class TestEntityLinkerEdgeCases:
     def test_entity_with_unicode_characters(self, linker):
         """Test entity with unicode characters in name"""
         entity = Entity(
-            entity_id="E001",
-            entity_type=EntityType.PERSON,
-            primary_name="José García"
+            entity_id="E001", entity_type=EntityType.PERSON, primary_name="José García"
         )
         linker.add_entity(entity)
         retrieved = linker.get_entity("E001")
@@ -536,7 +526,7 @@ class TestEntityLinkerEdgeCases:
             entity_id="E001",
             entity_type=EntityType.PERSON,
             primary_name="John Smith",
-            aliases=[]
+            aliases=[],
         )
         linker.add_entity(entity)
         assert linker.get_entity("E001").aliases == []
@@ -547,7 +537,7 @@ class TestEntityLinkerEdgeCases:
             entity_id="E001",
             entity_type=EntityType.PERSON,
             primary_name="John Smith",
-            identifiers={}
+            identifiers={},
         )
         linker.add_entity(entity)
         assert linker.get_entity("E001").identifiers == {}

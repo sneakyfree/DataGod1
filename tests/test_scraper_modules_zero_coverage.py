@@ -11,25 +11,27 @@ This module tests:
 Coverage target: 100% of all scraper modules
 """
 
-import pytest
+import json
 import os
 import sys
-import json
 import time
-from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock, Mock
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 # Set test environment before imports
 os.environ["TESTING"] = "1"
 
 # Add paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 # ==================== API MANAGER TESTS ====================
+
 
 class TestAPIManagerInit:
     """Tests for APIManager initialization."""
@@ -54,15 +56,15 @@ class TestAPIManagerInit:
     def test_usage_stats_structure(self):
         """Test usage stats structure on init."""
         usage_stats = {
-            'total_requests': 0,
-            'total_cost': 0.0,
-            'api_usage': {},
-            'last_updated': datetime.now().isoformat()
+            "total_requests": 0,
+            "total_cost": 0.0,
+            "api_usage": {},
+            "last_updated": datetime.now().isoformat(),
         }
 
-        assert usage_stats['total_requests'] == 0
-        assert usage_stats['total_cost'] == 0.0
-        assert 'last_updated' in usage_stats
+        assert usage_stats["total_requests"] == 0
+        assert usage_stats["total_cost"] == 0.0
+        assert "last_updated" in usage_stats
 
 
 class TestLoadCredentials:
@@ -128,12 +130,12 @@ class TestAddCredentials:
 
         credentials[api_name] = {
             **new_credentials,
-            'updated_at': datetime.now().isoformat()
+            "updated_at": datetime.now().isoformat(),
         }
 
         assert api_name in credentials
-        assert credentials[api_name]['api_key'] == "key123"
-        assert 'updated_at' in credentials[api_name]
+        assert credentials[api_name]["api_key"] == "key123"
+        assert "updated_at" in credentials[api_name]
 
     def test_update_existing_credentials(self):
         """Test updating existing credentials."""
@@ -143,10 +145,10 @@ class TestAddCredentials:
 
         credentials[api_name] = {
             **new_credentials,
-            'updated_at': datetime.now().isoformat()
+            "updated_at": datetime.now().isoformat(),
         }
 
-        assert credentials[api_name]['api_key'] == "new_key"
+        assert credentials[api_name]["api_key"] == "new_key"
 
 
 class TestGetIntegration:
@@ -259,7 +261,7 @@ class TestSearchAcrossAPIs:
 
     def test_auto_detect_apis(self):
         """Test auto-detecting APIs for jurisdiction."""
-        default_apis = ['florida_property_appraiser', 'california_sos']
+        default_apis = ["florida_property_appraiser", "california_sos"]
 
         assert len(default_apis) == 2
 
@@ -269,38 +271,36 @@ class TestTrackAPIUsage:
 
     def test_track_new_api_usage(self):
         """Test tracking usage for new API."""
-        usage_stats = {'api_usage': {}}
+        usage_stats = {"api_usage": {}}
         api_type = "test_api"
         result_count = 5
 
-        if api_type not in usage_stats['api_usage']:
-            usage_stats['api_usage'][api_type] = {
-                'requests': 0,
-                'results': 0,
-                'cost': 0.0
+        if api_type not in usage_stats["api_usage"]:
+            usage_stats["api_usage"][api_type] = {
+                "requests": 0,
+                "results": 0,
+                "cost": 0.0,
             }
 
-        usage_stats['api_usage'][api_type]['requests'] += 1
-        usage_stats['api_usage'][api_type]['results'] += result_count
+        usage_stats["api_usage"][api_type]["requests"] += 1
+        usage_stats["api_usage"][api_type]["results"] += result_count
 
-        assert usage_stats['api_usage'][api_type]['requests'] == 1
-        assert usage_stats['api_usage'][api_type]['results'] == 5
+        assert usage_stats["api_usage"][api_type]["requests"] == 1
+        assert usage_stats["api_usage"][api_type]["results"] == 5
 
     def test_track_existing_api_usage(self):
         """Test tracking usage for existing API."""
         usage_stats = {
-            'api_usage': {
-                'test_api': {'requests': 5, 'results': 50, 'cost': 0.5}
-            }
+            "api_usage": {"test_api": {"requests": 5, "results": 50, "cost": 0.5}}
         }
         api_type = "test_api"
         result_count = 10
 
-        usage_stats['api_usage'][api_type]['requests'] += 1
-        usage_stats['api_usage'][api_type]['results'] += result_count
+        usage_stats["api_usage"][api_type]["requests"] += 1
+        usage_stats["api_usage"][api_type]["results"] += result_count
 
-        assert usage_stats['api_usage'][api_type]['requests'] == 6
-        assert usage_stats['api_usage'][api_type]['results'] == 60
+        assert usage_stats["api_usage"][api_type]["requests"] == 6
+        assert usage_stats["api_usage"][api_type]["results"] == 60
 
 
 class TestCalculateAPICost:
@@ -308,12 +308,9 @@ class TestCalculateAPICost:
 
     def test_cost_per_request_lookup(self):
         """Test cost per request lookup."""
-        cost_per_request = {
-            'florida_property_appraiser': 0.10,
-            'california_sos': 0.15
-        }
+        cost_per_request = {"florida_property_appraiser": 0.10, "california_sos": 0.15}
 
-        cost = cost_per_request.get('florida_property_appraiser', 0.10)
+        cost = cost_per_request.get("florida_property_appraiser", 0.10)
         assert cost == 0.10
 
     def test_additional_cost_for_high_volume(self):
@@ -333,22 +330,21 @@ class TestGetCostReport:
     def test_cost_report_structure(self):
         """Test cost report structure."""
         usage_stats = {
-            'total_cost': 10.0,
-            'total_requests': 100,
-            'api_usage': {
-                'test_api': {'requests': 50, 'results': 500, 'cost': 5.0}
-            }
+            "total_cost": 10.0,
+            "total_requests": 100,
+            "api_usage": {"test_api": {"requests": 50, "results": 500, "cost": 5.0}},
         }
 
         report = {
-            'period_days': 30,
-            'total_cost': usage_stats['total_cost'],
-            'total_requests': usage_stats['total_requests'],
-            'cost_per_request': usage_stats['total_cost'] / usage_stats['total_requests'],
-            'generated_at': datetime.now().isoformat()
+            "period_days": 30,
+            "total_cost": usage_stats["total_cost"],
+            "total_requests": usage_stats["total_requests"],
+            "cost_per_request": usage_stats["total_cost"]
+            / usage_stats["total_requests"],
+            "generated_at": datetime.now().isoformat(),
         }
 
-        assert report['cost_per_request'] == 0.10
+        assert report["cost_per_request"] == 0.10
 
     def test_cost_per_request_zero_requests(self):
         """Test cost per request with zero requests."""
@@ -364,10 +360,7 @@ class TestCleanupExpiredIntegrations:
 
     def test_cleanup_removes_expired(self):
         """Test cleanup removes expired integrations."""
-        active_integrations = {
-            "1_api1": {"valid": False},
-            "2_api2": {"valid": True}
-        }
+        active_integrations = {"1_api1": {"valid": False}, "2_api2": {"valid": True}}
 
         expired_keys = []
         for key, integration in active_integrations.items():
@@ -382,10 +375,7 @@ class TestCleanupExpiredIntegrations:
 
     def test_cleanup_no_expired(self):
         """Test cleanup with no expired integrations."""
-        active_integrations = {
-            "1_api1": {"valid": True},
-            "2_api2": {"valid": True}
-        }
+        active_integrations = {"1_api1": {"valid": True}, "2_api2": {"valid": True}}
 
         expired_keys = []
         for key, integration in active_integrations.items():
@@ -400,11 +390,7 @@ class TestListAvailableAPIs:
 
     def test_list_apis(self):
         """Test listing APIs."""
-        api_registry = {
-            'api1': object,
-            'api2': object,
-            'api3': object
-        }
+        api_registry = {"api1": object, "api2": object, "api3": object}
 
         available = list(api_registry.keys())
         assert len(available) == 3
@@ -415,29 +401,33 @@ class TestGetAPIInfo:
 
     def test_get_api_info_exists(self):
         """Test getting info for existing API."""
-        api_registry = {'test_api': type('TestAPI', (), {'__name__': 'TestAPI', '__module__': 'test'})}
-        credentials = {'test_api': {'updated_at': '2024-01-01'}}
-        api_type = 'test_api'
+        api_registry = {
+            "test_api": type(
+                "TestAPI", (), {"__name__": "TestAPI", "__module__": "test"}
+            )
+        }
+        credentials = {"test_api": {"updated_at": "2024-01-01"}}
+        api_type = "test_api"
 
         if api_type in api_registry:
             api_class = api_registry[api_type]
             creds = credentials.get(api_type, {})
             info = {
-                'api_type': api_type,
-                'class_name': api_class.__name__,
-                'has_credentials': bool(creds),
-                'last_updated': creds.get('updated_at')
+                "api_type": api_type,
+                "class_name": api_class.__name__,
+                "has_credentials": bool(creds),
+                "last_updated": creds.get("updated_at"),
             }
         else:
             info = {}
 
-        assert info['api_type'] == 'test_api'
-        assert info['has_credentials'] is True
+        assert info["api_type"] == "test_api"
+        assert info["has_credentials"] is True
 
     def test_get_api_info_not_exists(self):
         """Test getting info for non-existent API."""
         api_registry = {}
-        api_type = 'nonexistent'
+        api_type = "nonexistent"
 
         if api_type not in api_registry:
             info = {}
@@ -447,11 +437,13 @@ class TestGetAPIInfo:
 
 # ==================== WEB SCRAPER TESTS ====================
 
+
 class TestScraperConfig:
     """Tests for ScraperConfig dataclass."""
 
     def test_config_creation(self):
         """Test scraper config creation."""
+
         @dataclass
         class ScraperConfig:
             name: str
@@ -463,13 +455,13 @@ class TestScraperConfig:
             timeout: int = 30
             retry_count: int = 3
             retry_delay: int = 5
-            user_agent: str = 'Mozilla/5.0'
+            user_agent: str = "Mozilla/5.0"
 
         config = ScraperConfig(
             name="test_scraper",
             base_url="https://example.com",
             jurisdiction="Test County",
-            data_type="property"
+            data_type="property",
         )
 
         assert config.name == "test_scraper"
@@ -477,6 +469,7 @@ class TestScraperConfig:
 
     def test_config_defaults(self):
         """Test config default values."""
+
         @dataclass
         class ScraperConfig:
             name: str
@@ -493,7 +486,7 @@ class TestScraperConfig:
             name="test",
             base_url="https://test.com",
             jurisdiction="Test",
-            data_type="test"
+            data_type="test",
         )
 
         assert config.timeout == 30
@@ -506,17 +499,17 @@ class TestBaseWebScraperInit:
     def test_session_headers(self):
         """Test session headers configuration."""
         headers = {
-            'User-Agent': 'Mozilla/5.0',
-            'Accept': 'text/html,application/xhtml+xml',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
-            'Connection': 'keep-alive',
-            'DNT': '1',
-            'Upgrade-Insecure-Requests': '1'
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "text/html,application/xhtml+xml",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Accept-Encoding": "gzip, deflate",
+            "Connection": "keep-alive",
+            "DNT": "1",
+            "Upgrade-Insecure-Requests": "1",
         }
 
-        assert 'User-Agent' in headers
-        assert 'DNT' in headers
+        assert "User-Agent" in headers
+        assert "DNT" in headers
 
     def test_initial_request_state(self):
         """Test initial request state."""
@@ -605,10 +598,10 @@ class TestGetSoup:
         from bs4 import BeautifulSoup
 
         html = "<html><body><div>Test</div></body></html>"
-        soup = BeautifulSoup(html, 'html.parser')
+        soup = BeautifulSoup(html, "html.parser")
 
         assert soup is not None
-        assert soup.find('div').text == 'Test'
+        assert soup.find("div").text == "Test"
 
     def test_get_soup_no_html(self):
         """Test getting soup when no HTML."""
@@ -632,42 +625,42 @@ class TestNormalizeRecord:
         config_data_type = "property"
 
         record = {
-            'id': 'test_1',
-            'title': 'Test Record',
-            'description': 'Description',
-            'amount': 100000,
-            'date': '2024-01-01',
-            'url': 'https://example.com/1'
+            "id": "test_1",
+            "title": "Test Record",
+            "description": "Description",
+            "amount": 100000,
+            "date": "2024-01-01",
+            "url": "https://example.com/1",
         }
 
         normalized = {
-            'source': config_name,
-            'source_id': record.get('id'),
-            'title': record.get('title', 'Untitled Record'),
-            'description': record.get('description', 'No description'),
-            'amount': record.get('amount'),
-            'date': record.get('date'),
-            'url': record.get('url', ''),
-            'jurisdiction': config_jurisdiction,
-            'data_type': config_data_type,
-            'raw_data': record,
-            'collected_at': datetime.now().isoformat(),
-            'scraper_version': '1.0'
+            "source": config_name,
+            "source_id": record.get("id"),
+            "title": record.get("title", "Untitled Record"),
+            "description": record.get("description", "No description"),
+            "amount": record.get("amount"),
+            "date": record.get("date"),
+            "url": record.get("url", ""),
+            "jurisdiction": config_jurisdiction,
+            "data_type": config_data_type,
+            "raw_data": record,
+            "collected_at": datetime.now().isoformat(),
+            "scraper_version": "1.0",
         }
 
-        assert normalized['source'] == 'test_scraper'
-        assert normalized['jurisdiction'] == 'Test County'
+        assert normalized["source"] == "test_scraper"
+        assert normalized["jurisdiction"] == "Test County"
 
     def test_normalize_record_missing_fields(self):
         """Test normalization with missing fields."""
         record = {}
 
-        source_id = record.get('id', f"default_{datetime.now().timestamp()}")
-        title = record.get('title', 'Untitled Record')
-        description = record.get('description', 'No description available')
+        source_id = record.get("id", f"default_{datetime.now().timestamp()}")
+        title = record.get("title", "Untitled Record")
+        description = record.get("description", "No description available")
 
-        assert title == 'Untitled Record'
-        assert description == 'No description available'
+        assert title == "Untitled Record"
+        assert description == "No description available"
 
 
 class TestWebScraperManagerInit:
@@ -680,8 +673,8 @@ class TestWebScraperManagerInit:
 
     def test_base_dir_configuration(self):
         """Test base directory configuration."""
-        base_dir = 'datagod/scrapers/data'
-        assert base_dir == 'datagod/scrapers/data'
+        base_dir = "datagod/scrapers/data"
+        assert base_dir == "datagod/scrapers/data"
 
 
 class TestAddScraper:
@@ -754,7 +747,7 @@ class TestSaveScraperData:
     def test_filename_generation(self):
         """Test filename generation."""
         scraper_name = "test_scraper"
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{scraper_name}_scraped_data_{timestamp}.json"
 
         assert filename.startswith("test_scraper_scraped_data_")
@@ -768,18 +761,18 @@ class TestMockWebScraper:
         """Test mock scraping."""
         mock_records = [
             {
-                'id': f'mock_scrape_{i}',
-                'title': f'Mock Scraped Record {i}',
-                'description': f'This is a mock scraped record {i}',
-                'amount': 2000.0 + i * 150,
-                'date': '2023-02-01',
-                'url': f'https://example.com/scraped/{i}'
+                "id": f"mock_scrape_{i}",
+                "title": f"Mock Scraped Record {i}",
+                "description": f"This is a mock scraped record {i}",
+                "amount": 2000.0 + i * 150,
+                "date": "2023-02-01",
+                "url": f"https://example.com/scraped/{i}",
             }
             for i in range(1, 11)
         ]
 
         assert len(mock_records) == 10
-        assert mock_records[0]['amount'] == 2150.0
+        assert mock_records[0]["amount"] == 2150.0
 
 
 class TestCaliforniaPropertyScraper:
@@ -790,35 +783,37 @@ class TestCaliforniaPropertyScraper:
         mock_records = []
         for page in range(1, 4):
             for i in range(1, 6):
-                mock_records.append({
-                    'id': f'ca_scrape_{page}_{i}',
-                    'county': 'Los Angeles',
-                    'address': f'{100 + (page-1)*10 + i} Main St'
-                })
+                mock_records.append(
+                    {
+                        "id": f"ca_scrape_{page}_{i}",
+                        "county": "Los Angeles",
+                        "address": f"{100 + (page-1)*10 + i} Main St",
+                    }
+                )
 
         assert len(mock_records) == 15
 
     def test_california_normalize_record(self):
         """Test California record normalization."""
         record = {
-            'owner': 'John Doe',
-            'property_type': 'Single Family',
-            'bedrooms': 3,
-            'bathrooms': 2,
-            'square_feet': 1800,
-            'year_built': 1990
+            "owner": "John Doe",
+            "property_type": "Single Family",
+            "bedrooms": 3,
+            "bathrooms": 2,
+            "square_feet": 1800,
+            "year_built": 1990,
         }
 
         additional_data = {
-            'owner': record['owner'],
-            'property_type': record['property_type'],
-            'bedrooms': record['bedrooms'],
-            'bathrooms': record['bathrooms'],
-            'square_feet': record['square_feet'],
-            'year_built': record['year_built']
+            "owner": record["owner"],
+            "property_type": record["property_type"],
+            "bedrooms": record["bedrooms"],
+            "bathrooms": record["bathrooms"],
+            "square_feet": record["square_feet"],
+            "year_built": record["year_built"],
         }
 
-        assert additional_data['bedrooms'] == 3
+        assert additional_data["bedrooms"] == 3
 
 
 class TestTexasPropertyScraper:
@@ -829,11 +824,13 @@ class TestTexasPropertyScraper:
         mock_records = []
         for page in range(1, 4):
             for i in range(1, 6):
-                mock_records.append({
-                    'id': f'tx_scrape_{page}_{i}',
-                    'county': 'Harris',
-                    'address': f'{200 + (page-1)*10 + i} Oak Ave'
-                })
+                mock_records.append(
+                    {
+                        "id": f"tx_scrape_{page}_{i}",
+                        "county": "Harris",
+                        "address": f"{200 + (page-1)*10 + i} Oak Ave",
+                    }
+                )
 
         assert len(mock_records) == 15
 
@@ -846,11 +843,13 @@ class TestFloridaPropertyScraper:
         mock_records = []
         for page in range(1, 4):
             for i in range(1, 6):
-                mock_records.append({
-                    'id': f'fl_scrape_{page}_{i}',
-                    'county': 'Miami-Dade',
-                    'address': f'{300 + (page-1)*10 + i} Palm St'
-                })
+                mock_records.append(
+                    {
+                        "id": f"fl_scrape_{page}_{i}",
+                        "county": "Miami-Dade",
+                        "address": f"{300 + (page-1)*10 + i} Palm St",
+                    }
+                )
 
         assert len(mock_records) == 15
 
@@ -866,7 +865,12 @@ class TestMainFunction:
     def test_add_multiple_scrapers(self):
         """Test adding multiple scrapers."""
         scrapers = {}
-        names = ["mock_scraper", "california_scraper", "texas_scraper", "florida_scraper"]
+        names = [
+            "mock_scraper",
+            "california_scraper",
+            "texas_scraper",
+            "florida_scraper",
+        ]
 
         for name in names:
             scrapers[name] = {"config": name}
@@ -883,19 +887,20 @@ class TestMainFunction:
 
 # ==================== PROPERTY SCRAPER TESTS ====================
 
+
 class TestPropertyScraperConfig:
     """Tests for property scraper configuration."""
 
     def test_property_scraper_config(self):
         """Test property scraper config."""
         config = {
-            'name': 'property_scraper',
-            'base_url': 'https://property.example.com',
-            'timeout': 30,
-            'rate_limit': 10
+            "name": "property_scraper",
+            "base_url": "https://property.example.com",
+            "timeout": 30,
+            "rate_limit": 10,
         }
 
-        assert config['name'] == 'property_scraper'
+        assert config["name"] == "property_scraper"
 
 
 class TestPropertySearch:
@@ -903,22 +908,19 @@ class TestPropertySearch:
 
     def test_property_search_by_address(self):
         """Test property search by address."""
-        query = {
-            'address': '123 Main St',
-            'city': 'Los Angeles',
-            'state': 'CA'
-        }
+        query = {"address": "123 Main St", "city": "Los Angeles", "state": "CA"}
 
-        assert query['address'] == '123 Main St'
+        assert query["address"] == "123 Main St"
 
     def test_property_search_by_parcel(self):
         """Test property search by parcel."""
-        query = {'parcel_id': '12345-67890'}
+        query = {"parcel_id": "12345-67890"}
 
-        assert query['parcel_id'] == '12345-67890'
+        assert query["parcel_id"] == "12345-67890"
 
 
 # ==================== JURISDICTION RESEARCH TESTS ====================
+
 
 class TestJurisdictionResearchConfig:
     """Tests for jurisdiction research configuration."""
@@ -926,30 +928,31 @@ class TestJurisdictionResearchConfig:
     def test_jurisdiction_research_structure(self):
         """Test jurisdiction research structure."""
         jurisdiction = {
-            'name': 'Test County',
-            'state': 'TX',
-            'county': 'Test',
-            'api_endpoints': [],
-            'scraper_configs': []
+            "name": "Test County",
+            "state": "TX",
+            "county": "Test",
+            "api_endpoints": [],
+            "scraper_configs": [],
         }
 
-        assert jurisdiction['state'] == 'TX'
+        assert jurisdiction["state"] == "TX"
 
     def test_api_discovery(self):
         """Test API discovery for jurisdiction."""
-        discovered_apis = ['property_api', 'deed_api', 'tax_api']
+        discovered_apis = ["property_api", "deed_api", "tax_api"]
 
         assert len(discovered_apis) == 3
 
     def test_validate_api_endpoint(self):
         """Test validating API endpoint."""
-        endpoint = 'https://api.example.com/v1'
-        is_valid = endpoint.startswith('https://') or endpoint.startswith('http://')
+        endpoint = "https://api.example.com/v1"
+        is_valid = endpoint.startswith("https://") or endpoint.startswith("http://")
 
         assert is_valid is True
 
 
 # ==================== ENHANCED BASE SCRAPER TESTS ====================
+
 
 class TestEnhancedBaseScraperConfig:
     """Tests for enhanced base scraper configuration."""
@@ -957,23 +960,23 @@ class TestEnhancedBaseScraperConfig:
     def test_enhanced_config(self):
         """Test enhanced scraper config."""
         config = {
-            'javascript_rendering': True,
-            'captcha_handling': True,
-            'proxy_rotation': True,
-            'screenshot_capture': False
+            "javascript_rendering": True,
+            "captcha_handling": True,
+            "proxy_rotation": True,
+            "screenshot_capture": False,
         }
 
-        assert config['javascript_rendering'] is True
+        assert config["javascript_rendering"] is True
 
     def test_browser_configuration(self):
         """Test browser configuration."""
         browser_config = {
-            'headless': True,
-            'window_size': (1920, 1080),
-            'user_agent': 'Mozilla/5.0'
+            "headless": True,
+            "window_size": (1920, 1080),
+            "user_agent": "Mozilla/5.0",
         }
 
-        assert browser_config['headless'] is True
+        assert browser_config["headless"] is True
 
 
 class TestJavaScriptRendering:
@@ -997,7 +1000,7 @@ class TestCaptchaHandling:
     def test_captcha_detection(self):
         """Test captcha detection."""
         html_content = "<html><body><div class='captcha'>Solve this</div></body></html>"
-        has_captcha = 'captcha' in html_content.lower()
+        has_captcha = "captcha" in html_content.lower()
 
         assert has_captcha is True
 
@@ -1008,9 +1011,9 @@ class TestProxyRotation:
     def test_proxy_list(self):
         """Test proxy list."""
         proxies = [
-            'http://proxy1.example.com:8080',
-            'http://proxy2.example.com:8080',
-            'http://proxy3.example.com:8080'
+            "http://proxy1.example.com:8080",
+            "http://proxy2.example.com:8080",
+            "http://proxy3.example.com:8080",
         ]
 
         assert len(proxies) == 3
@@ -1018,7 +1021,8 @@ class TestProxyRotation:
     def test_select_proxy(self):
         """Test selecting proxy."""
         import random
-        proxies = ['proxy1', 'proxy2', 'proxy3']
+
+        proxies = ["proxy1", "proxy2", "proxy3"]
 
         # Set seed for reproducibility
         random.seed(42)
@@ -1032,10 +1036,10 @@ class TestParallelPageFetching:
 
     def test_batch_urls(self):
         """Test batching URLs for parallel fetch."""
-        urls = [f'https://example.com/page/{i}' for i in range(1, 11)]
+        urls = [f"https://example.com/page/{i}" for i in range(1, 11)]
         batch_size = 3
 
-        batches = [urls[i:i + batch_size] for i in range(0, len(urls), batch_size)]
+        batches = [urls[i : i + batch_size] for i in range(0, len(urls), batch_size)]
 
         assert len(batches) == 4
         assert len(batches[0]) == 3
@@ -1046,7 +1050,7 @@ class TestMemoryManagement:
 
     def test_cleanup_resources(self):
         """Test cleaning up resources."""
-        resources = ['session', 'browser', 'cache']
+        resources = ["session", "browser", "cache"]
         cleaned = []
 
         for resource in resources:
@@ -1076,13 +1080,14 @@ class TestLoggingConfiguration:
     def test_logging_level(self):
         """Test logging level."""
         import logging
+
         level = logging.INFO
 
         assert level == 20
 
     def test_logging_handlers(self):
         """Test logging handlers."""
-        handlers = ['FileHandler', 'StreamHandler']
+        handlers = ["FileHandler", "StreamHandler"]
 
         assert len(handlers) == 2
 
@@ -1092,7 +1097,7 @@ class TestDirectoryOperations:
 
     def test_makedirs_exists_ok(self):
         """Test makedirs with exist_ok."""
-        base_dir = '/tmp/test_data'
+        base_dir = "/tmp/test_data"
 
         # Simulate makedirs
         created = True
@@ -1103,7 +1108,7 @@ class TestDirectoryOperations:
         """Test path operations."""
         from pathlib import Path
 
-        config_dir = Path('/tmp') / 'config'
-        credentials_file = config_dir / 'credentials.json'
+        config_dir = Path("/tmp") / "config"
+        credentials_file = config_dir / "credentials.json"
 
-        assert str(credentials_file).endswith('credentials.json')
+        assert str(credentials_file).endswith("credentials.json")

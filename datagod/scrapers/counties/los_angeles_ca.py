@@ -13,26 +13,26 @@ Note: LA County has modern APIs and portals for most services.
 """
 
 import asyncio
-import aiohttp
-import re
 import json
+import re
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 from bs4 import BeautifulSoup
 
 from .base_county_scraper import (
     BaseCountyScraper,
-    CountyConfig,
-    PropertyRecord,
-    DeedRecord,
-    MortgageRecord,
-    TaxRecord,
-    CourtCase,
-    LienRecord,
-    RecordType,
     CaseType,
+    CountyConfig,
+    CourtCase,
+    DeedRecord,
+    LienRecord,
+    MortgageRecord,
+    PropertyRecord,
+    RecordType,
+    TaxRecord,
 )
-
 
 # Los Angeles County Configuration
 LA_COUNTY_CONFIG = CountyConfig(
@@ -75,10 +75,7 @@ class LosAngelesCountyScraper(BaseCountyScraper):
     # ==================== Property/Assessor Methods ====================
 
     async def search_property_by_address(
-        self,
-        address: str,
-        city: Optional[str] = None,
-        zip_code: Optional[str] = None
+        self, address: str, city: Optional[str] = None, zip_code: Optional[str] = None
     ) -> List[PropertyRecord]:
         """
         Search LA County Assessor by address.
@@ -108,21 +105,33 @@ class LosAngelesCountyScraper(BaseCountyScraper):
 
                     for item in data.get("Parcels", data.get("results", [])):
                         try:
-                            ain = item.get("AIN", item.get("ain", item.get("parcel_id", "")))
+                            ain = item.get(
+                                "AIN", item.get("ain", item.get("parcel_id", ""))
+                            )
                             if not ain:
                                 continue
 
                             record = PropertyRecord(
                                 parcel_id=str(ain),
-                                address=item.get("PropertyAddress", item.get("address")),
+                                address=item.get(
+                                    "PropertyAddress", item.get("address")
+                                ),
                                 city=item.get("City", city),
                                 state="CA",
                                 zip_code=item.get("ZipCode", zip_code),
                                 owner_name=item.get("OwnerName", item.get("owner")),
-                                property_class=item.get("UseCode", item.get("use_code")),
-                                assessed_value=self._parse_currency(item.get("TotalValue", item.get("assessed_value"))),
-                                land_value=self._parse_currency(item.get("LandValue", item.get("land_value"))),
-                                improvement_value=self._parse_currency(item.get("ImpValue", item.get("improvement_value"))),
+                                property_class=item.get(
+                                    "UseCode", item.get("use_code")
+                                ),
+                                assessed_value=self._parse_currency(
+                                    item.get("TotalValue", item.get("assessed_value"))
+                                ),
+                                land_value=self._parse_currency(
+                                    item.get("LandValue", item.get("land_value"))
+                                ),
+                                improvement_value=self._parse_currency(
+                                    item.get("ImpValue", item.get("improvement_value"))
+                                ),
                                 square_feet=int(item.get("LandSqFt", 0) or 0),
                                 year_built=item.get("YearBuilt"),
                                 county="Los Angeles County",
@@ -143,10 +152,7 @@ class LosAngelesCountyScraper(BaseCountyScraper):
         return results
 
     async def _search_assessor_scrape(
-        self,
-        address: str,
-        city: Optional[str] = None,
-        zip_code: Optional[str] = None
+        self, address: str, city: Optional[str] = None, zip_code: Optional[str] = None
     ) -> List[PropertyRecord]:
         """Fallback scrape method for assessor search."""
         results = []
@@ -159,17 +165,17 @@ class LosAngelesCountyScraper(BaseCountyScraper):
             if not html:
                 return results
 
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
 
-            for row in soup.select('.parcel-result, tr.result'):
+            for row in soup.select(".parcel-result, tr.result"):
                 try:
-                    ain_el = row.select_one('.ain, [data-ain]')
-                    addr_el = row.select_one('.address')
+                    ain_el = row.select_one(".ain, [data-ain]")
+                    addr_el = row.select_one(".address")
 
                     if not ain_el:
                         continue
 
-                    ain = ain_el.get_text(strip=True) or ain_el.get('data-ain', '')
+                    ain = ain_el.get_text(strip=True) or ain_el.get("data-ain", "")
 
                     record = PropertyRecord(
                         parcel_id=ain,
@@ -188,10 +194,7 @@ class LosAngelesCountyScraper(BaseCountyScraper):
 
         return results
 
-    async def search_property_by_owner(
-        self,
-        owner_name: str
-    ) -> List[PropertyRecord]:
+    async def search_property_by_owner(self, owner_name: str) -> List[PropertyRecord]:
         """
         Search LA County Assessor by owner name.
         """
@@ -224,7 +227,9 @@ class LosAngelesCountyScraper(BaseCountyScraper):
                                 state="CA",
                                 zip_code=item.get("ZipCode"),
                                 owner_name=item.get("OwnerName", owner_name),
-                                assessed_value=self._parse_currency(item.get("TotalValue")),
+                                assessed_value=self._parse_currency(
+                                    item.get("TotalValue")
+                                ),
                                 property_class=item.get("UseCode"),
                                 county="Los Angeles County",
                                 fips_code="06037",
@@ -240,8 +245,7 @@ class LosAngelesCountyScraper(BaseCountyScraper):
         return results
 
     async def search_property_by_parcel(
-        self,
-        parcel_id: str
+        self, parcel_id: str
     ) -> Optional[PropertyRecord]:
         """
         Get property details by AIN (Assessor's Identification Number).
@@ -251,7 +255,7 @@ class LosAngelesCountyScraper(BaseCountyScraper):
         await self._ensure_session()
 
         # Clean AIN - remove dashes if present
-        ain = re.sub(r'[^0-9]', '', parcel_id)
+        ain = re.sub(r"[^0-9]", "", parcel_id)
 
         try:
             # Direct AIN lookup
@@ -306,7 +310,7 @@ class LosAngelesCountyScraper(BaseCountyScraper):
             if not html:
                 return None
 
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
 
             record = PropertyRecord(
                 parcel_id=ain,
@@ -316,9 +320,9 @@ class LosAngelesCountyScraper(BaseCountyScraper):
             )
 
             # Parse property info from page
-            for row in soup.select('.property-detail tr, .detail-row'):
-                label = row.select_one('th, .label')
-                value = row.select_one('td, .value')
+            for row in soup.select(".property-detail tr, .detail-row"):
+                label = row.select_one("th, .label")
+                value = row.select_one("td, .value")
 
                 if not label or not value:
                     continue
@@ -326,19 +330,19 @@ class LosAngelesCountyScraper(BaseCountyScraper):
                 label_text = label.get_text(strip=True).lower()
                 value_text = value.get_text(strip=True)
 
-                if 'address' in label_text and 'situs' in label_text:
+                if "address" in label_text and "situs" in label_text:
                     record.address = value_text
-                elif 'owner' in label_text:
+                elif "owner" in label_text:
                     record.owner_name = self._clean_name(value_text)
-                elif 'total value' in label_text or 'assessed' in label_text:
+                elif "total value" in label_text or "assessed" in label_text:
                     record.assessed_value = self._parse_currency(value_text)
-                elif 'land value' in label_text:
+                elif "land value" in label_text:
                     record.land_value = self._parse_currency(value_text)
-                elif 'improvement' in label_text:
+                elif "improvement" in label_text:
                     record.improvement_value = self._parse_currency(value_text)
-                elif 'use code' in label_text:
+                elif "use code" in label_text:
                     record.property_class = value_text
-                elif 'year built' in label_text:
+                elif "year built" in label_text:
                     try:
                         record.year_built = int(value_text)
                     except ValueError:
@@ -359,7 +363,7 @@ class LosAngelesCountyScraper(BaseCountyScraper):
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         as_grantor: bool = True,
-        as_grantee: bool = True
+        as_grantee: bool = True,
     ) -> List[DeedRecord]:
         """
         Search LA County Recorder by party name.
@@ -371,7 +375,11 @@ class LosAngelesCountyScraper(BaseCountyScraper):
             search_url = "https://www.lavote.gov/apps/ocrportal/api/search"
 
             start = start_date.strftime("%Y-%m-%d") if start_date else "1900-01-01"
-            end = end_date.strftime("%Y-%m-%d") if end_date else datetime.now().strftime("%Y-%m-%d")
+            end = (
+                end_date.strftime("%Y-%m-%d")
+                if end_date
+                else datetime.now().strftime("%Y-%m-%d")
+            )
 
             search_data = {
                 "searchType": "name",
@@ -389,18 +397,28 @@ class LosAngelesCountyScraper(BaseCountyScraper):
 
                     for item in data.get("documents", data.get("results", [])):
                         try:
-                            doc_num = item.get("documentNumber", item.get("doc_num", ""))
+                            doc_num = item.get(
+                                "documentNumber", item.get("doc_num", "")
+                            )
                             if not doc_num:
                                 continue
 
                             record = DeedRecord(
                                 document_number=str(doc_num),
-                                record_type=item.get("documentType", item.get("doc_type", "Unknown")),
+                                record_type=item.get(
+                                    "documentType", item.get("doc_type", "Unknown")
+                                ),
                                 grantor=item.get("grantor"),
                                 grantee=item.get("grantee"),
-                                recording_date=self._parse_date(item.get("recordingDate")),
-                                document_date=self._parse_date(item.get("documentDate")),
-                                consideration=self._parse_currency(item.get("consideration")),
+                                recording_date=self._parse_date(
+                                    item.get("recordingDate")
+                                ),
+                                document_date=self._parse_date(
+                                    item.get("documentDate")
+                                ),
+                                consideration=self._parse_currency(
+                                    item.get("consideration")
+                                ),
                                 book=item.get("book"),
                                 page=item.get("page"),
                                 parcel_id=item.get("ain"),
@@ -422,7 +440,7 @@ class LosAngelesCountyScraper(BaseCountyScraper):
         self,
         parcel_id: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[DeedRecord]:
         """
         Search LA County Recorder by AIN.
@@ -430,13 +448,17 @@ class LosAngelesCountyScraper(BaseCountyScraper):
         await self._ensure_session()
         results = []
 
-        ain = re.sub(r'[^0-9]', '', parcel_id)
+        ain = re.sub(r"[^0-9]", "", parcel_id)
 
         try:
             search_url = "https://www.lavote.gov/apps/ocrportal/api/search"
 
             start = start_date.strftime("%Y-%m-%d") if start_date else "1900-01-01"
-            end = end_date.strftime("%Y-%m-%d") if end_date else datetime.now().strftime("%Y-%m-%d")
+            end = (
+                end_date.strftime("%Y-%m-%d")
+                if end_date
+                else datetime.now().strftime("%Y-%m-%d")
+            )
 
             search_data = {
                 "searchType": "ain",
@@ -461,8 +483,12 @@ class LosAngelesCountyScraper(BaseCountyScraper):
                                 record_type=item.get("documentType", "Unknown"),
                                 grantor=item.get("grantor"),
                                 grantee=item.get("grantee"),
-                                recording_date=self._parse_date(item.get("recordingDate")),
-                                consideration=self._parse_currency(item.get("consideration")),
+                                recording_date=self._parse_date(
+                                    item.get("recordingDate")
+                                ),
+                                consideration=self._parse_currency(
+                                    item.get("consideration")
+                                ),
                                 parcel_id=ain,
                                 county="Los Angeles County",
                                 state="CA",
@@ -485,7 +511,7 @@ class LosAngelesCountyScraper(BaseCountyScraper):
         name: str,
         case_type: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """
         Search LA County Superior Court cases by party name.
@@ -508,14 +534,16 @@ class LosAngelesCountyScraper(BaseCountyScraper):
             if not html:
                 return results
 
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
 
             # Parse search results
-            results_table = soup.select_one('#MainContent_gvSearchResults, .case-results')
+            results_table = soup.select_one(
+                "#MainContent_gvSearchResults, .case-results"
+            )
             if results_table:
-                for row in results_table.select('tr')[1:]:  # Skip header
+                for row in results_table.select("tr")[1:]:  # Skip header
                     try:
-                        cells = row.select('td')
+                        cells = row.select("td")
                         if len(cells) < 3:
                             continue
 
@@ -525,18 +553,36 @@ class LosAngelesCountyScraper(BaseCountyScraper):
 
                         case = CourtCase(
                             case_number=case_num,
-                            case_type=cells[1].get_text(strip=True) if len(cells) > 1 else "Unknown",
-                            case_title=cells[2].get_text(strip=True) if len(cells) > 2 else None,
-                            filing_date=self._parse_date(cells[3].get_text(strip=True)) if len(cells) > 3 else None,
-                            status=cells[4].get_text(strip=True) if len(cells) > 4 else None,
+                            case_type=(
+                                cells[1].get_text(strip=True)
+                                if len(cells) > 1
+                                else "Unknown"
+                            ),
+                            case_title=(
+                                cells[2].get_text(strip=True)
+                                if len(cells) > 2
+                                else None
+                            ),
+                            filing_date=(
+                                self._parse_date(cells[3].get_text(strip=True))
+                                if len(cells) > 3
+                                else None
+                            ),
+                            status=(
+                                cells[4].get_text(strip=True)
+                                if len(cells) > 4
+                                else None
+                            ),
                             county="Los Angeles County",
                             state="CA",
                             fips_code="06037",
                         )
 
                         # Parse plaintiff/defendant from case title
-                        if case.case_title and ' vs ' in case.case_title.lower():
-                            parts = re.split(r'\s+v[s.]?\s+', case.case_title, flags=re.IGNORECASE)
+                        if case.case_title and " vs " in case.case_title.lower():
+                            parts = re.split(
+                                r"\s+v[s.]?\s+", case.case_title, flags=re.IGNORECASE
+                            )
                             if len(parts) >= 2:
                                 case.plaintiff = self._clean_name(parts[0])
                                 case.defendant = self._clean_name(parts[1])
@@ -552,8 +598,7 @@ class LosAngelesCountyScraper(BaseCountyScraper):
         return results
 
     async def search_court_cases_by_number(
-        self,
-        case_number: str
+        self, case_number: str
     ) -> Optional[CourtCase]:
         """
         Get LA County Superior Court case by case number.
@@ -567,7 +612,7 @@ class LosAngelesCountyScraper(BaseCountyScraper):
             if not html:
                 return None
 
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
 
             case = CourtCase(
                 case_number=case_number,
@@ -578,9 +623,9 @@ class LosAngelesCountyScraper(BaseCountyScraper):
             )
 
             # Parse case details
-            for row in soup.select('.case-detail tr, .detail-row'):
-                label = row.select_one('th, .label, td:first-child')
-                value = row.select_one('td:last-child, .value')
+            for row in soup.select(".case-detail tr, .detail-row"):
+                label = row.select_one("th, .label, td:first-child")
+                value = row.select_one("td:last-child, .value")
 
                 if not label or not value:
                     continue
@@ -588,17 +633,17 @@ class LosAngelesCountyScraper(BaseCountyScraper):
                 label_text = label.get_text(strip=True).lower()
                 value_text = value.get_text(strip=True)
 
-                if 'case type' in label_text:
+                if "case type" in label_text:
                     case.case_type = value_text
-                elif 'status' in label_text:
+                elif "status" in label_text:
                     case.status = value_text
-                elif 'filing date' in label_text or 'filed' in label_text:
+                elif "filing date" in label_text or "filed" in label_text:
                     case.filing_date = self._parse_date(value_text)
-                elif 'judge' in label_text:
+                elif "judge" in label_text:
                     case.judge = value_text
-                elif 'plaintiff' in label_text or 'petitioner' in label_text:
+                elif "plaintiff" in label_text or "petitioner" in label_text:
                     case.plaintiff = self._clean_name(value_text)
-                elif 'defendant' in label_text or 'respondent' in label_text:
+                elif "defendant" in label_text or "respondent" in label_text:
                     case.defendant = self._clean_name(value_text)
 
             return case
@@ -616,7 +661,7 @@ class LosAngelesCountyScraper(BaseCountyScraper):
         """
         await self._ensure_session()
 
-        ain = re.sub(r'[^0-9]', '', parcel_id)
+        ain = re.sub(r"[^0-9]", "", parcel_id)
 
         try:
             search_url = f"https://ttc.lacounty.gov/proptax/api/parcel/{ain}"
@@ -657,9 +702,10 @@ class LosAngelesCountyScraper(BaseCountyScraper):
 def search_la_county_property_sync(
     address: Optional[str] = None,
     owner: Optional[str] = None,
-    ain: Optional[str] = None
+    ain: Optional[str] = None,
 ) -> List[PropertyRecord]:
     """Synchronous wrapper for LA County property search."""
+
     async def _search():
         async with LosAngelesCountyScraper() as scraper:
             if ain:
@@ -670,14 +716,15 @@ def search_la_county_property_sync(
             elif address:
                 return await scraper.search_property_by_address(address)
             return []
+
     return asyncio.run(_search())
 
 
 def search_la_county_deeds_sync(
-    name: Optional[str] = None,
-    parcel_id: Optional[str] = None
+    name: Optional[str] = None, parcel_id: Optional[str] = None
 ) -> List[DeedRecord]:
     """Synchronous wrapper for LA County deed search."""
+
     async def _search():
         async with LosAngelesCountyScraper() as scraper:
             if parcel_id:
@@ -685,6 +732,7 @@ def search_la_county_deeds_sync(
             elif name:
                 return await scraper.search_deeds_by_name(name)
             return []
+
     return asyncio.run(_search())
 
 

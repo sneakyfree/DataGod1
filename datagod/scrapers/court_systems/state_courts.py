@@ -23,21 +23,22 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
+
 import aiohttp
 from bs4 import BeautifulSoup
 
 from .base import (
+    CaseDocument,
+    CaseEvent,
+    CaseParty,
+    CaseStatus,
+    CaseType,
+    CourtCase,
+    CourtLevel,
     CourtSystemBase,
     CourtType,
-    CourtLevel,
-    CaseType,
-    CaseStatus,
-    PartyType,
     PartyRole,
-    CourtCase,
-    CaseParty,
-    CaseEvent,
-    CaseDocument,
+    PartyType,
     SearchCriteria,
     SearchResult,
 )
@@ -47,6 +48,7 @@ logger = logging.getLogger(__name__)
 
 class StateCourtSystemType(Enum):
     """Types of state court systems."""
+
     UNIFIED = "unified"  # Statewide unified system
     COUNTY_BASED = "county_based"  # County-administered
     MIXED = "mixed"  # Combination
@@ -56,6 +58,7 @@ class StateCourtSystemType(Enum):
 @dataclass
 class StateCourtInfo:
     """Information about a state's court system."""
+
     state_code: str
     state_name: str
     system_type: StateCourtSystemType
@@ -485,9 +488,7 @@ class StateCourtBase(CourtSystemBase):
     STATE_NAME: str = ""
 
     def __init__(
-        self,
-        state_code: str,
-        session: Optional[aiohttp.ClientSession] = None
+        self, state_code: str, session: Optional[aiohttp.ClientSession] = None
     ):
         """Initialize the state court scraper."""
         super().__init__(session)
@@ -521,7 +522,7 @@ class StateCourtBase(CourtSystemBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         court_level: str = "all",  # supreme, appellate, all
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search appellate court opinions.
@@ -538,7 +539,9 @@ class StateCourtBase(CourtSystemBase):
         Returns:
             SearchResult with matching opinions
         """
-        raise NotImplementedError("Appellate opinion search not implemented for this state")
+        raise NotImplementedError(
+            "Appellate opinion search not implemented for this state"
+        )
 
     async def search_by_county(
         self,
@@ -546,7 +549,7 @@ class StateCourtBase(CourtSystemBase):
         party_name: Optional[str] = None,
         case_number: Optional[str] = None,
         case_types: Optional[List[CaseType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search cases within a specific county.
@@ -595,10 +598,11 @@ class PennsylvaniaUJS(StateCourtBase):
         filed_end_date: Optional[date] = None,
         case_types: Optional[List[CaseType]] = None,
         include_closed: bool = True,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search PA courts by party name."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.BASE_URL}DocketSheets/CP.aspx"
@@ -626,7 +630,7 @@ class PennsylvaniaUJS(StateCourtBase):
         results_table = soup.find("table", {"id": "searchResults"})
 
         if results_table:
-            for row in results_table.find_all("tr")[1:max_results+1]:
+            for row in results_table.find_all("tr")[1 : max_results + 1]:
                 cells = row.find_all("td")
                 if len(cells) >= 4:
                     case = CourtCase(
@@ -635,7 +639,9 @@ class PennsylvaniaUJS(StateCourtBase):
                         court_type=self.COURT_TYPE,
                         court_level=self.COURT_LEVEL,
                         case_title=cells[2].get_text(strip=True),
-                        filing_date=self._parse_date(cells[3].get_text(strip=True) if len(cells) > 3 else ""),
+                        filing_date=self._parse_date(
+                            cells[3].get_text(strip=True) if len(cells) > 3 else ""
+                        ),
                         state=self.STATE,
                         source_system="PA UJS Portal",
                     )
@@ -755,10 +761,11 @@ class WisconsinCCAP(StateCourtBase):
         filed_end_date: Optional[date] = None,
         case_types: Optional[List[CaseType]] = None,
         include_closed: bool = True,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Wisconsin circuit courts by party name."""
         import time
+
         start_time = time.time()
 
         # WCCA uses a simple query interface
@@ -782,7 +789,7 @@ class WisconsinCCAP(StateCourtBase):
         results_table = soup.find("table", {"class": "results"})
 
         if results_table:
-            for row in results_table.find_all("tr")[1:max_results+1]:
+            for row in results_table.find_all("tr")[1 : max_results + 1]:
                 cells = row.find_all("td")
                 if len(cells) >= 5:
                     case = CourtCase(
@@ -896,10 +903,11 @@ class MissouriCaseNet(StateCourtBase):
         filed_end_date: Optional[date] = None,
         case_types: Optional[List[CaseType]] = None,
         include_closed: bool = True,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Missouri courts by party name."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.BASE_URL}cases/searchCases.do"
@@ -917,7 +925,7 @@ class MissouriCaseNet(StateCourtBase):
         results_table = soup.find("table", {"id": "caseList"})
 
         if results_table:
-            for row in results_table.find_all("tr")[1:max_results+1]:
+            for row in results_table.find_all("tr")[1 : max_results + 1]:
                 cells = row.find_all("td")
                 if len(cells) >= 4:
                     case = CourtCase(
@@ -977,6 +985,7 @@ class MissouriCaseNet(StateCourtBase):
 
 # Factory function to get state court scraper
 
+
 def get_state_court_scraper(state_code: str) -> Optional[StateCourtBase]:
     """
     Get a state court scraper for a specific state.
@@ -1007,24 +1016,23 @@ def list_state_court_systems() -> List[Dict[str, Any]]:
     """List all configured state court systems."""
     systems = []
     for code, info in STATE_COURT_SYSTEMS.items():
-        systems.append({
-            "state_code": code,
-            "state_name": info.state_name,
-            "system_type": info.system_type.value,
-            "has_statewide_search": info.has_statewide_search,
-            "requires_registration": info.requires_registration,
-            "public_access_url": info.public_access_url,
-        })
+        systems.append(
+            {
+                "state_code": code,
+                "state_name": info.state_name,
+                "system_type": info.system_type.value,
+                "has_statewide_search": info.has_statewide_search,
+                "requires_registration": info.requires_registration,
+                "public_access_url": info.public_access_url,
+            }
+        )
     return systems
 
 
 # Synchronous wrapper functions
 
-def search_state_cases(
-    state_code: str,
-    party_name: str,
-    **kwargs
-) -> SearchResult:
+
+def search_state_cases(state_code: str, party_name: str, **kwargs) -> SearchResult:
     """Synchronous wrapper for state court party search."""
     scraper = get_state_court_scraper(state_code)
     if not scraper:
@@ -1033,13 +1041,11 @@ def search_state_cases(
     async def _search():
         async with scraper:
             return await scraper.search_by_party(party_name, **kwargs)
+
     return asyncio.run(_search())
 
 
-def get_state_case(
-    state_code: str,
-    case_number: str
-) -> Optional[CourtCase]:
+def get_state_case(state_code: str, case_number: str) -> Optional[CourtCase]:
     """Synchronous wrapper for state court case detail."""
     scraper = get_state_court_scraper(state_code)
     if not scraper:
@@ -1048,4 +1054,5 @@ def get_state_case(
     async def _get():
         async with scraper:
             return await scraper.get_case_detail(case_number)
+
     return asyncio.run(_get())

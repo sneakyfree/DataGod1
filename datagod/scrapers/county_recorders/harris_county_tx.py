@@ -32,12 +32,12 @@ from bs4 import BeautifulSoup
 
 from .base import (
     CountyRecorderBase,
-    DocumentType,
+    DocumentParty,
     DocumentStatus,
+    DocumentType,
+    LegalDescription,
     PartyRole,
     RecordedDocument,
-    DocumentParty,
-    LegalDescription,
     SearchCriteria,
     SearchResult,
 )
@@ -92,7 +92,6 @@ class HarrisCountyRecorder(CountyRecorderBase):
         "DEED WITHOUT WARRANTY": DocumentType.BARGAIN_SALE_DEED,
         "GIFT DEED": DocumentType.GRANT_DEED,
         "CORRECTION DEED": DocumentType.CORRECTION_DEED,
-
         # Deeds of Trust (Texas equivalent of mortgage)
         "DOT": DocumentType.DEED_OF_TRUST,
         "D/T": DocumentType.DEED_OF_TRUST,
@@ -112,11 +111,9 @@ class HarrisCountyRecorder(CountyRecorderBase):
         "LOAN MODIFICATION AGREEMENT": DocumentType.MORTGAGE_MODIFICATION,
         "SUB": DocumentType.SUBORDINATION_AGREEMENT,
         "SUBORDINATION AGREEMENT": DocumentType.SUBORDINATION_AGREEMENT,
-
         # Texas Home Equity
         "HOME EQUITY DEED OF TRUST": DocumentType.DEED_OF_TRUST,
         "HELOC": DocumentType.DEED_OF_TRUST,
-
         # Liens
         "MML": DocumentType.MECHANICS_LIEN,
         "MECHANIC'S LIEN": DocumentType.MECHANICS_LIEN,
@@ -138,7 +135,6 @@ class HarrisCountyRecorder(CountyRecorderBase):
         "HOA LIEN": DocumentType.HOA_LIEN,
         "ASSESSMENT LIEN": DocumentType.HOA_LIEN,
         "CHILD SUPPORT LIEN": DocumentType.CHILD_SUPPORT_LIEN,
-
         # Foreclosure (Texas non-judicial)
         "NOS": DocumentType.NOTICE_OF_SALE,
         "NOTICE OF SUBSTITUTE TRUSTEE'S SALE": DocumentType.NOTICE_OF_SALE,
@@ -148,14 +144,12 @@ class HarrisCountyRecorder(CountyRecorderBase):
         "LP": DocumentType.LIS_PENDENS,
         "LIS PENDENS": DocumentType.LIS_PENDENS,
         "NOTICE OF LIS PENDENS": DocumentType.LIS_PENDENS,
-
         # UCC (filed at county level in Texas for fixtures)
         "UCC": DocumentType.UCC_FINANCING,
         "UCC1": DocumentType.UCC_FINANCING,
         "UCC-1": DocumentType.UCC_FINANCING,
         "FINANCING STATEMENT": DocumentType.UCC_FINANCING,
         "FIXTURE FILING": DocumentType.UCC_FINANCING,
-
         # Easements and Restrictions
         "EASE": DocumentType.EASEMENT,
         "EASEMENT": DocumentType.EASEMENT,
@@ -167,7 +161,6 @@ class HarrisCountyRecorder(CountyRecorderBase):
         "RESTRICTIONS": DocumentType.RESTRICTIVE_COVENANT,
         "RESTRICTIVE COVENANT": DocumentType.RESTRICTIVE_COVENANT,
         "DEED RESTRICTION": DocumentType.RESTRICTIVE_COVENANT,
-
         # Other common Texas documents
         "AFF": DocumentType.AFFIDAVIT,
         "AFFIDAVIT": DocumentType.AFFIDAVIT,
@@ -185,13 +178,11 @@ class HarrisCountyRecorder(CountyRecorderBase):
         "MINERAL LEASE": DocumentType.LEASE,
         "MEMORANDUM OF LEASE": DocumentType.MEMORANDUM,
         "OPTION": DocumentType.OPTION_TO_PURCHASE,
-
         # Plats and Maps
         "PLAT": DocumentType.PLAT_MAP,
         "SUBDIVISION PLAT": DocumentType.SUBDIVISION_MAP,
         "REPLAT": DocumentType.PLAT_MAP,
         "AMENDING PLAT": DocumentType.PLAT_MAP,
-
         # Vital records (filed with County Clerk)
         "MARRIAGE LICENSE": DocumentType.MARRIAGE_LICENSE,
         "MARRIAGE": DocumentType.MARRIAGE_LICENSE,
@@ -246,9 +237,11 @@ class HarrisCountyRecorder(CountyRecorderBase):
         soup = self._parse_html(html)
 
         # Find the results grid/table
-        results_table = soup.find("table", {"id": "gvResults"}) or \
-                        soup.find("table", {"class": "results"}) or \
-                        soup.find("table", {"class": "GridView"})
+        results_table = (
+            soup.find("table", {"id": "gvResults"})
+            or soup.find("table", {"class": "results"})
+            or soup.find("table", {"class": "GridView"})
+        )
 
         if not results_table:
             # Check for "no results" message
@@ -308,20 +301,24 @@ class HarrisCountyRecorder(CountyRecorderBase):
             for name in self._split_party_names(grantor_text):
                 if name:
                     grantors.append(self._normalize_name(name))
-                    parties.append(DocumentParty(
-                        name=self._normalize_name(name),
-                        role=PartyRole.GRANTOR,
-                        raw_name=name
-                    ))
+                    parties.append(
+                        DocumentParty(
+                            name=self._normalize_name(name),
+                            role=PartyRole.GRANTOR,
+                            raw_name=name,
+                        )
+                    )
 
             for name in self._split_party_names(grantee_text):
                 if name:
                     grantees.append(self._normalize_name(name))
-                    parties.append(DocumentParty(
-                        name=self._normalize_name(name),
-                        role=PartyRole.GRANTEE,
-                        raw_name=name
-                    ))
+                    parties.append(
+                        DocumentParty(
+                            name=self._normalize_name(name),
+                            role=PartyRole.GRANTEE,
+                            raw_name=name,
+                        )
+                    )
 
             # Parse legal description
             legal_descriptions = []
@@ -362,7 +359,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
                     "grantee_raw": grantee_text,
                     "legal_raw": legal_text,
                     "vol_page": vol_page,
-                }
+                },
             )
 
         except Exception as e:
@@ -425,7 +422,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search Harris County records by party name.
@@ -443,6 +440,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
             SearchResult with matching documents
         """
         import time
+
         start_time = time.time()
 
         if not self._viewstate:
@@ -478,9 +476,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
 
         try:
             status, html = await self._fetch(
-                self.SEARCH_URL,
-                method="POST",
-                data=form_data
+                self.SEARCH_URL, method="POST", data=form_data
             )
 
             if status != 200:
@@ -489,7 +485,9 @@ class HarrisCountyRecorder(CountyRecorderBase):
                 documents = self._parse_search_results(html)
 
                 if document_types:
-                    documents = [d for d in documents if d.document_type in document_types]
+                    documents = [
+                        d for d in documents if d.document_type in document_types
+                    ]
 
                 all_documents.extend(documents)
 
@@ -503,18 +501,22 @@ class HarrisCountyRecorder(CountyRecorderBase):
                 page = 2
                 while len(all_documents) < max_results:
                     # Check for next page link
-                    next_link = soup.find("a", text=str(page)) or soup.find("a", {"class": "next"})
+                    next_link = soup.find("a", text=str(page)) or soup.find(
+                        "a", {"class": "next"}
+                    )
                     if not next_link:
                         break
 
                     # Post for next page
                     form_data["__VIEWSTATE"] = self._viewstate or ""
-                    form_data["__EVENTTARGET"] = next_link.get("href", "").replace("javascript:__doPostBack('", "").split("'")[0]
+                    form_data["__EVENTTARGET"] = (
+                        next_link.get("href", "")
+                        .replace("javascript:__doPostBack('", "")
+                        .split("'")[0]
+                    )
 
                     status, html = await self._fetch(
-                        self.SEARCH_URL,
-                        method="POST",
-                        data=form_data
+                        self.SEARCH_URL, method="POST", data=form_data
                     )
 
                     if status != 200:
@@ -525,7 +527,9 @@ class HarrisCountyRecorder(CountyRecorderBase):
                         break
 
                     if document_types:
-                        documents = [d for d in documents if d.document_type in document_types]
+                        documents = [
+                            d for d in documents if d.document_type in document_types
+                        ]
 
                     all_documents.extend(documents)
 
@@ -553,15 +557,14 @@ class HarrisCountyRecorder(CountyRecorderBase):
                 party_type=party_type,
                 start_date=start_date,
                 end_date=end_date,
-                document_types=document_types or []
+                document_types=document_types or [],
             ),
             search_time_ms=elapsed_ms,
-            source_system=self.SYSTEM_NAME
+            source_system=self.SYSTEM_NAME,
         )
 
     async def search_by_document_number(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """
         Search for a specific document by film code.
@@ -584,9 +587,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
 
         try:
             status, html = await self._fetch(
-                self.SEARCH_URL,
-                method="POST",
-                data=form_data
+                self.SEARCH_URL, method="POST", data=form_data
             )
 
             if status != 200:
@@ -610,7 +611,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search Harris County records by property ID / account number.
@@ -630,6 +631,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
             SearchResult with matching documents
         """
         import time
+
         start_time = time.time()
 
         if not self._viewstate:
@@ -652,9 +654,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
 
         try:
             status, html = await self._fetch(
-                self.SEARCH_URL,
-                method="POST",
-                data=form_data
+                self.SEARCH_URL, method="POST", data=form_data
             )
 
             if status != 200:
@@ -663,7 +663,9 @@ class HarrisCountyRecorder(CountyRecorderBase):
                 documents = self._parse_search_results(html)
 
                 if document_types:
-                    documents = [d for d in documents if d.document_type in document_types]
+                    documents = [
+                        d for d in documents if d.document_type in document_types
+                    ]
 
                 all_documents.extend(documents)
 
@@ -682,10 +684,10 @@ class HarrisCountyRecorder(CountyRecorderBase):
                 parcel_number=parcel_number,
                 start_date=start_date,
                 end_date=end_date,
-                document_types=document_types or []
+                document_types=document_types or [],
             ),
             search_time_ms=elapsed_ms,
-            source_system=self.SYSTEM_NAME
+            source_system=self.SYSTEM_NAME,
         )
 
     async def search_by_address(
@@ -695,7 +697,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
         zip_code: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search Harris County records by address.
@@ -721,7 +723,11 @@ class HarrisCountyRecorder(CountyRecorderBase):
         """
         # Extract street name from address as a workaround
         # This is imperfect but may find some results
-        street_match = re.search(r"\d+\s+(.+?)(?:\s+(?:ST|AVE|BLVD|DR|RD|LN|CT|CIR|WAY|PL|TER)\.?\s*$|$)", address, re.I)
+        street_match = re.search(
+            r"\d+\s+(.+?)(?:\s+(?:ST|AVE|BLVD|DR|RD|LN|CT|CIR|WAY|PL|TER)\.?\s*$|$)",
+            address,
+            re.I,
+        )
 
         if street_match:
             street_name = street_match.group(1).strip()
@@ -729,7 +735,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
                 subdivision=street_name,
                 start_date=start_date,
                 end_date=end_date,
-                max_results=max_results
+                max_results=max_results,
             )
 
         # If we can't parse the address, return empty results with a warning
@@ -745,8 +751,8 @@ class HarrisCountyRecorder(CountyRecorderBase):
             warnings=[
                 "Harris County Clerk doesn't support direct address search.",
                 "Look up property at hcad.org for account number and legal description.",
-                "Then search by property ID or legal description."
-            ]
+                "Then search by property ID or legal description.",
+            ],
         )
 
     async def search_by_legal_description(
@@ -756,7 +762,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
         block: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search Harris County records by legal description.
@@ -773,6 +779,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
             SearchResult with matching documents
         """
         import time
+
         start_time = time.time()
 
         if not self._viewstate:
@@ -803,9 +810,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
 
         try:
             status, html = await self._fetch(
-                self.SEARCH_URL,
-                method="POST",
-                data=form_data
+                self.SEARCH_URL, method="POST", data=form_data
             )
 
             if status != 200:
@@ -829,15 +834,14 @@ class HarrisCountyRecorder(CountyRecorderBase):
                 lot=lot,
                 block=block,
                 start_date=start_date,
-                end_date=end_date
+                end_date=end_date,
             ),
             search_time_ms=elapsed_ms,
-            source_system=self.SYSTEM_NAME
+            source_system=self.SYSTEM_NAME,
         )
 
     async def get_document_detail(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """
         Get detailed information for a specific document.
@@ -866,7 +870,7 @@ class HarrisCountyRecorder(CountyRecorderBase):
                 county=self.COUNTY_NAME,
                 state=self.STATE_ABBREV,
                 fips_code=self.FIPS_CODE,
-                source_url=detail_url
+                source_url=detail_url,
             )
 
             # Parse document details from the page
@@ -878,10 +882,14 @@ class HarrisCountyRecorder(CountyRecorderBase):
             logger.error(f"Error getting document detail: {e}")
             return None
 
-    def _parse_detail_page(self, soup: BeautifulSoup, doc: RecordedDocument) -> RecordedDocument:
+    def _parse_detail_page(
+        self, soup: BeautifulSoup, doc: RecordedDocument
+    ) -> RecordedDocument:
         """Parse the document detail page."""
         # Find document info table or fields
-        info_table = soup.find("table", {"class": "detail"}) or soup.find("div", {"class": "document-info"})
+        info_table = soup.find("table", {"class": "detail"}) or soup.find(
+            "div", {"class": "document-info"}
+        )
 
         if info_table:
             # Parse table rows or divs
@@ -894,32 +902,44 @@ class HarrisCountyRecorder(CountyRecorderBase):
                     doc = self._apply_detail_field(doc, label, value)
 
         # Also look for labeled spans/divs
-        for label_elem in soup.find_all(["label", "span"], class_=re.compile(r"label|field-name")):
+        for label_elem in soup.find_all(
+            ["label", "span"], class_=re.compile(r"label|field-name")
+        ):
             label = label_elem.get_text(strip=True).lower().rstrip(":")
-            value_elem = label_elem.find_next_sibling() or label_elem.parent.find(class_=re.compile(r"value|field-value"))
+            value_elem = label_elem.find_next_sibling() or label_elem.parent.find(
+                class_=re.compile(r"value|field-value")
+            )
             if value_elem:
                 value = value_elem.get_text(strip=True)
                 doc = self._apply_detail_field(doc, label, value)
 
         # Parse parties section
-        parties_section = soup.find("div", {"id": "parties"}) or soup.find("table", {"class": "parties"})
+        parties_section = soup.find("div", {"id": "parties"}) or soup.find(
+            "table", {"class": "parties"}
+        )
         if parties_section:
             doc.parties = self._parse_parties_section(parties_section)
             doc.grantors = doc.get_grantors()
             doc.grantees = doc.get_grantees()
 
         # Parse legal description
-        legal_section = soup.find("div", {"id": "legal"}) or soup.find("td", text=re.compile(r"legal", re.I))
+        legal_section = soup.find("div", {"id": "legal"}) or soup.find(
+            "td", text=re.compile(r"legal", re.I)
+        )
         if legal_section:
             legal_text = legal_section.get_text(strip=True)
-            legal_text = re.sub(r"^legal\s*description:?\s*", "", legal_text, flags=re.I)
+            legal_text = re.sub(
+                r"^legal\s*description:?\s*", "", legal_text, flags=re.I
+            )
             if legal_text:
                 ld = self._parse_legal_text(legal_text)
                 if ld:
                     doc.legal_descriptions = [ld]
 
         # Check for image availability
-        image_link = soup.find("a", text=re.compile(r"view\s*image|document\s*image", re.I))
+        image_link = soup.find(
+            "a", text=re.compile(r"view\s*image|document\s*image", re.I)
+        )
         if image_link:
             doc.image_available = True
             doc.image_url = urljoin(self.BASE_URL, image_link.get("href", ""))
@@ -933,7 +953,9 @@ class HarrisCountyRecorder(CountyRecorderBase):
 
         return doc
 
-    def _apply_detail_field(self, doc: RecordedDocument, label: str, value: str) -> RecordedDocument:
+    def _apply_detail_field(
+        self, doc: RecordedDocument, label: str, value: str
+    ) -> RecordedDocument:
         """Apply a parsed field to the document."""
         label = label.lower()
 
@@ -967,67 +989,80 @@ class HarrisCountyRecorder(CountyRecorderBase):
         if not grantor_rows:
             grantor_section = section.find(text=re.compile(r"grantor", re.I))
             if grantor_section:
-                parent = grantor_section.find_parent("tr") or grantor_section.find_parent("div")
+                parent = grantor_section.find_parent(
+                    "tr"
+                ) or grantor_section.find_parent("div")
                 if parent:
                     text = parent.get_text()
                     text = re.sub(r"grantor[s]?:?\s*", "", text, flags=re.I)
                     for name in self._split_party_names(text):
-                        parties.append(DocumentParty(
-                            name=self._normalize_name(name),
-                            role=PartyRole.GRANTOR,
-                            raw_name=name
-                        ))
+                        parties.append(
+                            DocumentParty(
+                                name=self._normalize_name(name),
+                                role=PartyRole.GRANTOR,
+                                raw_name=name,
+                            )
+                        )
 
         for row in grantor_rows:
             name = row.get_text(strip=True)
             name = re.sub(r"grantor:?\s*", "", name, flags=re.I)
             if name:
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTOR,
-                    raw_name=name
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTOR,
+                        raw_name=name,
+                    )
+                )
 
         # Find grantee entries
         grantee_rows = section.find_all("tr", class_=re.compile(r"grantee"))
         if not grantee_rows:
             grantee_section = section.find(text=re.compile(r"grantee", re.I))
             if grantee_section:
-                parent = grantee_section.find_parent("tr") or grantee_section.find_parent("div")
+                parent = grantee_section.find_parent(
+                    "tr"
+                ) or grantee_section.find_parent("div")
                 if parent:
                     text = parent.get_text()
                     text = re.sub(r"grantee[s]?:?\s*", "", text, flags=re.I)
                     for name in self._split_party_names(text):
-                        parties.append(DocumentParty(
-                            name=self._normalize_name(name),
-                            role=PartyRole.GRANTEE,
-                            raw_name=name
-                        ))
+                        parties.append(
+                            DocumentParty(
+                                name=self._normalize_name(name),
+                                role=PartyRole.GRANTEE,
+                                raw_name=name,
+                            )
+                        )
 
         for row in grantee_rows:
             name = row.get_text(strip=True)
             name = re.sub(r"grantee:?\s*", "", name, flags=re.I)
             if name:
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTEE,
-                    raw_name=name
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTEE,
+                        raw_name=name,
+                    )
+                )
 
         return parties
 
 
 # Convenience functions for synchronous usage
 
+
 def search_harris_county_by_name(
-    last_name: str,
-    first_name: Optional[str] = None,
-    **kwargs
+    last_name: str, first_name: Optional[str] = None, **kwargs
 ) -> SearchResult:
     """Search Harris County records by name (synchronous)."""
+
     async def _search():
         async with HarrisCountyRecorder() as recorder:
             return await recorder.search_by_name(last_name, first_name, **kwargs)
+
     return asyncio.run(_search())
 
 
@@ -1035,20 +1070,24 @@ def search_harris_county_by_legal(
     subdivision: Optional[str] = None,
     lot: Optional[str] = None,
     block: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> SearchResult:
     """Search Harris County records by legal description (synchronous)."""
+
     async def _search():
         async with HarrisCountyRecorder() as recorder:
-            return await recorder.search_by_legal_description(subdivision, lot, block, **kwargs)
+            return await recorder.search_by_legal_description(
+                subdivision, lot, block, **kwargs
+            )
+
     return asyncio.run(_search())
 
 
-def get_harris_county_document(
-    document_number: str
-) -> Optional[RecordedDocument]:
+def get_harris_county_document(document_number: str) -> Optional[RecordedDocument]:
     """Get a Harris County document by film code (synchronous)."""
+
     async def _get():
         async with HarrisCountyRecorder() as recorder:
             return await recorder.get_document_detail(document_number)
+
     return asyncio.run(_get())

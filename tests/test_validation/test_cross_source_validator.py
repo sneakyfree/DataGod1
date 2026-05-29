@@ -15,16 +15,18 @@ Tests cover:
 - Convenience functions
 """
 
-import pytest
 from datetime import date, datetime, timedelta
+
+import pytest
+
 from datagod.validation.cross_source_validator import (
-    DiscrepancyType,
-    DiscrepancySeverity,
-    SourceDiscrepancy,
     CrossSourceResult,
     CrossSourceValidator,
-    validate_cross_source,
+    DiscrepancySeverity,
+    DiscrepancyType,
+    SourceDiscrepancy,
     reconcile_records,
+    validate_cross_source,
 )
 
 
@@ -82,7 +84,7 @@ class TestSourceDiscrepancy:
             source1_name="county",
             source1_value="123 Main St",
             source2_name="assessor",
-            source2_value="123 Main Street"
+            source2_value="123 Main Street",
         )
         assert disc.field == "address"
         assert disc.discrepancy_type == DiscrepancyType.VALUE_MISMATCH
@@ -100,7 +102,7 @@ class TestSourceDiscrepancy:
             source2_value=100500,
             message="Values differ slightly",
             recommended_value=100250,
-            confidence=0.9
+            confidence=0.9,
         )
         assert disc.message == "Values differ slightly"
         assert disc.recommended_value == 100250
@@ -118,19 +120,19 @@ class TestSourceDiscrepancy:
             source2_value="456 Oak Ave",
             message="Address mismatch",
             recommended_value="123 Main St",
-            confidence=0.6
+            confidence=0.6,
         )
         result = disc.to_dict()
-        assert result['field'] == "address"
-        assert result['discrepancy_type'] == "value_mismatch"
-        assert result['severity'] == "high"
-        assert result['source1_name'] == "county"
-        assert result['source1_value'] == "123 Main St"
-        assert result['source2_name'] == "assessor"
-        assert result['source2_value'] == "456 Oak Ave"
-        assert result['message'] == "Address mismatch"
-        assert result['recommended_value'] == "123 Main St"
-        assert result['confidence'] == 0.6
+        assert result["field"] == "address"
+        assert result["discrepancy_type"] == "value_mismatch"
+        assert result["severity"] == "high"
+        assert result["source1_name"] == "county"
+        assert result["source1_value"] == "123 Main St"
+        assert result["source2_name"] == "assessor"
+        assert result["source2_value"] == "456 Oak Ave"
+        assert result["message"] == "Address mismatch"
+        assert result["recommended_value"] == "123 Main St"
+        assert result["confidence"] == 0.6
 
     def test_discrepancy_to_dict_null_values(self):
         """Test to_dict with null optional values"""
@@ -141,12 +143,12 @@ class TestSourceDiscrepancy:
             source1_name="s1",
             source1_value="value",
             source2_name="s2",
-            source2_value=None
+            source2_value=None,
         )
         result = disc.to_dict()
-        assert result['source2_value'] is None
-        assert result['message'] is None
-        assert result['recommended_value'] is None
+        assert result["source2_value"] is None
+        assert result["message"] is None
+        assert result["recommended_value"] is None
 
 
 class TestCrossSourceResult:
@@ -169,7 +171,7 @@ class TestCrossSourceResult:
             source1_name="s1",
             source1_value="1",
             source2_name="s2",
-            source2_value="2"
+            source2_value="2",
         )
         result.add_discrepancy(disc)
         assert result.is_consistent is False
@@ -185,7 +187,7 @@ class TestCrossSourceResult:
             source1_name="s1",
             source1_value=100,
             source2_name="s2",
-            source2_value=200
+            source2_value=200,
         )
         result.add_discrepancy(disc)
         assert result.is_consistent is False
@@ -200,7 +202,7 @@ class TestCrossSourceResult:
             source1_name="s1",
             source1_value="123 Main St.",
             source2_name="s2",
-            source2_value="123 Main Street"
+            source2_value="123 Main Street",
         )
         result.add_discrepancy(disc)
         assert result.is_consistent is True
@@ -216,7 +218,7 @@ class TestCrossSourceResult:
             source1_name="s1",
             source1_value="John Smith",
             source2_name="s2",
-            source2_value="JOHN SMITH"
+            source2_value="JOHN SMITH",
         )
         result.add_discrepancy(disc)
         assert result.is_consistent is True
@@ -234,7 +236,7 @@ class TestCrossSourceResult:
             source1_name="s1",
             source1_value="a",
             source2_name="s2",
-            source2_value="b"
+            source2_value="b",
         )
         result.add_discrepancy(disc)
         assert result.consistency_score < initial_score
@@ -249,16 +251,16 @@ class TestCrossSourceResult:
             source1_name="county",
             source1_value=100000,
             source2_name="assessor",
-            source2_value=100500
+            source2_value=100500,
         )
         result.add_discrepancy(disc)
 
         data = result.to_dict()
-        assert data['is_consistent'] is True
-        assert 'consistency_score' in data
-        assert data['discrepancy_count'] == 1
-        assert data['sources_compared'] == ["county", "assessor"]
-        assert len(data['discrepancies']) == 1
+        assert data["is_consistent"] is True
+        assert "consistency_score" in data
+        assert data["discrepancy_count"] == 1
+        assert data["sources_compared"] == ["county", "assessor"]
+        assert len(data["discrepancies"]) == 1
 
 
 class TestCrossSourceValidator:
@@ -273,9 +275,7 @@ class TestCrossSourceValidator:
     def custom_validator(self):
         """Create validator with custom tolerances"""
         return CrossSourceValidator(
-            date_tolerance_days=30,
-            numeric_tolerance_percent=0.10,
-            fuzzy_threshold=0.80
+            date_tolerance_days=30, numeric_tolerance_percent=0.10, fuzzy_threshold=0.80
         )
 
     def test_validator_initialization(self, validator):
@@ -292,10 +292,10 @@ class TestCrossSourceValidator:
 
     def test_field_categories(self, validator):
         """Test field categorization"""
-        assert 'parcel_id' in validator.EXACT_MATCH_FIELDS
-        assert 'address' in validator.FUZZY_MATCH_FIELDS
-        assert 'assessed_value' in validator.NUMERIC_FIELDS
-        assert 'last_sale_date' in validator.DATE_FIELDS
+        assert "parcel_id" in validator.EXACT_MATCH_FIELDS
+        assert "address" in validator.FUZZY_MATCH_FIELDS
+        assert "assessed_value" in validator.NUMERIC_FIELDS
+        assert "last_sale_date" in validator.DATE_FIELDS
 
 
 class TestValidateSingleSource:
@@ -330,7 +330,7 @@ class TestValidateExactMatch:
         """Test exact match fields with same values"""
         records = [
             ("source1", {"parcel_id": "123-456"}),
-            ("source2", {"parcel_id": "123-456"})
+            ("source2", {"parcel_id": "123-456"}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is True
@@ -339,7 +339,7 @@ class TestValidateExactMatch:
         """Test exact match fields with different values"""
         records = [
             ("source1", {"parcel_id": "123-456"}),
-            ("source2", {"parcel_id": "789-012"})
+            ("source2", {"parcel_id": "789-012"}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is False
@@ -348,10 +348,7 @@ class TestValidateExactMatch:
 
     def test_exact_match_case_insensitive(self, validator):
         """Test exact match is case insensitive"""
-        records = [
-            ("source1", {"state": "CA"}),
-            ("source2", {"state": "ca"})
-        ]
+        records = [("source1", {"state": "CA"}), ("source2", {"state": "ca"})]
         result = validator.validate(records)
         assert result.is_consistent is True
 
@@ -359,7 +356,7 @@ class TestValidateExactMatch:
         """Test exact match handles whitespace"""
         records = [
             ("source1", {"ein": "12-3456789 "}),
-            ("source2", {"ein": " 12-3456789"})
+            ("source2", {"ein": " 12-3456789"}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is True
@@ -376,7 +373,7 @@ class TestValidateNumericFields:
         """Test numeric fields with exact match"""
         records = [
             ("source1", {"assessed_value": 100000}),
-            ("source2", {"assessed_value": 100000})
+            ("source2", {"assessed_value": 100000}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is True
@@ -385,30 +382,35 @@ class TestValidateNumericFields:
         """Test numeric values within tolerance"""
         records = [
             ("source1", {"assessed_value": 100000}),
-            ("source2", {"assessed_value": 100500})  # 0.5% difference
+            ("source2", {"assessed_value": 100500}),  # 0.5% difference
         ]
         result = validator.validate(records)
         assert result.is_consistent is True
         assert len(result.discrepancies) == 1
-        assert result.discrepancies[0].discrepancy_type == DiscrepancyType.PRECISION_DIFFERENCE
+        assert (
+            result.discrepancies[0].discrepancy_type
+            == DiscrepancyType.PRECISION_DIFFERENCE
+        )
 
     def test_numeric_outside_tolerance(self, validator):
         """Test numeric values outside tolerance"""
         records = [
             ("source1", {"assessed_value": 100000}),
-            ("source2", {"assessed_value": 120000})  # 20% difference
+            ("source2", {"assessed_value": 120000}),  # 20% difference
         ]
         result = validator.validate(records)
         # 20% difference is MEDIUM severity, which doesn't make it inconsistent
         # But >20% difference would be HIGH severity
-        assert result.discrepancies[0].discrepancy_type == DiscrepancyType.VALUE_MISMATCH
+        assert (
+            result.discrepancies[0].discrepancy_type == DiscrepancyType.VALUE_MISMATCH
+        )
         assert result.discrepancies[0].severity == DiscrepancySeverity.MEDIUM
 
     def test_numeric_medium_difference(self, validator):
         """Test numeric values with medium difference"""
         records = [
             ("source1", {"assessed_value": 100000}),
-            ("source2", {"assessed_value": 110000})  # 10% difference
+            ("source2", {"assessed_value": 110000}),  # 10% difference
         ]
         result = validator.validate(records)
         disc = result.discrepancies[0]
@@ -418,7 +420,7 @@ class TestValidateNumericFields:
         """Test numeric values with large difference"""
         records = [
             ("source1", {"assessed_value": 100000}),
-            ("source2", {"assessed_value": 150000})  # 50% difference
+            ("source2", {"assessed_value": 150000}),  # 50% difference
         ]
         result = validator.validate(records)
         disc = result.discrepancies[0]
@@ -428,7 +430,7 @@ class TestValidateNumericFields:
         """Test numeric fields with non-numeric values"""
         records = [
             ("source1", {"assessed_value": 100000}),
-            ("source2", {"assessed_value": "unknown"})
+            ("source2", {"assessed_value": "unknown"}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is False
@@ -445,7 +447,7 @@ class TestValidateDateFields:
         """Test date fields with exact match"""
         records = [
             ("source1", {"last_sale_date": "2024-01-15"}),
-            ("source2", {"last_sale_date": "2024-01-15"})
+            ("source2", {"last_sale_date": "2024-01-15"}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is True
@@ -454,7 +456,7 @@ class TestValidateDateFields:
         """Test dates within tolerance (7 days)"""
         records = [
             ("source1", {"last_sale_date": "2024-01-15"}),
-            ("source2", {"last_sale_date": "2024-01-18"})  # 3 days diff
+            ("source2", {"last_sale_date": "2024-01-18"}),  # 3 days diff
         ]
         result = validator.validate(records)
         assert result.is_consistent is True
@@ -466,7 +468,7 @@ class TestValidateDateFields:
         """Test dates outside tolerance"""
         records = [
             ("source1", {"last_sale_date": "2024-01-15"}),
-            ("source2", {"last_sale_date": "2024-02-15"})  # 31 days diff
+            ("source2", {"last_sale_date": "2024-02-15"}),  # 31 days diff
         ]
         result = validator.validate(records)
         disc = result.discrepancies[0]
@@ -476,7 +478,7 @@ class TestValidateDateFields:
         """Test dates with large difference (>1 year)"""
         records = [
             ("source1", {"last_sale_date": "2024-01-15"}),
-            ("source2", {"last_sale_date": "2022-01-15"})  # 2 years diff
+            ("source2", {"last_sale_date": "2022-01-15"}),  # 2 years diff
         ]
         result = validator.validate(records)
         disc = result.discrepancies[0]
@@ -486,7 +488,7 @@ class TestValidateDateFields:
         """Test dates with different formats"""
         records = [
             ("source1", {"last_sale_date": "2024-01-15"}),
-            ("source2", {"last_sale_date": "01/15/2024"})
+            ("source2", {"last_sale_date": "01/15/2024"}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is True
@@ -495,7 +497,7 @@ class TestValidateDateFields:
         """Test date object vs string"""
         records = [
             ("source1", {"last_sale_date": date(2024, 1, 15)}),
-            ("source2", {"last_sale_date": "2024-01-15"})
+            ("source2", {"last_sale_date": "2024-01-15"}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is True
@@ -504,7 +506,7 @@ class TestValidateDateFields:
         """Test dates with invalid format"""
         records = [
             ("source1", {"last_sale_date": "2024-01-15"}),
-            ("source2", {"last_sale_date": "invalid"})
+            ("source2", {"last_sale_date": "invalid"}),
         ]
         result = validator.validate(records)
         disc = result.discrepancies[0]
@@ -522,7 +524,7 @@ class TestValidateFuzzyMatch:
         """Test fuzzy fields with exact match"""
         records = [
             ("source1", {"address": "123 Main Street"}),
-            ("source2", {"address": "123 Main Street"})
+            ("source2", {"address": "123 Main Street"}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is True
@@ -531,7 +533,7 @@ class TestValidateFuzzyMatch:
         """Test fuzzy fields with similar values"""
         records = [
             ("source1", {"address": "123 Main Street"}),
-            ("source2", {"address": "123 Main St"})
+            ("source2", {"address": "123 Main St"}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is True
@@ -545,27 +547,29 @@ class TestValidateFuzzyMatch:
         """Test fuzzy fields with different values"""
         records = [
             ("source1", {"address": "123 Main Street"}),
-            ("source2", {"address": "456 Oak Avenue"})
+            ("source2", {"address": "456 Oak Avenue"}),
         ]
         result = validator.validate(records)
         # Different addresses result in VALUE_MISMATCH, but severity depends on similarity
         # If similarity < 0.5, it's HIGH severity (inconsistent)
         # If similarity >= 0.5, it's MEDIUM severity (still consistent)
         assert len(result.discrepancies) == 1
-        assert result.discrepancies[0].discrepancy_type == DiscrepancyType.VALUE_MISMATCH
+        assert (
+            result.discrepancies[0].discrepancy_type == DiscrepancyType.VALUE_MISMATCH
+        )
 
     def test_fuzzy_owner_name_variations(self, validator):
         """Test owner name variations"""
         records = [
             ("source1", {"owner_name": "John A. Smith"}),
-            ("source2", {"owner_name": "John Smith"})
+            ("source2", {"owner_name": "John Smith"}),
         ]
         result = validator.validate(records)
         # Should be similar enough
         if result.discrepancies:
             assert result.discrepancies[0].severity in (
                 DiscrepancySeverity.LOW,
-                DiscrepancySeverity.MEDIUM
+                DiscrepancySeverity.MEDIUM,
             )
 
 
@@ -580,7 +584,7 @@ class TestValidateMissingFields:
         """Test field missing in one source"""
         records = [
             ("source1", {"address": "123 Main St", "city": "Springfield"}),
-            ("source2", {"address": "123 Main St"})  # Missing city
+            ("source2", {"address": "123 Main St"}),  # Missing city
         ]
         result = validator.validate(records)
         disc = [d for d in result.discrepancies if d.field == "city"][0]
@@ -590,7 +594,7 @@ class TestValidateMissingFields:
         """Test missing exact match field has high severity"""
         records = [
             ("source1", {"parcel_id": "123-456", "address": "123 Main St"}),
-            ("source2", {"address": "123 Main St"})  # Missing parcel_id
+            ("source2", {"address": "123 Main St"}),  # Missing parcel_id
         ]
         result = validator.validate(records)
         disc = [d for d in result.discrepancies if d.field == "parcel_id"][0]
@@ -600,7 +604,7 @@ class TestValidateMissingFields:
         """Test missing non-critical field has low severity"""
         records = [
             ("source1", {"address": "123 Main St", "notes": "test"}),
-            ("source2", {"address": "123 Main St"})
+            ("source2", {"address": "123 Main St"}),
         ]
         result = validator.validate(records)
         disc = [d for d in result.discrepancies if d.field == "notes"][0]
@@ -610,7 +614,7 @@ class TestValidateMissingFields:
         """Test field missing in both sources"""
         records = [
             ("source1", {"address": "123 Main St"}),
-            ("source2", {"address": "123 Main St"})
+            ("source2", {"address": "123 Main St"}),
         ]
         result = validator.validate(records)
         # No discrepancy for consistently missing field
@@ -628,7 +632,7 @@ class TestValidateCaseDifference:
         """Test case difference is detected"""
         records = [
             ("source1", {"city": "Springfield"}),
-            ("source2", {"city": "SPRINGFIELD"})
+            ("source2", {"city": "SPRINGFIELD"}),
         ]
         result = validator.validate(records)
         # Should detect case difference for non-categorized fields
@@ -650,7 +654,7 @@ class TestValidateMultipleSources:
         records = [
             ("county", {"address": "123 Main St", "value": 100000}),
             ("assessor", {"address": "123 Main St", "value": 100000}),
-            ("mls", {"address": "123 Main St", "value": 100000})
+            ("mls", {"address": "123 Main St", "value": 100000}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is True
@@ -661,7 +665,7 @@ class TestValidateMultipleSources:
         records = [
             ("county", {"parcel_id": "123"}),
             ("assessor", {"parcel_id": "123"}),
-            ("mls", {"parcel_id": "456"})
+            ("mls", {"parcel_id": "456"}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is False
@@ -691,7 +695,7 @@ class TestReconcile:
         """Test reconcile with default priority (first wins)"""
         records = [
             ("source1", {"address": "123 Main St"}),
-            ("source2", {"address": "456 Oak Ave"})
+            ("source2", {"address": "456 Oak Ave"}),
         ]
         result = validator.reconcile(records)
         assert result["address"] == "123 Main St"
@@ -700,27 +704,21 @@ class TestReconcile:
         """Test reconcile with custom priority order"""
         records = [
             ("county", {"address": "123 Main St"}),
-            ("assessor", {"address": "456 Oak Ave"})
+            ("assessor", {"address": "456 Oak Ave"}),
         ]
         result = validator.reconcile(records, priority_order=["assessor", "county"])
         assert result["address"] == "456 Oak Ave"
 
     def test_reconcile_fills_missing(self, validator):
         """Test reconcile fills missing fields"""
-        records = [
-            ("source1", {"field1": "value1"}),
-            ("source2", {"field2": "value2"})
-        ]
+        records = [("source1", {"field1": "value1"}), ("source2", {"field2": "value2"})]
         result = validator.reconcile(records)
         assert result["field1"] == "value1"
         assert result["field2"] == "value2"
 
     def test_reconcile_skips_none(self, validator):
         """Test reconcile skips None values"""
-        records = [
-            ("source1", {"field": None}),
-            ("source2", {"field": "value"})
-        ]
+        records = [("source1", {"field": None}), ("source2", {"field": "value"})]
         result = validator.reconcile(records)
         assert result["field"] == "value"
 
@@ -860,88 +858,98 @@ class TestStatistics:
             CrossSourceResult(is_consistent=True, consistency_score=1.0),
         ]
         stats = validator.get_statistics(results)
-        assert stats['total_comparisons'] == 3
-        assert stats['consistent_records'] == 3
-        assert stats['inconsistent_records'] == 0
-        assert stats['consistency_rate'] == 1.0
+        assert stats["total_comparisons"] == 3
+        assert stats["consistent_records"] == 3
+        assert stats["inconsistent_records"] == 0
+        assert stats["consistency_rate"] == 1.0
 
     def test_statistics_some_inconsistent(self, validator):
         """Test statistics with some inconsistent"""
         result1 = CrossSourceResult()
         result2 = CrossSourceResult()
-        result2.add_discrepancy(SourceDiscrepancy(
-            field="id",
-            discrepancy_type=DiscrepancyType.VALUE_MISMATCH,
-            severity=DiscrepancySeverity.CRITICAL,
-            source1_name="s1",
-            source1_value="1",
-            source2_name="s2",
-            source2_value="2"
-        ))
+        result2.add_discrepancy(
+            SourceDiscrepancy(
+                field="id",
+                discrepancy_type=DiscrepancyType.VALUE_MISMATCH,
+                severity=DiscrepancySeverity.CRITICAL,
+                source1_name="s1",
+                source1_value="1",
+                source2_name="s2",
+                source2_value="2",
+            )
+        )
         result3 = CrossSourceResult()
 
         stats = validator.get_statistics([result1, result2, result3])
-        assert stats['total_comparisons'] == 3
-        assert stats['consistent_records'] == 2
-        assert stats['inconsistent_records'] == 1
+        assert stats["total_comparisons"] == 3
+        assert stats["consistent_records"] == 2
+        assert stats["inconsistent_records"] == 1
 
     def test_statistics_by_type(self, validator):
         """Test statistics by discrepancy type"""
         result = CrossSourceResult()
-        result.add_discrepancy(SourceDiscrepancy(
-            field="f1",
-            discrepancy_type=DiscrepancyType.VALUE_MISMATCH,
-            severity=DiscrepancySeverity.MEDIUM,
-            source1_name="s1",
-            source1_value="a",
-            source2_name="s2",
-            source2_value="b"
-        ))
-        result.add_discrepancy(SourceDiscrepancy(
-            field="f2",
-            discrepancy_type=DiscrepancyType.MISSING_IN_SOURCE,
-            severity=DiscrepancySeverity.LOW,
-            source1_name="s1",
-            source1_value="x",
-            source2_name="s2",
-            source2_value=None
-        ))
+        result.add_discrepancy(
+            SourceDiscrepancy(
+                field="f1",
+                discrepancy_type=DiscrepancyType.VALUE_MISMATCH,
+                severity=DiscrepancySeverity.MEDIUM,
+                source1_name="s1",
+                source1_value="a",
+                source2_name="s2",
+                source2_value="b",
+            )
+        )
+        result.add_discrepancy(
+            SourceDiscrepancy(
+                field="f2",
+                discrepancy_type=DiscrepancyType.MISSING_IN_SOURCE,
+                severity=DiscrepancySeverity.LOW,
+                source1_name="s1",
+                source1_value="x",
+                source2_name="s2",
+                source2_value=None,
+            )
+        )
 
         stats = validator.get_statistics([result])
-        assert stats['discrepancies_by_type']['value_mismatch'] == 1
-        assert stats['discrepancies_by_type']['missing_in_source'] == 1
+        assert stats["discrepancies_by_type"]["value_mismatch"] == 1
+        assert stats["discrepancies_by_type"]["missing_in_source"] == 1
 
     def test_statistics_by_severity(self, validator):
         """Test statistics by severity"""
         result = CrossSourceResult()
-        result.add_discrepancy(SourceDiscrepancy(
-            field="f1",
-            discrepancy_type=DiscrepancyType.VALUE_MISMATCH,
-            severity=DiscrepancySeverity.HIGH,
-            source1_name="s1",
-            source1_value="a",
-            source2_name="s2",
-            source2_value="b"
-        ))
-        result.add_discrepancy(SourceDiscrepancy(
-            field="f2",
-            discrepancy_type=DiscrepancyType.FORMAT_DIFFERENCE,
-            severity=DiscrepancySeverity.LOW,
-            source1_name="s1",
-            source1_value="x",
-            source2_name="s2",
-            source2_value="y"
-        ))
+        result.add_discrepancy(
+            SourceDiscrepancy(
+                field="f1",
+                discrepancy_type=DiscrepancyType.VALUE_MISMATCH,
+                severity=DiscrepancySeverity.HIGH,
+                source1_name="s1",
+                source1_value="a",
+                source2_name="s2",
+                source2_value="b",
+            )
+        )
+        result.add_discrepancy(
+            SourceDiscrepancy(
+                field="f2",
+                discrepancy_type=DiscrepancyType.FORMAT_DIFFERENCE,
+                severity=DiscrepancySeverity.LOW,
+                source1_name="s1",
+                source1_value="x",
+                source2_name="s2",
+                source2_value="y",
+            )
+        )
 
         stats = validator.get_statistics([result])
-        assert stats['discrepancies_by_severity']['high'] == 1
-        assert stats['discrepancies_by_severity']['low'] == 1
+        assert stats["discrepancies_by_severity"]["high"] == 1
+        assert stats["discrepancies_by_severity"]["low"] == 1
 
     def test_statistics_empty(self, validator):
         """Test statistics with empty results"""
         stats = validator.get_statistics([])
-        assert stats['total_comparisons'] == 0
-        assert stats['consistency_rate'] == 0
+        assert stats["total_comparisons"] == 0
+        assert stats["consistency_rate"] == 0
 
 
 class TestConvenienceFunctions:
@@ -949,38 +957,26 @@ class TestConvenienceFunctions:
 
     def test_validate_cross_source(self):
         """Test validate_cross_source function"""
-        records = [
-            ("source1", {"field": "value"}),
-            ("source2", {"field": "value"})
-        ]
+        records = [("source1", {"field": "value"}), ("source2", {"field": "value"})]
         result = validate_cross_source(records)
         assert result.is_consistent is True
 
     def test_validate_cross_source_inconsistent(self):
         """Test validate_cross_source with inconsistent data"""
-        records = [
-            ("source1", {"parcel_id": "123"}),
-            ("source2", {"parcel_id": "456"})
-        ]
+        records = [("source1", {"parcel_id": "123"}), ("source2", {"parcel_id": "456"})]
         result = validate_cross_source(records)
         assert result.is_consistent is False
 
     def test_reconcile_records(self):
         """Test reconcile_records function"""
-        records = [
-            ("source1", {"field1": "value1"}),
-            ("source2", {"field2": "value2"})
-        ]
+        records = [("source1", {"field1": "value1"}), ("source2", {"field2": "value2"})]
         result = reconcile_records(records)
         assert result["field1"] == "value1"
         assert result["field2"] == "value2"
 
     def test_reconcile_records_with_priority(self):
         """Test reconcile_records with priority"""
-        records = [
-            ("source1", {"field": "a"}),
-            ("source2", {"field": "b"})
-        ]
+        records = [("source1", {"field": "a"}), ("source2", {"field": "b"})]
         result = reconcile_records(records, priority_order=["source2", "source1"])
         assert result["field"] == "b"
 
@@ -994,10 +990,7 @@ class TestEdgeCases:
 
     def test_empty_string_values(self, validator):
         """Test empty string values"""
-        records = [
-            ("source1", {"field": ""}),
-            ("source2", {"field": "value"})
-        ]
+        records = [("source1", {"field": ""}), ("source2", {"field": "value"})]
         result = validator.validate(records)
         # Empty string is treated as a value, not None
         assert len(result.discrepancies) >= 0
@@ -1006,7 +999,7 @@ class TestEdgeCases:
         """Test numeric zero values"""
         records = [
             ("source1", {"assessed_value": 0}),
-            ("source2", {"assessed_value": 100000})
+            ("source2", {"assessed_value": 100000}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is False
@@ -1015,7 +1008,7 @@ class TestEdgeCases:
         """Test unicode values"""
         records = [
             ("source1", {"owner_name": "José García"}),
-            ("source2", {"owner_name": "Jose Garcia"})
+            ("source2", {"owner_name": "Jose Garcia"}),
         ]
         result = validator.validate(records)
         # Should handle unicode gracefully
@@ -1026,7 +1019,7 @@ class TestEdgeCases:
         long_str = "a" * 10000
         records = [
             ("source1", {"description": long_str}),
-            ("source2", {"description": long_str})
+            ("source2", {"description": long_str}),
         ]
         result = validator.validate(records)
         assert result.is_consistent is True
@@ -1035,7 +1028,7 @@ class TestEdgeCases:
         """Test special characters in values"""
         records = [
             ("source1", {"address": "123 Main St. #1A"}),
-            ("source2", {"address": "123 Main St #1A"})
+            ("source2", {"address": "123 Main St #1A"}),
         ]
         result = validator.validate(records)
         # Should handle punctuation differences

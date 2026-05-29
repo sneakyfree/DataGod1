@@ -3,10 +3,11 @@ Tests for Stripe subscription endpoints in api_v2.
 Uses proper function-level mocking to avoid sys.modules pollution.
 """
 
-import sys
 import os
-import pytest
+import sys
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Ensure test environment
 os.environ["TESTING"] = "1"
@@ -23,14 +24,15 @@ def _get_app_and_client():
     mock_db.SessionLocal = MagicMock()
 
     saved = {}
-    keys_to_patch = ['api.src.db', 'db']
+    keys_to_patch = ["api.src.db", "db"]
     for k in keys_to_patch:
         saved[k] = sys.modules.get(k)
         if k not in sys.modules or isinstance(sys.modules[k], MagicMock):
             sys.modules[k] = mock_db
 
-    from api.src.api_v2 import app, get_db_manager, get_current_user
     from fastapi.testclient import TestClient
+
+    from api.src.api_v2 import app, get_current_user, get_db_manager
 
     # Restore patched modules
     for k in keys_to_patch:
@@ -50,7 +52,7 @@ def mock_get_current_user():
         "email": "test@example.com",
         "roles": ["user"],
         "subscription_tier": "free",
-        "stripe_customer_id": "cus_existing"
+        "stripe_customer_id": "cus_existing",
     }
 
 
@@ -64,7 +66,7 @@ class MockDBManager:
                 "email": "test@example.com",
                 "full_name": "Test User",
                 "stripe_customer_id": "cus_existing",
-                "subscription_tier": "free"
+                "subscription_tier": "free",
             }
         return None
 
@@ -80,7 +82,9 @@ def test_create_checkout_session():
     # Mock the stripe_service at the module level where api_v2 uses it
     mock_stripe = MagicMock()
     mock_stripe.get_price_id_for_tier.return_value = "price_mock"
-    mock_stripe.create_checkout_session.return_value = {"url": "http://mock-checkout.com"}
+    mock_stripe.create_checkout_session.return_value = {
+        "url": "http://mock-checkout.com"
+    }
 
     with patch("api.src.api_v2.stripe_service", mock_stripe):
         response = client.post("/subscription/checkout?tier=pro")

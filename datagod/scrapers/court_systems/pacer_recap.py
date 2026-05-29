@@ -33,18 +33,18 @@ from urllib.parse import urlencode, urljoin
 import aiohttp
 
 from .base import (
+    CaseCharge,
+    CaseDocument,
+    CaseEvent,
+    CaseParty,
+    CaseStatus,
+    CaseType,
+    CourtCase,
+    CourtLevel,
     CourtSystemBase,
     CourtType,
-    CourtLevel,
-    CaseType,
-    CaseStatus,
-    PartyType,
     PartyRole,
-    CourtCase,
-    CaseParty,
-    CaseEvent,
-    CaseDocument,
-    CaseCharge,
+    PartyType,
     SearchCriteria,
     SearchResult,
 )
@@ -60,7 +60,6 @@ FEDERAL_DISTRICTS = {
     "nhd": {"name": "New Hampshire District Court", "circuit": "1"},
     "prd": {"name": "Puerto Rico District Court", "circuit": "1"},
     "rid": {"name": "Rhode Island District Court", "circuit": "1"},
-
     # 2nd Circuit
     "ctd": {"name": "Connecticut District Court", "circuit": "2"},
     "nyed": {"name": "Eastern District of New York", "circuit": "2"},
@@ -68,7 +67,6 @@ FEDERAL_DISTRICTS = {
     "nysd": {"name": "Southern District of New York", "circuit": "2"},
     "nywd": {"name": "Western District of New York", "circuit": "2"},
     "vtd": {"name": "Vermont District Court", "circuit": "2"},
-
     # 3rd Circuit
     "ded": {"name": "Delaware District Court", "circuit": "3"},
     "njd": {"name": "New Jersey District Court", "circuit": "3"},
@@ -76,7 +74,6 @@ FEDERAL_DISTRICTS = {
     "pamd": {"name": "Middle District of Pennsylvania", "circuit": "3"},
     "pawd": {"name": "Western District of Pennsylvania", "circuit": "3"},
     "vid": {"name": "Virgin Islands District Court", "circuit": "3"},
-
     # 4th Circuit
     "mdd": {"name": "Maryland District Court", "circuit": "4"},
     "nced": {"name": "Eastern District of North Carolina", "circuit": "4"},
@@ -87,7 +84,6 @@ FEDERAL_DISTRICTS = {
     "vawd": {"name": "Western District of Virginia", "circuit": "4"},
     "wvnd": {"name": "Northern District of West Virginia", "circuit": "4"},
     "wvsd": {"name": "Southern District of West Virginia", "circuit": "4"},
-
     # 5th Circuit
     "laed": {"name": "Eastern District of Louisiana", "circuit": "5"},
     "lamd": {"name": "Middle District of Louisiana", "circuit": "5"},
@@ -98,7 +94,6 @@ FEDERAL_DISTRICTS = {
     "txnd": {"name": "Northern District of Texas", "circuit": "5"},
     "txsd": {"name": "Southern District of Texas", "circuit": "5"},
     "txwd": {"name": "Western District of Texas", "circuit": "5"},
-
     # 6th Circuit
     "kyed": {"name": "Eastern District of Kentucky", "circuit": "6"},
     "kywd": {"name": "Western District of Kentucky", "circuit": "6"},
@@ -109,7 +104,6 @@ FEDERAL_DISTRICTS = {
     "tned": {"name": "Eastern District of Tennessee", "circuit": "6"},
     "tnmd": {"name": "Middle District of Tennessee", "circuit": "6"},
     "tnwd": {"name": "Western District of Tennessee", "circuit": "6"},
-
     # 7th Circuit
     "ilcd": {"name": "Central District of Illinois", "circuit": "7"},
     "ilnd": {"name": "Northern District of Illinois", "circuit": "7"},
@@ -118,7 +112,6 @@ FEDERAL_DISTRICTS = {
     "insd": {"name": "Southern District of Indiana", "circuit": "7"},
     "wied": {"name": "Eastern District of Wisconsin", "circuit": "7"},
     "wiwd": {"name": "Western District of Wisconsin", "circuit": "7"},
-
     # 8th Circuit
     "ared": {"name": "Eastern District of Arkansas", "circuit": "8"},
     "arwd": {"name": "Western District of Arkansas", "circuit": "8"},
@@ -130,7 +123,6 @@ FEDERAL_DISTRICTS = {
     "ned": {"name": "Nebraska District Court", "circuit": "8"},
     "ndd": {"name": "North Dakota District Court", "circuit": "8"},
     "sdd": {"name": "South Dakota District Court", "circuit": "8"},
-
     # 9th Circuit
     "akd": {"name": "Alaska District Court", "circuit": "9"},
     "azd": {"name": "Arizona District Court", "circuit": "9"},
@@ -147,7 +139,6 @@ FEDERAL_DISTRICTS = {
     "ord": {"name": "Oregon District Court", "circuit": "9"},
     "waed": {"name": "Eastern District of Washington", "circuit": "9"},
     "wawd": {"name": "Western District of Washington", "circuit": "9"},
-
     # 10th Circuit
     "cod": {"name": "Colorado District Court", "circuit": "10"},
     "ksd": {"name": "Kansas District Court", "circuit": "10"},
@@ -157,7 +148,6 @@ FEDERAL_DISTRICTS = {
     "okwd": {"name": "Western District of Oklahoma", "circuit": "10"},
     "utd": {"name": "Utah District Court", "circuit": "10"},
     "wyd": {"name": "Wyoming District Court", "circuit": "10"},
-
     # 11th Circuit
     "almd": {"name": "Middle District of Alabama", "circuit": "11"},
     "alnd": {"name": "Northern District of Alabama", "circuit": "11"},
@@ -168,26 +158,49 @@ FEDERAL_DISTRICTS = {
     "gamd": {"name": "Middle District of Georgia", "circuit": "11"},
     "gand": {"name": "Northern District of Georgia", "circuit": "11"},
     "gasd": {"name": "Southern District of Georgia", "circuit": "11"},
-
     # DC Circuit
     "dcd": {"name": "District of Columbia District Court", "circuit": "dc"},
 }
 
 # Circuit Courts of Appeals
 CIRCUIT_COURTS = {
-    "ca1": {"name": "First Circuit Court of Appeals", "states": ["MA", "ME", "NH", "PR", "RI"]},
+    "ca1": {
+        "name": "First Circuit Court of Appeals",
+        "states": ["MA", "ME", "NH", "PR", "RI"],
+    },
     "ca2": {"name": "Second Circuit Court of Appeals", "states": ["CT", "NY", "VT"]},
-    "ca3": {"name": "Third Circuit Court of Appeals", "states": ["DE", "NJ", "PA", "VI"]},
-    "ca4": {"name": "Fourth Circuit Court of Appeals", "states": ["MD", "NC", "SC", "VA", "WV"]},
+    "ca3": {
+        "name": "Third Circuit Court of Appeals",
+        "states": ["DE", "NJ", "PA", "VI"],
+    },
+    "ca4": {
+        "name": "Fourth Circuit Court of Appeals",
+        "states": ["MD", "NC", "SC", "VA", "WV"],
+    },
     "ca5": {"name": "Fifth Circuit Court of Appeals", "states": ["LA", "MS", "TX"]},
-    "ca6": {"name": "Sixth Circuit Court of Appeals", "states": ["KY", "MI", "OH", "TN"]},
+    "ca6": {
+        "name": "Sixth Circuit Court of Appeals",
+        "states": ["KY", "MI", "OH", "TN"],
+    },
     "ca7": {"name": "Seventh Circuit Court of Appeals", "states": ["IL", "IN", "WI"]},
-    "ca8": {"name": "Eighth Circuit Court of Appeals", "states": ["AR", "IA", "MN", "MO", "NE", "ND", "SD"]},
-    "ca9": {"name": "Ninth Circuit Court of Appeals", "states": ["AK", "AZ", "CA", "GU", "HI", "ID", "MT", "NV", "MP", "OR", "WA"]},
-    "ca10": {"name": "Tenth Circuit Court of Appeals", "states": ["CO", "KS", "NM", "OK", "UT", "WY"]},
+    "ca8": {
+        "name": "Eighth Circuit Court of Appeals",
+        "states": ["AR", "IA", "MN", "MO", "NE", "ND", "SD"],
+    },
+    "ca9": {
+        "name": "Ninth Circuit Court of Appeals",
+        "states": ["AK", "AZ", "CA", "GU", "HI", "ID", "MT", "NV", "MP", "OR", "WA"],
+    },
+    "ca10": {
+        "name": "Tenth Circuit Court of Appeals",
+        "states": ["CO", "KS", "NM", "OK", "UT", "WY"],
+    },
     "ca11": {"name": "Eleventh Circuit Court of Appeals", "states": ["AL", "FL", "GA"]},
     "cadc": {"name": "DC Circuit Court of Appeals", "states": ["DC"]},
-    "cafc": {"name": "Federal Circuit Court of Appeals", "states": []},  # Patents, trade, etc.
+    "cafc": {
+        "name": "Federal Circuit Court of Appeals",
+        "states": [],
+    },  # Patents, trade, etc.
 }
 
 
@@ -235,7 +248,7 @@ class PacerRecapAPI(CourtSystemBase):
         session: Optional[aiohttp.ClientSession] = None,
         courtlistener_token: Optional[str] = None,
         pacer_username: Optional[str] = None,
-        pacer_password: Optional[str] = None
+        pacer_password: Optional[str] = None,
     ):
         """
         Initialize PACER/RECAP API.
@@ -295,9 +308,17 @@ class PacerRecapAPI(CourtSystemBase):
         for party_data in data.get("parties", []):
             party = self._parse_party(party_data)
             parties.append(party)
-            if party.role in {PartyRole.PLAINTIFF, PartyRole.PETITIONER, PartyRole.APPELLANT}:
+            if party.role in {
+                PartyRole.PLAINTIFF,
+                PartyRole.PETITIONER,
+                PartyRole.APPELLANT,
+            }:
                 plaintiffs.append(party.name)
-            elif party.role in {PartyRole.DEFENDANT, PartyRole.RESPONDENT, PartyRole.APPELLEE}:
+            elif party.role in {
+                PartyRole.DEFENDANT,
+                PartyRole.RESPONDENT,
+                PartyRole.APPELLEE,
+            }:
                 defendants.append(party.name)
 
         # Parse docket entries
@@ -325,7 +346,7 @@ class PacerRecapAPI(CourtSystemBase):
             district=data.get("court", ""),
             source_url=f"https://www.courtlistener.com{data.get('absolute_url', '')}",
             source_system="CourtListener/RECAP",
-            raw_data=data
+            raw_data=data,
         )
 
     def _parse_federal_case_type(self, raw_type: str) -> CaseType:
@@ -348,7 +369,6 @@ class PacerRecapAPI(CourtSystemBase):
             "153": CaseType.CONTRACT,  # Recovery of Veteran's Benefits
             "160": CaseType.CONTRACT,  # Stockholders' Suits
             "190": CaseType.CONTRACT,  # Other Contract
-
             # Real Property
             "210": CaseType.PROPERTY,  # Land Condemnation
             "220": CaseType.FORECLOSURE,  # Foreclosure
@@ -356,7 +376,6 @@ class PacerRecapAPI(CourtSystemBase):
             "240": CaseType.TORT,  # Torts to Land
             "245": CaseType.PROPERTY,  # Tort Product Liability
             "290": CaseType.PROPERTY,  # All Other Real Property
-
             # Personal Injury
             "310": CaseType.PERSONAL_INJURY,  # Airplane
             "315": CaseType.PERSONAL_INJURY,  # Airplane Product Liability
@@ -375,7 +394,6 @@ class PacerRecapAPI(CourtSystemBase):
             "371": CaseType.TORT,  # Truth in Lending
             "380": CaseType.TORT,  # Other Personal Property Damage
             "385": CaseType.PRODUCT_LIABILITY,  # Property Damage Product Liability
-
             # Civil Rights
             "440": CaseType.DISCRIMINATION,  # Other Civil Rights
             "441": CaseType.DISCRIMINATION,  # Voting
@@ -385,15 +403,12 @@ class PacerRecapAPI(CourtSystemBase):
             "445": CaseType.DISCRIMINATION,  # ADA - Employment
             "446": CaseType.DISCRIMINATION,  # ADA - Other
             "448": CaseType.DISCRIMINATION,  # Education
-
             # Bankruptcy
             "422": CaseType.BANKRUPTCY_CH7,
             "423": CaseType.BANKRUPTCY_CH11,
-
             # Securities
             "850": CaseType.SECURITIES,
             "890": CaseType.SECURITIES,
-
             # Intellectual Property
             "820": CaseType.INTELLECTUAL_PROPERTY,  # Copyrights
             "830": CaseType.INTELLECTUAL_PROPERTY,  # Patent
@@ -461,7 +476,7 @@ class PacerRecapAPI(CourtSystemBase):
             attorney_name=attorney_name,
             attorney_firm=attorney_firm,
             is_pro_se=party_data.get("is_pro_se", False),
-            raw_name=party_data.get("name", "")
+            raw_name=party_data.get("name", ""),
         )
 
     def _parse_docket_entry(self, entry: Dict[str, Any]) -> CaseEvent:
@@ -474,7 +489,7 @@ class PacerRecapAPI(CourtSystemBase):
             document_url=entry.get("filepath_local", ""),
             page_count=entry.get("page_count"),
             sequence_number=entry.get("entry_number"),
-            raw_text=entry.get("description", "")
+            raw_text=entry.get("description", ""),
         )
 
     async def search_by_party(
@@ -486,7 +501,7 @@ class PacerRecapAPI(CourtSystemBase):
         case_types: Optional[List[CaseType]] = None,
         include_closed: bool = True,
         max_results: int = 100,
-        court: Optional[str] = None
+        court: Optional[str] = None,
     ) -> SearchResult:
         """
         Search federal court cases by party name using CourtListener API.
@@ -505,6 +520,7 @@ class PacerRecapAPI(CourtSystemBase):
             SearchResult with matching cases
         """
         import time
+
         start_time = time.time()
 
         # Build API parameters
@@ -582,17 +598,15 @@ class PacerRecapAPI(CourtSystemBase):
                 party_type=party_type,
                 filed_start_date=filed_start_date,
                 filed_end_date=filed_end_date,
-                case_types=case_types or []
+                case_types=case_types or [],
             ),
             search_time_ms=elapsed_ms,
             source_system="CourtListener/RECAP",
-            fees_incurred=0.0  # Free via RECAP
+            fees_incurred=0.0,  # Free via RECAP
         )
 
     async def search_by_case_number(
-        self,
-        case_number: str,
-        court: Optional[str] = None
+        self, case_number: str, court: Optional[str] = None
     ) -> Optional[CourtCase]:
         """
         Search for a specific federal case by case number.
@@ -627,9 +641,7 @@ class PacerRecapAPI(CourtSystemBase):
             return None
 
     async def get_case_detail(
-        self,
-        case_number: str,
-        court: Optional[str] = None
+        self, case_number: str, court: Optional[str] = None
     ) -> Optional[CourtCase]:
         """
         Get detailed information for a federal case including full docket.
@@ -653,11 +665,7 @@ class PacerRecapAPI(CourtSystemBase):
 
         # Fetch full docket entries
         docket_url = f"{self.API_URL}docket-entries/"
-        params = {
-            "docket": case_id,
-            "order_by": "entry_number",
-            "page_size": 100
-        }
+        params = {"docket": case_id, "order_by": "entry_number", "page_size": 100}
 
         try:
             events = []
@@ -678,15 +686,17 @@ class PacerRecapAPI(CourtSystemBase):
                     # Check for documents
                     recap_documents = entry.get("recap_documents", [])
                     for doc in recap_documents:
-                        documents.append(CaseDocument(
-                            document_number=str(doc.get("document_number", "")),
-                            title=doc.get("description", ""),
-                            filed_date=self._parse_date(doc.get("date_upload", "")),
-                            page_count=doc.get("page_count"),
-                            url=doc.get("filepath_local", ""),
-                            is_sealed=doc.get("is_sealed", False),
-                            description=doc.get("description", "")
-                        ))
+                        documents.append(
+                            CaseDocument(
+                                document_number=str(doc.get("document_number", "")),
+                                title=doc.get("description", ""),
+                                filed_date=self._parse_date(doc.get("date_upload", "")),
+                                page_count=doc.get("page_count"),
+                                url=doc.get("filepath_local", ""),
+                                is_sealed=doc.get("is_sealed", False),
+                                description=doc.get("description", ""),
+                            )
+                        )
 
                 if response.get("next"):
                     page += 1
@@ -707,7 +717,7 @@ class PacerRecapAPI(CourtSystemBase):
         court: Optional[str] = None,
         filed_start_date: Optional[date] = None,
         filed_end_date: Optional[date] = None,
-        max_results: int = 50
+        max_results: int = 50,
     ) -> List[Dict[str, Any]]:
         """
         Search court opinions/orders in RECAP archive.
@@ -745,15 +755,17 @@ class PacerRecapAPI(CourtSystemBase):
             response = await self._fetch_json(search_url, params=params)
 
             for result in response.get("results", [])[:max_results]:
-                opinions.append({
-                    "case_name": result.get("caseName", ""),
-                    "court": result.get("court", ""),
-                    "date_filed": result.get("dateFiled", ""),
-                    "docket_number": result.get("docketNumber", ""),
-                    "citation": result.get("citation", []),
-                    "snippet": result.get("snippet", ""),
-                    "url": result.get("absolute_url", ""),
-                })
+                opinions.append(
+                    {
+                        "case_name": result.get("caseName", ""),
+                        "court": result.get("court", ""),
+                        "date_filed": result.get("dateFiled", ""),
+                        "docket_number": result.get("docketNumber", ""),
+                        "citation": result.get("citation", []),
+                        "snippet": result.get("snippet", ""),
+                        "url": result.get("absolute_url", ""),
+                    }
+                )
 
         except Exception as e:
             logger.error(f"Error searching opinions: {e}")
@@ -761,9 +773,7 @@ class PacerRecapAPI(CourtSystemBase):
         return opinions
 
     async def get_bankruptcy_case(
-        self,
-        case_number: str,
-        district: str
+        self, case_number: str, district: str
     ) -> Optional[CourtCase]:
         """
         Get a bankruptcy case by number.
@@ -789,7 +799,7 @@ class PacerRecapAPI(CourtSystemBase):
             courts[code] = {
                 "name": info["name"],
                 "type": "district",
-                "circuit": info["circuit"]
+                "circuit": info["circuit"],
             }
 
         # Add circuit courts
@@ -797,7 +807,7 @@ class PacerRecapAPI(CourtSystemBase):
             courts[code] = {
                 "name": info["name"],
                 "type": "appellate",
-                "states": info["states"]
+                "states": info["states"],
             }
 
         return courts
@@ -805,34 +815,34 @@ class PacerRecapAPI(CourtSystemBase):
 
 # Convenience functions for synchronous usage
 
-def search_federal_courts(
-    party_name: str,
-    **kwargs
-) -> SearchResult:
+
+def search_federal_courts(party_name: str, **kwargs) -> SearchResult:
     """Search federal courts by party name (synchronous)."""
+
     async def _search():
         async with PacerRecapAPI() as api:
             return await api.search_by_party(party_name, **kwargs)
+
     return asyncio.run(_search())
 
 
 def get_federal_case(
-    case_number: str,
-    court: Optional[str] = None
+    case_number: str, court: Optional[str] = None
 ) -> Optional[CourtCase]:
     """Get a federal case by number (synchronous)."""
+
     async def _get():
         async with PacerRecapAPI() as api:
             return await api.get_case_detail(case_number, court)
+
     return asyncio.run(_get())
 
 
-def search_federal_opinions(
-    query: str,
-    **kwargs
-) -> List[Dict[str, Any]]:
+def search_federal_opinions(query: str, **kwargs) -> List[Dict[str, Any]]:
     """Search federal court opinions (synchronous)."""
+
     async def _search():
         async with PacerRecapAPI() as api:
             return await api.search_opinions(query, **kwargs)
+
     return asyncio.run(_search())

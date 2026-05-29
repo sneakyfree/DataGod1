@@ -15,16 +15,18 @@ Tests cover:
 - Convenience functions
 """
 
-import pytest
 from datetime import date, datetime, timedelta
+
+import pytest
+
 from datagod.validation.business_rules import (
+    BusinessRuleValidator,
+    RuleResult,
     RuleSeverity,
     RuleViolation,
-    RuleResult,
-    BusinessRuleValidator,
-    validate_property_record,
-    validate_court_record,
     validate_business_record,
+    validate_court_record,
+    validate_property_record,
 )
 
 
@@ -54,9 +56,7 @@ class TestRuleViolation:
     def test_create_violation(self):
         """Test creating a rule violation"""
         violation = RuleViolation(
-            rule_id="TEST-001",
-            rule_name="Test Rule",
-            message="Test violation message"
+            rule_id="TEST-001", rule_name="Test Rule", message="Test violation message"
         )
         assert violation.rule_id == "TEST-001"
         assert violation.rule_name == "Test Rule"
@@ -69,7 +69,7 @@ class TestRuleViolation:
             rule_id="TEST-001",
             rule_name="Critical Rule",
             message="Critical issue",
-            severity=RuleSeverity.CRITICAL
+            severity=RuleSeverity.CRITICAL,
         )
         assert violation.severity == RuleSeverity.CRITICAL
 
@@ -81,7 +81,7 @@ class TestRuleViolation:
             message="Value out of range",
             field="test_field",
             actual_value=150,
-            expected_range="0-100"
+            expected_range="0-100",
         )
         assert violation.field == "test_field"
         assert violation.actual_value == 150
@@ -96,28 +96,26 @@ class TestRuleViolation:
             severity=RuleSeverity.HIGH,
             field="test_field",
             actual_value="bad_value",
-            expected_range="good_value"
+            expected_range="good_value",
         )
         result = violation.to_dict()
-        assert result['rule_id'] == "TEST-001"
-        assert result['rule_name'] == "Test Rule"
-        assert result['message'] == "Test message"
-        assert result['severity'] == "high"
-        assert result['field'] == "test_field"
-        assert result['actual_value'] == "bad_value"
-        assert result['expected_range'] == "good_value"
+        assert result["rule_id"] == "TEST-001"
+        assert result["rule_name"] == "Test Rule"
+        assert result["message"] == "Test message"
+        assert result["severity"] == "high"
+        assert result["field"] == "test_field"
+        assert result["actual_value"] == "bad_value"
+        assert result["expected_range"] == "good_value"
 
     def test_violation_to_dict_null_values(self):
         """Test to_dict with null optional values"""
         violation = RuleViolation(
-            rule_id="TEST-001",
-            rule_name="Test Rule",
-            message="Test message"
+            rule_id="TEST-001", rule_name="Test Rule", message="Test message"
         )
         result = violation.to_dict()
-        assert result['field'] is None
-        assert result['actual_value'] is None
-        assert result['expected_range'] is None
+        assert result["field"] is None
+        assert result["actual_value"] is None
+        assert result["expected_range"] is None
 
 
 class TestRuleResult:
@@ -136,7 +134,7 @@ class TestRuleResult:
             rule_id="TEST-001",
             rule_name="High Severity",
             message="Test",
-            severity=RuleSeverity.HIGH
+            severity=RuleSeverity.HIGH,
         )
         assert result.is_valid is False
         assert len(result.violations) == 1
@@ -148,7 +146,7 @@ class TestRuleResult:
             rule_id="TEST-001",
             rule_name="Critical",
             message="Test",
-            severity=RuleSeverity.CRITICAL
+            severity=RuleSeverity.CRITICAL,
         )
         assert result.is_valid is False
 
@@ -159,7 +157,7 @@ class TestRuleResult:
             rule_id="TEST-001",
             rule_name="Medium",
             message="Test",
-            severity=RuleSeverity.MEDIUM
+            severity=RuleSeverity.MEDIUM,
         )
         assert result.is_valid is True
         assert len(result.violations) == 1
@@ -171,28 +169,25 @@ class TestRuleResult:
             rule_id="TEST-001",
             rule_name="Low",
             message="Test",
-            severity=RuleSeverity.LOW
+            severity=RuleSeverity.LOW,
         )
         assert result.is_valid is True
 
     def test_result_to_dict(self):
         """Test converting result to dictionary"""
-        result = RuleResult(
-            record_type='property',
-            record_id='123'
-        )
+        result = RuleResult(record_type="property", record_id="123")
         result.add_violation(
             rule_id="TEST-001",
             rule_name="Test",
             message="Test",
-            severity=RuleSeverity.LOW
+            severity=RuleSeverity.LOW,
         )
         data = result.to_dict()
-        assert data['is_valid'] is True
-        assert data['violation_count'] == 1
-        assert data['record_type'] == 'property'
-        assert data['record_id'] == '123'
-        assert len(data['violations']) == 1
+        assert data["is_valid"] is True
+        assert data["violation_count"] == 1
+        assert data["record_type"] == "property"
+        assert data["record_id"] == "123"
+        assert len(data["violations"]) == 1
 
 
 class TestBusinessRuleValidator:
@@ -211,14 +206,14 @@ class TestBusinessRuleValidator:
 
     def test_us_states_includes_all_50(self, validator):
         """Test all 50 states are included"""
-        assert 'CA' in validator.US_STATES
-        assert 'NY' in validator.US_STATES
-        assert 'TX' in validator.US_STATES
-        assert 'FL' in validator.US_STATES
+        assert "CA" in validator.US_STATES
+        assert "NY" in validator.US_STATES
+        assert "TX" in validator.US_STATES
+        assert "FL" in validator.US_STATES
         # Territories
-        assert 'DC' in validator.US_STATES
-        assert 'PR' in validator.US_STATES
-        assert 'VI' in validator.US_STATES
+        assert "DC" in validator.US_STATES
+        assert "PR" in validator.US_STATES
+        assert "VI" in validator.US_STATES
 
 
 class TestPropertyValidation:
@@ -272,20 +267,14 @@ class TestPropertyValidation:
 
     def test_price_per_sqft_too_low(self, validator):
         """Test price per sqft below minimum"""
-        record = {
-            "square_feet": 2000,
-            "market_value": 100  # $0.05/sqft
-        }
+        record = {"square_feet": 2000, "market_value": 100}  # $0.05/sqft
         result = validator.validate_property(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "PROP-006" in rule_ids
 
     def test_price_per_sqft_too_high(self, validator):
         """Test price per sqft above maximum"""
-        record = {
-            "square_feet": 100,
-            "market_value": 50_000_000  # $500,000/sqft
-        }
+        record = {"square_feet": 100, "market_value": 50_000_000}  # $500,000/sqft
         result = validator.validate_property(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "PROP-007" in rule_ids
@@ -300,7 +289,7 @@ class TestPropertyValidation:
 
     def test_valid_states(self, validator):
         """Test valid state codes don't trigger violation"""
-        for state in ['CA', 'NY', 'TX', 'FL', 'IL']:
+        for state in ["CA", "NY", "TX", "FL", "IL"]:
             record = {"state": state}
             result = validator.validate_property(record)
             rule_ids = [v.rule_id for v in result.violations]
@@ -317,20 +306,14 @@ class TestPropertyValidation:
 
     def test_assessed_market_ratio_high(self, validator):
         """Test assessed/market ratio too high"""
-        record = {
-            "assessed_value": 500000,
-            "market_value": 200000  # ratio = 2.5
-        }
+        record = {"assessed_value": 500000, "market_value": 200000}  # ratio = 2.5
         result = validator.validate_property(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "PROP-010" in rule_ids
 
     def test_assessed_market_ratio_low(self, validator):
         """Test assessed/market ratio too low"""
-        record = {
-            "assessed_value": 50000,
-            "market_value": 500000  # ratio = 0.1
-        }
+        record = {"assessed_value": 50000, "market_value": 500000}  # ratio = 0.1
         result = validator.validate_property(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "PROP-011" in rule_ids
@@ -351,50 +334,35 @@ class TestPropertyValidation:
 
     def test_coordinates_outside_us(self, validator):
         """Test coordinates outside US bounds"""
-        record = {
-            "latitude": 51.5,  # London
-            "longitude": -0.1
-        }
+        record = {"latitude": 51.5, "longitude": -0.1}  # London
         result = validator.validate_property(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "PROP-014" in rule_ids
 
     def test_valid_continental_us_coordinates(self, validator):
         """Test valid continental US coordinates"""
-        record = {
-            "latitude": 34.0522,
-            "longitude": -118.2437  # Los Angeles
-        }
+        record = {"latitude": 34.0522, "longitude": -118.2437}  # Los Angeles
         result = validator.validate_property(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "PROP-014" not in rule_ids
 
     def test_valid_alaska_coordinates(self, validator):
         """Test valid Alaska coordinates"""
-        record = {
-            "latitude": 64.2008,
-            "longitude": -149.4937  # Fairbanks
-        }
+        record = {"latitude": 64.2008, "longitude": -149.4937}  # Fairbanks
         result = validator.validate_property(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "PROP-014" not in rule_ids
 
     def test_valid_hawaii_coordinates(self, validator):
         """Test valid Hawaii coordinates"""
-        record = {
-            "latitude": 21.3069,
-            "longitude": -157.8583  # Honolulu
-        }
+        record = {"latitude": 21.3069, "longitude": -157.8583}  # Honolulu
         result = validator.validate_property(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "PROP-014" not in rule_ids
 
     def test_valid_puerto_rico_coordinates(self, validator):
         """Test valid Puerto Rico coordinates"""
-        record = {
-            "latitude": 18.4655,
-            "longitude": -66.1057  # San Juan
-        }
+        record = {"latitude": 18.4655, "longitude": -66.1057}  # San Juan
         result = validator.validate_property(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "PROP-014" not in rule_ids
@@ -448,7 +416,7 @@ class TestDeedValidation:
         """Test grantor and grantee are the same"""
         record = {
             "grantor": "John Smith",
-            "grantee": "JOHN SMITH"  # Same person, different case
+            "grantee": "JOHN SMITH",  # Same person, different case
         }
         result = validator.validate_deed(record)
         rule_ids = [v.rule_id for v in result.violations]
@@ -456,10 +424,7 @@ class TestDeedValidation:
 
     def test_different_grantor_grantee(self, validator):
         """Test different grantor and grantee pass"""
-        record = {
-            "grantor": "John Smith",
-            "grantee": "Jane Doe"
-        }
+        record = {"grantor": "John Smith", "grantee": "Jane Doe"}
         result = validator.validate_deed(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "DEED-005" not in rule_ids
@@ -496,10 +461,7 @@ class TestCourtCaseValidation:
 
     def test_disposition_before_filing(self, validator):
         """Test disposition date before filing date"""
-        record = {
-            "filing_date": "2024-06-01",
-            "disposition_date": "2024-01-01"
-        }
+        record = {"filing_date": "2024-06-01", "disposition_date": "2024-01-01"}
         result = validator.validate_court_case(record)
         assert result.is_valid is False
         rule_ids = [v.rule_id for v in result.violations]
@@ -522,20 +484,14 @@ class TestCourtCaseValidation:
 
     def test_judgment_exceeds_claim(self, validator):
         """Test judgment greatly exceeds amount claimed"""
-        record = {
-            "amount_claimed": 10000,
-            "judgment_amount": 500000  # 50x claim
-        }
+        record = {"amount_claimed": 10000, "judgment_amount": 500000}  # 50x claim
         result = validator.validate_court_case(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "COURT-005" in rule_ids
 
     def test_reasonable_judgment(self, validator):
         """Test reasonable judgment doesn't trigger"""
-        record = {
-            "amount_claimed": 10000,
-            "judgment_amount": 15000  # 1.5x claim
-        }
+        record = {"amount_claimed": 10000, "judgment_amount": 15000}  # 1.5x claim
         result = validator.validate_court_case(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "COURT-005" not in rule_ids
@@ -552,7 +508,7 @@ class TestCourtCaseValidation:
         record = {
             "case_status": "CLOSED",
             "disposition_date": "2024-06-15",
-            "filing_date": "2024-01-01"
+            "filing_date": "2024-01-01",
         }
         result = validator.validate_court_case(record)
         rule_ids = [v.rule_id for v in result.violations]
@@ -597,10 +553,7 @@ class TestBusinessValidation:
 
     def test_dissolution_before_formation(self, validator):
         """Test dissolution date before formation date"""
-        record = {
-            "formation_date": "2020-06-01",
-            "dissolution_date": "2019-01-01"
-        }
+        record = {"formation_date": "2020-06-01", "dissolution_date": "2019-01-01"}
         result = validator.validate_business(record)
         assert result.is_valid is False
         rule_ids = [v.rule_id for v in result.violations]
@@ -608,10 +561,7 @@ class TestBusinessValidation:
 
     def test_active_with_dissolution(self, validator):
         """Test active entity with dissolution date"""
-        record = {
-            "status": "ACTIVE",
-            "dissolution_date": "2024-01-01"
-        }
+        record = {"status": "ACTIVE", "dissolution_date": "2024-01-01"}
         result = validator.validate_business(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "BUS-004" in rule_ids
@@ -625,10 +575,7 @@ class TestBusinessValidation:
 
     def test_dissolved_with_date(self, validator):
         """Test dissolved entity with dissolution date"""
-        record = {
-            "status": "DISSOLVED",
-            "dissolution_date": "2024-01-01"
-        }
+        record = {"status": "DISSOLVED", "dissolution_date": "2024-01-01"}
         result = validator.validate_business(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "BUS-005" not in rule_ids
@@ -709,7 +656,9 @@ class TestCoordinateValidation:
 
     def test_continental_us_coordinates(self, validator):
         """Test continental US coordinates are valid"""
-        assert validator._is_valid_us_coordinates(40.7128, -74.0060) is False  # NYC is in main bounds
+        assert (
+            validator._is_valid_us_coordinates(40.7128, -74.0060) is False
+        )  # NYC is in main bounds
         # Check the main bounds logic
         lat, lon = 40.7128, -74.0060
         assert 24 <= lat <= 50 and -125 <= lon <= -66  # NYC is in continental bounds
@@ -755,10 +704,10 @@ class TestStatistics:
             RuleResult(is_valid=True),
         ]
         stats = validator.get_statistics(results)
-        assert stats['total_records'] == 3
-        assert stats['valid_records'] == 3
-        assert stats['invalid_records'] == 0
-        assert stats['validation_rate'] == 1.0
+        assert stats["total_records"] == 3
+        assert stats["valid_records"] == 3
+        assert stats["invalid_records"] == 0
+        assert stats["validation_rate"] == 1.0
 
     def test_statistics_some_invalid(self, validator):
         """Test statistics with some invalid records"""
@@ -768,10 +717,10 @@ class TestStatistics:
             RuleResult(is_valid=True),
         ]
         stats = validator.get_statistics(results)
-        assert stats['total_records'] == 3
-        assert stats['valid_records'] == 2
-        assert stats['invalid_records'] == 1
-        assert stats['validation_rate'] == 2/3
+        assert stats["total_records"] == 3
+        assert stats["valid_records"] == 2
+        assert stats["invalid_records"] == 1
+        assert stats["validation_rate"] == 2 / 3
 
     def test_statistics_by_severity(self, validator):
         """Test statistics by violation severity"""
@@ -783,8 +732,8 @@ class TestStatistics:
         result2.add_violation("R1", "Rule 1", "msg", RuleSeverity.HIGH)
 
         stats = validator.get_statistics([result1, result2])
-        assert stats['violations_by_severity']['high'] == 2
-        assert stats['violations_by_severity']['low'] == 1
+        assert stats["violations_by_severity"]["high"] == 2
+        assert stats["violations_by_severity"]["low"] == 1
 
     def test_statistics_by_rule(self, validator):
         """Test statistics by rule ID"""
@@ -796,14 +745,14 @@ class TestStatistics:
         result2.add_violation("PROP-001", "Rule 1", "msg")
 
         stats = validator.get_statistics([result1, result2])
-        assert stats['violations_by_rule']['PROP-001'] == 2
-        assert stats['violations_by_rule']['PROP-002'] == 1
+        assert stats["violations_by_rule"]["PROP-001"] == 2
+        assert stats["violations_by_rule"]["PROP-002"] == 1
 
     def test_statistics_empty(self, validator):
         """Test statistics with empty results"""
         stats = validator.get_statistics([])
-        assert stats['total_records'] == 0
-        assert stats['validation_rate'] == 0
+        assert stats["total_records"] == 0
+        assert stats["validation_rate"] == 0
 
 
 class TestConvenienceFunctions:
@@ -813,7 +762,7 @@ class TestConvenienceFunctions:
         """Test validate_property_record function"""
         result = validate_property_record(valid_property_record)
         assert result.is_valid is True
-        assert result.record_type == 'property'
+        assert result.record_type == "property"
 
     def test_validate_property_record_invalid(self):
         """Test validate_property_record with invalid data"""
@@ -825,13 +774,13 @@ class TestConvenienceFunctions:
         """Test validate_court_record function"""
         result = validate_court_record(valid_court_case_record)
         assert result.is_valid is True
-        assert result.record_type == 'court_case'
+        assert result.record_type == "court_case"
 
     def test_validate_business_record(self, valid_business_entity_record):
         """Test validate_business_record function"""
         result = validate_business_record(valid_business_entity_record)
         assert result.is_valid is True
-        assert result.record_type == 'business_entity'
+        assert result.record_type == "business_entity"
 
 
 class TestEdgeCases:
@@ -849,20 +798,13 @@ class TestEdgeCases:
 
     def test_none_values(self, validator):
         """Test validation with None values"""
-        record = {
-            "year_built": None,
-            "assessed_value": None,
-            "state": None
-        }
+        record = {"year_built": None, "assessed_value": None, "state": None}
         result = validator.validate_property(record)
         assert result.is_valid is True
 
     def test_zero_values(self, validator):
         """Test validation with zero values"""
-        record = {
-            "assessed_value": 0,
-            "square_feet": 0
-        }
+        record = {"assessed_value": 0, "square_feet": 0}
         result = validator.validate_property(record)
         # Zero values should be handled gracefully
         assert isinstance(result, RuleResult)
@@ -884,30 +826,21 @@ class TestEdgeCases:
     def test_boundary_coordinates(self, validator):
         """Test coordinate boundaries"""
         # Continental US boundary
-        record = {
-            "latitude": 24.0,  # Southern Florida
-            "longitude": -80.0
-        }
+        record = {"latitude": 24.0, "longitude": -80.0}  # Southern Florida
         result = validator.validate_property(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "PROP-014" not in rule_ids
 
     def test_special_characters_in_names(self, validator):
         """Test handling of special characters"""
-        record = {
-            "grantor": "José García",
-            "grantee": "François Müller"
-        }
+        record = {"grantor": "José García", "grantee": "François Müller"}
         result = validator.validate_deed(record)
         # Should not crash
         assert isinstance(result, RuleResult)
 
     def test_whitespace_in_names(self, validator):
         """Test whitespace handling in name comparison"""
-        record = {
-            "grantor": "  John Smith  ",
-            "grantee": "John Smith"
-        }
+        record = {"grantor": "  John Smith  ", "grantee": "John Smith"}
         result = validator.validate_deed(record)
         rule_ids = [v.rule_id for v in result.violations]
         assert "DEED-005" in rule_ids
@@ -919,7 +852,7 @@ class TestEdgeCases:
             "assessed_value": 500,
             "state": "XX",
             "bedrooms": 50,
-            "bathrooms": 50
+            "bathrooms": 50,
         }
         result = validator.validate_property(record)
         assert len(result.violations) >= 4

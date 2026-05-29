@@ -20,18 +20,19 @@ This module tests:
 Coverage target: 100% of all state API scraper modules
 """
 
-import pytest
+import json
 import os
 import sys
-import json
 from datetime import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Set test environment before imports
 os.environ["TESTING"] = "1"
 
 # Add paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 class TestTexasCountyAPI:
@@ -40,25 +41,25 @@ class TestTexasCountyAPI:
     def test_county_apis_structure(self):
         """Test COUNTY_APIS dictionary structure."""
         county_apis = {
-            'harris': {
-                'base_url': 'https://publicdata.hcad.org/api',
-                'features': ['property_search', 'deed_records']
+            "harris": {
+                "base_url": "https://publicdata.hcad.org/api",
+                "features": ["property_search", "deed_records"],
             },
-            'dallas': {
-                'base_url': 'https://www.dallascad.org/api',
-                'features': ['property_search']
-            }
+            "dallas": {
+                "base_url": "https://www.dallascad.org/api",
+                "features": ["property_search"],
+            },
         }
 
-        assert 'harris' in county_apis
-        assert 'base_url' in county_apis['harris']
-        assert 'features' in county_apis['harris']
+        assert "harris" in county_apis
+        assert "base_url" in county_apis["harris"]
+        assert "features" in county_apis["harris"]
 
     def test_extract_county_name(self):
         """Test county name extraction."""
         jurisdiction_name = "Harris County"
         name = jurisdiction_name.lower()
-        if name.endswith(' county'):
+        if name.endswith(" county"):
             name = name[:-7]
 
         assert name == "harris"
@@ -67,19 +68,19 @@ class TestTexasCountyAPI:
         """Test county name with spaces."""
         jurisdiction_name = "Fort Bend County"
         name = jurisdiction_name.lower()
-        if name.endswith(' county'):
+        if name.endswith(" county"):
             name = name[:-7]
-        name = name.replace(' ', '-')
+        name = name.replace(" ", "-")
 
         assert name == "fort-bend"
 
     def test_available_features_check(self):
         """Test available features check."""
-        available_features = ['property_search', 'deed_records', 'tax_info']
+        available_features = ["property_search", "deed_records", "tax_info"]
 
-        assert 'property_search' in available_features
-        assert 'deed_records' in available_features
-        assert 'mortgage_records' not in available_features
+        assert "property_search" in available_features
+        assert "deed_records" in available_features
+        assert "mortgage_records" not in available_features
 
     def test_fallback_url_generation(self):
         """Test fallback URL generation for unknown county."""
@@ -95,31 +96,31 @@ class TestCaliforniaCountyAPI:
     def test_county_apis_structure(self):
         """Test California county APIs structure."""
         county_apis = {
-            'los-angeles': {
-                'assessor_url': 'https://portal.assessor.lacounty.gov/api',
-                'features': ['property_search', 'assessment_history']
+            "los-angeles": {
+                "assessor_url": "https://portal.assessor.lacounty.gov/api",
+                "features": ["property_search", "assessment_history"],
             },
-            'san-francisco': {
-                'assessor_url': 'https://sfassessor.org/api',
-                'features': ['property_search']
-            }
+            "san-francisco": {
+                "assessor_url": "https://sfassessor.org/api",
+                "features": ["property_search"],
+            },
         }
 
-        assert 'los-angeles' in county_apis
-        assert 'assessor_url' in county_apis['los-angeles']
+        assert "los-angeles" in county_apis
+        assert "assessor_url" in county_apis["los-angeles"]
 
     def test_state_specific_field_mapping(self):
         """Test California-specific field mapping."""
         api_response = {
             "APN": "1234-567-890",
             "SitusAddress": "123 Main St, Los Angeles, CA",
-            "AssessedValue": 500000
+            "AssessedValue": 500000,
         }
 
         mapping = {
             "APN": "parcel_id",
             "SitusAddress": "address",
-            "AssessedValue": "assessed_value"
+            "AssessedValue": "assessed_value",
         }
 
         mapped = {}
@@ -137,15 +138,15 @@ class TestNewYorkCountyAPI:
     def test_borough_mapping(self):
         """Test New York City borough mapping."""
         borough_mapping = {
-            'manhattan': 1,
-            'bronx': 2,
-            'brooklyn': 3,
-            'queens': 4,
-            'staten-island': 5
+            "manhattan": 1,
+            "bronx": 2,
+            "brooklyn": 3,
+            "queens": 4,
+            "staten-island": 5,
         }
 
-        assert borough_mapping['manhattan'] == 1
-        assert borough_mapping['brooklyn'] == 3
+        assert borough_mapping["manhattan"] == 1
+        assert borough_mapping["brooklyn"] == 3
 
     def test_bbl_construction(self):
         """Test BBL (Borough-Block-Lot) construction."""
@@ -159,14 +160,14 @@ class TestNewYorkCountyAPI:
     def test_acris_document_types(self):
         """Test ACRIS document type codes."""
         doc_types = {
-            'DEED': 'Deed Transfer',
-            'MTGE': 'Mortgage',
-            'AGMT': 'Agreement',
-            'ASST': 'Assignment'
+            "DEED": "Deed Transfer",
+            "MTGE": "Mortgage",
+            "AGMT": "Agreement",
+            "ASST": "Assignment",
         }
 
-        assert doc_types['DEED'] == 'Deed Transfer'
-        assert doc_types['MTGE'] == 'Mortgage'
+        assert doc_types["DEED"] == "Deed Transfer"
+        assert doc_types["MTGE"] == "Mortgage"
 
 
 class TestFloridaCountyAPI:
@@ -175,24 +176,24 @@ class TestFloridaCountyAPI:
     def test_county_apis_structure(self):
         """Test Florida county APIs structure."""
         county_apis = {
-            'miami-dade': {
-                'base_url': 'https://www.miamidade.gov/pa/api',
-                'features': ['property_search', 'deed_records']
+            "miami-dade": {
+                "base_url": "https://www.miamidade.gov/pa/api",
+                "features": ["property_search", "deed_records"],
             },
-            'broward': {
-                'base_url': 'https://www.bcpa.net/api',
-                'features': ['property_search']
-            }
+            "broward": {
+                "base_url": "https://www.bcpa.net/api",
+                "features": ["property_search"],
+            },
         }
 
-        assert 'miami-dade' in county_apis
+        assert "miami-dade" in county_apis
 
     def test_folio_number_format(self):
         """Test Florida folio number format."""
         folio = "30-4029-033-0010"
 
         # Validate format
-        parts = folio.split('-')
+        parts = folio.split("-")
         assert len(parts) == 4
 
     def test_doc_stamps_calculation(self):
@@ -210,30 +211,30 @@ class TestIllinoisCountyAPI:
     def test_county_apis_structure(self):
         """Test Illinois county APIs structure."""
         county_apis = {
-            'cook': {
-                'base_url': 'https://www.cookcountyassessor.com/api',
-                'features': ['property_search', 'tax_records']
+            "cook": {
+                "base_url": "https://www.cookcountyassessor.com/api",
+                "features": ["property_search", "tax_records"],
             }
         }
 
-        assert 'cook' in county_apis
+        assert "cook" in county_apis
 
     def test_pin_format(self):
         """Test Illinois Property Index Number format."""
         # 14-digit PIN
         pin = "10-25-100-001-0000"
-        cleaned = pin.replace('-', '')
+        cleaned = pin.replace("-", "")
 
         assert len(cleaned) == 14
 
     def test_township_mapping(self):
         """Test Cook County township mapping."""
         townships = {
-            'chicago': ['lake_view', 'jefferson', 'lake'],
-            'suburban': ['evanston', 'niles', 'palatine']
+            "chicago": ["lake_view", "jefferson", "lake"],
+            "suburban": ["evanston", "niles", "palatine"],
         }
 
-        assert 'lake_view' in townships['chicago']
+        assert "lake_view" in townships["chicago"]
 
 
 class TestPennsylvaniaCountyAPI:
@@ -242,13 +243,13 @@ class TestPennsylvaniaCountyAPI:
     def test_county_apis_structure(self):
         """Test Pennsylvania county APIs structure."""
         county_apis = {
-            'philadelphia': {
-                'base_url': 'https://property.phila.gov/api',
-                'features': ['property_search', 'deed_records', 'tax_records']
+            "philadelphia": {
+                "base_url": "https://property.phila.gov/api",
+                "features": ["property_search", "deed_records", "tax_records"],
             }
         }
 
-        assert 'philadelphia' in county_apis
+        assert "philadelphia" in county_apis
 
     def test_opa_number_format(self):
         """Test Philadelphia OPA number format."""
@@ -274,19 +275,19 @@ class TestOhioCountyAPI:
     def test_county_apis_structure(self):
         """Test Ohio county APIs structure."""
         county_apis = {
-            'cuyahoga': {
-                'base_url': 'https://fiscalofficer.cuyahogacounty.us/api',
-                'features': ['property_search']
+            "cuyahoga": {
+                "base_url": "https://fiscalofficer.cuyahogacounty.us/api",
+                "features": ["property_search"],
             }
         }
 
-        assert 'cuyahoga' in county_apis
+        assert "cuyahoga" in county_apis
 
     def test_parcel_number_format(self):
         """Test Ohio parcel number format."""
         parcel = "123-45-678"
 
-        parts = parcel.split('-')
+        parts = parcel.split("-")
         assert len(parts) == 3
 
 
@@ -296,13 +297,13 @@ class TestGeorgiaCountyAPI:
     def test_county_apis_structure(self):
         """Test Georgia county APIs structure."""
         county_apis = {
-            'fulton': {
-                'base_url': 'https://qpublic.schneidercorp.com/api/fulton',
-                'features': ['property_search', 'deed_records']
+            "fulton": {
+                "base_url": "https://qpublic.schneidercorp.com/api/fulton",
+                "features": ["property_search", "deed_records"],
             }
         }
 
-        assert 'fulton' in county_apis
+        assert "fulton" in county_apis
 
     def test_land_lot_system(self):
         """Test Georgia land lot system."""
@@ -319,20 +320,20 @@ class TestArizonaCountyAPI:
     def test_county_apis_structure(self):
         """Test Arizona county APIs structure."""
         county_apis = {
-            'maricopa': {
-                'base_url': 'https://mcassessor.maricopa.gov/api',
-                'features': ['property_search', 'deed_records']
+            "maricopa": {
+                "base_url": "https://mcassessor.maricopa.gov/api",
+                "features": ["property_search", "deed_records"],
             }
         }
 
-        assert 'maricopa' in county_apis
+        assert "maricopa" in county_apis
 
     def test_apn_format(self):
         """Test Arizona APN format."""
         apn = "123-45-678-A"
 
         # Validate format
-        assert '-' in apn
+        assert "-" in apn
 
 
 class TestColoradoCountyAPI:
@@ -341,13 +342,13 @@ class TestColoradoCountyAPI:
     def test_county_apis_structure(self):
         """Test Colorado county APIs structure."""
         county_apis = {
-            'denver': {
-                'base_url': 'https://www.denvergov.org/assessor/api',
-                'features': ['property_search']
+            "denver": {
+                "base_url": "https://www.denvergov.org/assessor/api",
+                "features": ["property_search"],
             }
         }
 
-        assert 'denver' in county_apis
+        assert "denver" in county_apis
 
     def test_schedule_number_format(self):
         """Test Colorado schedule number format."""
@@ -362,13 +363,13 @@ class TestWashingtonCountyAPI:
     def test_county_apis_structure(self):
         """Test Washington county APIs structure."""
         county_apis = {
-            'king': {
-                'base_url': 'https://blue.kingcounty.com/api',
-                'features': ['property_search', 'deed_records']
+            "king": {
+                "base_url": "https://blue.kingcounty.com/api",
+                "features": ["property_search", "deed_records"],
             }
         }
 
-        assert 'king' in county_apis
+        assert "king" in county_apis
 
     def test_parcel_format(self):
         """Test Washington parcel number format."""
@@ -383,19 +384,19 @@ class TestVirginiaCountyAPI:
     def test_county_apis_structure(self):
         """Test Virginia county APIs structure."""
         county_apis = {
-            'fairfax': {
-                'base_url': 'https://www.fairfaxcounty.gov/api',
-                'features': ['property_search']
+            "fairfax": {
+                "base_url": "https://www.fairfaxcounty.gov/api",
+                "features": ["property_search"],
             }
         }
 
-        assert 'fairfax' in county_apis
+        assert "fairfax" in county_apis
 
     def test_independent_city_handling(self):
         """Test Virginia independent city handling."""
-        independent_cities = ['richmond', 'norfolk', 'virginia-beach']
+        independent_cities = ["richmond", "norfolk", "virginia-beach"]
 
-        assert 'richmond' in independent_cities
+        assert "richmond" in independent_cities
 
 
 class TestNorthCarolinaCountyAPI:
@@ -404,13 +405,13 @@ class TestNorthCarolinaCountyAPI:
     def test_county_apis_structure(self):
         """Test North Carolina county APIs structure."""
         county_apis = {
-            'mecklenburg': {
-                'base_url': 'https://polaris3g.mecklenburgcountync.gov/api',
-                'features': ['property_search', 'deed_records']
+            "mecklenburg": {
+                "base_url": "https://polaris3g.mecklenburgcountync.gov/api",
+                "features": ["property_search", "deed_records"],
             }
         }
 
-        assert 'mecklenburg' in county_apis
+        assert "mecklenburg" in county_apis
 
     def test_pin_format(self):
         """Test NC PIN format."""
@@ -425,13 +426,13 @@ class TestNewJerseyCountyAPI:
     def test_county_apis_structure(self):
         """Test New Jersey county APIs structure."""
         county_apis = {
-            'bergen': {
-                'base_url': 'https://www.bcclerk.com/api',
-                'features': ['deed_records']
+            "bergen": {
+                "base_url": "https://www.bcclerk.com/api",
+                "features": ["deed_records"],
             }
         }
 
-        assert 'bergen' in county_apis
+        assert "bergen" in county_apis
 
     def test_block_lot_format(self):
         """Test NJ block/lot format."""
@@ -451,7 +452,7 @@ class TestCommonScraperPatterns:
             "property_address": "123 Main St",
             "owner_name": "John Doe",
             "sale_price": 250000,
-            "sale_date": "2024-01-15"
+            "sale_date": "2024-01-15",
         }
 
         standard_record = {
@@ -459,7 +460,7 @@ class TestCommonScraperPatterns:
             "owner": api_record.get("owner_name"),
             "amount": api_record.get("sale_price"),
             "date": api_record.get("sale_date"),
-            "record_type": "property"
+            "record_type": "property",
         }
 
         assert standard_record["address"] == "123 Main St"
@@ -521,11 +522,7 @@ class TestCommonScraperPatterns:
 
     def test_error_response_handling(self):
         """Test error response handling."""
-        error_response = {
-            "error": True,
-            "message": "Record not found",
-            "code": 404
-        }
+        error_response = {"error": True, "message": "Record not found", "code": 404}
 
         assert error_response["error"] is True
         assert error_response["code"] == 404
@@ -560,11 +557,7 @@ class TestSearchQueryBuilding:
 
     def test_combined_search(self):
         """Test combined search parameters."""
-        query = {
-            "owner_name": "Smith",
-            "city": "Austin",
-            "date_from": "2024-01-01"
-        }
+        query = {"owner_name": "Smith", "city": "Austin", "date_from": "2024-01-01"}
 
         search_params = {k: v for k, v in query.items() if v}
         assert len(search_params) == 3
@@ -579,7 +572,7 @@ class TestRecordTypeMapping:
             "WD": "Warranty Deed",
             "QC": "Quit Claim Deed",
             "TD": "Trust Deed",
-            "SD": "Special Warranty Deed"
+            "SD": "Special Warranty Deed",
         }
 
         assert deed_types["WD"] == "Warranty Deed"
@@ -591,18 +584,14 @@ class TestRecordTypeMapping:
             "CONV": "Conventional",
             "FHA": "FHA Loan",
             "VA": "VA Loan",
-            "REV": "Reverse Mortgage"
+            "REV": "Reverse Mortgage",
         }
 
         assert mortgage_types["FHA"] == "FHA Loan"
 
     def test_document_status_mapping(self):
         """Test document status mapping."""
-        statuses = {
-            "R": "Recorded",
-            "P": "Pending",
-            "C": "Cancelled"
-        }
+        statuses = {"R": "Recorded", "P": "Pending", "C": "Cancelled"}
 
         assert statuses["R"] == "Recorded"
 
@@ -625,7 +614,7 @@ class TestGeocodingIntegration:
             "address": "123 Main St, Austin, TX",
             "lat": 30.2672,
             "lon": -97.7431,
-            "accuracy": "rooftop"
+            "accuracy": "rooftop",
         }
 
         assert "lat" in geocode_result
@@ -640,7 +629,7 @@ class TestRateLimitingByState:
         rate_limits = {
             "texas": {"requests_per_minute": 60, "requests_per_hour": 1000},
             "california": {"requests_per_minute": 30, "requests_per_hour": 500},
-            "new_york": {"requests_per_minute": 100, "requests_per_hour": 2000}
+            "new_york": {"requests_per_minute": 100, "requests_per_hour": 2000},
         }
 
         assert rate_limits["texas"]["requests_per_minute"] == 60
@@ -691,7 +680,7 @@ class TestDataExtractionPatterns:
         # Simulated table data
         table_rows = [
             {"col1": "Value1", "col2": "Value2"},
-            {"col1": "Value3", "col2": "Value4"}
+            {"col1": "Value3", "col2": "Value4"},
         ]
 
         extracted = [row for row in table_rows if row.get("col1")]
@@ -700,10 +689,7 @@ class TestDataExtractionPatterns:
     def test_extract_from_json_array(self):
         """Test extraction from JSON array."""
         json_response = {
-            "results": [
-                {"id": 1, "name": "Record 1"},
-                {"id": 2, "name": "Record 2"}
-            ]
+            "results": [{"id": 1, "name": "Record 1"}, {"id": 2, "name": "Record 2"}]
         }
 
         records = json_response.get("results", [])
@@ -713,15 +699,14 @@ class TestDataExtractionPatterns:
         """Test extraction of nested data."""
         response = {
             "data": {
-                "property": {
-                    "address": "123 Main St",
-                    "owner": {"name": "John Doe"}
-                }
+                "property": {"address": "123 Main St", "owner": {"name": "John Doe"}}
             }
         }
 
         address = response.get("data", {}).get("property", {}).get("address")
-        owner = response.get("data", {}).get("property", {}).get("owner", {}).get("name")
+        owner = (
+            response.get("data", {}).get("property", {}).get("owner", {}).get("name")
+        )
 
         assert address == "123 Main St"
         assert owner == "John Doe"

@@ -3,11 +3,12 @@ Tests for datagod/main.py
 Tests the main application entry point
 """
 
-import pytest
-import sys
 import logging
-from unittest.mock import MagicMock, patch, call
-from typing import Dict, Any
+import sys
+from typing import Any, Dict
+from unittest.mock import MagicMock, call, patch
+
+import pytest
 
 
 class TestLoggingConfiguration:
@@ -16,19 +17,21 @@ class TestLoggingConfiguration:
     def test_logging_setup(self):
         """Test logging can be configured"""
         # Set up logging like main.py does
-        logger = logging.getLogger('test_main')
+        logger = logging.getLogger("test_main")
         logger.setLevel(logging.INFO)
 
         handler = logging.StreamHandler(sys.stdout)
         handler.setLevel(logging.INFO)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
         handler.setFormatter(formatter)
 
         assert logger.level == logging.INFO
 
     def test_logging_handlers(self):
         """Test logging handlers can be created"""
-        logger = logging.getLogger('test_handlers')
+        logger = logging.getLogger("test_handlers")
         stream_handler = logging.StreamHandler(sys.stdout)
         logger.addHandler(stream_handler)
 
@@ -87,7 +90,9 @@ class TestCreateSampleJurisdiction:
         """Test when jurisdiction already exists"""
         mock_session = MagicMock()
         mock_jurisdiction = MagicMock(name="Sample County")
-        mock_session.query.return_value.filter_by.return_value.first.return_value = mock_jurisdiction
+        mock_session.query.return_value.filter_by.return_value.first.return_value = (
+            mock_jurisdiction
+        )
 
         # Simulate existing jurisdiction
         existing = mock_session.query().filter_by().first()
@@ -144,7 +149,7 @@ class TestCreateSampleDataSource:
         # First call returns jurisdiction, second returns None (no existing data source)
         mock_session.query.return_value.filter_by.return_value.first.side_effect = [
             mock_jurisdiction,
-            None
+            None,
         ]
 
         jurisdiction = mock_session.query().filter_by().first()
@@ -162,7 +167,7 @@ class TestCreateSampleDataSource:
         # Both jurisdiction and data source exist
         mock_session.query.return_value.filter_by.return_value.first.side_effect = [
             mock_jurisdiction,
-            mock_data_source
+            mock_data_source,
         ]
 
         jurisdiction = mock_session.query().filter_by().first()
@@ -179,8 +184,8 @@ class TestRunDataCollection:
         """Test data collection when data is returned"""
         mock_scraper = MagicMock()
         mock_scraper.scrape.return_value = [
-            {'address': '123 Main St', 'price': 500000},
-            {'address': '456 Oak Ave', 'price': 750000}
+            {"address": "123 Main St", "price": 500000},
+            {"address": "456 Oak Ave", "price": 750000},
         ]
 
         property_data = mock_scraper.scrape()
@@ -202,12 +207,9 @@ class TestRunDataCollection:
     def test_data_validation_loop(self):
         """Test data validation for each record"""
         mock_validator = MagicMock()
-        mock_validator.validate_record.return_value = {'valid': True, 'errors': []}
+        mock_validator.validate_record.return_value = {"valid": True, "errors": []}
 
-        property_data = [
-            {'address': '123 Main St'},
-            {'address': '456 Oak Ave'}
-        ]
+        property_data = [{"address": "123 Main St"}, {"address": "456 Oak Ave"}]
 
         validation_results = []
         for record in property_data:
@@ -215,33 +217,33 @@ class TestRunDataCollection:
             validation_results.append(result)
 
         assert len(validation_results) == 2
-        assert all(r['valid'] for r in validation_results)
+        assert all(r["valid"] for r in validation_results)
 
     def test_data_validation_with_errors(self):
         """Test data validation when errors occur"""
         mock_validator = MagicMock()
         mock_validator.validate_record.return_value = {
-            'valid': False,
-            'errors': ['Missing required field: price']
+            "valid": False,
+            "errors": ["Missing required field: price"],
         }
 
-        record = {'address': '123 Main St'}
+        record = {"address": "123 Main St"}
         result = mock_validator.validate_record(record)
 
-        assert result['valid'] is False
-        assert len(result['errors']) > 0
+        assert result["valid"] is False
+        assert len(result["errors"]) > 0
 
     def test_data_processing(self):
         """Test data processing/enrichment"""
         mock_processor = MagicMock()
         mock_processor.enrich_data.return_value = {
-            'address': '123 Main St',
-            'price': 500000,
-            'enriched': True,
-            'timestamp': '2024-01-01T00:00:00'
+            "address": "123 Main St",
+            "price": 500000,
+            "enriched": True,
+            "timestamp": "2024-01-01T00:00:00",
         }
 
-        property_data = [{'address': '123 Main St', 'price': 500000}]
+        property_data = [{"address": "123 Main St", "price": 500000}]
         processed_data = []
 
         for record in property_data:
@@ -249,7 +251,7 @@ class TestRunDataCollection:
             processed_data.append(enriched)
 
         assert len(processed_data) == 1
-        assert processed_data[0]['enriched'] is True
+        assert processed_data[0]["enriched"] is True
 
 
 class TestMainFunction:
@@ -301,18 +303,18 @@ class TestJurisdictionModel:
         """Test Jurisdiction model has expected attributes"""
         # Simulate jurisdiction attributes
         jurisdiction_data = {
-            'name': "Sample County",
-            'state': "CA",
-            'county': "Sample County",
-            'type': "County",
-            'api_available': False,
-            'scraper_needed': True,
-            'description': "Sample jurisdiction for testing"
+            "name": "Sample County",
+            "state": "CA",
+            "county": "Sample County",
+            "type": "County",
+            "api_available": False,
+            "scraper_needed": True,
+            "description": "Sample jurisdiction for testing",
         }
 
-        assert jurisdiction_data['name'] == "Sample County"
-        assert jurisdiction_data['state'] == "CA"
-        assert jurisdiction_data['api_available'] is False
+        assert jurisdiction_data["name"] == "Sample County"
+        assert jurisdiction_data["state"] == "CA"
+        assert jurisdiction_data["api_available"] is False
 
 
 class TestDataSourceModel:
@@ -322,16 +324,16 @@ class TestDataSourceModel:
         """Test DataSource model has expected attributes"""
         # Simulate data source attributes
         data_source_data = {
-            'jurisdiction_id': 1,
-            'source_name': "Sample Property Source",
-            'source_type': "scraper",
-            'status': "active",
-            'description': "Sample property data source for testing"
+            "jurisdiction_id": 1,
+            "source_name": "Sample Property Source",
+            "source_type": "scraper",
+            "status": "active",
+            "description": "Sample property data source for testing",
         }
 
-        assert data_source_data['source_name'] == "Sample Property Source"
-        assert data_source_data['source_type'] == "scraper"
-        assert data_source_data['status'] == "active"
+        assert data_source_data["source_name"] == "Sample Property Source"
+        assert data_source_data["source_type"] == "scraper"
+        assert data_source_data["status"] == "active"
 
 
 class TestPropertyScraper:
@@ -349,12 +351,12 @@ class TestPropertyScraper:
         """Test scraper returns property data"""
         mock_scraper = MagicMock()
         mock_scraper.scrape.return_value = [
-            {'address': '123 Main St', 'owner': 'John Doe'}
+            {"address": "123 Main St", "owner": "John Doe"}
         ]
 
         data = mock_scraper.scrape()
         assert len(data) == 1
-        assert data[0]['address'] == '123 Main St'
+        assert data[0]["address"] == "123 Main St"
 
     def test_scraper_returns_empty(self):
         """Test scraper returns empty list"""
@@ -370,29 +372,22 @@ class TestDataProcessorUsage:
 
     def test_processor_enrich_data(self):
         """Test processor enriches data"""
-        record = {'address': '123 Main St'}
-        enriched = {
-            **record,
-            'enriched': True,
-            'processed_at': '2024-01-01'
-        }
+        record = {"address": "123 Main St"}
+        enriched = {**record, "enriched": True, "processed_at": "2024-01-01"}
 
-        assert enriched['address'] == '123 Main St'
-        assert enriched['enriched'] is True
+        assert enriched["address"] == "123 Main St"
+        assert enriched["enriched"] is True
 
     def test_processor_with_multiple_records(self):
         """Test processor handles multiple records"""
-        records = [
-            {'address': '123 Main St'},
-            {'address': '456 Oak Ave'}
-        ]
+        records = [{"address": "123 Main St"}, {"address": "456 Oak Ave"}]
 
         processed = []
         for record in records:
-            processed.append({**record, 'enriched': True})
+            processed.append({**record, "enriched": True})
 
         assert len(processed) == 2
-        assert all(p['enriched'] for p in processed)
+        assert all(p["enriched"] for p in processed)
 
 
 class TestValidatorUsage:
@@ -400,23 +395,20 @@ class TestValidatorUsage:
 
     def test_validator_valid_record(self):
         """Test validator with valid record"""
-        validation_result = {
-            'valid': True,
-            'errors': []
-        }
+        validation_result = {"valid": True, "errors": []}
 
-        assert validation_result['valid'] is True
-        assert len(validation_result['errors']) == 0
+        assert validation_result["valid"] is True
+        assert len(validation_result["errors"]) == 0
 
     def test_validator_invalid_record(self):
         """Test validator with invalid record"""
         validation_result = {
-            'valid': False,
-            'errors': ['Missing field: address', 'Invalid price format']
+            "valid": False,
+            "errors": ["Missing field: address", "Invalid price format"],
         }
 
-        assert validation_result['valid'] is False
-        assert len(validation_result['errors']) == 2
+        assert validation_result["valid"] is False
+        assert len(validation_result["errors"]) == 2
 
 
 class TestErrorHandling:

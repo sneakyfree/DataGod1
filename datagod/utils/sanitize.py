@@ -3,23 +3,22 @@ DataGod Input Sanitization Utilities
 Prevents XSS, SQL injection patterns, and other malicious input
 """
 
-import re
 import html
+import re
 from typing import Optional
-
 
 # Known XSS patterns to strip
 _XSS_PATTERNS = [
-    re.compile(r'<script[^>]*>.*?</script>', re.IGNORECASE | re.DOTALL),
-    re.compile(r'javascript:', re.IGNORECASE),
-    re.compile(r'on\w+\s*=', re.IGNORECASE),
-    re.compile(r'<iframe[^>]*>.*?</iframe>', re.IGNORECASE | re.DOTALL),
-    re.compile(r'<object[^>]*>.*?</object>', re.IGNORECASE | re.DOTALL),
-    re.compile(r'<embed[^>]*>', re.IGNORECASE),
-    re.compile(r'<link[^>]*>', re.IGNORECASE),
-    re.compile(r'expression\s*\(', re.IGNORECASE),
-    re.compile(r'url\s*\(', re.IGNORECASE),
-    re.compile(r'data:', re.IGNORECASE),
+    re.compile(r"<script[^>]*>.*?</script>", re.IGNORECASE | re.DOTALL),
+    re.compile(r"javascript:", re.IGNORECASE),
+    re.compile(r"on\w+\s*=", re.IGNORECASE),
+    re.compile(r"<iframe[^>]*>.*?</iframe>", re.IGNORECASE | re.DOTALL),
+    re.compile(r"<object[^>]*>.*?</object>", re.IGNORECASE | re.DOTALL),
+    re.compile(r"<embed[^>]*>", re.IGNORECASE),
+    re.compile(r"<link[^>]*>", re.IGNORECASE),
+    re.compile(r"expression\s*\(", re.IGNORECASE),
+    re.compile(r"url\s*\(", re.IGNORECASE),
+    re.compile(r"data:", re.IGNORECASE),
 ]
 
 # SQL injection patterns to detect
@@ -35,11 +34,11 @@ _SQL_PATTERNS = [
 def sanitize_input(text: Optional[str], max_length: int = 10000) -> Optional[str]:
     """
     Sanitize user input text to prevent XSS and other injection attacks.
-    
+
     Args:
         text: Raw user input string
         max_length: Maximum allowed length
-    
+
     Returns:
         Sanitized string safe for storage and display
     """
@@ -57,13 +56,13 @@ def sanitize_input(text: Optional[str], max_length: int = 10000) -> Optional[str
 
     # Strip known XSS patterns
     for pattern in _XSS_PATTERNS:
-        text = pattern.sub('', text)
+        text = pattern.sub("", text)
 
     # Strip null bytes
-    text = text.replace('\x00', '')
+    text = text.replace("\x00", "")
 
     # Normalize whitespace (collapse multiple spaces, strip leading/trailing)
-    text = ' '.join(text.split())
+    text = " ".join(text.split())
 
     return text
 
@@ -72,10 +71,10 @@ def sanitize_search_query(query: Optional[str]) -> Optional[str]:
     """
     Sanitize search query input — less aggressive than general sanitization
     to preserve search-specific characters like quotes for phrase search.
-    
+
     Args:
         query: Raw search query
-    
+
     Returns:
         Sanitized search query
     """
@@ -90,13 +89,13 @@ def sanitize_search_query(query: Optional[str]) -> Optional[str]:
 
     # Strip script tags and event handlers
     for pattern in _XSS_PATTERNS:
-        query = pattern.sub('', query)
+        query = pattern.sub("", query)
 
     # Strip null bytes
-    query = query.replace('\x00', '')
+    query = query.replace("\x00", "")
 
     # Normalize whitespace
-    query = ' '.join(query.split())
+    query = " ".join(query.split())
 
     return query
 
@@ -105,10 +104,10 @@ def is_suspicious_input(text: str) -> bool:
     """
     Check if input contains suspicious patterns that may indicate
     an injection attempt (SQL injection, XSS, etc.).
-    
+
     Args:
         text: Input text to check
-    
+
     Returns:
         True if suspicious patterns detected
     """
@@ -121,7 +120,7 @@ def is_suspicious_input(text: str) -> bool:
             return True
 
     # Check for excessive special characters (potential attack payload)
-    special_count = sum(1 for c in text if c in '<>{}[]|\\^~`')
+    special_count = sum(1 for c in text if c in "<>{}[]|\\^~`")
     if special_count > len(text) * 0.3:
         return True
 
@@ -131,20 +130,20 @@ def is_suspicious_input(text: str) -> bool:
 def sanitize_filename(filename: str) -> str:
     """
     Sanitize a filename to prevent path traversal attacks.
-    
+
     Args:
         filename: Raw filename
-    
+
     Returns:
         Safe filename
     """
     # Remove path separators
-    filename = filename.replace('/', '').replace('\\', '')
+    filename = filename.replace("/", "").replace("\\", "")
     # Remove null bytes
-    filename = filename.replace('\x00', '')
+    filename = filename.replace("\x00", "")
     # Remove leading dots (hidden files / traversal)
-    filename = filename.lstrip('.')
+    filename = filename.lstrip(".")
     # Only allow alphanumeric, dash, underscore, dot
-    filename = re.sub(r'[^\w\-.]', '_', filename)
+    filename = re.sub(r"[^\w\-.]", "_", filename)
     # Truncate
-    return filename[:255] if filename else 'unnamed'
+    return filename[:255] if filename else "unnamed"

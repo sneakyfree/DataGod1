@@ -24,21 +24,23 @@ Note: Some states also report complaints and serious incidents.
 """
 
 import asyncio
+import json
+import logging
+import re
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
 import aiohttp
 from bs4 import BeautifulSoup
-from dataclasses import dataclass, field
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List, Dict, Any
-import json
-import re
-import logging
 
 logger = logging.getLogger(__name__)
 
 
 class FacilityType(Enum):
     """Types of childcare facilities"""
+
     # Center-based
     CHILD_CARE_CENTER = "child_care_center"
     PRESCHOOL = "preschool"
@@ -68,6 +70,7 @@ class FacilityType(Enum):
 
 class LicenseStatus(Enum):
     """License status"""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
     PROVISIONAL = "provisional"
@@ -82,6 +85,7 @@ class LicenseStatus(Enum):
 
 class LicenseType(Enum):
     """Types of licenses"""
+
     FULL_LICENSE = "full_license"
     PROVISIONAL = "provisional"
     TEMPORARY = "temporary"
@@ -94,6 +98,7 @@ class LicenseType(Enum):
 
 class InspectionType(Enum):
     """Types of inspections"""
+
     INITIAL = "initial"
     ANNUAL = "annual"
     RENEWAL = "renewal"
@@ -105,6 +110,7 @@ class InspectionType(Enum):
 
 class ViolationType(Enum):
     """Types of violations"""
+
     CRITICAL = "critical"
     SERIOUS = "serious"
     NON_CRITICAL = "non_critical"
@@ -115,6 +121,7 @@ class ViolationType(Enum):
 @dataclass
 class Inspection:
     """Inspection record"""
+
     inspection_date: date
     inspection_type: InspectionType = InspectionType.ANNUAL
     result: Optional[str] = None
@@ -128,6 +135,7 @@ class Inspection:
 @dataclass
 class Violation:
     """Violation record"""
+
     violation_date: date
     violation_type: ViolationType = ViolationType.NON_CRITICAL
     code: Optional[str] = None
@@ -141,6 +149,7 @@ class Violation:
 @dataclass
 class Capacity:
     """Facility capacity by age group"""
+
     total_capacity: int = 0
     infants: int = 0  # 0-12 months
     toddlers: int = 0  # 12-24 months
@@ -152,6 +161,7 @@ class Capacity:
 @dataclass
 class ChildcareFacility:
     """Childcare facility license record"""
+
     # Facility identification
     facility_name: str
     license_number: Optional[str] = None
@@ -217,6 +227,7 @@ class ChildcareFacility:
 @dataclass
 class SearchCriteria:
     """Search criteria for childcare facilities"""
+
     facility_name: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
@@ -231,6 +242,7 @@ class SearchCriteria:
 @dataclass
 class SearchResult:
     """Search result container"""
+
     facilities: List[ChildcareFacility] = field(default_factory=list)
     total_count: int = 0
     page: int = 1
@@ -327,7 +339,11 @@ class BaseChildcareAPI:
             return FacilityType.PRESCHOOL
         elif "head start" in type_lower:
             return FacilityType.HEAD_START
-        elif "before" in type_lower or "after" in type_lower or "school age" in type_lower:
+        elif (
+            "before" in type_lower
+            or "after" in type_lower
+            or "school age" in type_lower
+        ):
             return FacilityType.BEFORE_AFTER_SCHOOL
         elif "summer" in type_lower or "camp" in type_lower:
             return FacilityType.SUMMER_CAMP
@@ -335,7 +351,11 @@ class BaseChildcareAPI:
             return FacilityType.INFANT_CENTER
         elif "montessori" in type_lower:
             return FacilityType.MONTESSORI
-        elif "center" in type_lower or "day care" in type_lower or "daycare" in type_lower:
+        elif (
+            "center" in type_lower
+            or "day care" in type_lower
+            or "daycare" in type_lower
+        ):
             return FacilityType.CHILD_CARE_CENTER
 
         return FacilityType.OTHER
@@ -375,22 +395,18 @@ class BaseChildcareAPI:
         zip_code: Optional[str] = None,
         county: Optional[str] = None,
         facility_type: Optional[FacilityType] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for childcare facilities - override in subclass"""
         raise NotImplementedError
 
     async def get_facility_detail(
-        self,
-        license_number: str
+        self, license_number: str
     ) -> Optional[ChildcareFacility]:
         """Get detailed facility information - override in subclass"""
         raise NotImplementedError
 
-    async def get_inspection_history(
-        self,
-        license_number: str
-    ) -> List[Inspection]:
+    async def get_inspection_history(self, license_number: str) -> List[Inspection]:
         """Get inspection history for a facility"""
         raise NotImplementedError
 
@@ -411,16 +427,14 @@ class CaliforniaChildcareAPI(BaseChildcareAPI):
         zip_code: Optional[str] = None,
         county: Optional[str] = None,
         facility_type: Optional[FacilityType] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search California childcare facilities"""
         import time
+
         start_time = time.time()
 
-        params = {
-            "facilityType": "CHILDCARE",
-            "pageSize": min(max_results, 100)
-        }
+        params = {"facilityType": "CHILDCARE", "pageSize": min(max_results, 100)}
 
         if name:
             params["facilityName"] = name
@@ -446,7 +460,9 @@ class CaliforniaChildcareAPI(BaseChildcareAPI):
             facility = ChildcareFacility(
                 facility_name=item.get("facilityName", ""),
                 license_number=item.get("facilityNumber"),
-                facility_type=self._classify_facility_type(item.get("facilityType", "")),
+                facility_type=self._classify_facility_type(
+                    item.get("facilityType", "")
+                ),
                 address=item.get("address"),
                 city=item.get("city"),
                 state="CA",
@@ -496,10 +512,11 @@ class TexasChildcareAPI(BaseChildcareAPI):
         zip_code: Optional[str] = None,
         county: Optional[str] = None,
         facility_type: Optional[FacilityType] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Texas childcare facilities"""
         import time
+
         start_time = time.time()
 
         params = {"pageSize": min(max_results, 100)}
@@ -528,7 +545,9 @@ class TexasChildcareAPI(BaseChildcareAPI):
             facility = ChildcareFacility(
                 facility_name=item.get("operationName", ""),
                 license_number=item.get("operationNumber"),
-                facility_type=self._classify_facility_type(item.get("operationType", "")),
+                facility_type=self._classify_facility_type(
+                    item.get("operationType", "")
+                ),
                 address=item.get("address"),
                 city=item.get("city"),
                 state="TX",
@@ -578,10 +597,11 @@ class FloridaChildcareAPI(BaseChildcareAPI):
         zip_code: Optional[str] = None,
         county: Optional[str] = None,
         facility_type: Optional[FacilityType] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Florida childcare facilities"""
         import time
+
         start_time = time.time()
 
         params = {"searchType": "ChildCare"}
@@ -661,10 +681,11 @@ class NewYorkChildcareAPI(BaseChildcareAPI):
         zip_code: Optional[str] = None,
         county: Optional[str] = None,
         facility_type: Optional[FacilityType] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search New York childcare facilities"""
         import time
+
         start_time = time.time()
 
         params = {"pageSize": min(max_results, 100)}
@@ -679,7 +700,9 @@ class NewYorkChildcareAPI(BaseChildcareAPI):
             params["county"] = county
 
         try:
-            data = await self._fetch_json(f"{self.API_URL}/api/facilities", params=params)
+            data = await self._fetch_json(
+                f"{self.API_URL}/api/facilities", params=params
+            )
         except Exception as e:
             logger.error(f"New York childcare search failed: {e}")
             return SearchResult(
@@ -746,15 +769,17 @@ def get_childcare_api(state: str) -> Optional[BaseChildcareAPI]:
 
 # Convenience functions
 
+
 def search_childcare_facilities(
     state: str,
     name: Optional[str] = None,
     city: Optional[str] = None,
     zip_code: Optional[str] = None,
     county: Optional[str] = None,
-    max_results: int = 100
+    max_results: int = 100,
 ) -> SearchResult:
     """Search childcare facilities in a state"""
+
     async def _search():
         api = get_childcare_api(state)
         if not api:
@@ -769,47 +794,46 @@ def search_childcare_facilities(
                 city=city,
                 zip_code=zip_code,
                 county=county,
-                max_results=max_results
+                max_results=max_results,
             )
+
     return asyncio.run(_search())
 
 
 def search_childcare_by_zip(
-    state: str,
-    zip_code: str,
-    max_results: int = 100
+    state: str, zip_code: str, max_results: int = 100
 ) -> SearchResult:
     """Search childcare facilities by ZIP code"""
     return search_childcare_facilities(
-        state=state,
-        zip_code=zip_code,
-        max_results=max_results
+        state=state, zip_code=zip_code, max_results=max_results
     )
 
 
 def search_all_states_childcare(
     city: Optional[str] = None,
     zip_code: Optional[str] = None,
-    max_results_per_state: int = 50
+    max_results_per_state: int = 50,
 ) -> List[SearchResult]:
     """Search childcare facilities across all available states"""
+
     async def _search_all():
         results = []
         for state_code, api_class in STATE_CHILDCARE_APIS.items():
             try:
                 async with api_class() as api:
                     result = await api.search_facilities(
-                        city=city,
-                        zip_code=zip_code,
-                        max_results=max_results_per_state
+                        city=city, zip_code=zip_code, max_results=max_results_per_state
                     )
                     results.append(result)
             except Exception as e:
                 logger.error(f"Error searching {state_code}: {e}")
-                results.append(SearchResult(
-                    facilities=[],
-                    total_count=0,
-                    warnings=[f"{state_code}: {str(e)}"],
-                ))
+                results.append(
+                    SearchResult(
+                        facilities=[],
+                        total_count=0,
+                        warnings=[f"{state_code}: {str(e)}"],
+                    )
+                )
         return results
+
     return asyncio.run(_search_all())

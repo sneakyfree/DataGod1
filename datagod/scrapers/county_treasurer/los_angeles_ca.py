@@ -31,22 +31,23 @@ import re
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 from .base import (
     CountyTreasurerBase,
-    TaxStatus,
     LienStatus,
-    TaxSaleType,
     PaymentMethod,
-    TaxBillItem,
-    TaxBill,
-    TaxPayment,
-    TaxLien,
-    TaxSaleProperty,
     PropertyTaxRecord,
+    TaxBill,
+    TaxBillItem,
+    TaxLien,
+    TaxPayment,
+    TaxSaleProperty,
+    TaxSaleType,
     TaxSearchCriteria,
     TaxSearchResult,
+    TaxStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -126,10 +127,7 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
             "formatted": self._format_apn(apn),
         }
 
-    async def get_tax_record(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyTaxRecord]:
+    async def get_tax_record(self, parcel_id: str) -> Optional[PropertyTaxRecord]:
         """Get property tax record by APN."""
         formatted_apn = self._format_apn(parcel_id)
         detail_url = f"{self.API_BASE}property/{formatted_apn}"
@@ -150,10 +148,11 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> TaxSearchResult:
         """Search for tax records by property address."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}search/address"
@@ -201,12 +200,11 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
         )
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> TaxSearchResult:
         """Search for tax records by owner name."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}search/owner"
@@ -249,12 +247,11 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
         )
 
     async def get_delinquent_properties(
-        self,
-        min_amount: Optional[Decimal] = None,
-        max_results: int = 500
+        self, min_amount: Optional[Decimal] = None, max_results: int = 500
     ) -> TaxSearchResult:
         """Get list of tax-defaulted properties."""
         import time
+
         start_time = time.time()
 
         defaulted_url = f"{self.API_BASE}defaulted"
@@ -291,7 +288,9 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
             page_number=1,
             page_size=max_results,
             has_more=json_response.get("hasMore", False),
-            search_criteria=TaxSearchCriteria(delinquent_only=True, min_amount_due=min_amount),
+            search_criteria=TaxSearchCriteria(
+                delinquent_only=True, min_amount_due=min_amount
+            ),
             search_time_ms=search_time,
             source_system=self.SYSTEM_NAME,
         )
@@ -300,7 +299,7 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
         self,
         sale_type: Optional[TaxSaleType] = None,
         upcoming_only: bool = True,
-        max_results: int = 500
+        max_results: int = 500,
     ) -> List[TaxSaleProperty]:
         """Get properties scheduled for tax sale auction."""
         sale_url = f"{self.API_BASE}auction"
@@ -327,10 +326,7 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
 
         return properties
 
-    async def get_supplemental_bills(
-        self,
-        parcel_id: str
-    ) -> List[TaxBill]:
+    async def get_supplemental_bills(self, parcel_id: str) -> List[TaxBill]:
         """Get supplemental tax bills for a property (due to ownership change or new construction)."""
         formatted_apn = self._format_apn(parcel_id)
         supp_url = f"{self.API_BASE}supplemental/{formatted_apn}"
@@ -360,8 +356,12 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
         formatted_apn = self._format_apn(apn)
 
         # Parse current tax info
-        current_tax = self._parse_decimal(str(item.get("totalTax", item.get("annualTax", ""))))
-        balance_due = self._parse_decimal(str(item.get("balanceDue", item.get("amountDue", ""))))
+        current_tax = self._parse_decimal(
+            str(item.get("totalTax", item.get("annualTax", "")))
+        )
+        balance_due = self._parse_decimal(
+            str(item.get("balanceDue", item.get("amountDue", "")))
+        )
         amount_paid = self._parse_decimal(str(item.get("amountPaid", "")))
 
         # Determine status
@@ -370,7 +370,11 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
 
         # Check for default status (CA term for tax delinquency)
         is_defaulted = item.get("isDefaulted", item.get("taxDefaulted", False))
-        is_delinquent = is_defaulted or "DEFAULT" in str(status_str).upper() or (balance_due and balance_due > 0)
+        is_delinquent = (
+            is_defaulted
+            or "DEFAULT" in str(status_str).upper()
+            or (balance_due and balance_due > 0)
+        )
 
         if is_defaulted:
             tax_status = TaxStatus.DELINQUENT
@@ -399,16 +403,25 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
             owner_name=item.get("owner", item.get("ownerName", item.get("assessee"))),
             owner_address=item.get("ownerAddress", item.get("mailingAddress")),
             assessed_value=self._parse_decimal(str(item.get("assessedValue", ""))),
-            taxable_value=self._parse_decimal(str(item.get("netAssessedValue", item.get("taxableValue", "")))),
+            taxable_value=self._parse_decimal(
+                str(item.get("netAssessedValue", item.get("taxableValue", "")))
+            ),
             market_value=self._parse_decimal(str(item.get("marketValue", ""))),
-            current_tax_year=self._parse_int(str(item.get("taxYear", item.get("fiscalYear", "")))),
+            current_tax_year=self._parse_int(
+                str(item.get("taxYear", item.get("fiscalYear", "")))
+            ),
             current_tax_amount=current_tax,
             current_amount_paid=amount_paid,
             current_balance_due=balance_due,
             tax_status=tax_status,
             is_delinquent=is_delinquent,
-            years_delinquent=self._parse_int(str(item.get("yearsDefaulted", item.get("yearsDelinquent", "0")))) or 0,
-            total_delinquent=self._parse_decimal(str(item.get("totalDefaulted", item.get("totalDelinquent", "")))),
+            years_delinquent=self._parse_int(
+                str(item.get("yearsDefaulted", item.get("yearsDelinquent", "0")))
+            )
+            or 0,
+            total_delinquent=self._parse_decimal(
+                str(item.get("totalDefaulted", item.get("totalDelinquent", "")))
+            ),
             exemptions=exemptions,
             exemption_amount=self._parse_decimal(str(item.get("exemptionAmount", ""))),
             has_tax_lien=is_defaulted,  # In CA, defaulted = potential lien
@@ -444,7 +457,9 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
                 tax_bills.append(bill)
 
         # Sort bills by year (most recent first)
-        tax_bills.sort(key=lambda b: (b.tax_year, b.installment_number or 0), reverse=True)
+        tax_bills.sort(
+            key=lambda b: (b.tax_year, b.installment_number or 0), reverse=True
+        )
 
         # Parse payment history
         payment_history = []
@@ -473,20 +488,33 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
 
         # Parse special assessments (Mello-Roos, etc.)
         special_assessments = []
-        for assess_data in data.get("specialAssessments", data.get("directCharges", [])):
+        for assess_data in data.get(
+            "specialAssessments", data.get("directCharges", [])
+        ):
             item = TaxBillItem(
-                description=assess_data.get("description", assess_data.get("name", "Special Assessment")),
-                amount=self._parse_decimal(str(assess_data.get("amount", ""))) or Decimal(0),
-                taxing_authority=assess_data.get("authority", assess_data.get("district")),
+                description=assess_data.get(
+                    "description", assess_data.get("name", "Special Assessment")
+                ),
+                amount=self._parse_decimal(str(assess_data.get("amount", "")))
+                or Decimal(0),
+                taxing_authority=assess_data.get(
+                    "authority", assess_data.get("district")
+                ),
                 raw_data=assess_data,
             )
             special_assessments.append(item)
 
         # Calculate totals
-        current_tax = self._parse_decimal(str(data.get("annualTax", data.get("totalTax", ""))))
-        balance_due = self._parse_decimal(str(data.get("balanceDue", data.get("totalDue", ""))))
+        current_tax = self._parse_decimal(
+            str(data.get("annualTax", data.get("totalTax", "")))
+        )
+        balance_due = self._parse_decimal(
+            str(data.get("balanceDue", data.get("totalDue", "")))
+        )
         amount_paid = self._parse_decimal(str(data.get("amountPaid", "")))
-        total_defaulted = self._parse_decimal(str(data.get("totalDefaulted", data.get("priorDue", ""))))
+        total_defaulted = self._parse_decimal(
+            str(data.get("totalDefaulted", data.get("priorDue", "")))
+        )
 
         # Determine status
         is_defaulted = data.get("isDefaulted", data.get("taxDefaulted", False))
@@ -508,9 +536,13 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
             owner_name=data.get("owner", data.get("ownerName", data.get("assessee"))),
             owner_address=data.get("ownerAddress", data.get("mailingAddress")),
             assessed_value=self._parse_decimal(str(data.get("assessedValue", ""))),
-            taxable_value=self._parse_decimal(str(data.get("netAssessedValue", data.get("taxableValue", "")))),
+            taxable_value=self._parse_decimal(
+                str(data.get("netAssessedValue", data.get("taxableValue", "")))
+            ),
             market_value=self._parse_decimal(str(data.get("marketValue", ""))),
-            current_tax_year=self._parse_int(str(data.get("taxYear", data.get("fiscalYear", "")))),
+            current_tax_year=self._parse_int(
+                str(data.get("taxYear", data.get("fiscalYear", "")))
+            ),
             current_tax_amount=current_tax,
             current_amount_paid=amount_paid,
             current_balance_due=balance_due,
@@ -535,7 +567,7 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
         data: Dict[str, Any],
         apn: str,
         is_secured: bool = True,
-        is_supplemental: bool = False
+        is_supplemental: bool = False,
     ) -> Optional[TaxBill]:
         """Parse a tax bill record."""
         tax_year = self._parse_int(str(data.get("taxYear", data.get("fiscalYear", ""))))
@@ -547,7 +579,10 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
         for item_data in data.get("lineItems", data.get("taxes", [])):
             item = TaxBillItem(
                 description=item_data.get("description", item_data.get("name", "")),
-                amount=self._parse_decimal(str(item_data.get("amount", item_data.get("tax", "")))) or Decimal(0),
+                amount=self._parse_decimal(
+                    str(item_data.get("amount", item_data.get("tax", "")))
+                )
+                or Decimal(0),
                 taxing_authority=item_data.get("authority", item_data.get("agency")),
                 tax_rate=self._parse_decimal(str(item_data.get("rate", ""))),
                 raw_data=item_data,
@@ -555,11 +590,16 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
             line_items.append(item)
 
         # Add special assessments / direct charges
-        for assess_data in data.get("directCharges", data.get("specialAssessments", [])):
+        for assess_data in data.get(
+            "directCharges", data.get("specialAssessments", [])
+        ):
             item = TaxBillItem(
                 description=assess_data.get("description", "Direct Charge"),
-                amount=self._parse_decimal(str(assess_data.get("amount", ""))) or Decimal(0),
-                taxing_authority=assess_data.get("authority", assess_data.get("district")),
+                amount=self._parse_decimal(str(assess_data.get("amount", "")))
+                or Decimal(0),
+                taxing_authority=assess_data.get(
+                    "authority", assess_data.get("district")
+                ),
                 raw_data=assess_data,
             )
             line_items.append(item)
@@ -580,15 +620,23 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
             property_address=data.get("address", data.get("situsAddress")),
             owner_name=data.get("owner", data.get("assessee")),
             assessed_value=self._parse_decimal(str(data.get("assessedValue", ""))),
-            taxable_value=self._parse_decimal(str(data.get("netAssessedValue", data.get("taxableValue", "")))),
+            taxable_value=self._parse_decimal(
+                str(data.get("netAssessedValue", data.get("taxableValue", "")))
+            ),
             tax_rate=self._parse_decimal(str(data.get("taxRate", ""))),
-            gross_tax=self._parse_decimal(str(data.get("grossTax", data.get("totalTax", "")))),
+            gross_tax=self._parse_decimal(
+                str(data.get("grossTax", data.get("totalTax", "")))
+            ),
             exemptions=self._parse_decimal(str(data.get("exemptions", ""))),
             net_tax=self._parse_decimal(str(data.get("netTax", ""))),
-            penalties=self._parse_decimal(str(data.get("penalty", data.get("penalties", "")))),
+            penalties=self._parse_decimal(
+                str(data.get("penalty", data.get("penalties", "")))
+            ),
             interest=self._parse_decimal(str(data.get("interest", ""))),
             fees=self._parse_decimal(str(data.get("costs", data.get("fees", "")))),
-            total_due=self._parse_decimal(str(data.get("totalDue", data.get("amountDue", "")))),
+            total_due=self._parse_decimal(
+                str(data.get("totalDue", data.get("amountDue", "")))
+            ),
             amount_paid=self._parse_decimal(str(data.get("amountPaid", ""))),
             balance_due=self._parse_decimal(str(data.get("balanceDue", ""))),
             payment_status=self._parse_tax_status(data.get("status", "")),
@@ -605,7 +653,9 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
     def _parse_payment(self, data: Dict[str, Any], apn: str) -> Optional[TaxPayment]:
         """Parse a payment record."""
         payment_date = self._parse_date(data.get("paymentDate", data.get("date", "")))
-        amount = self._parse_decimal(str(data.get("amount", data.get("paymentAmount", ""))))
+        amount = self._parse_decimal(
+            str(data.get("amount", data.get("paymentAmount", "")))
+        )
 
         if not amount:
             return None
@@ -629,13 +679,20 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
                 method = PaymentMethod.ONLINE
 
         return TaxPayment(
-            payment_id=data.get("paymentId", data.get("transactionId", data.get("receiptNumber"))),
+            payment_id=data.get(
+                "paymentId", data.get("transactionId", data.get("receiptNumber"))
+            ),
             parcel_id=apn,
-            tax_year=self._parse_int(str(data.get("taxYear", data.get("fiscalYear", "")))) or 0,
+            tax_year=self._parse_int(
+                str(data.get("taxYear", data.get("fiscalYear", "")))
+            )
+            or 0,
             payment_date=payment_date,
             payment_amount=amount,
             payment_method=method,
-            principal_paid=self._parse_decimal(str(data.get("principal", data.get("taxPaid", "")))),
+            principal_paid=self._parse_decimal(
+                str(data.get("principal", data.get("taxPaid", "")))
+            ),
             interest_paid=self._parse_decimal(str(data.get("interest", ""))),
             penalty_paid=self._parse_decimal(str(data.get("penalty", ""))),
             fees_paid=self._parse_decimal(str(data.get("costs", data.get("fees", "")))),
@@ -646,7 +703,9 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
             raw_data=data,
         )
 
-    def _parse_tax_sale_property(self, data: Dict[str, Any]) -> Optional[TaxSaleProperty]:
+    def _parse_tax_sale_property(
+        self, data: Dict[str, Any]
+    ) -> Optional[TaxSaleProperty]:
         """Parse a tax sale property listing."""
         apn = data.get("apn", data.get("parcelNumber", data.get("ain", "")))
         if not apn:
@@ -657,7 +716,9 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
         # Parse defaulted years
         tax_years = data.get("taxYears", data.get("yearsDefaulted", []))
         if isinstance(tax_years, str):
-            tax_years = [int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()]
+            tax_years = [
+                int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()
+            ]
         elif isinstance(tax_years, int):
             tax_years = [tax_years]
 
@@ -681,11 +742,17 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
             penalties_due=self._parse_decimal(str(data.get("penalties", ""))),
             interest_due=self._parse_decimal(str(data.get("interest", ""))),
             fees_due=self._parse_decimal(str(data.get("costs", ""))),
-            total_amount_due=self._parse_decimal(str(data.get("totalDue", data.get("minimumBid", "")))),
+            total_amount_due=self._parse_decimal(
+                str(data.get("totalDue", data.get("minimumBid", "")))
+            ),
             sale_type=sale_type,
-            sale_date=self._parse_date(data.get("saleDate", data.get("auctionDate", ""))),
+            sale_date=self._parse_date(
+                data.get("saleDate", data.get("auctionDate", ""))
+            ),
             auction_date=self._parse_date(data.get("auctionDate", "")),
-            minimum_bid=self._parse_decimal(str(data.get("minimumBid", data.get("openingBid", "")))),
+            minimum_bid=self._parse_decimal(
+                str(data.get("minimumBid", data.get("openingBid", "")))
+            ),
             opening_bid=self._parse_decimal(str(data.get("openingBid", ""))),
             assessed_value=self._parse_decimal(str(data.get("assessedValue", ""))),
             market_value=self._parse_decimal(str(data.get("marketValue", ""))),
@@ -732,6 +799,7 @@ class LosAngelesCountyTreasurer(CountyTreasurerBase):
 
 # Convenience functions
 
+
 def get_la_county_tax_record(parcel_id: str) -> Optional[PropertyTaxRecord]:
     """Get LA County tax record by APN."""
     treasurer = LosAngelesCountyTreasurer()
@@ -739,6 +807,7 @@ def get_la_county_tax_record(parcel_id: str) -> Optional[PropertyTaxRecord]:
     async def _get():
         async with treasurer:
             return await treasurer.get_tax_record(parcel_id)
+
     return asyncio.run(_get())
 
 
@@ -746,14 +815,17 @@ def search_la_county_by_address(
     street_address: str,
     city: Optional[str] = None,
     zip_code: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> TaxSearchResult:
     """Search LA County tax records by address."""
     treasurer = LosAngelesCountyTreasurer()
 
     async def _search():
         async with treasurer:
-            return await treasurer.search_by_address(street_address, city, zip_code, **kwargs)
+            return await treasurer.search_by_address(
+                street_address, city, zip_code, **kwargs
+            )
+
     return asyncio.run(_search())
 
 
@@ -764,4 +836,5 @@ def search_la_county_by_owner(owner_name: str, **kwargs) -> TaxSearchResult:
     async def _search():
         async with treasurer:
             return await treasurer.search_by_owner(owner_name, **kwargs)
+
     return asyncio.run(_search())

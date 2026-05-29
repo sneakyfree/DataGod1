@@ -34,12 +34,12 @@ from bs4 import BeautifulSoup
 
 from .base import (
     CountyRecorderBase,
-    DocumentType,
+    DocumentParty,
     DocumentStatus,
+    DocumentType,
+    LegalDescription,
     PartyRole,
     RecordedDocument,
-    DocumentParty,
-    LegalDescription,
     SearchCriteria,
     SearchResult,
 )
@@ -94,7 +94,6 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         "TRUSTEE'S DEED UPON SALE": DocumentType.TRUSTEES_DEED_UPON_SALE,
         "INTERSPOUSAL TRANSFER DEED": DocumentType.QUITCLAIM_DEED,
         "ITD": DocumentType.QUITCLAIM_DEED,
-
         # Deeds of Trust (California uses DOT instead of Mortgage)
         "DOT": DocumentType.DEED_OF_TRUST,
         "DEED OF TRUST": DocumentType.DEED_OF_TRUST,
@@ -112,7 +111,6 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         "ASSIGNMENT OF DOT": DocumentType.MORTGAGE_ASSIGNMENT,
         "MOD": DocumentType.MORTGAGE_MODIFICATION,
         "LOAN MODIFICATION": DocumentType.MORTGAGE_MODIFICATION,
-
         # Liens
         "ML": DocumentType.MECHANICS_LIEN,
         "MECHANIC'S LIEN": DocumentType.MECHANICS_LIEN,
@@ -131,7 +129,6 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         "STATE TAX LIEN": DocumentType.TAX_LIEN_STATE,
         "FTB LIEN": DocumentType.TAX_LIEN_STATE,
         "CERTIFICATE OF RELEASE FTL": DocumentType.TAX_LIEN_RELEASE,
-
         # Foreclosure (California non-judicial foreclosure)
         "NOD": DocumentType.NOTICE_OF_DEFAULT,
         "NOTICE OF DEFAULT": DocumentType.NOTICE_OF_DEFAULT,
@@ -143,14 +140,12 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         "LP": DocumentType.LIS_PENDENS,
         "LIS PENDENS": DocumentType.LIS_PENDENS,
         "NOTICE OF PENDENCY OF ACTION": DocumentType.LIS_PENDENS,
-
         # UCC
         "UCC1": DocumentType.UCC_FINANCING,
         "UCC-1": DocumentType.UCC_FINANCING,
         "FINANCING STATEMENT": DocumentType.UCC_FINANCING,
         "UCC3": DocumentType.UCC_AMENDMENT,
         "UCC-3": DocumentType.UCC_AMENDMENT,
-
         # Easements and Restrictions
         "EASE": DocumentType.EASEMENT,
         "EASEMENT": DocumentType.EASEMENT,
@@ -160,7 +155,6 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         "CC&RS": DocumentType.CC_AND_RS,
         "DECLARATION OF CC&RS": DocumentType.CC_AND_RS,
         "COVENANT": DocumentType.RESTRICTIVE_COVENANT,
-
         # Other common documents
         "AFF": DocumentType.AFFIDAVIT,
         "AFFIDAVIT": DocumentType.AFFIDAVIT,
@@ -175,7 +169,6 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         "MEM": DocumentType.MEMORANDUM,
         "MEMORANDUM": DocumentType.MEMORANDUM,
         "OPTION": DocumentType.OPTION_TO_PURCHASE,
-
         # Maps
         "PM": DocumentType.PARCEL_MAP,
         "PARCEL MAP": DocumentType.PARCEL_MAP,
@@ -243,13 +236,16 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         soup = self._parse_html(html)
 
         # Find results container
-        results_div = soup.find("div", {"class": "search-results"}) or soup.find("div", {"id": "results"})
+        results_div = soup.find("div", {"class": "search-results"}) or soup.find(
+            "div", {"id": "results"}
+        )
         if not results_div:
             results_div = soup
 
         # Find result rows/cards
-        result_items = results_div.find_all("div", {"class": "result-item"}) or \
-                       results_div.find_all("tr", {"class": "result-row"})
+        result_items = results_div.find_all(
+            "div", {"class": "result-item"}
+        ) or results_div.find_all("tr", {"class": "result-row"})
 
         if not result_items:
             # Try table format
@@ -301,7 +297,11 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
 
         # Get link to detail page
         doc_link = cells[0].find("a")
-        source_url = urljoin(self.BASE_URL, doc_link.get("href")) if doc_link and doc_link.get("href") else None
+        source_url = (
+            urljoin(self.BASE_URL, doc_link.get("href"))
+            if doc_link and doc_link.get("href")
+            else None
+        )
 
         # Parse parties
         parties = []
@@ -311,20 +311,24 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         for name in self._split_party_names(grantor_text):
             if name:
                 grantors.append(self._normalize_name(name))
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTOR,
-                    raw_name=name
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTOR,
+                        raw_name=name,
+                    )
+                )
 
         for name in self._split_party_names(grantee_text):
             if name:
                 grantees.append(self._normalize_name(name))
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTEE,
-                    raw_name=name
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTEE,
+                        raw_name=name,
+                    )
+                )
 
         # Parse APN
         legal_descriptions = []
@@ -333,11 +337,11 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
             apn = self._parse_apn(apn_text)
             if apn:
                 parcels.append(apn)
-                legal_descriptions.append(LegalDescription(
-                    full_description=f"APN: {apn}",
-                    parcel_number=apn,
-                    apn=apn
-                ))
+                legal_descriptions.append(
+                    LegalDescription(
+                        full_description=f"APN: {apn}", parcel_number=apn, apn=apn
+                    )
+                )
 
         return RecordedDocument(
             document_number=doc_number,
@@ -359,13 +363,15 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                 "grantor_raw": grantor_text,
                 "grantee_raw": grantee_text,
                 "apn_raw": apn_text,
-            }
+            },
         )
 
     def _parse_result_div(self, div) -> Optional[RecordedDocument]:
         """Parse a div-based result item."""
         # Find document number
-        doc_num_elem = div.find("span", {"class": "doc-number"}) or div.find(class_=re.compile(r"doc.*num"))
+        doc_num_elem = div.find("span", {"class": "doc-number"}) or div.find(
+            class_=re.compile(r"doc.*num")
+        )
         doc_number = doc_num_elem.get_text(strip=True) if doc_num_elem else None
 
         if not doc_number:
@@ -384,19 +390,29 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
             return None
 
         # Extract other fields
-        doc_type_elem = div.find("span", {"class": "doc-type"}) or div.find(class_=re.compile(r"type"))
+        doc_type_elem = div.find("span", {"class": "doc-type"}) or div.find(
+            class_=re.compile(r"type")
+        )
         doc_type_raw = doc_type_elem.get_text(strip=True) if doc_type_elem else ""
 
-        date_elem = div.find("span", {"class": "recorded-date"}) or div.find(class_=re.compile(r"date"))
+        date_elem = div.find("span", {"class": "recorded-date"}) or div.find(
+            class_=re.compile(r"date")
+        )
         recorded_date_str = date_elem.get_text(strip=True) if date_elem else ""
 
-        grantor_elem = div.find("span", {"class": "grantor"}) or div.find(class_=re.compile(r"grantor"))
+        grantor_elem = div.find("span", {"class": "grantor"}) or div.find(
+            class_=re.compile(r"grantor")
+        )
         grantor_text = grantor_elem.get_text(strip=True) if grantor_elem else ""
 
-        grantee_elem = div.find("span", {"class": "grantee"}) or div.find(class_=re.compile(r"grantee"))
+        grantee_elem = div.find("span", {"class": "grantee"}) or div.find(
+            class_=re.compile(r"grantee")
+        )
         grantee_text = grantee_elem.get_text(strip=True) if grantee_elem else ""
 
-        apn_elem = div.find("span", {"class": "apn"}) or div.find(class_=re.compile(r"apn|parcel"))
+        apn_elem = div.find("span", {"class": "apn"}) or div.find(
+            class_=re.compile(r"apn|parcel")
+        )
         apn_text = apn_elem.get_text(strip=True) if apn_elem else ""
 
         # Build parties lists
@@ -407,20 +423,24 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         for name in self._split_party_names(grantor_text):
             if name:
                 grantors.append(self._normalize_name(name))
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTOR,
-                    raw_name=name
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTOR,
+                        raw_name=name,
+                    )
+                )
 
         for name in self._split_party_names(grantee_text):
             if name:
                 grantees.append(self._normalize_name(name))
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTEE,
-                    raw_name=name
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTEE,
+                        raw_name=name,
+                    )
+                )
 
         # Parse APN
         legal_descriptions = []
@@ -429,15 +449,19 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
             apn = self._parse_apn(apn_text)
             if apn:
                 parcels.append(apn)
-                legal_descriptions.append(LegalDescription(
-                    full_description=f"APN: {apn}",
-                    parcel_number=apn,
-                    apn=apn
-                ))
+                legal_descriptions.append(
+                    LegalDescription(
+                        full_description=f"APN: {apn}", parcel_number=apn, apn=apn
+                    )
+                )
 
         # Get detail link
         link = div.find("a", href=re.compile(r"document|detail"))
-        source_url = urljoin(self.BASE_URL, link.get("href")) if link and link.get("href") else None
+        source_url = (
+            urljoin(self.BASE_URL, link.get("href"))
+            if link and link.get("href")
+            else None
+        )
 
         return RecordedDocument(
             document_number=doc_number,
@@ -485,7 +509,7 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search LA County records by party name.
@@ -503,6 +527,7 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
             SearchResult with matching documents
         """
         import time
+
         start_time = time.time()
 
         await self._initialize_session()
@@ -540,11 +565,7 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
             params["pageSize"] = min(50, max_results - len(all_documents))
 
             try:
-                status, html = await self._fetch(
-                    search_url,
-                    method="POST",
-                    data=params
-                )
+                status, html = await self._fetch(search_url, method="POST", data=params)
 
                 if status != 200:
                     logger.warning(f"Name search returned HTTP {status}")
@@ -556,7 +577,9 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                     has_more = False
                 else:
                     if document_types:
-                        documents = [d for d in documents if d.document_type in document_types]
+                        documents = [
+                            d for d in documents if d.document_type in document_types
+                        ]
 
                     all_documents.extend(documents)
                     page += 1
@@ -582,15 +605,14 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                 party_type=party_type,
                 start_date=start_date,
                 end_date=end_date,
-                document_types=document_types or []
+                document_types=document_types or [],
             ),
             search_time_ms=elapsed_ms,
-            source_system=self.SYSTEM_NAME
+            source_system=self.SYSTEM_NAME,
         )
 
     async def search_by_document_number(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """
         Search for a specific document by its recording number.
@@ -617,11 +639,7 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         search_url = f"{self.SEARCH_URL}search"
 
         try:
-            status, html = await self._fetch(
-                search_url,
-                method="POST",
-                data=params
-            )
+            status, html = await self._fetch(search_url, method="POST", data=params)
 
             if status != 200:
                 logger.warning(f"Document search returned HTTP {status}")
@@ -644,7 +662,7 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search LA County records by APN (Assessor's Parcel Number).
@@ -660,6 +678,7 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
             SearchResult with matching documents
         """
         import time
+
         start_time = time.time()
 
         await self._initialize_session()
@@ -676,7 +695,7 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                 search_criteria=SearchCriteria(parcel_number=parcel_number),
                 search_time_ms=0,
                 source_system=self.SYSTEM_NAME,
-                warnings=["Invalid APN format. Use XXXX-XXX-XXX format."]
+                warnings=["Invalid APN format. Use XXXX-XXX-XXX format."],
             )
 
         params = {
@@ -700,11 +719,7 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
             params["pageSize"] = min(50, max_results - len(all_documents))
 
             try:
-                status, html = await self._fetch(
-                    search_url,
-                    method="POST",
-                    data=params
-                )
+                status, html = await self._fetch(search_url, method="POST", data=params)
 
                 if status != 200:
                     logger.warning(f"APN search returned HTTP {status}")
@@ -716,7 +731,9 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                     has_more = False
                 else:
                     if document_types:
-                        documents = [d for d in documents if d.document_type in document_types]
+                        documents = [
+                            d for d in documents if d.document_type in document_types
+                        ]
 
                     all_documents.extend(documents)
                     page += 1
@@ -740,10 +757,10 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                 parcel_number=apn,
                 start_date=start_date,
                 end_date=end_date,
-                document_types=document_types or []
+                document_types=document_types or [],
             ),
             search_time_ms=elapsed_ms,
-            source_system=self.SYSTEM_NAME
+            source_system=self.SYSTEM_NAME,
         )
 
     async def search_by_address(
@@ -753,7 +770,7 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         zip_code: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search LA County records by property address.
@@ -777,6 +794,7 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
             SearchResult with matching documents
         """
         import time
+
         start_time = time.time()
 
         await self._initialize_session()
@@ -801,11 +819,7 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         search_url = f"{self.SEARCH_URL}search"
 
         try:
-            status, html = await self._fetch(
-                search_url,
-                method="POST",
-                data=params
-            )
+            status, html = await self._fetch(search_url, method="POST", data=params)
 
             if status != 200:
                 return SearchResult(
@@ -817,7 +831,7 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                     search_criteria=SearchCriteria(property_address=address),
                     search_time_ms=int((time.time() - start_time) * 1000),
                     source_system=self.SYSTEM_NAME,
-                    warnings=[f"Search returned HTTP {status}"]
+                    warnings=[f"Search returned HTTP {status}"],
                 )
 
             documents = self._parse_search_results_html(html)
@@ -831,13 +845,13 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                 page_size=max_results,
                 has_more=False,
                 search_criteria=SearchCriteria(
-                    property_address=address,
-                    start_date=start_date,
-                    end_date=end_date
+                    property_address=address, start_date=start_date, end_date=end_date
                 ),
                 search_time_ms=elapsed_ms,
                 source_system=self.SYSTEM_NAME,
-                warnings=["For complete results, search by APN. Look up APN at portal.assessor.lacounty.gov"]
+                warnings=[
+                    "For complete results, search by APN. Look up APN at portal.assessor.lacounty.gov"
+                ],
             )
 
         except Exception as e:
@@ -851,12 +865,11 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                 search_criteria=SearchCriteria(property_address=address),
                 search_time_ms=int((time.time() - start_time) * 1000),
                 source_system=self.SYSTEM_NAME,
-                warnings=[str(e)]
+                warnings=[str(e)],
             )
 
     async def get_document_detail(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """
         Get detailed information for a specific document.
@@ -884,7 +897,7 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                 county=self.COUNTY_NAME,
                 state=self.STATE_ABBREV,
                 fips_code=self.FIPS_CODE,
-                source_url=detail_url
+                source_url=detail_url,
             )
 
             # Parse document details
@@ -896,17 +909,23 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
             logger.error(f"Error getting document detail: {e}")
             return None
 
-    def _parse_detail_page(self, soup: BeautifulSoup, doc: RecordedDocument) -> RecordedDocument:
+    def _parse_detail_page(
+        self, soup: BeautifulSoup, doc: RecordedDocument
+    ) -> RecordedDocument:
         """Parse the document detail page."""
         # Find document info section
-        info_section = soup.find("div", {"class": "document-info"}) or \
-                       soup.find("table", {"class": "document-details"}) or \
-                       soup.find("dl", {"class": "document-info"})
+        info_section = (
+            soup.find("div", {"class": "document-info"})
+            or soup.find("table", {"class": "document-details"})
+            or soup.find("dl", {"class": "document-info"})
+        )
 
         if info_section:
             # Parse key-value pairs
             if info_section.name == "dl":
-                items = list(zip(info_section.find_all("dt"), info_section.find_all("dd")))
+                items = list(
+                    zip(info_section.find_all("dt"), info_section.find_all("dd"))
+                )
                 for dt, dd in items:
                     label = dt.get_text(strip=True).lower().rstrip(":")
                     value = dd.get_text(strip=True)
@@ -920,20 +939,26 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                         doc = self._apply_detail_field(doc, label, value)
 
         # Parse parties
-        parties_section = soup.find("div", {"class": "parties"}) or soup.find("table", {"class": "parties"})
+        parties_section = soup.find("div", {"class": "parties"}) or soup.find(
+            "table", {"class": "parties"}
+        )
         if parties_section:
             doc.parties = self._parse_parties(parties_section)
             doc.grantors = doc.get_grantors()
             doc.grantees = doc.get_grantees()
 
         # Parse legal descriptions
-        legal_section = soup.find("div", {"class": "legal"}) or soup.find("div", {"class": "apn"})
+        legal_section = soup.find("div", {"class": "legal"}) or soup.find(
+            "div", {"class": "apn"}
+        )
         if legal_section:
             doc.legal_descriptions = self._parse_legal(legal_section)
             doc.parcels = [ld.apn for ld in doc.legal_descriptions if ld.apn]
 
         # Check for image
-        image_link = soup.find("a", {"class": "view-image"}) or soup.find("a", text=re.compile(r"view.*image", re.I))
+        image_link = soup.find("a", {"class": "view-image"}) or soup.find(
+            "a", text=re.compile(r"view.*image", re.I)
+        )
         if image_link:
             doc.image_available = True
             doc.image_url = urljoin(self.BASE_URL, image_link.get("href", ""))
@@ -947,7 +972,9 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
 
         return doc
 
-    def _apply_detail_field(self, doc: RecordedDocument, label: str, value: str) -> RecordedDocument:
+    def _apply_detail_field(
+        self, doc: RecordedDocument, label: str, value: str
+    ) -> RecordedDocument:
         """Apply a parsed detail field to the document."""
         label = label.lower()
 
@@ -979,7 +1006,9 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         parties = []
 
         # Find grantor names
-        grantor_section = section.find(text=re.compile(r"grantor|trustor|mortgagor", re.I))
+        grantor_section = section.find(
+            text=re.compile(r"grantor|trustor|mortgagor", re.I)
+        )
         if grantor_section:
             parent = grantor_section.find_parent(["tr", "div", "li", "dt"])
             if parent:
@@ -992,14 +1021,18 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                     text = value_elem.get_text()
                     text = re.sub(r"^.*?:\s*", "", text)  # Remove label
                     for name in self._split_party_names(text):
-                        parties.append(DocumentParty(
-                            name=self._normalize_name(name),
-                            role=PartyRole.GRANTOR,
-                            raw_name=name
-                        ))
+                        parties.append(
+                            DocumentParty(
+                                name=self._normalize_name(name),
+                                role=PartyRole.GRANTOR,
+                                raw_name=name,
+                            )
+                        )
 
         # Find grantee names
-        grantee_section = section.find(text=re.compile(r"grantee|trustee|beneficiary|mortgagee", re.I))
+        grantee_section = section.find(
+            text=re.compile(r"grantee|trustee|beneficiary|mortgagee", re.I)
+        )
         if grantee_section:
             parent = grantee_section.find_parent(["tr", "div", "li", "dt"])
             if parent:
@@ -1011,11 +1044,13 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                     text = value_elem.get_text()
                     text = re.sub(r"^.*?:\s*", "", text)
                     for name in self._split_party_names(text):
-                        parties.append(DocumentParty(
-                            name=self._normalize_name(name),
-                            role=PartyRole.GRANTEE,
-                            raw_name=name
-                        ))
+                        parties.append(
+                            DocumentParty(
+                                name=self._normalize_name(name),
+                                role=PartyRole.GRANTEE,
+                                raw_name=name,
+                            )
+                        )
 
         return parties
 
@@ -1029,11 +1064,11 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
         for apn_raw in apn_matches:
             apn = self._parse_apn(apn_raw)
             if apn:
-                legal_descriptions.append(LegalDescription(
-                    full_description=f"APN: {apn}",
-                    parcel_number=apn,
-                    apn=apn
-                ))
+                legal_descriptions.append(
+                    LegalDescription(
+                        full_description=f"APN: {apn}", parcel_number=apn, apn=apn
+                    )
+                )
 
         # Look for tract/lot/unit info (common in subdivisions)
         tract_match = re.search(r"tract\s+(?:no\.?\s*)?(\d+)", text, re.I)
@@ -1050,46 +1085,48 @@ class LosAngelesCountyRecorder(CountyRecorderBase):
                 if unit_match:
                     ld.unit = unit_match.group(1)
             else:
-                legal_descriptions.append(LegalDescription(
-                    full_description=text.strip()[:500],
-                    tract=tract_match.group(1) if tract_match else None,
-                    lot=lot_match.group(1) if lot_match else None,
-                    unit=unit_match.group(1) if unit_match else None
-                ))
+                legal_descriptions.append(
+                    LegalDescription(
+                        full_description=text.strip()[:500],
+                        tract=tract_match.group(1) if tract_match else None,
+                        lot=lot_match.group(1) if lot_match else None,
+                        unit=unit_match.group(1) if unit_match else None,
+                    )
+                )
 
         return legal_descriptions
 
 
 # Convenience functions for synchronous usage
 
+
 def search_la_county_by_name(
-    last_name: str,
-    first_name: Optional[str] = None,
-    **kwargs
+    last_name: str, first_name: Optional[str] = None, **kwargs
 ) -> SearchResult:
     """Search LA County records by name (synchronous)."""
+
     async def _search():
         async with LosAngelesCountyRecorder() as recorder:
             return await recorder.search_by_name(last_name, first_name, **kwargs)
+
     return asyncio.run(_search())
 
 
-def search_la_county_by_apn(
-    apn: str,
-    **kwargs
-) -> SearchResult:
+def search_la_county_by_apn(apn: str, **kwargs) -> SearchResult:
     """Search LA County records by APN (synchronous)."""
+
     async def _search():
         async with LosAngelesCountyRecorder() as recorder:
             return await recorder.search_by_parcel(apn, **kwargs)
+
     return asyncio.run(_search())
 
 
-def get_la_county_document(
-    document_number: str
-) -> Optional[RecordedDocument]:
+def get_la_county_document(document_number: str) -> Optional[RecordedDocument]:
     """Get an LA County document by number (synchronous)."""
+
     async def _get():
         async with LosAngelesCountyRecorder() as recorder:
             return await recorder.get_document_detail(document_number)
+
     return asyncio.run(_get())

@@ -2,12 +2,13 @@
 Pytest configuration and fixtures for DataGod tests
 """
 
-import pytest
 import os
 import sys
-from typing import Generator, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, Generator
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Test database URL (SQLite in memory for fast tests)
 TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -30,8 +31,8 @@ def clean_module_imports():
 
     # Clean up modules that were imported during the test
     modules_to_clean = [
-        'main',
-        'db_manager',
+        "main",
+        "db_manager",
     ]
 
     for module in modules_to_clean:
@@ -47,14 +48,15 @@ def reset_api_manager():
     # Clean up the global API manager
     try:
         from datagod.scrapers import api_manager
-        if hasattr(api_manager, 'api_manager'):
+
+        if hasattr(api_manager, "api_manager"):
             # Reset the singleton
             api_manager.api_manager.active_integrations.clear()
             api_manager.api_manager.usage_stats = {
-                'total_requests': 0,
-                'total_cost': 0.0,
-                'api_usage': {},
-                'last_updated': datetime.now().isoformat()
+                "total_requests": 0,
+                "total_cost": 0.0,
+                "api_usage": {},
+                "last_updated": datetime.now().isoformat(),
             }
     except ImportError:
         pass
@@ -64,10 +66,13 @@ def reset_api_manager():
 def engine():
     """Create test database engine"""
     from sqlalchemy import create_engine
+
     engine = create_engine(
-        TEST_DATABASE_URL, 
+        TEST_DATABASE_URL,
         echo=False,
-        connect_args={"check_same_thread": False} if "sqlite" in TEST_DATABASE_URL else {}
+        connect_args=(
+            {"check_same_thread": False} if "sqlite" in TEST_DATABASE_URL else {}
+        ),
     )
     yield engine
     engine.dispose()
@@ -77,8 +82,16 @@ def engine():
 def tables(engine):
     """Create all tables"""
     # Import from __init__.py which has all models registered with Base
-    from datagod.models import Base, Jurisdiction, Record, Entity, Relationship, DataSource
+    from datagod.models import (
+        Base,
+        DataSource,
+        Entity,
+        Jurisdiction,
+        Record,
+        Relationship,
+    )
     from datagod.models.user import User
+
     Base.metadata.create_all(engine)
     yield
     Base.metadata.drop_all(engine)
@@ -87,8 +100,8 @@ def tables(engine):
 @pytest.fixture
 def db_session(engine, tables):
     """Create a database session for tests with proper cleanup"""
-    from sqlalchemy.orm import sessionmaker
     from sqlalchemy import text
+    from sqlalchemy.orm import sessionmaker
 
     # Create a connection with a transaction that we'll rollback
     connection = engine.connect()
@@ -117,7 +130,7 @@ def sample_jurisdiction_data() -> Dict[str, Any]:
         "api_available": True,
         "scraper_needed": True,
         "population": 100000,
-        "description": "Test jurisdiction for testing"
+        "description": "Test jurisdiction for testing",
     }
 
 
@@ -138,7 +151,7 @@ def sample_record_data() -> Dict[str, Any]:
         "date": datetime.now(),
         "document_number": "DOC-789",
         "book_page": "100/50",
-        "raw_data": {"test": "data"}
+        "raw_data": {"test": "data"},
         # NOTE: jurisdiction_id and data_source_id must be set by the test
     }
 
@@ -153,7 +166,7 @@ def sample_entity_data() -> Dict[str, Any]:
         "city": "Test City",
         "state": "TX",
         "zip_code": "75001",
-        "status": "active"
+        "status": "active",
     }
 
 
@@ -170,17 +183,17 @@ def mock_api_response():
                 "zip_code": "77001",
                 "assessed_value": 350000,
                 "land_value": 100000,
-                "improvement_value": 250000
+                "improvement_value": 250000,
             }
         ],
-        "total_count": 1
+        "total_count": 1,
     }
 
 
 @pytest.fixture
 def mock_requests():
     """Mock requests library for API testing"""
-    with patch('requests.Session') as mock:
+    with patch("requests.Session") as mock:
         session = MagicMock()
         mock.return_value = session
         yield session
@@ -193,5 +206,5 @@ def api_config() -> Dict[str, Any]:
         "jurisdiction_name": "Harris County",
         "api_key": "test_api_key",
         "requests_per_minute": 60,
-        "timeout": 30
+        "timeout": 30,
     }

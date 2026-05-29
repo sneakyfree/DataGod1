@@ -4,9 +4,10 @@ Extended tests for datagod/scrapers/enhanced_base_scraper.py
 Additional coverage tests for the enhanced base scraper module.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 
 class TestScraperTypeEnum:
@@ -15,21 +16,25 @@ class TestScraperTypeEnum:
     def test_scraper_type_exists(self):
         """Test that ScraperType enum exists"""
         from datagod.scrapers.enhanced_base_scraper import ScraperType
+
         assert ScraperType is not None
 
     def test_simple_type(self):
         """Test SIMPLE type"""
         from datagod.scrapers.enhanced_base_scraper import ScraperType
+
         assert ScraperType.SIMPLE.value == "simple"
 
     def test_browser_type(self):
         """Test BROWSER type"""
         from datagod.scrapers.enhanced_base_scraper import ScraperType
+
         assert ScraperType.BROWSER.value == "browser"
 
     def test_hybrid_type(self):
         """Test HYBRID type"""
         from datagod.scrapers.enhanced_base_scraper import ScraperType
+
         assert ScraperType.HYBRID.value == "hybrid"
 
 
@@ -39,21 +44,25 @@ class TestProxyTypeEnum:
     def test_proxy_type_exists(self):
         """Test that ProxyType enum exists"""
         from datagod.scrapers.enhanced_base_scraper import ProxyType
+
         assert ProxyType is not None
 
     def test_http_type(self):
         """Test HTTP type"""
         from datagod.scrapers.enhanced_base_scraper import ProxyType
+
         assert ProxyType.HTTP.value == "http"
 
     def test_https_type(self):
         """Test HTTPS type"""
         from datagod.scrapers.enhanced_base_scraper import ProxyType
+
         assert ProxyType.HTTPS.value == "https"
 
     def test_socks5_type(self):
         """Test SOCKS5 type"""
         from datagod.scrapers.enhanced_base_scraper import ProxyType
+
         assert ProxyType.SOCKS5.value == "socks5"
 
 
@@ -63,18 +72,16 @@ class TestProxyConfig:
     def test_proxy_config_exists(self):
         """Test that ProxyConfig dataclass exists"""
         from datagod.scrapers.enhanced_base_scraper import ProxyConfig
+
         assert ProxyConfig is not None
 
     def test_create_proxy_config(self):
         """Test creating a ProxyConfig"""
         from datagod.scrapers.enhanced_base_scraper import ProxyConfig, ProxyType
 
-        proxy = ProxyConfig(
-            host='proxy.example.com',
-            port=8080
-        )
+        proxy = ProxyConfig(host="proxy.example.com", port=8080)
 
-        assert proxy.host == 'proxy.example.com'
+        assert proxy.host == "proxy.example.com"
         assert proxy.port == 8080
         assert proxy.protocol == ProxyType.HTTP
 
@@ -82,31 +89,28 @@ class TestProxyConfig:
         """Test proxy URL without authentication"""
         from datagod.scrapers.enhanced_base_scraper import ProxyConfig
 
-        proxy = ProxyConfig(host='proxy.example.com', port=8080)
+        proxy = ProxyConfig(host="proxy.example.com", port=8080)
         url = proxy.url
 
-        assert url == 'http://proxy.example.com:8080'
+        assert url == "http://proxy.example.com:8080"
 
     def test_proxy_url_with_auth(self):
         """Test proxy URL with authentication"""
         from datagod.scrapers.enhanced_base_scraper import ProxyConfig
 
         proxy = ProxyConfig(
-            host='proxy.example.com',
-            port=8080,
-            username='user',
-            password='pass'
+            host="proxy.example.com", port=8080, username="user", password="pass"
         )
         url = proxy.url
 
-        assert 'user:pass@' in url
-        assert 'proxy.example.com:8080' in url
+        assert "user:pass@" in url
+        assert "proxy.example.com:8080" in url
 
     def test_record_success(self):
         """Test recording successful request"""
         from datagod.scrapers.enhanced_base_scraper import ProxyConfig
 
-        proxy = ProxyConfig(host='proxy.example.com', port=8080)
+        proxy = ProxyConfig(host="proxy.example.com", port=8080)
         initial_success = proxy.success_count
 
         proxy.record_success(1.5)
@@ -119,7 +123,7 @@ class TestProxyConfig:
         """Test recording failed request"""
         from datagod.scrapers.enhanced_base_scraper import ProxyConfig
 
-        proxy = ProxyConfig(host='proxy.example.com', port=8080)
+        proxy = ProxyConfig(host="proxy.example.com", port=8080)
         initial_failure = proxy.failure_count
 
         proxy.record_failure()
@@ -131,7 +135,7 @@ class TestProxyConfig:
         """Test proxy deactivation after multiple failures"""
         from datagod.scrapers.enhanced_base_scraper import ProxyConfig
 
-        proxy = ProxyConfig(host='proxy.example.com', port=8080)
+        proxy = ProxyConfig(host="proxy.example.com", port=8080)
 
         # Record 5 failures
         for _ in range(5):
@@ -146,6 +150,7 @@ class TestScrapingMetrics:
     def test_scraping_metrics_exists(self):
         """Test that ScrapingMetrics dataclass exists"""
         from datagod.scrapers.enhanced_base_scraper import ScrapingMetrics
+
         assert ScrapingMetrics is not None
 
     def test_create_scraping_metrics(self):
@@ -171,10 +176,7 @@ class TestScrapingMetrics:
         """Test success rate with requests"""
         from datagod.scrapers.enhanced_base_scraper import ScrapingMetrics
 
-        metrics = ScrapingMetrics(
-            total_requests=100,
-            successful_requests=95
-        )
+        metrics = ScrapingMetrics(total_requests=100, successful_requests=95)
         rate = metrics.success_rate
 
         # Success rate could be percentage (95.0) or decimal (0.95)
@@ -188,6 +190,7 @@ class TestRateLimiter:
         """Test that RateLimiter exists"""
         try:
             from datagod.scrapers.enhanced_base_scraper import RateLimiter
+
             assert RateLimiter is not None
         except ImportError:
             pytest.skip("RateLimiter not available")
@@ -211,6 +214,7 @@ class TestRetryConfig:
         """Test that RetryConfig exists"""
         try:
             from datagod.scrapers.enhanced_base_scraper import RetryConfig
+
             assert RetryConfig is not None
         except ImportError:
             pytest.skip("RetryConfig not available")
@@ -220,10 +224,7 @@ class TestRetryConfig:
         try:
             from datagod.scrapers.enhanced_base_scraper import RetryConfig
 
-            config = RetryConfig(
-                max_retries=3,
-                base_delay=1.0
-            )
+            config = RetryConfig(max_retries=3, base_delay=1.0)
 
             assert config.max_retries == 3
             assert config.base_delay == 1.0
@@ -238,6 +239,7 @@ class TestProxyManager:
         """Test that ProxyManager exists"""
         try:
             from datagod.scrapers.enhanced_base_scraper import ProxyManager
+
             assert ProxyManager is not None
         except ImportError:
             pytest.skip("ProxyManager not available")
@@ -261,6 +263,7 @@ class TestEnhancedBaseScraper:
         """Test that EnhancedBaseScraper exists"""
         try:
             from datagod.scrapers.enhanced_base_scraper import EnhancedBaseScraper
+
             assert EnhancedBaseScraper is not None
         except ImportError:
             pytest.skip("EnhancedBaseScraper not available")
@@ -268,8 +271,9 @@ class TestEnhancedBaseScraper:
     def test_is_abstract_class(self):
         """Test that EnhancedBaseScraper is abstract"""
         try:
-            from datagod.scrapers.enhanced_base_scraper import EnhancedBaseScraper
             from abc import ABC
+
+            from datagod.scrapers.enhanced_base_scraper import EnhancedBaseScraper
 
             assert issubclass(EnhancedBaseScraper, ABC)
         except ImportError:
@@ -283,6 +287,7 @@ class TestCacheConfig:
         """Test that CacheConfig exists"""
         try:
             from datagod.scrapers.enhanced_base_scraper import CacheConfig
+
             assert CacheConfig is not None
         except (ImportError, AttributeError):
             pytest.skip("CacheConfig not available")
@@ -295,6 +300,7 @@ class TestScrapingSession:
         """Test that ScrapingSession exists"""
         try:
             from datagod.scrapers.enhanced_base_scraper import ScrapingSession
+
             assert ScrapingSession is not None
         except (ImportError, AttributeError):
             pytest.skip("ScrapingSession not available")
@@ -307,6 +313,7 @@ class TestUserAgentRotation:
         """Test that user agents are defined"""
         try:
             from datagod.scrapers.enhanced_base_scraper import USER_AGENTS
+
             assert isinstance(USER_AGENTS, (list, tuple))
             assert len(USER_AGENTS) > 0
         except (ImportError, AttributeError):
@@ -319,14 +326,16 @@ class TestModuleImports:
     def test_module_importable(self):
         """Test that module is importable"""
         from datagod.scrapers import enhanced_base_scraper
+
         assert enhanced_base_scraper is not None
 
     def test_all_main_classes_importable(self):
         """Test that main classes are importable"""
         from datagod.scrapers.enhanced_base_scraper import (
-            ScraperType,
-            ProxyType,
             ProxyConfig,
-            ScrapingMetrics
+            ProxyType,
+            ScraperType,
+            ScrapingMetrics,
         )
+
         assert all([ScraperType, ProxyType, ProxyConfig, ScrapingMetrics])

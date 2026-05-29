@@ -12,26 +12,27 @@ Features:
 - Cache invalidation
 """
 
+import asyncio
+import hashlib
+import json
 import logging
 import time
-import json
-import hashlib
-from functools import wraps
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Callable, TypeVar, Union
-from dataclasses import dataclass, field
 from collections import OrderedDict
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from functools import wraps
 from threading import Lock
-import asyncio
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass
 class CacheEntry:
     """A single cache entry with metadata"""
+
     value: Any
     created_at: datetime
     expires_at: Optional[datetime]
@@ -75,10 +76,10 @@ class LRUCache:
         self._cache: OrderedDict[str, CacheEntry] = OrderedDict()
         self._lock = Lock()
         self._stats = {
-            'hits': 0,
-            'misses': 0,
-            'evictions': 0,
-            'expirations': 0,
+            "hits": 0,
+            "misses": 0,
+            "evictions": 0,
+            "expirations": 0,
         }
 
     def get(self, key: str) -> Optional[Any]:
@@ -93,21 +94,21 @@ class LRUCache:
         """
         with self._lock:
             if key not in self._cache:
-                self._stats['misses'] += 1
+                self._stats["misses"] += 1
                 return None
 
             entry = self._cache[key]
 
             if entry.is_expired:
                 del self._cache[key]
-                self._stats['expirations'] += 1
-                self._stats['misses'] += 1
+                self._stats["expirations"] += 1
+                self._stats["misses"] += 1
                 return None
 
             # Move to end (most recently used)
             self._cache.move_to_end(key)
             entry.access()
-            self._stats['hits'] += 1
+            self._stats["hits"] += 1
 
             return entry.value
 
@@ -129,7 +130,7 @@ class LRUCache:
             while len(self._cache) >= self.max_size:
                 oldest_key = next(iter(self._cache))
                 del self._cache[oldest_key]
-                self._stats['evictions'] += 1
+                self._stats["evictions"] += 1
 
             # Calculate expiration
             ttl = timedelta(seconds=ttl_seconds) if ttl_seconds else self.default_ttl
@@ -173,13 +174,12 @@ class LRUCache:
         """
         with self._lock:
             expired_keys = [
-                key for key, entry in self._cache.items()
-                if entry.is_expired
+                key for key, entry in self._cache.items() if entry.is_expired
             ]
 
             for key in expired_keys:
                 del self._cache[key]
-                self._stats['expirations'] += 1
+                self._stats["expirations"] += 1
 
             if expired_keys:
                 logger.debug(f"Cleaned up {len(expired_keys)} expired cache entries")
@@ -189,17 +189,17 @@ class LRUCache:
     def get_stats(self) -> Dict[str, Any]:
         """Get cache statistics"""
         with self._lock:
-            total_requests = self._stats['hits'] + self._stats['misses']
-            hit_rate = self._stats['hits'] / total_requests if total_requests > 0 else 0
+            total_requests = self._stats["hits"] + self._stats["misses"]
+            hit_rate = self._stats["hits"] / total_requests if total_requests > 0 else 0
 
             return {
-                'size': len(self._cache),
-                'max_size': self.max_size,
-                'hits': self._stats['hits'],
-                'misses': self._stats['misses'],
-                'hit_rate': round(hit_rate * 100, 2),
-                'evictions': self._stats['evictions'],
-                'expirations': self._stats['expirations'],
+                "size": len(self._cache),
+                "max_size": self.max_size,
+                "hits": self._stats["hits"],
+                "misses": self._stats["misses"],
+                "hit_rate": round(hit_rate * 100, 2),
+                "evictions": self._stats["evictions"],
+                "expirations": self._stats["expirations"],
             }
 
     def keys(self) -> List[str]:
@@ -248,6 +248,7 @@ def cached(ttl_seconds: int = 300, cache: LRUCache = None, key_prefix: str = "")
         def expensive_function(arg1, arg2):
             ...
     """
+
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         _cache = cache or get_default_cache()
 
@@ -278,6 +279,7 @@ def cached(ttl_seconds: int = 300, cache: LRUCache = None, key_prefix: str = "")
         )
 
         return wrapper
+
     return decorator
 
 
@@ -290,6 +292,7 @@ def async_cached(ttl_seconds: int = 300, cache: LRUCache = None, key_prefix: str
         cache: Optional cache instance
         key_prefix: Optional prefix for cache keys
     """
+
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         _cache = cache or get_default_cache()
 
@@ -314,6 +317,7 @@ def async_cached(ttl_seconds: int = 300, cache: LRUCache = None, key_prefix: str
         )
 
         return wrapper
+
     return decorator
 
 
@@ -332,8 +336,13 @@ class CacheWarmer:
         self._warming_tasks: List[Dict[str, Any]] = []
         self._is_warming = False
 
-    def register(self, key: str, loader: Callable[[], Any],
-                 ttl_seconds: int = 300, priority: int = 0):
+    def register(
+        self,
+        key: str,
+        loader: Callable[[], Any],
+        ttl_seconds: int = 300,
+        priority: int = 0,
+    ):
         """
         Register a cache warming task.
 
@@ -343,13 +352,15 @@ class CacheWarmer:
             ttl_seconds: Cache TTL
             priority: Higher priority tasks run first
         """
-        self._warming_tasks.append({
-            'key': key,
-            'loader': loader,
-            'ttl_seconds': ttl_seconds,
-            'priority': priority,
-        })
-        self._warming_tasks.sort(key=lambda x: -x['priority'])
+        self._warming_tasks.append(
+            {
+                "key": key,
+                "loader": loader,
+                "ttl_seconds": ttl_seconds,
+                "priority": priority,
+            }
+        )
+        self._warming_tasks.sort(key=lambda x: -x["priority"])
 
     def warm(self) -> Dict[str, Any]:
         """
@@ -360,28 +371,32 @@ class CacheWarmer:
         """
         self._is_warming = True
         results = {
-            'total': len(self._warming_tasks),
-            'success': 0,
-            'failed': 0,
-            'errors': [],
+            "total": len(self._warming_tasks),
+            "success": 0,
+            "failed": 0,
+            "errors": [],
         }
 
         for task in self._warming_tasks:
             try:
-                value = task['loader']()
-                self.cache.set(task['key'], value, task['ttl_seconds'])
-                results['success'] += 1
+                value = task["loader"]()
+                self.cache.set(task["key"], value, task["ttl_seconds"])
+                results["success"] += 1
                 logger.debug(f"Warmed cache key: {task['key']}")
             except Exception as e:
-                results['failed'] += 1
-                results['errors'].append({
-                    'key': task['key'],
-                    'error': str(e),
-                })
+                results["failed"] += 1
+                results["errors"].append(
+                    {
+                        "key": task["key"],
+                        "error": str(e),
+                    }
+                )
                 logger.error(f"Failed to warm cache key {task['key']}: {e}")
 
         self._is_warming = False
-        logger.info(f"Cache warming complete: {results['success']}/{results['total']} successful")
+        logger.info(
+            f"Cache warming complete: {results['success']}/{results['total']} successful"
+        )
 
         return results
 
@@ -389,33 +404,33 @@ class CacheWarmer:
         """Execute warming tasks asynchronously"""
         self._is_warming = True
         results = {
-            'total': len(self._warming_tasks),
-            'success': 0,
-            'failed': 0,
-            'errors': [],
+            "total": len(self._warming_tasks),
+            "success": 0,
+            "failed": 0,
+            "errors": [],
         }
 
         async def warm_task(task):
             try:
-                if asyncio.iscoroutinefunction(task['loader']):
-                    value = await task['loader']()
+                if asyncio.iscoroutinefunction(task["loader"]):
+                    value = await task["loader"]()
                 else:
-                    value = task['loader']()
-                self.cache.set(task['key'], value, task['ttl_seconds'])
+                    value = task["loader"]()
+                self.cache.set(task["key"], value, task["ttl_seconds"])
                 return True, None
             except Exception as e:
-                return False, {'key': task['key'], 'error': str(e)}
+                return False, {"key": task["key"], "error": str(e)}
 
         tasks = [warm_task(task) for task in self._warming_tasks]
         task_results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for success, error in task_results:
             if success:
-                results['success'] += 1
+                results["success"] += 1
             else:
-                results['failed'] += 1
+                results["failed"] += 1
                 if error:
-                    results['errors'].append(error)
+                    results["errors"].append(error)
 
         self._is_warming = False
         return results
@@ -514,7 +529,9 @@ def configure_default_cache(max_size: int = 10000, default_ttl_seconds: int = 30
     """Configure the default cache instance"""
     global _default_cache
     with _default_lock:
-        _default_cache = LRUCache(max_size=max_size, default_ttl_seconds=default_ttl_seconds)
+        _default_cache = LRUCache(
+            max_size=max_size, default_ttl_seconds=default_ttl_seconds
+        )
 
 
 # Convenience functions

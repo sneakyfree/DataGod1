@@ -1,8 +1,20 @@
 """Relationship model for DataGod"""
 
-from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey, Index, DateTime, JSON
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import (
+    JSON,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.orm import relationship
+
 from datagod.models.base import Base
 
 
@@ -10,14 +22,15 @@ class Relationship(Base):
     """
     Represents relationships between entities
     """
-    __tablename__ = 'relationships'
+
+    __tablename__ = "relationships"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # Relationship participants
-    entity1_id = Column(Integer, ForeignKey('entities.id'), nullable=False)
-    entity2_id = Column(Integer, ForeignKey('entities.id'), nullable=False)
-    record_id = Column(Integer, ForeignKey('records.id'), nullable=False)
+    entity1_id = Column(Integer, ForeignKey("entities.id"), nullable=False)
+    entity2_id = Column(Integer, ForeignKey("entities.id"), nullable=False)
+    record_id = Column(Integer, ForeignKey("records.id"), nullable=False)
 
     # Relationship details
     relationship_type = Column(String(100), nullable=False)
@@ -28,14 +41,16 @@ class Relationship(Base):
     # Context and evidence
     context = Column(Text, nullable=True)  # Description of the relationship context
     evidence = Column(JSON, nullable=True)  # Supporting evidence from records
-    confidence_score = Column(Float, default=1.0)  # Confidence in the relationship (0.0 to 1.0)
+    confidence_score = Column(
+        Float, default=1.0
+    )  # Confidence in the relationship (0.0 to 1.0)
 
     # Temporal information
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
 
     # Status
-    status = Column(String(50), default='active')
+    status = Column(String(50), default="active")
     # 'active', 'inactive', 'disputed'
 
     # Additional data
@@ -43,14 +58,16 @@ class Relationship(Base):
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # Indexes
     __table_args__ = (
-        Index('idx_relationship_entities', 'entity1_id', 'entity2_id'),
-        Index('idx_relationship_record', 'record_id'),
-        Index('idx_relationship_type', 'relationship_type'),
-        Index('idx_relationship_status', 'status'),
+        Index("idx_relationship_entities", "entity1_id", "entity2_id"),
+        Index("idx_relationship_record", "record_id"),
+        Index("idx_relationship_type", "relationship_type"),
+        Index("idx_relationship_status", "status"),
     )
 
     def __repr__(self):

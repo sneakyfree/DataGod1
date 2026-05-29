@@ -3,8 +3,9 @@ Tests for Neural Network Integration module
 Tests the integration between neural network and DataGod models
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -136,8 +137,9 @@ class TestMortgageDataProcessor:
 
     def test_processor_prepare_data(self):
         """Test data preparation returns loaders"""
-        from datagod.neural_network.model import MortgageDataProcessor
         from datetime import datetime
+
+        from datagod.neural_network.model import MortgageDataProcessor
 
         processor = MortgageDataProcessor(input_size=2, hidden_size=64, num_classes=2)
 
@@ -163,9 +165,11 @@ class TestModelTraining:
 
     def test_model_can_train_single_epoch(self):
         """Test model can complete a training step"""
-        from datagod.neural_network.model import MortgageDataProcessor
         from datetime import datetime
+
         import torch
+
+        from datagod.neural_network.model import MortgageDataProcessor
 
         processor = MortgageDataProcessor(input_size=2, hidden_size=32, num_classes=2)
 

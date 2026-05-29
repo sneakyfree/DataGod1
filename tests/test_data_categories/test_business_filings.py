@@ -10,23 +10,24 @@ Tests cover:
 - Convenience functions
 """
 
-import pytest
 from datetime import date, datetime
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from datagod.scrapers.categories.business_filings import (
-    EntityType,
-    EntityStatus,
-    FilingType,
-    RegisteredAgent,
-    Officer,
-    BusinessFiling,
     BusinessEntity,
-    UCCFiling,
-    CorporateSearch,
-    UCCSearch,
+    BusinessFiling,
     BusinessFilingsScraper,
+    CorporateSearch,
+    EntityStatus,
+    EntityType,
+    FilingType,
+    Officer,
+    RegisteredAgent,
     StateSOSScraper,
+    UCCFiling,
+    UCCSearch,
     search_businesses,
     search_ucc,
 )
@@ -38,9 +39,19 @@ class TestEntityTypeEnum:
     def test_all_entity_types_exist(self):
         """Verify all expected entity types are defined"""
         expected_types = [
-            'CORPORATION', 'LLC', 'LLP', 'LP', 'PARTNERSHIP',
-            'SOLE_PROPRIETOR', 'NONPROFIT', 'TRUST', 'FOREIGN_CORP',
-            'FOREIGN_LLC', 'PROFESSIONAL_CORP', 'BENEFIT_CORP', 'UNKNOWN'
+            "CORPORATION",
+            "LLC",
+            "LLP",
+            "LP",
+            "PARTNERSHIP",
+            "SOLE_PROPRIETOR",
+            "NONPROFIT",
+            "TRUST",
+            "FOREIGN_CORP",
+            "FOREIGN_LLC",
+            "PROFESSIONAL_CORP",
+            "BENEFIT_CORP",
+            "UNKNOWN",
         ]
         for entity_type in expected_types:
             assert hasattr(EntityType, entity_type)
@@ -65,8 +76,17 @@ class TestEntityStatusEnum:
     def test_all_entity_statuses_exist(self):
         """Verify all expected entity statuses are defined"""
         expected_statuses = [
-            'ACTIVE', 'INACTIVE', 'DISSOLVED', 'SUSPENDED', 'MERGED',
-            'CONVERTED', 'REVOKED', 'WITHDRAWN', 'FORFEITED', 'PENDING', 'UNKNOWN'
+            "ACTIVE",
+            "INACTIVE",
+            "DISSOLVED",
+            "SUSPENDED",
+            "MERGED",
+            "CONVERTED",
+            "REVOKED",
+            "WITHDRAWN",
+            "FORFEITED",
+            "PENDING",
+            "UNKNOWN",
         ]
         for status in expected_statuses:
             assert hasattr(EntityStatus, status)
@@ -84,11 +104,21 @@ class TestFilingTypeEnum:
     def test_all_filing_types_exist(self):
         """Verify all expected filing types are defined"""
         expected_types = [
-            'ARTICLES_OF_INCORPORATION', 'ARTICLES_OF_ORGANIZATION',
-            'CERTIFICATE_OF_FORMATION', 'ANNUAL_REPORT', 'AMENDMENT',
-            'NAME_CHANGE', 'MERGER', 'DISSOLUTION', 'REINSTATEMENT',
-            'REGISTERED_AGENT_CHANGE', 'ADDRESS_CHANGE', 'UCC_FILING',
-            'UCC_AMENDMENT', 'UCC_TERMINATION', 'FOREIGN_QUALIFICATION'
+            "ARTICLES_OF_INCORPORATION",
+            "ARTICLES_OF_ORGANIZATION",
+            "CERTIFICATE_OF_FORMATION",
+            "ANNUAL_REPORT",
+            "AMENDMENT",
+            "NAME_CHANGE",
+            "MERGER",
+            "DISSOLUTION",
+            "REINSTATEMENT",
+            "REGISTERED_AGENT_CHANGE",
+            "ADDRESS_CHANGE",
+            "UCC_FILING",
+            "UCC_AMENDMENT",
+            "UCC_TERMINATION",
+            "FOREIGN_QUALIFICATION",
         ]
         for filing_type in expected_types:
             assert hasattr(FilingType, filing_type)
@@ -112,7 +142,7 @@ class TestRegisteredAgent:
             city="Austin",
             state="TX",
             zip_code="78701",
-            is_commercial=True
+            is_commercial=True,
         )
         assert agent.name == "ABC Agent Services"
         assert agent.city == "Austin"
@@ -126,12 +156,12 @@ class TestRegisteredAgent:
             city="Austin",
             state="TX",
             zip_code="78701",
-            is_commercial=True
+            is_commercial=True,
         )
         result = agent.to_dict()
-        assert result['name'] == "ABC Agent Services"
-        assert result['city'] == "Austin"
-        assert result['is_commercial'] is True
+        assert result["name"] == "ABC Agent Services"
+        assert result["city"] == "Austin"
+        assert result["is_commercial"] is True
 
 
 class TestOfficer:
@@ -150,7 +180,7 @@ class TestOfficer:
             name="John Smith",
             title="CEO",
             address="456 Corporate Blvd",
-            start_date=date(2024, 1, 1)
+            start_date=date(2024, 1, 1),
         )
         assert officer.name == "John Smith"
         assert officer.title == "CEO"
@@ -158,21 +188,17 @@ class TestOfficer:
 
     def test_officer_to_dict(self):
         """Test converting officer to dictionary"""
-        officer = Officer(
-            name="John Smith",
-            title="CEO",
-            start_date=date(2024, 1, 1)
-        )
+        officer = Officer(name="John Smith", title="CEO", start_date=date(2024, 1, 1))
         result = officer.to_dict()
-        assert result['name'] == "John Smith"
-        assert result['title'] == "CEO"
-        assert result['start_date'] == "2024-01-01"
+        assert result["name"] == "John Smith"
+        assert result["title"] == "CEO"
+        assert result["start_date"] == "2024-01-01"
 
     def test_officer_to_dict_null_date(self):
         """Test converting officer with null date to dictionary"""
         officer = Officer(name="John Smith")
         result = officer.to_dict()
-        assert result['start_date'] is None
+        assert result["start_date"] is None
 
 
 class TestBusinessFiling:
@@ -183,7 +209,7 @@ class TestBusinessFiling:
         filing = BusinessFiling(
             filing_number="F123456",
             filing_type=FilingType.ARTICLES_OF_INCORPORATION,
-            filing_date=date(2024, 1, 15)
+            filing_date=date(2024, 1, 15),
         )
         assert filing.filing_number == "F123456"
         assert filing.filing_type == FilingType.ARTICLES_OF_INCORPORATION
@@ -197,7 +223,7 @@ class TestBusinessFiling:
             filing_date=date(2024, 1, 15),
             effective_date=date(2024, 1, 20),
             document_url="https://sos.state.gov/doc/F123456",
-            pages=5
+            pages=5,
         )
         assert filing.effective_date == date(2024, 1, 20)
         assert filing.pages == 5
@@ -207,12 +233,12 @@ class TestBusinessFiling:
         filing = BusinessFiling(
             filing_number="F123456",
             filing_type=FilingType.MERGER,
-            filing_date=date(2024, 1, 15)
+            filing_date=date(2024, 1, 15),
         )
         result = filing.to_dict()
-        assert result['filing_number'] == "F123456"
-        assert result['filing_type'] == "merger"
-        assert result['filing_date'] == "2024-01-15"
+        assert result["filing_number"] == "F123456"
+        assert result["filing_type"] == "merger"
+        assert result["filing_date"] == "2024-01-15"
 
 
 class TestBusinessEntity:
@@ -224,7 +250,7 @@ class TestBusinessEntity:
             entity_id="E12345",
             entity_name="Acme Corporation",
             entity_type=EntityType.CORPORATION,
-            state="TX"
+            state="TX",
         )
         assert entity.entity_id == "E12345"
         assert entity.entity_name == "Acme Corporation"
@@ -236,11 +262,13 @@ class TestBusinessEntity:
         """Test creating a business entity with all fields"""
         agent = RegisteredAgent(name="Agent Co")
         officers = [Officer(name="John Smith", title="CEO")]
-        filings = [BusinessFiling(
-            filing_number="F123",
-            filing_type=FilingType.ARTICLES_OF_INCORPORATION,
-            filing_date=date(2024, 1, 1)
-        )]
+        filings = [
+            BusinessFiling(
+                filing_number="F123",
+                filing_type=FilingType.ARTICLES_OF_INCORPORATION,
+                filing_date=date(2024, 1, 1),
+            )
+        ]
 
         entity = BusinessEntity(
             entity_id="E12345",
@@ -255,7 +283,7 @@ class TestBusinessEntity:
             filings=filings,
             ein="12-3456789",
             jurisdiction="Texas",
-            previous_names=["Old Acme Inc"]
+            previous_names=["Old Acme Inc"],
         )
         assert entity.status == EntityStatus.ACTIVE
         assert entity.ein == "12-3456789"
@@ -268,13 +296,13 @@ class TestBusinessEntity:
             entity_name="Acme Corporation",
             entity_type=EntityType.LLC,
             state="TX",
-            formation_date=date(2020, 1, 15)
+            formation_date=date(2020, 1, 15),
         )
         result = entity.to_dict()
-        assert result['entity_id'] == "E12345"
-        assert result['entity_type'] == "llc"
-        assert result['formation_date'] == "2020-01-15"
-        assert 'fetched_at' in result
+        assert result["entity_id"] == "E12345"
+        assert result["entity_type"] == "llc"
+        assert result["formation_date"] == "2020-01-15"
+        assert "fetched_at" in result
 
 
 class TestUCCFiling:
@@ -285,7 +313,7 @@ class TestUCCFiling:
         ucc = UCCFiling(
             filing_number="UCC123456",
             filing_date=date(2024, 1, 15),
-            filing_type="Initial"
+            filing_type="Initial",
         )
         assert ucc.filing_number == "UCC123456"
         assert ucc.filing_type == "Initial"
@@ -304,7 +332,7 @@ class TestUCCFiling:
             debtor_address="789 Business Plaza",
             collateral_description="All inventory and equipment",
             state="TX",
-            amendments=[{"date": "2024-06-01", "type": "Amendment"}]
+            amendments=[{"date": "2024-06-01", "type": "Amendment"}],
         )
         assert ucc.lapse_date == date(2029, 1, 15)
         assert ucc.secured_party == "First National Bank"
@@ -316,12 +344,12 @@ class TestUCCFiling:
             filing_number="UCC123456",
             filing_date=date(2024, 1, 15),
             filing_type="Initial",
-            debtor_name="Acme Corporation"
+            debtor_name="Acme Corporation",
         )
         result = ucc.to_dict()
-        assert result['filing_number'] == "UCC123456"
-        assert result['filing_date'] == "2024-01-15"
-        assert result['debtor_name'] == "Acme Corporation"
+        assert result["filing_number"] == "UCC123456"
+        assert result["filing_date"] == "2024-01-15"
+        assert result["debtor_name"] == "Acme Corporation"
 
 
 class TestCorporateSearch:
@@ -347,7 +375,7 @@ class TestCorporateSearch:
             registered_agent_name="Agent Co",
             date_from=date(2024, 1, 1),
             date_to=date(2024, 12, 31),
-            exact_match=True
+            exact_match=True,
         )
         assert search.entity_name == "Acme"
         assert search.include_inactive is True
@@ -373,7 +401,7 @@ class TestUCCSearch:
             date_from=date(2024, 1, 1),
             date_to=date(2024, 12, 31),
             include_terminated=True,
-            exact_match=True
+            exact_match=True,
         )
         assert search.debtor_name == "Acme Corporation"
         assert search.include_terminated is True
@@ -385,34 +413,48 @@ class TestBusinessFilingsScraperUtils:
     @pytest.fixture
     def scraper(self):
         """Create a StateSOSScraper for testing utility methods"""
-        return StateSOSScraper("TX", config={'base_url': 'https://sos.texas.gov'})
+        return StateSOSScraper("TX", config={"base_url": "https://sos.texas.gov"})
 
     def test_classify_entity_type_llc(self, scraper):
         """Test classifying LLC entities"""
         assert scraper.classify_entity_type("Acme LLC") == EntityType.LLC
         assert scraper.classify_entity_type("Tech Solutions L.L.C.") == EntityType.LLC
-        assert scraper.classify_entity_type("Limited Liability Company") == EntityType.LLC
+        assert (
+            scraper.classify_entity_type("Limited Liability Company") == EntityType.LLC
+        )
 
     def test_classify_entity_type_corp(self, scraper):
         """Test classifying corporation entities"""
         assert scraper.classify_entity_type("Acme Inc") == EntityType.CORPORATION
         assert scraper.classify_entity_type("Tech Corp") == EntityType.CORPORATION
-        assert scraper.classify_entity_type("Solutions Incorporated") == EntityType.CORPORATION
+        assert (
+            scraper.classify_entity_type("Solutions Incorporated")
+            == EntityType.CORPORATION
+        )
 
     def test_classify_entity_type_partnership(self, scraper):
         """Test classifying partnership entities"""
         assert scraper.classify_entity_type("Smith & Jones LLP") == EntityType.LLP
         assert scraper.classify_entity_type("Venture Partners LP") == EntityType.LP
-        assert scraper.classify_entity_type("General Partnership") == EntityType.PARTNERSHIP
+        assert (
+            scraper.classify_entity_type("General Partnership")
+            == EntityType.PARTNERSHIP
+        )
 
     def test_classify_entity_type_special(self, scraper):
         """Test classifying special entity types"""
         assert scraper.classify_entity_type("Charity Nonprofit") == EntityType.NONPROFIT
         assert scraper.classify_entity_type("Family Trust") == EntityType.TRUST
         # Note: "Law Professional Corp" contains "corp" which matches CORPORATION before "professional"
-        assert scraper.classify_entity_type("Law Professional Corp") == EntityType.CORPORATION
+        assert (
+            scraper.classify_entity_type("Law Professional Corp")
+            == EntityType.CORPORATION
+        )
         # To get PROFESSIONAL_CORP, name must contain "professional" but not other keywords
-        assert scraper.classify_entity_type("Law Professional") == EntityType.PROFESSIONAL_CORP
+        assert (
+            scraper.classify_entity_type("Law Professional")
+            == EntityType.PROFESSIONAL_CORP
+        )
 
     def test_classify_entity_type_unknown(self, scraper):
         """Test classifying unknown entity types"""
@@ -456,7 +498,9 @@ class TestBusinessFilingsScraperUtils:
         assert scraper.normalize_entity_name("TECH SOLUTIONS LLC") == "TECH SOLUTIONS"
         assert scraper.normalize_entity_name("ABC Corp.") == "ABC"
         assert scraper.normalize_entity_name("XYZ Corporation") == "XYZ"
-        assert scraper.normalize_entity_name("  Extra   Spaces  LTD  ") == "EXTRA SPACES"
+        assert (
+            scraper.normalize_entity_name("  Extra   Spaces  LTD  ") == "EXTRA SPACES"
+        )
 
     def test_parse_date_valid(self, scraper):
         """Test parsing valid dates"""
@@ -473,8 +517,8 @@ class TestBusinessFilingsScraperUtils:
     def test_get_statistics(self, scraper):
         """Test getting scraper statistics"""
         stats = scraper.get_statistics()
-        assert stats['state'] == "TX"
-        assert stats['scraper_class'] == "StateSOSScraper"
+        assert stats["state"] == "TX"
+        assert stats["scraper_class"] == "StateSOSScraper"
 
 
 class TestStateSOSScraper:
@@ -482,10 +526,7 @@ class TestStateSOSScraper:
 
     def test_initialization(self):
         """Test StateSOSScraper initialization"""
-        config = {
-            'base_url': 'https://sos.texas.gov',
-            'api_key': 'test_key'
-        }
+        config = {"base_url": "https://sos.texas.gov", "api_key": "test_key"}
         scraper = StateSOSScraper("TX", config=config)
         assert scraper.state_code == "TX"
         assert scraper.base_url == "https://sos.texas.gov"
@@ -541,9 +582,7 @@ class TestSearchBusinessesFunction:
     def test_search_with_filters(self):
         """Test business search with filters"""
         results = search_businesses(
-            entity_name="Acme",
-            states=["TX", "CA"],
-            include_inactive=True
+            entity_name="Acme", states=["TX", "CA"], include_inactive=True
         )
         assert isinstance(results, list)
 
@@ -564,9 +603,7 @@ class TestSearchUCCFunction:
     def test_search_with_all_params(self):
         """Test UCC search with all parameters"""
         results = search_ucc(
-            debtor_name="Acme",
-            secured_party="Bank",
-            states=["TX", "CA"]
+            debtor_name="Acme", secured_party="Bank", states=["TX", "CA"]
         )
         assert isinstance(results, list)
 
@@ -577,27 +614,40 @@ class TestBusinessFilingsImports:
     def test_all_exports_available(self):
         """Test that all expected exports are available"""
         from datagod.scrapers.categories.business_filings import (
-            EntityType,
-            EntityStatus,
-            FilingType,
-            RegisteredAgent,
-            Officer,
-            BusinessFiling,
             BusinessEntity,
-            UCCFiling,
-            CorporateSearch,
-            UCCSearch,
+            BusinessFiling,
             BusinessFilingsScraper,
+            CorporateSearch,
+            EntityStatus,
+            EntityType,
+            FilingType,
+            Officer,
+            RegisteredAgent,
             StateSOSScraper,
+            UCCFiling,
+            UCCSearch,
             search_businesses,
-            search_ucc
+            search_ucc,
         )
-        assert all([
-            EntityType, EntityStatus, FilingType, RegisteredAgent, Officer,
-            BusinessFiling, BusinessEntity, UCCFiling, CorporateSearch,
-            UCCSearch, BusinessFilingsScraper, StateSOSScraper,
-            search_businesses, search_ucc
-        ])
+
+        assert all(
+            [
+                EntityType,
+                EntityStatus,
+                FilingType,
+                RegisteredAgent,
+                Officer,
+                BusinessFiling,
+                BusinessEntity,
+                UCCFiling,
+                CorporateSearch,
+                UCCSearch,
+                BusinessFilingsScraper,
+                StateSOSScraper,
+                search_businesses,
+                search_ucc,
+            ]
+        )
 
 
 class TestBusinessFilingsEdgeCases:
@@ -608,17 +658,17 @@ class TestBusinessFilingsEdgeCases:
         officers = [
             Officer(name="John Smith", title="CEO"),
             Officer(name="Jane Doe", title="CFO"),
-            Officer(name="Bob Wilson", title="COO")
+            Officer(name="Bob Wilson", title="COO"),
         ]
         entity = BusinessEntity(
             entity_id="E12345",
             entity_name="Acme Corporation",
             entity_type=EntityType.CORPORATION,
             state="TX",
-            officers=officers
+            officers=officers,
         )
         result = entity.to_dict()
-        assert len(result['officers']) == 3
+        assert len(result["officers"]) == 3
 
     def test_entity_with_multiple_filings(self):
         """Test entity with multiple filings"""
@@ -626,23 +676,23 @@ class TestBusinessFilingsEdgeCases:
             BusinessFiling(
                 filing_number="F1",
                 filing_type=FilingType.ARTICLES_OF_INCORPORATION,
-                filing_date=date(2020, 1, 1)
+                filing_date=date(2020, 1, 1),
             ),
             BusinessFiling(
                 filing_number="F2",
                 filing_type=FilingType.ANNUAL_REPORT,
-                filing_date=date(2021, 1, 1)
-            )
+                filing_date=date(2021, 1, 1),
+            ),
         ]
         entity = BusinessEntity(
             entity_id="E12345",
             entity_name="Acme Corporation",
             entity_type=EntityType.CORPORATION,
             state="TX",
-            filings=filings
+            filings=filings,
         )
         result = entity.to_dict()
-        assert len(result['filings']) == 2
+        assert len(result["filings"]) == 2
 
     def test_entity_name_with_special_characters(self):
         """Test entity name normalization with special characters"""
@@ -656,10 +706,10 @@ class TestBusinessFilingsEdgeCases:
             entity_id="E12345",
             entity_name="Acme",
             entity_type=EntityType.UNKNOWN,
-            state="TX"
+            state="TX",
         )
         result = entity.to_dict()
-        assert result['formation_date'] is None
-        assert result['dissolution_date'] is None
-        assert result['registered_agent'] is None
-        assert result['ein'] is None
+        assert result["formation_date"] is None
+        assert result["dissolution_date"] is None
+        assert result["registered_agent"] is None
+        assert result["ein"] is None

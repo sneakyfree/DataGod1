@@ -6,20 +6,22 @@ across all configured jurisdictions.
 """
 
 import asyncio
-import aiohttp
 import json
 import logging
-from typing import Dict, List, Optional, Any, Tuple
-from pathlib import Path
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
 
 class EndpointStatus(Enum):
     """Status of an endpoint test."""
+
     AVAILABLE = "available"
     UNAVAILABLE = "unavailable"
     TIMEOUT = "timeout"
@@ -33,6 +35,7 @@ class EndpointStatus(Enum):
 @dataclass
 class EndpointTestResult:
     """Result of testing a single endpoint."""
+
     url: str
     status: EndpointStatus
     http_status: Optional[int]
@@ -46,6 +49,7 @@ class EndpointTestResult:
 @dataclass
 class JurisdictionTestResult:
     """Results of testing all endpoints for a jurisdiction."""
+
     fips_code: str
     name: str
     state_code: str
@@ -73,80 +77,80 @@ class EndpointTester:
 
     # Federal API endpoints to test
     FEDERAL_ENDPOINTS = {
-        'fec': {
-            'name': 'FEC Campaign Finance',
-            'url': 'https://api.open.fec.gov/v1/candidates/?api_key=DEMO_KEY&per_page=1',
-            'category': 'voter_records',
+        "fec": {
+            "name": "FEC Campaign Finance",
+            "url": "https://api.open.fec.gov/v1/candidates/?api_key=DEMO_KEY&per_page=1",
+            "category": "voter_records",
         },
-        'fda_drugs': {
-            'name': 'FDA Drug Events',
-            'url': 'https://api.fda.gov/drug/event.json?limit=1',
-            'category': 'regulatory_records',
+        "fda_drugs": {
+            "name": "FDA Drug Events",
+            "url": "https://api.fda.gov/drug/event.json?limit=1",
+            "category": "regulatory_records",
         },
-        'fda_recalls': {
-            'name': 'FDA Drug Recalls',
-            'url': 'https://api.fda.gov/drug/enforcement.json?limit=1',
-            'category': 'regulatory_records',
+        "fda_recalls": {
+            "name": "FDA Drug Recalls",
+            "url": "https://api.fda.gov/drug/enforcement.json?limit=1",
+            "category": "regulatory_records",
         },
-        'epa_tri': {
-            'name': 'EPA TRI Facilities',
-            'url': 'https://enviro.epa.gov/enviro/efservice/tri_facility/rows/1:1/json',
-            'category': 'regulatory_records',
+        "epa_tri": {
+            "name": "EPA TRI Facilities",
+            "url": "https://enviro.epa.gov/enviro/efservice/tri_facility/rows/1:1/json",
+            "category": "regulatory_records",
         },
-        'nhtsa_recalls': {
-            'name': 'NHTSA Vehicle Recalls',
-            'url': 'https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=f-150&modelYear=2020',
-            'category': 'transportation',
+        "nhtsa_recalls": {
+            "name": "NHTSA Vehicle Recalls",
+            "url": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=f-150&modelYear=2020",
+            "category": "transportation",
         },
-        'nhtsa_vin': {
-            'name': 'NHTSA VIN Decoder',
-            'url': 'https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/1HGBH41JXMN109186?format=json',
-            'category': 'transportation',
+        "nhtsa_vin": {
+            "name": "NHTSA VIN Decoder",
+            "url": "https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/1HGBH41JXMN109186?format=json",
+            "category": "transportation",
         },
-        'census': {
-            'name': 'Census ACS Data',
-            'url': 'https://api.census.gov/data/2020/acs/acs5?get=NAME&for=state:*',
-            'category': 'federal_sources',
+        "census": {
+            "name": "Census ACS Data",
+            "url": "https://api.census.gov/data/2020/acs/acs5?get=NAME&for=state:*",
+            "category": "federal_sources",
         },
-        'nppes': {
-            'name': 'NPPES NPI Registry',
-            'url': 'https://npiregistry.cms.hhs.gov/api/?version=2.1&limit=1',
-            'category': 'health_safety',
+        "nppes": {
+            "name": "NPPES NPI Registry",
+            "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&limit=1",
+            "category": "health_safety",
         },
-        'faa_registry': {
-            'name': 'FAA Aircraft Registry',
-            'url': 'https://registry.faa.gov/aircraftinquiry/',
-            'category': 'asset_records',
+        "faa_registry": {
+            "name": "FAA Aircraft Registry",
+            "url": "https://registry.faa.gov/aircraftinquiry/",
+            "category": "asset_records",
         },
-        'sec_edgar': {
-            'name': 'SEC EDGAR',
-            'url': 'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&output=atom',
-            'category': 'financial_records',
+        "sec_edgar": {
+            "name": "SEC EDGAR",
+            "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&output=atom",
+            "category": "financial_records",
         },
-        'usaspending': {
-            'name': 'USAspending Awards',
-            'url': 'https://api.usaspending.gov/api/v2/references/agency/',
-            'category': 'employment_records',
+        "usaspending": {
+            "name": "USAspending Awards",
+            "url": "https://api.usaspending.gov/api/v2/references/agency/",
+            "category": "employment_records",
         },
-        'osha': {
-            'name': 'OSHA Enforcement Data',
-            'url': 'https://enforcedata.dol.gov/views/data_summary.php',
-            'category': 'regulatory_records',
+        "osha": {
+            "name": "OSHA Enforcement Data",
+            "url": "https://enforcedata.dol.gov/views/data_summary.php",
+            "category": "regulatory_records",
         },
-        'college_scorecard': {
-            'name': 'College Scorecard',
-            'url': 'https://api.data.gov/ed/collegescorecard/v1/schools?api_key=DEMO_KEY&per_page=1',
-            'category': 'education_records',
+        "college_scorecard": {
+            "name": "College Scorecard",
+            "url": "https://api.data.gov/ed/collegescorecard/v1/schools?api_key=DEMO_KEY&per_page=1",
+            "category": "education_records",
         },
-        'propublica_nonprofits': {
-            'name': 'ProPublica Nonprofits',
-            'url': 'https://projects.propublica.org/nonprofits/api/v2/search.json?q=red+cross',
-            'category': 'financial_records',
+        "propublica_nonprofits": {
+            "name": "ProPublica Nonprofits",
+            "url": "https://projects.propublica.org/nonprofits/api/v2/search.json?q=red+cross",
+            "category": "financial_records",
         },
-        'nsopw': {
-            'name': 'National Sex Offender Registry',
-            'url': 'https://www.nsopw.gov/',
-            'category': 'criminal_records',
+        "nsopw": {
+            "name": "National Sex Offender Registry",
+            "url": "https://www.nsopw.gov/",
+            "category": "criminal_records",
         },
     }
 
@@ -164,10 +168,7 @@ class EndpointTester:
         self.results_dir.mkdir(parents=True, exist_ok=True)
 
     async def test_endpoint(
-        self,
-        session: aiohttp.ClientSession,
-        url: str,
-        method: str = "HEAD"
+        self, session: aiohttp.ClientSession, url: str, method: str = "HEAD"
     ) -> EndpointTestResult:
         """
         Test a single endpoint.
@@ -186,8 +187,12 @@ class EndpointTester:
             timeout = aiohttp.ClientTimeout(total=self.REQUEST_TIMEOUT)
 
             if method == "HEAD":
-                async with session.head(url, timeout=timeout, allow_redirects=False) as response:
-                    response_time = (datetime.utcnow() - start_time).total_seconds() * 1000
+                async with session.head(
+                    url, timeout=timeout, allow_redirects=False
+                ) as response:
+                    response_time = (
+                        datetime.utcnow() - start_time
+                    ).total_seconds() * 1000
 
                     # Determine status
                     if response.status == 200:
@@ -210,15 +215,19 @@ class EndpointTester:
                         status=status,
                         http_status=response.status,
                         response_time_ms=round(response_time, 2),
-                        redirect_url=str(response.headers.get('Location', '')),
-                        content_type=response.headers.get('Content-Type', ''),
+                        redirect_url=str(response.headers.get("Location", "")),
+                        content_type=response.headers.get("Content-Type", ""),
                         error_message=None,
                         tested_at=start_time.isoformat(),
                     )
             else:
                 # GET request
-                async with session.get(url, timeout=timeout, allow_redirects=False) as response:
-                    response_time = (datetime.utcnow() - start_time).total_seconds() * 1000
+                async with session.get(
+                    url, timeout=timeout, allow_redirects=False
+                ) as response:
+                    response_time = (
+                        datetime.utcnow() - start_time
+                    ).total_seconds() * 1000
 
                     if response.status == 200:
                         status = EndpointStatus.AVAILABLE
@@ -240,8 +249,8 @@ class EndpointTester:
                         status=status,
                         http_status=response.status,
                         response_time_ms=round(response_time, 2),
-                        redirect_url=str(response.headers.get('Location', '')),
-                        content_type=response.headers.get('Content-Type', ''),
+                        redirect_url=str(response.headers.get("Location", "")),
+                        content_type=response.headers.get("Content-Type", ""),
                         error_message=None,
                         tested_at=start_time.isoformat(),
                     )
@@ -281,9 +290,7 @@ class EndpointTester:
             )
 
     async def test_state_config(
-        self,
-        state_code: str,
-        limit_counties: Optional[int] = None
+        self, state_code: str, limit_counties: Optional[int] = None
     ) -> List[JurisdictionTestResult]:
         """
         Test all endpoints in a state's configuration.
@@ -301,10 +308,10 @@ class EndpointTester:
             logger.warning(f"No config found for state: {state_code}")
             return []
 
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             config = json.load(f)
 
-        counties = config.get('counties', [])
+        counties = config.get("counties", [])
         if limit_counties:
             counties = counties[:limit_counties]
 
@@ -312,13 +319,12 @@ class EndpointTester:
         connector = aiohttp.TCPConnector(limit=self.CONCURRENT_LIMIT)
 
         async with aiohttp.ClientSession(
-            connector=connector,
-            headers={"User-Agent": self.USER_AGENT}
+            connector=connector, headers={"User-Agent": self.USER_AGENT}
         ) as session:
 
             for county in counties:
                 endpoints_results = {}
-                base_urls = county.get('base_urls', {})
+                base_urls = county.get("base_urls", {})
 
                 # Test each category's base URL
                 for category, url in base_urls.items():
@@ -327,15 +333,18 @@ class EndpointTester:
 
                 # Calculate availability score
                 available_count = sum(
-                    1 for r in endpoints_results.values()
+                    1
+                    for r in endpoints_results.values()
                     if r.status == EndpointStatus.AVAILABLE
                 )
                 total_count = len(endpoints_results)
-                availability_score = available_count / total_count if total_count > 0 else 0
+                availability_score = (
+                    available_count / total_count if total_count > 0 else 0
+                )
 
                 jurisdiction_result = JurisdictionTestResult(
-                    fips_code=county.get('fips_code', ''),
-                    name=county.get('name', ''),
+                    fips_code=county.get("fips_code", ""),
+                    name=county.get("name", ""),
                     state_code=state_code,
                     endpoints=endpoints_results,
                     availability_score=round(availability_score, 2),
@@ -346,9 +355,7 @@ class EndpointTester:
         return results
 
     async def test_all_states(
-        self,
-        tier: Optional[int] = None,
-        limit_counties_per_state: int = 5
+        self, tier: Optional[int] = None, limit_counties_per_state: int = 5
     ) -> Dict[str, List[JurisdictionTestResult]]:
         """
         Test endpoints for all configured states.
@@ -368,8 +375,7 @@ class EndpointTester:
 
             try:
                 state_results = await self.test_state_config(
-                    state_code,
-                    limit_counties=limit_counties_per_state
+                    state_code, limit_counties=limit_counties_per_state
                 )
                 results[state_code] = state_results
                 logger.info(f"Tested {len(state_results)} counties in {state_code}")
@@ -382,7 +388,7 @@ class EndpointTester:
     def save_results(
         self,
         results: Dict[str, List[JurisdictionTestResult]],
-        filename: Optional[str] = None
+        filename: Optional[str] = None,
     ) -> str:
         """
         Save test results to JSON file.
@@ -423,15 +429,14 @@ class EndpointTester:
                     }
                 output[state_code].append(jr_dict)
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(output, f, indent=2)
 
         logger.info(f"Saved results to: {output_path}")
         return str(output_path)
 
     def get_availability_summary(
-        self,
-        results: Dict[str, List[JurisdictionTestResult]]
+        self, results: Dict[str, List[JurisdictionTestResult]]
     ) -> Dict[str, Any]:
         """
         Generate summary statistics from test results.
@@ -476,7 +481,11 @@ class EndpointTester:
                 "jurisdictions_tested": len(state_results),
                 "endpoints_tested": state_total,
                 "endpoints_available": state_available,
-                "availability_pct": round(state_available / state_total * 100, 1) if state_total > 0 else 0,
+                "availability_pct": (
+                    round(state_available / state_total * 100, 1)
+                    if state_total > 0
+                    else 0
+                ),
             }
 
         return {
@@ -486,10 +495,13 @@ class EndpointTester:
             "unavailable_endpoints": unavailable_endpoints,
             "auth_required_endpoints": auth_required_endpoints,
             "timeout_endpoints": timeout_endpoints,
-            "overall_availability_pct": round(available_endpoints / total_endpoints * 100, 1) if total_endpoints > 0 else 0,
+            "overall_availability_pct": (
+                round(available_endpoints / total_endpoints * 100, 1)
+                if total_endpoints > 0
+                else 0
+            ),
             "state_summaries": state_summaries,
         }
-
 
     async def test_federal_endpoints(self) -> Dict[str, EndpointTestResult]:
         """
@@ -502,19 +514,20 @@ class EndpointTester:
         connector = aiohttp.TCPConnector(limit=self.CONCURRENT_LIMIT)
 
         async with aiohttp.ClientSession(
-            connector=connector,
-            headers={"User-Agent": self.USER_AGENT}
+            connector=connector, headers={"User-Agent": self.USER_AGENT}
         ) as session:
 
             for endpoint_id, config in self.FEDERAL_ENDPOINTS.items():
                 try:
-                    result = await self.test_endpoint(session, config['url'], method="GET")
+                    result = await self.test_endpoint(
+                        session, config["url"], method="GET"
+                    )
                     results[endpoint_id] = result
                     logger.info(f"Tested {config['name']}: {result.status.value}")
                 except Exception as e:
                     logger.error(f"Error testing {endpoint_id}: {e}")
                     results[endpoint_id] = EndpointTestResult(
-                        url=config['url'],
+                        url=config["url"],
                         status=EndpointStatus.ERROR,
                         http_status=None,
                         response_time_ms=None,
@@ -526,7 +539,9 @@ class EndpointTester:
 
         return results
 
-    def get_federal_summary(self, results: Dict[str, EndpointTestResult]) -> Dict[str, Any]:
+    def get_federal_summary(
+        self, results: Dict[str, EndpointTestResult]
+    ) -> Dict[str, Any]:
         """
         Generate summary of federal endpoint tests.
 
@@ -537,44 +552,52 @@ class EndpointTester:
             Summary statistics
         """
         total = len(results)
-        available = sum(1 for r in results.values() if r.status == EndpointStatus.AVAILABLE)
-        auth_required = sum(1 for r in results.values() if r.status == EndpointStatus.AUTH_REQUIRED)
+        available = sum(
+            1 for r in results.values() if r.status == EndpointStatus.AVAILABLE
+        )
+        auth_required = sum(
+            1 for r in results.values() if r.status == EndpointStatus.AUTH_REQUIRED
+        )
         timeout = sum(1 for r in results.values() if r.status == EndpointStatus.TIMEOUT)
         errors = sum(1 for r in results.values() if r.status == EndpointStatus.ERROR)
 
         # Group by category
         by_category: Dict[str, Dict[str, int]] = {}
         for endpoint_id, result in results.items():
-            category = self.FEDERAL_ENDPOINTS[endpoint_id]['category']
+            category = self.FEDERAL_ENDPOINTS[endpoint_id]["category"]
             if category not in by_category:
-                by_category[category] = {'total': 0, 'available': 0}
-            by_category[category]['total'] += 1
+                by_category[category] = {"total": 0, "available": 0}
+            by_category[category]["total"] += 1
             if result.status == EndpointStatus.AVAILABLE:
-                by_category[category]['available'] += 1
+                by_category[category]["available"] += 1
 
         # Calculate average response time
-        response_times = [r.response_time_ms for r in results.values() if r.response_time_ms]
-        avg_response_time = sum(response_times) / len(response_times) if response_times else 0
+        response_times = [
+            r.response_time_ms for r in results.values() if r.response_time_ms
+        ]
+        avg_response_time = (
+            sum(response_times) / len(response_times) if response_times else 0
+        )
 
         return {
-            'total_endpoints': total,
-            'available': available,
-            'auth_required': auth_required,
-            'timeout': timeout,
-            'errors': errors,
-            'availability_pct': round(available / total * 100, 1) if total > 0 else 0,
-            'avg_response_time_ms': round(avg_response_time, 2),
-            'by_category': by_category,
-            'endpoints': {
+            "total_endpoints": total,
+            "available": available,
+            "auth_required": auth_required,
+            "timeout": timeout,
+            "errors": errors,
+            "availability_pct": round(available / total * 100, 1) if total > 0 else 0,
+            "avg_response_time_ms": round(avg_response_time, 2),
+            "by_category": by_category,
+            "endpoints": {
                 endpoint_id: {
-                    'name': self.FEDERAL_ENDPOINTS[endpoint_id]['name'],
-                    'category': self.FEDERAL_ENDPOINTS[endpoint_id]['category'],
-                    'status': results[endpoint_id].status.value,
-                    'http_status': results[endpoint_id].http_status,
-                    'response_time_ms': results[endpoint_id].response_time_ms,
+                    "name": self.FEDERAL_ENDPOINTS[endpoint_id]["name"],
+                    "category": self.FEDERAL_ENDPOINTS[endpoint_id]["category"],
+                    "status": results[endpoint_id].status.value,
+                    "http_status": results[endpoint_id].http_status,
+                    "response_time_ms": results[endpoint_id].response_time_ms,
                 }
                 for endpoint_id in results
-            }
+            },
         }
 
 
@@ -587,7 +610,9 @@ async def main():
     parser = argparse.ArgumentParser(description="Test data source endpoints")
     parser.add_argument("--state", type=str, help="Test specific state")
     parser.add_argument("--all", action="store_true", help="Test all configured states")
-    parser.add_argument("--federal", action="store_true", help="Test federal API endpoints")
+    parser.add_argument(
+        "--federal", action="store_true", help="Test federal API endpoints"
+    )
     parser.add_argument("--limit", type=int, default=5, help="Limit counties per state")
     parser.add_argument("--save", action="store_true", help="Save results to file")
 
@@ -608,12 +633,16 @@ async def main():
         print(f"Availability: {summary['availability_pct']}%")
         print(f"Avg response time: {summary['avg_response_time_ms']}ms")
         print("\n--- Endpoint Details ---")
-        for endpoint_id, details in summary['endpoints'].items():
-            status_icon = "✓" if details['status'] == 'available' else "✗"
-            print(f"  {status_icon} {details['name']}: {details['status']} ({details['response_time_ms']}ms)")
+        for endpoint_id, details in summary["endpoints"].items():
+            status_icon = "✓" if details["status"] == "available" else "✗"
+            print(
+                f"  {status_icon} {details['name']}: {details['status']} ({details['response_time_ms']}ms)"
+            )
 
     elif args.state:
-        results = await tester.test_state_config(args.state.upper(), limit_counties=args.limit)
+        results = await tester.test_state_config(
+            args.state.upper(), limit_counties=args.limit
+        )
         print(f"\nTested {len(results)} jurisdictions in {args.state.upper()}")
 
         for jr in results:

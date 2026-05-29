@@ -20,26 +20,27 @@ This module tests:
 Coverage target: 100% of api/src/api_v2.py (959 lines)
 """
 
-import pytest
+import csv
+import io
+import json
 import os
 import sys
-import json
 import time
 import uuid
-import io
-import csv
-from datetime import datetime, timedelta, date
-from unittest.mock import patch, MagicMock, Mock
+from datetime import date, datetime, timedelta
 from functools import wraps
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 # Set test environment before imports
 os.environ["TESTING"] = "1"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 # Add paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'api', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "api", "src"))
 
 
 class TestAppInitialization:
@@ -48,10 +49,11 @@ class TestAppInitialization:
     def test_app_creation(self):
         """Test FastAPI app is created."""
         from fastapi import FastAPI
+
         app = FastAPI(
             title="DataGod API v2",
             version="2.0.0",
-            description="Comprehensive API for mortgage data"
+            description="Comprehensive API for mortgage data",
         )
         assert app is not None
         assert app.title == "DataGod API v2"
@@ -59,11 +61,12 @@ class TestAppInitialization:
     def test_app_with_docs(self):
         """Test app with documentation URLs."""
         from fastapi import FastAPI
+
         app = FastAPI(
             title="Test API",
             docs_url="/docs",
             openapi_url="/openapi.json",
-            redoc_url="/redoc"
+            redoc_url="/redoc",
         )
         assert app.docs_url == "/docs"
         assert app.redoc_url == "/redoc"
@@ -106,12 +109,14 @@ class TestPasswordContext:
     def test_password_context_creation(self):
         """Test password context creation."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         assert pwd_context is not None
 
     def test_password_hashing(self):
         """Test password hashing."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         password = "testpassword123"
@@ -123,6 +128,7 @@ class TestPasswordContext:
     def test_password_verification(self):
         """Test password verification."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         password = "testpassword123"
@@ -253,8 +259,9 @@ class TestUserModel:
 
     def test_user_model_creation(self):
         """Test User model creation."""
+        from typing import List, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, List
 
         class User(BaseModel):
             username: str
@@ -269,8 +276,9 @@ class TestUserModel:
 
     def test_user_with_roles(self):
         """Test User model with custom roles."""
+        from typing import List, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, List
 
         class User(BaseModel):
             username: str
@@ -280,9 +288,7 @@ class TestUserModel:
             roles: List[str] = ["user"]
 
         user = User(
-            username="admin",
-            email="admin@example.com",
-            roles=["admin", "user"]
+            username="admin", email="admin@example.com", roles=["admin", "user"]
         )
         assert "admin" in user.roles
 
@@ -292,8 +298,9 @@ class TestUserInDBModel:
 
     def test_user_in_db_model(self):
         """Test UserInDB model with hashed password."""
+        from typing import List, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, List
 
         class User(BaseModel):
             username: str
@@ -308,7 +315,7 @@ class TestUserInDBModel:
         user = UserInDB(
             username="testuser",
             email="test@example.com",
-            hashed_password="$2b$12$hashedpassword"
+            hashed_password="$2b$12$hashedpassword",
         )
         assert user.hashed_password.startswith("$2b$")
 
@@ -328,7 +335,7 @@ class TestTokenModel:
         token = Token(
             access_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
             token_type="bearer",
-            expires_in=1800
+            expires_in=1800,
         )
         assert token.token_type == "bearer"
         assert token.expires_in == 1800
@@ -339,8 +346,9 @@ class TestTokenDataModel:
 
     def test_token_data_model(self):
         """Test TokenData model."""
+        from typing import List, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, List
 
         class TokenData(BaseModel):
             username: Optional[str] = None
@@ -356,8 +364,9 @@ class TestUserCreateModel:
 
     def test_user_create_model(self):
         """Test UserCreate model."""
+        from typing import List, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, List
 
         class UserCreate(BaseModel):
             username: str
@@ -367,9 +376,7 @@ class TestUserCreateModel:
             roles: List[str] = ["user"]
 
         user_create = UserCreate(
-            username="newuser",
-            email="new@example.com",
-            password="password123"
+            username="newuser", email="new@example.com", password="password123"
         )
         assert user_create.password == "password123"
 
@@ -380,7 +387,8 @@ class TestUserRegisterModel:
     def test_valid_email_validation(self):
         """Test valid email validation."""
         import re
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
         valid_emails = ["user@example.com", "test.user@domain.org"]
         for email in valid_emails:
@@ -389,7 +397,8 @@ class TestUserRegisterModel:
     def test_invalid_email_validation(self):
         """Test invalid email validation."""
         import re
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
         invalid_emails = ["notanemail", "@example.com", "user@"]
         for email in invalid_emails:
@@ -439,10 +448,7 @@ class TestPasswordResetModels:
             token: str
             new_password: str
 
-        confirm = PasswordResetConfirm(
-            token="abc123",
-            new_password="newpassword123"
-        )
+        confirm = PasswordResetConfirm(token="abc123", new_password="newpassword123")
         assert confirm.token == "abc123"
 
 
@@ -451,8 +457,9 @@ class TestJurisdictionModels:
 
     def test_jurisdiction_create_model(self):
         """Test JurisdictionCreate model."""
+        from typing import Any, Dict, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, Dict, Any
 
         class JurisdictionCreate(BaseModel):
             name: str
@@ -463,18 +470,16 @@ class TestJurisdictionModels:
             metadata: Optional[Dict[str, Any]] = None
 
         jurisdiction = JurisdictionCreate(
-            name="Test County",
-            state="TX",
-            county="Test",
-            jurisdiction_type="county"
+            name="Test County", state="TX", county="Test", jurisdiction_type="county"
         )
         assert jurisdiction.name == "Test County"
         assert jurisdiction.state == "TX"
 
     def test_jurisdiction_update_model(self):
         """Test JurisdictionUpdate model."""
+        from typing import Any, Dict, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, Dict, Any
 
         class JurisdictionUpdate(BaseModel):
             name: Optional[str] = None
@@ -494,8 +499,9 @@ class TestDataSourceModels:
 
     def test_data_source_create_model(self):
         """Test DataSourceCreate model."""
+        from typing import Any, Dict, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, Dict, Any
 
         class DataSourceCreate(BaseModel):
             jurisdiction_id: int
@@ -507,9 +513,7 @@ class TestDataSourceModels:
             metadata: Optional[Dict[str, Any]] = None
 
         data_source = DataSourceCreate(
-            jurisdiction_id=1,
-            source_name="Test Source",
-            source_type="api"
+            jurisdiction_id=1, source_name="Test Source", source_type="api"
         )
         assert data_source.status == "active"
 
@@ -519,9 +523,10 @@ class TestRecordModels:
 
     def test_record_create_model(self):
         """Test RecordCreate model."""
-        from pydantic import BaseModel
-        from typing import Optional, Dict, Any
         from datetime import date
+        from typing import Any, Dict, Optional
+
+        from pydantic import BaseModel
 
         class RecordCreate(BaseModel):
             jurisdiction_id: int
@@ -538,7 +543,7 @@ class TestRecordModels:
             jurisdiction_id=1,
             record_type="mortgage",
             title="Test Record",
-            amount=250000.0
+            amount=250000.0,
         )
         assert record.amount == 250000.0
 
@@ -548,8 +553,9 @@ class TestEntityModels:
 
     def test_entity_create_model(self):
         """Test EntityCreate model."""
+        from typing import Any, Dict, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, Dict, Any
 
         class EntityCreate(BaseModel):
             entity_name: str
@@ -558,10 +564,7 @@ class TestEntityModels:
             jurisdiction_id: Optional[int] = None
             metadata: Optional[Dict[str, Any]] = None
 
-        entity = EntityCreate(
-            entity_name="John Doe",
-            entity_type="person"
-        )
+        entity = EntityCreate(entity_name="John Doe", entity_type="person")
         assert entity.entity_name == "John Doe"
 
 
@@ -570,8 +573,9 @@ class TestRelationshipModels:
 
     def test_relationship_create_model(self):
         """Test RelationshipCreate model."""
+        from typing import Any, Dict, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, Dict, Any
 
         class RelationshipCreate(BaseModel):
             entity1_id: int
@@ -583,10 +587,7 @@ class TestRelationshipModels:
             metadata: Optional[Dict[str, Any]] = None
 
         relationship = RelationshipCreate(
-            entity1_id=1,
-            entity2_id=2,
-            relationship_type="owns",
-            confidence_score=0.95
+            entity1_id=1, entity2_id=2, relationship_type="owns", confidence_score=0.95
         )
         assert relationship.confidence_score == 0.95
 
@@ -596,9 +597,10 @@ class TestSearchQueryModel:
 
     def test_search_query_model(self):
         """Test SearchQuery model."""
-        from pydantic import BaseModel
-        from typing import Optional, List
         from datetime import date
+        from typing import List, Optional
+
+        from pydantic import BaseModel
 
         class SearchQuery(BaseModel):
             query: Optional[str] = None
@@ -614,11 +616,7 @@ class TestSearchQueryModel:
             page: int = 1
             page_size: int = 50
 
-        search = SearchQuery(
-            query="mortgage",
-            amount_min=100000,
-            amount_max=500000
-        )
+        search = SearchQuery(query="mortgage", amount_min=100000, amount_max=500000)
         assert search.query == "mortgage"
         assert search.page == 1
 
@@ -628,8 +626,9 @@ class TestExportRequestModel:
 
     def test_export_request_model(self):
         """Test ExportRequest model."""
+        from typing import List, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, List
 
         class ExportRequest(BaseModel):
             format: str = "json"
@@ -676,6 +675,7 @@ class TestPasswordHashing:
     def test_verify_password_correct(self):
         """Test verifying correct password."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         def verify_password(plain_password, hashed_password):
@@ -688,6 +688,7 @@ class TestPasswordHashing:
     def test_get_password_hash(self):
         """Test getting password hash."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         def get_password_hash(password):
@@ -768,7 +769,13 @@ class TestRegistrationRateLimiting:
     def test_check_registration_rate_limit_exceeded(self):
         """Test registration rate limit exceeded."""
         registration_attempts = {
-            "127.0.0.1": [time.time(), time.time(), time.time(), time.time(), time.time()]
+            "127.0.0.1": [
+                time.time(),
+                time.time(),
+                time.time(),
+                time.time(),
+                time.time(),
+            ]
         }
         ip = "127.0.0.1"
         max_attempts = 5
@@ -808,7 +815,7 @@ class TestHealthEndpoint:
             "timestamp": datetime.utcnow().isoformat(),
             "database": db_status,
             "cache": cache_status,
-            "api_version": "2.0.0"
+            "api_version": "2.0.0",
         }
 
         assert response["status"] == "healthy"
@@ -828,8 +835,8 @@ class TestMetricsEndpoint:
                 "api_calls": 0,
                 "database_queries": 0,
                 "cache_hits": 0,
-                "active_connections": 0
-            }
+                "active_connections": 0,
+            },
         }
 
         assert "metrics" in response
@@ -844,7 +851,7 @@ class TestTokenEndpoint:
         response = {
             "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
             "token_type": "bearer",
-            "expires_in": 1800
+            "expires_in": 1800,
         }
 
         assert response["token_type"] == "bearer"
@@ -859,7 +866,7 @@ class TestRefreshTokenEndpoint:
         response = {
             "access_token": "new_token",
             "token_type": "bearer",
-            "expires_in": 1800
+            "expires_in": 1800,
         }
 
         assert response["access_token"] == "new_token"
@@ -875,7 +882,7 @@ class TestRegisterEndpoint:
             "email": "new@example.com",
             "full_name": "New User",
             "disabled": False,
-            "roles": ["user"]
+            "roles": ["user"],
         }
 
         assert user["username"] == "newuser"
@@ -1063,7 +1070,7 @@ class TestExportEndpoint:
         """Test CSV export."""
         records = [
             {"id": 1, "title": "Record 1", "amount": 250000},
-            {"id": 2, "title": "Record 2", "amount": 300000}
+            {"id": 2, "title": "Record 2", "amount": 300000},
         ]
 
         output = io.StringIO()
@@ -1087,7 +1094,7 @@ class TestExportEndpoint:
             "records": records,
             "count": len(records),
             "format": "json",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
         assert response["count"] == 2
@@ -1144,7 +1151,7 @@ class TestCacheEndpoints:
             "used_memory": 1024000,
             "db0": {"keys": 100},
             "uptime_in_seconds": 3600,
-            "connected_clients": 5
+            "connected_clients": 5,
         }
 
         response = {
@@ -1153,8 +1160,8 @@ class TestCacheEndpoints:
                 "used_memory": info.get("used_memory", 0),
                 "keys": info.get("db0", {}).get("keys", 0),
                 "uptime": info.get("uptime_in_seconds", 0),
-                "connected_clients": info.get("connected_clients", 0)
-            }
+                "connected_clients": info.get("connected_clients", 0),
+            },
         }
 
         assert response["status"] == "healthy"
@@ -1182,7 +1189,7 @@ class TestSubscriptionEndpoints:
 
     def test_subscribe_to_plan_validation(self):
         """Test subscribe to plan tier validation."""
-        valid_tiers = ['basic', 'pro', 'enterprise']
+        valid_tiers = ["basic", "pro", "enterprise"]
 
         tier = "premium"
         is_valid = tier.lower() in valid_tiers
@@ -1194,7 +1201,7 @@ class TestSubscriptionEndpoints:
         response = {
             "tier": "pro",
             "status": "active",
-            "expires_at": datetime.utcnow().isoformat()
+            "expires_at": datetime.utcnow().isoformat(),
         }
 
         assert response["tier"] == "pro"
@@ -1239,7 +1246,7 @@ class TestMiddlewareConfiguration:
             "allow_origins": ["*"],
             "allow_credentials": True,
             "allow_methods": ["*"],
-            "allow_headers": ["*"]
+            "allow_headers": ["*"],
         }
 
         assert cors_config["allow_origins"] == ["*"]
@@ -1267,17 +1274,13 @@ class TestExceptionHandlers:
         status_code = 404
         detail = "Not found"
 
-        response = {
-            "message": detail
-        }
+        response = {"message": detail}
 
         assert response["message"] == "Not found"
 
     def test_general_exception_handler_response(self):
         """Test general exception handler response."""
-        response = {
-            "message": "Internal server error"
-        }
+        response = {"message": "Internal server error"}
 
         assert response["message"] == "Internal server error"
 
@@ -1291,7 +1294,7 @@ class TestRootEndpoint:
             "message": "DataGod API v2 is running",
             "version": "2.0.0",
             "documentation": "/docs",
-            "status": "healthy"
+            "status": "healthy",
         }
 
         assert "running" in response["message"]
@@ -1340,7 +1343,7 @@ class TestDemoUsersCreation:
                 "full_name": "DataGod Admin",
                 "password": "admin123",
                 "roles": ["admin", "user"],
-                "disabled": False
+                "disabled": False,
             },
             {
                 "username": "user",
@@ -1348,8 +1351,8 @@ class TestDemoUsersCreation:
                 "full_name": "DataGod User",
                 "password": "user123",
                 "roles": ["user"],
-                "disabled": False
-            }
+                "disabled": False,
+            },
         ]
 
         assert len(demo_users) == 2
@@ -1384,11 +1387,7 @@ class TestStartupAndShutdown:
 
     def test_startup_event_structure(self):
         """Test startup event structure."""
-        startup_checks = {
-            "database": True,
-            "cache": False,
-            "demo_users": True
-        }
+        startup_checks = {"database": True, "cache": False, "demo_users": True}
 
         assert startup_checks["database"] is True
 

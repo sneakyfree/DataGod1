@@ -13,27 +13,29 @@ Features:
 
 import logging
 import time
-from datetime import datetime, timedelta
-from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional, Callable
-from enum import Enum
 from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class HealthStatus(Enum):
     """Health status levels"""
-    HEALTHY = "healthy"          # All systems operational
-    DEGRADED = "degraded"        # Some issues, still functional
-    UNHEALTHY = "unhealthy"      # Significant issues
-    CRITICAL = "critical"        # System down or major failure
-    UNKNOWN = "unknown"          # Status not determined
+
+    HEALTHY = "healthy"  # All systems operational
+    DEGRADED = "degraded"  # Some issues, still functional
+    UNHEALTHY = "unhealthy"  # Significant issues
+    CRITICAL = "critical"  # System down or major failure
+    UNKNOWN = "unknown"  # Status not determined
 
 
 @dataclass
 class ScraperMetrics:
     """Metrics for a single scraper"""
+
     scraper_id: str
     state_code: str
     total_requests: int = 0
@@ -89,9 +91,11 @@ class ScraperMetrics:
             return HealthStatus.UNHEALTHY
 
         # Degraded: >10% failure rate or >75% quota or slow response
-        if (self.failure_rate > 0.10 or
-            self.quota_usage_percent > 75 or
-            self.avg_response_time_ms > 5000):
+        if (
+            self.failure_rate > 0.10
+            or self.quota_usage_percent > 75
+            or self.avg_response_time_ms > 5000
+        ):
             return HealthStatus.DEGRADED
 
         # Healthy
@@ -103,29 +107,34 @@ class ScraperMetrics:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'scraper_id': self.scraper_id,
-            'state_code': self.state_code,
-            'total_requests': self.total_requests,
-            'successful_requests': self.successful_requests,
-            'failed_requests': self.failed_requests,
-            'success_rate': round(self.success_rate, 4),
-            'failure_rate': round(self.failure_rate, 4),
-            'avg_response_time_ms': round(self.avg_response_time_ms, 2),
-            'last_success_time': self.last_success_time.isoformat() if self.last_success_time else None,
-            'last_failure_time': self.last_failure_time.isoformat() if self.last_failure_time else None,
-            'last_error_message': self.last_error_message,
-            'records_fetched': self.records_fetched,
-            'api_quota_used': self.api_quota_used,
-            'api_quota_limit': self.api_quota_limit,
-            'quota_usage_percent': round(self.quota_usage_percent, 2),
-            'health_status': self.health_status.value,
-            'updated_at': self.updated_at.isoformat(),
+            "scraper_id": self.scraper_id,
+            "state_code": self.state_code,
+            "total_requests": self.total_requests,
+            "successful_requests": self.successful_requests,
+            "failed_requests": self.failed_requests,
+            "success_rate": round(self.success_rate, 4),
+            "failure_rate": round(self.failure_rate, 4),
+            "avg_response_time_ms": round(self.avg_response_time_ms, 2),
+            "last_success_time": (
+                self.last_success_time.isoformat() if self.last_success_time else None
+            ),
+            "last_failure_time": (
+                self.last_failure_time.isoformat() if self.last_failure_time else None
+            ),
+            "last_error_message": self.last_error_message,
+            "records_fetched": self.records_fetched,
+            "api_quota_used": self.api_quota_used,
+            "api_quota_limit": self.api_quota_limit,
+            "quota_usage_percent": round(self.quota_usage_percent, 2),
+            "health_status": self.health_status.value,
+            "updated_at": self.updated_at.isoformat(),
         }
 
 
 @dataclass
 class HealthCheckResult:
     """Result of a health check"""
+
     scraper_id: str
     status: HealthStatus
     message: str
@@ -136,12 +145,12 @@ class HealthCheckResult:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'scraper_id': self.scraper_id,
-            'status': self.status.value,
-            'message': self.message,
-            'checked_at': self.checked_at.isoformat(),
-            'response_time_ms': round(self.response_time_ms, 2),
-            'details': self.details,
+            "scraper_id": self.scraper_id,
+            "status": self.status.value,
+            "message": self.message,
+            "checked_at": self.checked_at.isoformat(),
+            "response_time_ms": round(self.response_time_ms, 2),
+            "details": self.details,
         }
 
 
@@ -164,10 +173,12 @@ class ScraperHealthMonitor:
     DEFAULT_QUOTA_WARN_PERCENT = 75
     DEFAULT_QUOTA_CRITICAL_PERCENT = 90
 
-    def __init__(self,
-                 freshness_threshold_hours: int = DEFAULT_FRESHNESS_HOURS,
-                 response_time_warn_ms: float = DEFAULT_RESPONSE_TIME_WARN_MS,
-                 response_time_critical_ms: float = DEFAULT_RESPONSE_TIME_CRITICAL_MS):
+    def __init__(
+        self,
+        freshness_threshold_hours: int = DEFAULT_FRESHNESS_HOURS,
+        response_time_warn_ms: float = DEFAULT_RESPONSE_TIME_WARN_MS,
+        response_time_critical_ms: float = DEFAULT_RESPONSE_TIME_CRITICAL_MS,
+    ):
         """
         Initialize the health monitor.
 
@@ -183,11 +194,19 @@ class ScraperHealthMonitor:
         # Metrics storage (in production, use Redis or database)
         self._metrics: Dict[str, ScraperMetrics] = {}
         self._health_history: List[HealthCheckResult] = []
-        self._error_counts: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        self._error_counts: Dict[str, Dict[str, int]] = defaultdict(
+            lambda: defaultdict(int)
+        )
 
-    def record_request(self, scraper_id: str, state_code: str,
-                       success: bool, response_time_ms: float,
-                       records_count: int = 0, error_message: str = None):
+    def record_request(
+        self,
+        scraper_id: str,
+        state_code: str,
+        success: bool,
+        response_time_ms: float,
+        records_count: int = 0,
+        error_message: str = None,
+    ):
         """
         Record a scraper request.
 
@@ -202,8 +221,7 @@ class ScraperHealthMonitor:
         # Get or create metrics
         if scraper_id not in self._metrics:
             self._metrics[scraper_id] = ScraperMetrics(
-                scraper_id=scraper_id,
-                state_code=state_code
+                scraper_id=scraper_id, state_code=state_code
             )
 
         metrics = self._metrics[scraper_id]
@@ -224,8 +242,10 @@ class ScraperHealthMonitor:
             error_type = self._classify_error(error_message)
             self._error_counts[scraper_id][error_type] += 1
 
-        logger.debug(f"Recorded request for {scraper_id}: success={success}, "
-                    f"time={response_time_ms}ms, records={records_count}")
+        logger.debug(
+            f"Recorded request for {scraper_id}: success={success}, "
+            f"time={response_time_ms}ms, records={records_count}"
+        )
 
     def update_quota(self, scraper_id: str, used: int, limit: int):
         """
@@ -248,8 +268,9 @@ class ScraperHealthMonitor:
         """Get metrics for all scrapers"""
         return self._metrics.copy()
 
-    def check_health(self, scraper_id: str,
-                     health_check_func: Callable[[], bool] = None) -> HealthCheckResult:
+    def check_health(
+        self, scraper_id: str, health_check_func: Callable[[], bool] = None
+    ) -> HealthCheckResult:
         """
         Check health of a specific scraper.
 
@@ -266,7 +287,7 @@ class ScraperHealthMonitor:
             return HealthCheckResult(
                 scraper_id=scraper_id,
                 status=HealthStatus.UNKNOWN,
-                message="No metrics available for this scraper"
+                message="No metrics available for this scraper",
             )
 
         # Perform actual health check if function provided
@@ -280,7 +301,7 @@ class ScraperHealthMonitor:
                         scraper_id=scraper_id,
                         status=HealthStatus.UNHEALTHY,
                         message="Health check function returned False",
-                        response_time_ms=response_time
+                        response_time_ms=response_time,
                     )
             except Exception as e:
                 response_time = (time.time() - check_start) * 1000
@@ -288,7 +309,7 @@ class ScraperHealthMonitor:
                     scraper_id=scraper_id,
                     status=HealthStatus.CRITICAL,
                     message=f"Health check failed: {str(e)}",
-                    response_time_ms=response_time
+                    response_time_ms=response_time,
                 )
 
         # Check based on metrics
@@ -299,13 +320,17 @@ class ScraperHealthMonitor:
         if metrics.last_success_time:
             age = datetime.now() - metrics.last_success_time
             if age > self.freshness_threshold:
-                issues.append(f"Data is stale (last success {age.total_seconds() / 3600:.1f} hours ago)")
+                issues.append(
+                    f"Data is stale (last success {age.total_seconds() / 3600:.1f} hours ago)"
+                )
                 if status == HealthStatus.HEALTHY:
                     status = HealthStatus.DEGRADED
 
         # Check response time
         if metrics.avg_response_time_ms > self.response_time_critical:
-            issues.append(f"Critical response time ({metrics.avg_response_time_ms:.0f}ms)")
+            issues.append(
+                f"Critical response time ({metrics.avg_response_time_ms:.0f}ms)"
+            )
         elif metrics.avg_response_time_ms > self.response_time_warn:
             issues.append(f"Slow response time ({metrics.avg_response_time_ms:.0f}ms)")
 
@@ -327,11 +352,11 @@ class ScraperHealthMonitor:
             message=message,
             response_time_ms=(time.time() - check_start) * 1000,
             details={
-                'success_rate': metrics.success_rate,
-                'avg_response_time_ms': metrics.avg_response_time_ms,
-                'quota_usage_percent': metrics.quota_usage_percent,
-                'records_fetched': metrics.records_fetched,
-            }
+                "success_rate": metrics.success_rate,
+                "avg_response_time_ms": metrics.avg_response_time_ms,
+                "quota_usage_percent": metrics.quota_usage_percent,
+                "records_fetched": metrics.records_fetched,
+            },
         )
 
         self._health_history.append(result)
@@ -360,34 +385,40 @@ class ScraperHealthMonitor:
 
     def get_state_summary(self) -> Dict[str, Dict[str, Any]]:
         """Get summary of health by state"""
-        state_summary = defaultdict(lambda: {
-            'scrapers': [],
-            'total_requests': 0,
-            'successful_requests': 0,
-            'failed_requests': 0,
-            'records_fetched': 0,
-            'health_status': HealthStatus.UNKNOWN.value,
-        })
+        state_summary = defaultdict(
+            lambda: {
+                "scrapers": [],
+                "total_requests": 0,
+                "successful_requests": 0,
+                "failed_requests": 0,
+                "records_fetched": 0,
+                "health_status": HealthStatus.UNKNOWN.value,
+            }
+        )
 
         for scraper_id, metrics in self._metrics.items():
             state = metrics.state_code
-            state_summary[state]['scrapers'].append(scraper_id)
-            state_summary[state]['total_requests'] += metrics.total_requests
-            state_summary[state]['successful_requests'] += metrics.successful_requests
-            state_summary[state]['failed_requests'] += metrics.failed_requests
-            state_summary[state]['records_fetched'] += metrics.records_fetched
+            state_summary[state]["scrapers"].append(scraper_id)
+            state_summary[state]["total_requests"] += metrics.total_requests
+            state_summary[state]["successful_requests"] += metrics.successful_requests
+            state_summary[state]["failed_requests"] += metrics.failed_requests
+            state_summary[state]["records_fetched"] += metrics.records_fetched
 
             # Determine overall state health (worst status wins)
-            current_status = HealthStatus(state_summary[state]['health_status'])
-            if self._status_priority(metrics.health_status) > self._status_priority(current_status):
-                state_summary[state]['health_status'] = metrics.health_status.value
+            current_status = HealthStatus(state_summary[state]["health_status"])
+            if self._status_priority(metrics.health_status) > self._status_priority(
+                current_status
+            ):
+                state_summary[state]["health_status"] = metrics.health_status.value
 
         # Calculate success rates
         for state, data in state_summary.items():
-            if data['total_requests'] > 0:
-                data['success_rate'] = data['successful_requests'] / data['total_requests']
+            if data["total_requests"] > 0:
+                data["success_rate"] = (
+                    data["successful_requests"] / data["total_requests"]
+                )
             else:
-                data['success_rate'] = 0.0
+                data["success_rate"] = 0.0
 
         return dict(state_summary)
 
@@ -395,13 +426,13 @@ class ScraperHealthMonitor:
         """Get overall system health summary"""
         if not self._metrics:
             return {
-                'status': HealthStatus.UNKNOWN.value,
-                'message': 'No scrapers registered',
-                'scraper_count': 0,
-                'healthy_count': 0,
-                'degraded_count': 0,
-                'unhealthy_count': 0,
-                'critical_count': 0,
+                "status": HealthStatus.UNKNOWN.value,
+                "message": "No scrapers registered",
+                "scraper_count": 0,
+                "healthy_count": 0,
+                "degraded_count": 0,
+                "unhealthy_count": 0,
+                "critical_count": 0,
             }
 
         status_counts = defaultdict(int)
@@ -428,19 +459,21 @@ class ScraperHealthMonitor:
             overall_status = HealthStatus.UNKNOWN
 
         return {
-            'status': overall_status.value,
-            'message': self._get_status_message(overall_status, status_counts),
-            'scraper_count': len(self._metrics),
-            'healthy_count': status_counts[HealthStatus.HEALTHY],
-            'degraded_count': status_counts[HealthStatus.DEGRADED],
-            'unhealthy_count': status_counts[HealthStatus.UNHEALTHY],
-            'critical_count': status_counts[HealthStatus.CRITICAL],
-            'unknown_count': status_counts[HealthStatus.UNKNOWN],
-            'total_requests': total_requests,
-            'total_successful': total_successful,
-            'overall_success_rate': total_successful / total_requests if total_requests > 0 else 0,
-            'total_records': total_records,
-            'checked_at': datetime.now().isoformat(),
+            "status": overall_status.value,
+            "message": self._get_status_message(overall_status, status_counts),
+            "scraper_count": len(self._metrics),
+            "healthy_count": status_counts[HealthStatus.HEALTHY],
+            "degraded_count": status_counts[HealthStatus.DEGRADED],
+            "unhealthy_count": status_counts[HealthStatus.UNHEALTHY],
+            "critical_count": status_counts[HealthStatus.CRITICAL],
+            "unknown_count": status_counts[HealthStatus.UNKNOWN],
+            "total_requests": total_requests,
+            "total_successful": total_successful,
+            "overall_success_rate": (
+                total_successful / total_requests if total_requests > 0 else 0
+            ),
+            "total_records": total_records,
+            "checked_at": datetime.now().isoformat(),
         }
 
     def reset_metrics(self, scraper_id: str = None):
@@ -454,8 +487,7 @@ class ScraperHealthMonitor:
             if scraper_id in self._metrics:
                 state_code = self._metrics[scraper_id].state_code
                 self._metrics[scraper_id] = ScraperMetrics(
-                    scraper_id=scraper_id,
-                    state_code=state_code
+                    scraper_id=scraper_id, state_code=state_code
                 )
                 self._error_counts[scraper_id].clear()
         else:
@@ -498,8 +530,9 @@ class ScraperHealthMonitor:
         }
         return priorities.get(status, 1)
 
-    def _get_status_message(self, status: HealthStatus,
-                           counts: Dict[HealthStatus, int]) -> str:
+    def _get_status_message(
+        self, status: HealthStatus, counts: Dict[HealthStatus, int]
+    ) -> str:
         """Generate status message"""
         if status == HealthStatus.HEALTHY:
             return "All scrapers operational"

@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
+
 import aiohttp
 from bs4 import BeautifulSoup
 
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 class DocumentType(Enum):
     """Types of documents recorded in county recorder offices."""
+
     # Deeds
     WARRANTY_DEED = "warranty_deed"
     QUITCLAIM_DEED = "quitclaim_deed"
@@ -112,6 +114,7 @@ class DocumentType(Enum):
 
 class DocumentStatus(Enum):
     """Status of a recorded document."""
+
     ACTIVE = "active"
     RELEASED = "released"
     SATISFIED = "satisfied"
@@ -126,6 +129,7 @@ class DocumentStatus(Enum):
 
 class PartyRole(Enum):
     """Roles of parties in recorded documents."""
+
     # Deed parties
     GRANTOR = "grantor"
     GRANTEE = "grantee"
@@ -173,6 +177,7 @@ class PartyRole(Enum):
 @dataclass
 class DocumentParty:
     """A party (person or entity) involved in a recorded document."""
+
     name: str
     role: PartyRole
     party_type: str = "unknown"  # individual, corporation, trust, llc, etc.
@@ -187,6 +192,7 @@ class DocumentParty:
 @dataclass
 class LegalDescription:
     """Legal description of a property."""
+
     full_description: str
     parcel_number: Optional[str] = None
     apn: Optional[str] = None  # Assessor's Parcel Number
@@ -208,6 +214,7 @@ class LegalDescription:
 @dataclass
 class RecordedDocument:
     """A document recorded in the county recorder's office."""
+
     # Core identifiers
     document_number: str
     instrument_number: Optional[str] = None
@@ -259,21 +266,35 @@ class RecordedDocument:
 
     def get_grantors(self) -> List[str]:
         """Get all grantor names from parties."""
-        grantor_roles = {PartyRole.GRANTOR, PartyRole.MORTGAGOR, PartyRole.TRUSTOR,
-                        PartyRole.SELLER, PartyRole.ASSIGNOR, PartyRole.RELEASOR}
+        grantor_roles = {
+            PartyRole.GRANTOR,
+            PartyRole.MORTGAGOR,
+            PartyRole.TRUSTOR,
+            PartyRole.SELLER,
+            PartyRole.ASSIGNOR,
+            PartyRole.RELEASOR,
+        }
         return [p.name for p in self.parties if p.role in grantor_roles]
 
     def get_grantees(self) -> List[str]:
         """Get all grantee names from parties."""
-        grantee_roles = {PartyRole.GRANTEE, PartyRole.MORTGAGEE, PartyRole.TRUSTEE,
-                        PartyRole.BENEFICIARY, PartyRole.BUYER, PartyRole.ASSIGNEE,
-                        PartyRole.RELEASEE, PartyRole.SECURED_PARTY}
+        grantee_roles = {
+            PartyRole.GRANTEE,
+            PartyRole.MORTGAGEE,
+            PartyRole.TRUSTEE,
+            PartyRole.BENEFICIARY,
+            PartyRole.BUYER,
+            PartyRole.ASSIGNEE,
+            PartyRole.RELEASEE,
+            PartyRole.SECURED_PARTY,
+        }
         return [p.name for p in self.parties if p.role in grantee_roles]
 
 
 @dataclass
 class SearchCriteria:
     """Criteria for searching recorded documents."""
+
     # Name search
     last_name: Optional[str] = None
     first_name: Optional[str] = None
@@ -312,6 +333,7 @@ class SearchCriteria:
 @dataclass
 class SearchResult:
     """Result of a document search."""
+
     documents: List[RecordedDocument]
     total_count: int
     page_number: int
@@ -362,7 +384,7 @@ class CountyRecorderBase(ABC):
         if self._owns_session:
             self.session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=self.TIMEOUT),
-                headers=self._get_headers()
+                headers=self._get_headers(),
             )
         return self
 
@@ -385,6 +407,7 @@ class CountyRecorderBase(ABC):
     async def _rate_limit(self):
         """Enforce rate limiting between requests."""
         import time
+
         current_time = time.time()
         elapsed = current_time - self._last_request_time
         if elapsed < self.REQUEST_DELAY:
@@ -415,15 +438,19 @@ class CountyRecorderBase(ABC):
                     raise ValueError(f"Unsupported HTTP method: {method}")
 
             except aiohttp.ClientError as e:
-                logger.warning(f"Request failed (attempt {attempt + 1}/{self.MAX_RETRIES}): {e}")
+                logger.warning(
+                    f"Request failed (attempt {attempt + 1}/{self.MAX_RETRIES}): {e}"
+                )
                 if attempt < self.MAX_RETRIES - 1:
-                    await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                    await asyncio.sleep(2**attempt)  # Exponential backoff
                 else:
                     raise
 
         raise RuntimeError(f"Failed to fetch {url} after {self.MAX_RETRIES} attempts")
 
-    async def _fetch_json(self, url: str, method: str = "GET", **kwargs) -> Dict[str, Any]:
+    async def _fetch_json(
+        self, url: str, method: str = "GET", **kwargs
+    ) -> Dict[str, Any]:
         """Fetch a URL and parse JSON response."""
         if not self.session:
             raise RuntimeError("Session not initialized. Use async context manager.")
@@ -447,7 +474,18 @@ class CountyRecorderBase(ABC):
         # Convert to title case but preserve known acronyms
         parts = []
         for part in name.split():
-            if part.upper() in {"LLC", "LP", "LLP", "INC", "CORP", "CO", "LTD", "NA", "FSB", "PC"}:
+            if part.upper() in {
+                "LLC",
+                "LP",
+                "LLP",
+                "INC",
+                "CORP",
+                "CO",
+                "LTD",
+                "NA",
+                "FSB",
+                "PC",
+            }:
                 parts.append(part.upper())
             elif part.upper() in {"II", "III", "IV", "JR", "SR"}:
                 parts.append(part.upper())
@@ -482,7 +520,6 @@ class CountyRecorderBase(ABC):
             "SHERIFFS DEED": DocumentType.SHERIFFS_DEED,
             "TAX DEED": DocumentType.TAX_DEED,
             "DEED": DocumentType.WARRANTY_DEED,  # Default deed type
-
             # Mortgages
             "MTG": DocumentType.MORTGAGE,
             "MORT": DocumentType.MORTGAGE,
@@ -501,7 +538,6 @@ class CountyRecorderBase(ABC):
             "MOD": DocumentType.MORTGAGE_MODIFICATION,
             "MODIFICATION": DocumentType.MORTGAGE_MODIFICATION,
             "LOAN MODIFICATION": DocumentType.MORTGAGE_MODIFICATION,
-
             # Liens
             "ML": DocumentType.MECHANICS_LIEN,
             "MECH LIEN": DocumentType.MECHANICS_LIEN,
@@ -524,7 +560,6 @@ class CountyRecorderBase(ABC):
             "UCC3": DocumentType.UCC_AMENDMENT,
             "UCC-3": DocumentType.UCC_AMENDMENT,
             "HOA LIEN": DocumentType.HOA_LIEN,
-
             # Foreclosure
             "LP": DocumentType.LIS_PENDENS,
             "LIS PENDENS": DocumentType.LIS_PENDENS,
@@ -535,7 +570,6 @@ class CountyRecorderBase(ABC):
             "NOTICE OF TRUSTEE SALE": DocumentType.NOTICE_OF_SALE,
             "TDUS": DocumentType.TRUSTEES_DEED_UPON_SALE,
             "TRUSTEES DEED UPON SALE": DocumentType.TRUSTEES_DEED_UPON_SALE,
-
             # Easements
             "EASE": DocumentType.EASEMENT,
             "EASEMENT": DocumentType.EASEMENT,
@@ -544,7 +578,6 @@ class CountyRecorderBase(ABC):
             "CC&RS": DocumentType.CC_AND_RS,
             "COVENANT": DocumentType.RESTRICTIVE_COVENANT,
             "RESTRICTION": DocumentType.RESTRICTIVE_COVENANT,
-
             # Vital
             "MAR": DocumentType.MARRIAGE_LICENSE,
             "MARRIAGE": DocumentType.MARRIAGE_LICENSE,
@@ -552,11 +585,9 @@ class CountyRecorderBase(ABC):
             "MARRIAGE CERTIFICATE": DocumentType.MARRIAGE_CERTIFICATE,
             "DEATH": DocumentType.DEATH_CERTIFICATE,
             "DEATH CERTIFICATE": DocumentType.DEATH_CERTIFICATE,
-
             # Powers
             "POA": DocumentType.POWER_OF_ATTORNEY,
             "POWER OF ATTORNEY": DocumentType.POWER_OF_ATTORNEY,
-
             # Maps
             "PLAT": DocumentType.PLAT_MAP,
             "PLAT MAP": DocumentType.PLAT_MAP,
@@ -564,7 +595,6 @@ class CountyRecorderBase(ABC):
             "SUBDIVISION MAP": DocumentType.SUBDIVISION_MAP,
             "PARCEL MAP": DocumentType.PARCEL_MAP,
             "SURVEY": DocumentType.SURVEY,
-
             # Other
             "AFF": DocumentType.AFFIDAVIT,
             "AFFIDAVIT": DocumentType.AFFIDAVIT,
@@ -644,7 +674,7 @@ class CountyRecorderBase(ABC):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search for documents by party name.
@@ -665,8 +695,7 @@ class CountyRecorderBase(ABC):
 
     @abstractmethod
     async def search_by_document_number(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """
         Search for a specific document by its recording number.
@@ -686,7 +715,7 @@ class CountyRecorderBase(ABC):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search for documents by parcel/APN number.
@@ -711,7 +740,7 @@ class CountyRecorderBase(ABC):
         zip_code: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search for documents by property address.
@@ -731,8 +760,7 @@ class CountyRecorderBase(ABC):
 
     @abstractmethod
     async def get_document_detail(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """
         Get detailed information for a specific document.
@@ -749,7 +777,7 @@ class CountyRecorderBase(ABC):
         self,
         days: int = 7,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Get recent recordings within the specified number of days.
@@ -776,7 +804,7 @@ class CountyRecorderBase(ABC):
             start_date=start_date,
             end_date=end_date,
             document_types=document_types,
-            max_results=max_results
+            max_results=max_results,
         )
 
     async def authenticate(self, username: str, password: str) -> bool:
@@ -794,7 +822,9 @@ class CountyRecorderBase(ABC):
         """
         if not self.REQUIRES_LOGIN:
             return True
-        raise NotImplementedError("This county requires authentication. Override authenticate() method.")
+        raise NotImplementedError(
+            "This county requires authentication. Override authenticate() method."
+        )
 
     def get_county_info(self) -> Dict[str, Any]:
         """Get information about this county recorder."""
@@ -812,48 +842,53 @@ class CountyRecorderBase(ABC):
 
 # Synchronous wrapper functions for non-async consumers
 
+
 def search_name_sync(
     recorder: CountyRecorderBase,
     last_name: str,
     first_name: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> SearchResult:
     """Synchronous wrapper for search_by_name."""
+
     async def _search():
         async with recorder:
             return await recorder.search_by_name(last_name, first_name, **kwargs)
+
     return asyncio.run(_search())
 
 
 def search_document_sync(
-    recorder: CountyRecorderBase,
-    document_number: str
+    recorder: CountyRecorderBase, document_number: str
 ) -> Optional[RecordedDocument]:
     """Synchronous wrapper for search_by_document_number."""
+
     async def _search():
         async with recorder:
             return await recorder.search_by_document_number(document_number)
+
     return asyncio.run(_search())
 
 
 def search_parcel_sync(
-    recorder: CountyRecorderBase,
-    parcel_number: str,
-    **kwargs
+    recorder: CountyRecorderBase, parcel_number: str, **kwargs
 ) -> SearchResult:
     """Synchronous wrapper for search_by_parcel."""
+
     async def _search():
         async with recorder:
             return await recorder.search_by_parcel(parcel_number, **kwargs)
+
     return asyncio.run(_search())
 
 
 def get_document_detail_sync(
-    recorder: CountyRecorderBase,
-    document_number: str
+    recorder: CountyRecorderBase, document_number: str
 ) -> Optional[RecordedDocument]:
     """Synchronous wrapper for get_document_detail."""
+
     async def _search():
         async with recorder:
             return await recorder.get_document_detail(document_number)
+
     return asyncio.run(_search())

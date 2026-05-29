@@ -22,24 +22,25 @@ import re
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 from .base import (
-    SheriffInmateBase,
-    InmateStatus,
-    ChargeType,
-    ChargeSeverity,
-    BondType,
-    ReleaseType,
-    InmateRecord,
-    BookingRecord,
-    InmateCharge,
-    BondInformation,
-    VisitationInfo,
     ArrestRecord,
-    WarrantRecord,
+    BondInformation,
+    BondType,
+    BookingRecord,
+    ChargeSeverity,
+    ChargeType,
+    InmateCharge,
+    InmateRecord,
     InmateSearchCriteria,
     InmateSearchResult,
+    InmateStatus,
+    ReleaseType,
+    SheriffInmateBase,
+    VisitationInfo,
+    WarrantRecord,
 )
 
 logger = logging.getLogger(__name__)
@@ -85,10 +86,11 @@ class CookCountySheriff(SheriffInmateBase):
         first_name: Optional[str] = None,
         date_of_birth: Optional[date] = None,
         include_released: bool = False,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> InmateSearchResult:
         """Search for inmates by name and other criteria."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}inmates/search"
@@ -118,7 +120,7 @@ class CookCountySheriff(SheriffInmateBase):
                 search_criteria=InmateSearchCriteria(
                     last_name=last_name,
                     first_name=first_name,
-                    date_of_birth=date_of_birth
+                    date_of_birth=date_of_birth,
                 ),
                 warnings=[str(e)],
             )
@@ -144,16 +146,13 @@ class CookCountySheriff(SheriffInmateBase):
                 last_name=last_name,
                 first_name=first_name,
                 date_of_birth=date_of_birth,
-                include_released=include_released
+                include_released=include_released,
             ),
             search_time_ms=search_time,
             source_system=self.SYSTEM_NAME,
         )
 
-    async def get_inmate_detail(
-        self,
-        inmate_id: str
-    ) -> Optional[InmateRecord]:
+    async def get_inmate_detail(self, inmate_id: str) -> Optional[InmateRecord]:
         """Get detailed information for a specific inmate."""
         detail_url = f"{self.API_BASE}inmates/{inmate_id}"
 
@@ -169,8 +168,7 @@ class CookCountySheriff(SheriffInmateBase):
         return self._parse_inmate_detail(json_response)
 
     async def search_by_booking_number(
-        self,
-        booking_number: str
+        self, booking_number: str
     ) -> Optional[InmateRecord]:
         """Search for an inmate by booking number."""
         search_url = f"{self.API_BASE}inmates/booking/{booking_number}"
@@ -187,12 +185,11 @@ class CookCountySheriff(SheriffInmateBase):
         return self._parse_inmate_detail(json_response)
 
     async def get_current_inmates(
-        self,
-        facility: Optional[str] = None,
-        max_results: int = 500
+        self, facility: Optional[str] = None, max_results: int = 500
     ) -> InmateSearchResult:
         """Get list of current inmates (jail roster)."""
         import time
+
         start_time = time.time()
 
         roster_url = f"{self.API_BASE}inmates/roster"
@@ -241,7 +238,9 @@ class CookCountySheriff(SheriffInmateBase):
         charges = []
         for charge_data in item.get("charges", []):
             charge = InmateCharge(
-                charge_description=charge_data.get("description", charge_data.get("charge", "")),
+                charge_description=charge_data.get(
+                    "description", charge_data.get("charge", "")
+                ),
                 charge_code=charge_data.get("code"),
                 charge_type=self._parse_charge_type(charge_data.get("type", "")),
                 is_felony="FELONY" in str(charge_data.get("type", "")).upper(),
@@ -250,11 +249,17 @@ class CookCountySheriff(SheriffInmateBase):
             charges.append(charge)
 
         # Parse bond
-        bond_amount = self._parse_decimal(str(item.get("bondAmount", item.get("bond", ""))))
-        bond_info = BondInformation(
-            bond_amount=bond_amount,
-            bond_type=self._parse_bond_type(item.get("bondType", "")),
-        ) if bond_amount else None
+        bond_amount = self._parse_decimal(
+            str(item.get("bondAmount", item.get("bond", "")))
+        )
+        bond_info = (
+            BondInformation(
+                bond_amount=bond_amount,
+                bond_type=self._parse_bond_type(item.get("bondType", "")),
+            )
+            if bond_amount
+            else None
+        )
 
         return InmateRecord(
             inmate_id=str(inmate_id),
@@ -262,7 +267,9 @@ class CookCountySheriff(SheriffInmateBase):
             first_name=item.get("firstName", ""),
             middle_name=item.get("middleName"),
             last_name=item.get("lastName", ""),
-            date_of_birth=self._parse_date(item.get("dob", item.get("dateOfBirth", ""))),
+            date_of_birth=self._parse_date(
+                item.get("dob", item.get("dateOfBirth", ""))
+            ),
             age=self._parse_int(str(item.get("age", ""))),
             gender=item.get("gender", item.get("sex")),
             race=item.get("race"),
@@ -289,7 +296,9 @@ class CookCountySheriff(SheriffInmateBase):
         charges = []
         for charge_data in data.get("charges", data.get("chargeList", [])):
             charge = InmateCharge(
-                charge_description=charge_data.get("description", charge_data.get("charge", "")),
+                charge_description=charge_data.get(
+                    "description", charge_data.get("charge", "")
+                ),
                 charge_code=charge_data.get("code", charge_data.get("statute")),
                 charge_type=self._parse_charge_type(charge_data.get("type", "")),
                 severity=self._parse_charge_severity(charge_data.get("class", "")),
@@ -299,7 +308,9 @@ class CookCountySheriff(SheriffInmateBase):
                 court=charge_data.get("court"),
                 case_number=charge_data.get("caseNumber"),
                 disposition=charge_data.get("disposition"),
-                disposition_date=self._parse_date(charge_data.get("dispositionDate", "")),
+                disposition_date=self._parse_date(
+                    charge_data.get("dispositionDate", "")
+                ),
                 sentence=charge_data.get("sentence"),
                 counts=charge_data.get("counts", 1),
                 is_felony="FELONY" in str(charge_data.get("type", "")).upper(),
@@ -313,22 +324,29 @@ class CookCountySheriff(SheriffInmateBase):
         if isinstance(bond_data, (int, float, str)):
             bond_data = {"amount": bond_data}
 
-        bond_amount = self._parse_decimal(str(bond_data.get("amount", bond_data.get("totalBond", ""))))
-        bond_info = BondInformation(
-            bond_amount=bond_amount,
-            bond_type=self._parse_bond_type(bond_data.get("type", "")),
-            bond_status=bond_data.get("status"),
-            bond_date=self._parse_date(bond_data.get("date", "")),
-            total_bond=bond_amount,
-            raw_data=bond_data if isinstance(bond_data, dict) else {},
-        ) if bond_amount or bond_data.get("type") else None
+        bond_amount = self._parse_decimal(
+            str(bond_data.get("amount", bond_data.get("totalBond", "")))
+        )
+        bond_info = (
+            BondInformation(
+                bond_amount=bond_amount,
+                bond_type=self._parse_bond_type(bond_data.get("type", "")),
+                bond_status=bond_data.get("status"),
+                bond_date=self._parse_date(bond_data.get("date", "")),
+                total_bond=bond_amount,
+                raw_data=bond_data if isinstance(bond_data, dict) else {},
+            )
+            if bond_amount or bond_data.get("type")
+            else None
+        )
 
         # Parse booking history
         booking_history = []
         for booking_data in data.get("bookingHistory", []):
             booking = BookingRecord(
                 booking_number=booking_data.get("bookingNumber", ""),
-                booking_date=self._parse_datetime(booking_data.get("bookingDate", "")) or datetime.now(),
+                booking_date=self._parse_datetime(booking_data.get("bookingDate", ""))
+                or datetime.now(),
                 booking_facility=booking_data.get("facility"),
                 arresting_agency=booking_data.get("arrestingAgency"),
                 release_date=self._parse_datetime(booking_data.get("releaseDate", "")),
@@ -339,15 +357,19 @@ class CookCountySheriff(SheriffInmateBase):
 
         # Parse visitation info
         visit_data = data.get("visitation", {})
-        visitation = VisitationInfo(
-            visitation_allowed=visit_data.get("allowed", True),
-            visitation_days=visit_data.get("days", []),
-            visitation_hours=visit_data.get("hours"),
-            video_visitation=visit_data.get("videoAvailable", False),
-            video_url=visit_data.get("videoUrl"),
-            restrictions=visit_data.get("restrictions"),
-            raw_data=visit_data,
-        ) if visit_data else None
+        visitation = (
+            VisitationInfo(
+                visitation_allowed=visit_data.get("allowed", True),
+                visitation_days=visit_data.get("days", []),
+                visitation_hours=visit_data.get("hours"),
+                video_visitation=visit_data.get("videoAvailable", False),
+                video_url=visit_data.get("videoUrl"),
+                restrictions=visit_data.get("restrictions"),
+                raw_data=visit_data,
+            )
+            if visit_data
+            else None
+        )
 
         # Parse holds/detainers
         holds = data.get("holds", [])
@@ -367,7 +389,9 @@ class CookCountySheriff(SheriffInmateBase):
             last_name=data.get("lastName", ""),
             suffix=data.get("suffix"),
             aliases=data.get("aliases", []),
-            date_of_birth=self._parse_date(data.get("dob", data.get("dateOfBirth", ""))),
+            date_of_birth=self._parse_date(
+                data.get("dob", data.get("dateOfBirth", ""))
+            ),
             age=self._parse_int(str(data.get("age", ""))),
             gender=data.get("gender", data.get("sex")),
             race=data.get("race"),
@@ -376,7 +400,9 @@ class CookCountySheriff(SheriffInmateBase):
             weight=data.get("weight"),
             eye_color=data.get("eyeColor"),
             hair_color=data.get("hairColor"),
-            scars_marks_tattoos=data.get("scarsMarksTattoos", data.get("identifyingMarks")),
+            scars_marks_tattoos=data.get(
+                "scarsMarksTattoos", data.get("identifyingMarks")
+            ),
             status=self._parse_inmate_status(data.get("status", "IN_CUSTODY")),
             facility=self.FACILITIES.get(data.get("facility"), data.get("facility")),
             housing_location=data.get("housing", data.get("location")),
@@ -406,10 +432,9 @@ class CookCountySheriff(SheriffInmateBase):
 
 # Convenience functions
 
+
 def search_cook_county_inmates(
-    last_name: str,
-    first_name: Optional[str] = None,
-    **kwargs
+    last_name: str, first_name: Optional[str] = None, **kwargs
 ) -> InmateSearchResult:
     """Search Cook County Jail inmates by name."""
     sheriff = CookCountySheriff()
@@ -417,6 +442,7 @@ def search_cook_county_inmates(
     async def _search():
         async with sheriff:
             return await sheriff.search_inmates(last_name, first_name, **kwargs)
+
     return asyncio.run(_search())
 
 
@@ -427,4 +453,5 @@ def get_cook_county_inmate(inmate_id: str) -> Optional[InmateRecord]:
     async def _get():
         async with sheriff:
             return await sheriff.get_inmate_detail(inmate_id)
+
     return asyncio.run(_get())

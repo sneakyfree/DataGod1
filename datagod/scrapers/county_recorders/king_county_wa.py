@@ -33,12 +33,12 @@ from bs4 import BeautifulSoup
 
 from .base import (
     CountyRecorderBase,
-    DocumentType,
+    DocumentParty,
     DocumentStatus,
+    DocumentType,
+    LegalDescription,
     PartyRole,
     RecordedDocument,
-    DocumentParty,
-    LegalDescription,
     SearchCriteria,
     SearchResult,
 )
@@ -172,10 +172,11 @@ class KingCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for documents by party name."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -204,7 +205,9 @@ class KingCountyRecorder(CountyRecorderBase):
                 page_number=1,
                 page_size=max_results,
                 has_more=False,
-                search_criteria=SearchCriteria(last_name=last_name, first_name=first_name),
+                search_criteria=SearchCriteria(
+                    last_name=last_name, first_name=first_name
+                ),
                 warnings=[str(e)],
             )
 
@@ -228,8 +231,7 @@ class KingCountyRecorder(CountyRecorderBase):
         )
 
     async def search_by_document_number(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """Search for a specific document by recording number."""
         try:
@@ -248,15 +250,16 @@ class KingCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for documents by parcel number (tax account number)."""
         import time
+
         start_time = time.time()
 
         # King County uses 10-digit parcel numbers
         # Format: XXXXXXXXXX (no separators)
-        clean_parcel = re.sub(r'[^0-9]', '', parcel_number)
+        clean_parcel = re.sub(r"[^0-9]", "", parcel_number)
 
         params = {
             "parcelNumber": clean_parcel,
@@ -311,10 +314,11 @@ class KingCountyRecorder(CountyRecorderBase):
         zip_code: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for documents by property address."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -366,14 +370,12 @@ class KingCountyRecorder(CountyRecorderBase):
         )
 
     async def get_document_detail(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """Get full document details by recording number."""
         try:
             json_response = await self._fetch_json(
-                f"{self.DETAIL_URL}/{document_number}",
-                params={"include": "all"}
+                f"{self.DETAIL_URL}/{document_number}", params={"include": "all"}
             )
             if json_response.get("document"):
                 return self._parse_document_detail(json_response["document"])
@@ -381,7 +383,9 @@ class KingCountyRecorder(CountyRecorderBase):
             logger.error(f"King County document detail failed: {e}")
         return None
 
-    def _parse_document_result(self, data: Dict[str, Any]) -> Optional[RecordedDocument]:
+    def _parse_document_result(
+        self, data: Dict[str, Any]
+    ) -> Optional[RecordedDocument]:
         """Parse a search result into RecordedDocument."""
         rec_number = data.get("recordingNumber", data.get("instrumentNumber", ""))
         if not rec_number:
@@ -395,35 +399,41 @@ class KingCountyRecorder(CountyRecorderBase):
             name = grantor if isinstance(grantor, str) else grantor.get("name", "")
             if name:
                 grantors.append(self._normalize_name(name))
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTOR,
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTOR,
+                    )
+                )
 
         for grantee in data.get("grantees", []):
             name = grantee if isinstance(grantee, str) else grantee.get("name", "")
             if name:
                 grantees.append(self._normalize_name(name))
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTEE,
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTEE,
+                    )
+                )
 
         legal_descriptions = []
         for legal in data.get("legalDescriptions", []):
             if isinstance(legal, str):
                 legal_descriptions.append(LegalDescription(full_description=legal))
             elif isinstance(legal, dict):
-                legal_descriptions.append(LegalDescription(
-                    full_description=legal.get("description", ""),
-                    parcel_number=legal.get("parcelNumber"),
-                    lot=legal.get("lot"),
-                    block=legal.get("block"),
-                    subdivision=legal.get("subdivision"),
-                    section=legal.get("section"),
-                    township=legal.get("township"),
-                    range=legal.get("range"),
-                ))
+                legal_descriptions.append(
+                    LegalDescription(
+                        full_description=legal.get("description", ""),
+                        parcel_number=legal.get("parcelNumber"),
+                        lot=legal.get("lot"),
+                        block=legal.get("block"),
+                        subdivision=legal.get("subdivision"),
+                        section=legal.get("section"),
+                        township=legal.get("township"),
+                        range=legal.get("range"),
+                    )
+                )
 
         parcels = data.get("parcelNumbers", [])
         if isinstance(parcels, str):
@@ -445,7 +455,9 @@ class KingCountyRecorder(CountyRecorderBase):
             grantees=grantees,
             legal_descriptions=legal_descriptions,
             parcels=parcels,
-            consideration=self._parse_float(data.get("consideration", data.get("salePrice"))),
+            consideration=self._parse_float(
+                data.get("consideration", data.get("salePrice"))
+            ),
             transfer_tax=reet_amount,
             county=self.COUNTY_NAME,
             state=self.STATE_ABBREV,
@@ -473,7 +485,9 @@ class KingCountyRecorder(CountyRecorderBase):
         # Property addresses
         addresses = data.get("propertyAddresses", [])
         if addresses:
-            doc.property_addresses = addresses if isinstance(addresses, list) else [addresses]
+            doc.property_addresses = (
+                addresses if isinstance(addresses, list) else [addresses]
+            )
 
         # Related documents
         for ref in data.get("references", []):
@@ -507,48 +521,54 @@ class KingCountyRecorder(CountyRecorderBase):
 
 # Synchronous convenience functions
 
+
 def search_king_county_by_name(
-    last_name: str,
-    first_name: Optional[str] = None,
-    max_results: int = 100
+    last_name: str, first_name: Optional[str] = None, max_results: int = 100
 ) -> SearchResult:
     """Search King County recorded documents by name."""
+
     async def _search():
         async with KingCountyRecorder() as recorder:
             return await recorder.search_by_name(
                 last_name, first_name=first_name, max_results=max_results
             )
+
     return asyncio.run(_search())
 
 
 def search_king_county_by_parcel(
-    parcel_number: str,
-    max_results: int = 100
+    parcel_number: str, max_results: int = 100
 ) -> SearchResult:
     """Search King County recorded documents by parcel number."""
+
     async def _search():
         async with KingCountyRecorder() as recorder:
-            return await recorder.search_by_parcel(parcel_number, max_results=max_results)
+            return await recorder.search_by_parcel(
+                parcel_number, max_results=max_results
+            )
+
     return asyncio.run(_search())
 
 
 def search_king_county_by_address(
-    address: str,
-    city: Optional[str] = None,
-    max_results: int = 100
+    address: str, city: Optional[str] = None, max_results: int = 100
 ) -> SearchResult:
     """Search King County recorded documents by address."""
+
     async def _search():
         async with KingCountyRecorder() as recorder:
             return await recorder.search_by_address(
                 address, city=city, max_results=max_results
             )
+
     return asyncio.run(_search())
 
 
 def get_king_county_document(document_number: str) -> Optional[RecordedDocument]:
     """Get a specific King County recorded document."""
+
     async def _get():
         async with KingCountyRecorder() as recorder:
             return await recorder.get_document_detail(document_number)
+
     return asyncio.run(_get())

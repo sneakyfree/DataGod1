@@ -21,18 +21,20 @@ Background checks requiring consent are not included.
 """
 
 import asyncio
-import aiohttp
-from dataclasses import dataclass, field
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List, Dict, Any
 import logging
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
 
 class OffenderType(Enum):
     """Sex offender classification"""
+
     LEVEL_1 = "Level 1"  # Low risk
     LEVEL_2 = "Level 2"  # Moderate risk
     LEVEL_3 = "Level 3"  # High risk
@@ -42,6 +44,7 @@ class OffenderType(Enum):
 
 class InmateStatus(Enum):
     """Inmate custody status"""
+
     IN_CUSTODY = "In Custody"
     RELEASED = "Released"
     PAROLE = "On Parole"
@@ -53,6 +56,7 @@ class InmateStatus(Enum):
 
 class WarrantType(Enum):
     """Warrant types"""
+
     ARREST = "Arrest Warrant"
     BENCH = "Bench Warrant"
     SEARCH = "Search Warrant"
@@ -62,6 +66,7 @@ class WarrantType(Enum):
 
 class CrimeCategory(Enum):
     """Crime categories"""
+
     VIOLENT = "Violent Crime"
     PROPERTY = "Property Crime"
     DRUG = "Drug Offense"
@@ -75,6 +80,7 @@ class CrimeCategory(Enum):
 @dataclass
 class SexOffender:
     """Registered sex offender record"""
+
     registry_id: str
     name: str
     aliases: List[str] = field(default_factory=list)
@@ -107,6 +113,7 @@ class SexOffender:
 @dataclass
 class Inmate:
     """Prison/jail inmate record"""
+
     inmate_id: str
     name: str
     aliases: List[str] = field(default_factory=list)
@@ -134,6 +141,7 @@ class Inmate:
 @dataclass
 class Warrant:
     """Active warrant record"""
+
     warrant_number: str
     name: str
     aliases: List[str] = field(default_factory=list)
@@ -159,6 +167,7 @@ class Warrant:
 @dataclass
 class MostWanted:
     """Most wanted fugitive record"""
+
     name: str
     aliases: List[str] = field(default_factory=list)
     photo_url: Optional[str] = None
@@ -182,6 +191,7 @@ class MostWanted:
 @dataclass
 class CriminalCase:
     """Criminal court case"""
+
     case_number: str
     defendant_name: str
     case_status: Optional[str] = None
@@ -262,7 +272,7 @@ class CriminalRecordsScraper:
         "WA": "https://www.doc.wa.gov/information/inmate-search/default.aspx",
         "WV": "https://dcr.wv.gov/resources/Pages/Incarcerated-Individual-Search.aspx",
         "WI": "https://widocoffenders.wi.gov/",
-        "WY": "https://corrections.wyo.gov/"
+        "WY": "https://corrections.wyo.gov/",
     }
 
     def __init__(self):
@@ -273,9 +283,7 @@ class CriminalRecordsScraper:
         """Get or create aiohttp session"""
         if self._session is None or self._session.closed:
             timeout = aiohttp.ClientTimeout(total=30)
-            headers = {
-                "User-Agent": "DataGod/1.0 (Public Records Research)"
-            }
+            headers = {"User-Agent": "DataGod/1.0 (Public Records Research)"}
             self._session = aiohttp.ClientSession(timeout=timeout, headers=headers)
         return self._session
 
@@ -329,7 +337,7 @@ class CriminalRecordsScraper:
         city: Optional[str] = None,
         state: Optional[str] = None,
         zip_code: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[SexOffender]:
         """
         Search National Sex Offender Public Website (NSOPW)
@@ -362,7 +370,7 @@ class CriminalRecordsScraper:
         last_name: Optional[str] = None,
         first_name: Optional[str] = None,
         inmate_id: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[Inmate]:
         """
         Search state DOC inmate database
@@ -396,7 +404,7 @@ class CriminalRecordsScraper:
         last_name: Optional[str] = None,
         first_name: Optional[str] = None,
         register_number: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[Inmate]:
         """
         Search Federal Bureau of Prisons inmate locator
@@ -426,7 +434,7 @@ class CriminalRecordsScraper:
         county: str,
         last_name: Optional[str] = None,
         first_name: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[Inmate]:
         """
         Search county jail inmate roster
@@ -453,9 +461,7 @@ class CriminalRecordsScraper:
         return results
 
     async def search_fbi_most_wanted(
-        self,
-        category: Optional[str] = None,
-        limit: int = 50
+        self, category: Optional[str] = None, limit: int = 50
     ) -> List[MostWanted]:
         """
         Search FBI Most Wanted list
@@ -477,10 +483,7 @@ class CriminalRecordsScraper:
 
         return results
 
-    async def search_us_marshals_fugitives(
-        self,
-        limit: int = 50
-    ) -> List[MostWanted]:
+    async def search_us_marshals_fugitives(self, limit: int = 50) -> List[MostWanted]:
         """
         Search US Marshals most wanted fugitives
 
@@ -497,9 +500,7 @@ class CriminalRecordsScraper:
         return results
 
     async def search_state_most_wanted(
-        self,
-        state: str,
-        limit: int = 50
+        self, state: str, limit: int = 50
     ) -> List[MostWanted]:
         """
         Search state most wanted list
@@ -525,7 +526,7 @@ class CriminalRecordsScraper:
         county: Optional[str] = None,
         last_name: Optional[str] = None,
         first_name: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[Warrant]:
         """
         Search active warrants
@@ -562,11 +563,12 @@ class CriminalRecordsScraper:
         return {
             "doc_inmate_search": self.get_state_doc_url(state),
             "sex_offender_registry": self.get_state_sex_offender_registry_url(state),
-            "nsopw_search": f"https://www.nsopw.gov/en/Search/Results?state={state}"
+            "nsopw_search": f"https://www.nsopw.gov/en/Search/Results?state={state}",
         }
 
 
 # Convenience functions
+
 
 def get_state_doc_url(state: str) -> Optional[str]:
     """Get state DOC inmate search URL"""
@@ -581,18 +583,15 @@ def get_state_resources(state: str) -> Dict[str, str]:
 
 
 def search_sex_offenders_sync(
-    last_name: Optional[str] = None,
-    state: Optional[str] = None,
-    limit: int = 100
+    last_name: Optional[str] = None, state: Optional[str] = None, limit: int = 100
 ) -> List[SexOffender]:
     """Synchronous sex offender search"""
+
     async def _search():
         scraper = CriminalRecordsScraper()
         try:
             return await scraper.search_sex_offenders_nsopw(
-                last_name=last_name,
-                state=state,
-                limit=limit
+                last_name=last_name, state=state, limit=limit
             )
         finally:
             await scraper.close()
@@ -604,17 +603,15 @@ def search_inmates_sync(
     state: str,
     last_name: Optional[str] = None,
     first_name: Optional[str] = None,
-    limit: int = 100
+    limit: int = 100,
 ) -> List[Inmate]:
     """Synchronous inmate search"""
+
     async def _search():
         scraper = CriminalRecordsScraper()
         try:
             return await scraper.search_state_inmates(
-                state=state,
-                last_name=last_name,
-                first_name=first_name,
-                limit=limit
+                state=state, last_name=last_name, first_name=first_name, limit=limit
             )
         finally:
             await scraper.close()

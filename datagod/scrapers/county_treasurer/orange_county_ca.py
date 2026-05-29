@@ -27,18 +27,18 @@ from bs4 import BeautifulSoup
 
 from .base import (
     CountyTreasurerBase,
-    TaxStatus,
     LienStatus,
-    TaxSaleType,
     PaymentMethod,
-    TaxBillItem,
-    TaxBill,
-    TaxPayment,
-    TaxLien,
-    TaxSaleProperty,
     PropertyTaxRecord,
+    TaxBill,
+    TaxBillItem,
+    TaxLien,
+    TaxPayment,
+    TaxSaleProperty,
+    TaxSaleType,
     TaxSearchCriteria,
     TaxSearchResult,
+    TaxStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -71,24 +71,20 @@ class OrangeCountyTreasurer(CountyTreasurerBase):
     def _format_apn(self, apn: str) -> str:
         """Format APN to standard format."""
         import re
-        digits = re.sub(r'[^0-9]', '', apn)
+
+        digits = re.sub(r"[^0-9]", "", apn)
         if len(digits) == 8:
             return f"{digits[:3]}-{digits[3:6]}-{digits[6:8]}"
         elif len(digits) == 9:
             return f"{digits[:3]}-{digits[3:6]}-{digits[6:9]}"
         return apn
 
-    async def get_tax_record(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyTaxRecord]:
+    async def get_tax_record(self, parcel_id: str) -> Optional[PropertyTaxRecord]:
         """Get property tax record by parcel ID (APN)."""
         formatted_apn = self._format_apn(parcel_id)
 
         try:
-            data = await self._fetch_json(
-                f"{self.DETAIL_URL}/{formatted_apn}"
-            )
+            data = await self._fetch_json(f"{self.DETAIL_URL}/{formatted_apn}")
         except Exception as e:
             logger.error(f"Orange County tax record lookup failed: {e}")
             return None
@@ -130,7 +126,9 @@ class OrangeCountyTreasurer(CountyTreasurerBase):
                 parcel_id=formatted_apn,
                 property_address=data.get("propertyAddress"),
                 owner_name=data.get("ownerName"),
-                assessed_value=self._parse_decimal(str(bill_data.get("assessedValue", ""))),
+                assessed_value=self._parse_decimal(
+                    str(bill_data.get("assessedValue", ""))
+                ),
                 net_tax=self._parse_decimal(str(bill_data.get("netTax", ""))),
                 total_due=self._parse_decimal(str(bill_data.get("totalDue", ""))),
                 amount_paid=self._parse_decimal(str(bill_data.get("amountPaid", ""))),
@@ -149,7 +147,8 @@ class OrangeCountyTreasurer(CountyTreasurerBase):
                 parcel_id=formatted_apn,
                 tax_year=payment_data.get("taxYear", 0),
                 payment_date=self._parse_date(payment_data.get("paymentDate", "")),
-                payment_amount=self._parse_decimal(str(payment_data.get("amount", ""))) or Decimal(0),
+                payment_amount=self._parse_decimal(str(payment_data.get("amount", "")))
+                or Decimal(0),
                 receipt_number=payment_data.get("receiptNumber"),
                 raw_data=payment_data,
             )
@@ -162,10 +161,11 @@ class OrangeCountyTreasurer(CountyTreasurerBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> TaxSearchResult:
         """Search for tax records by property address."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -197,7 +197,9 @@ class OrangeCountyTreasurer(CountyTreasurerBase):
                 county=self.COUNTY_NAME,
                 owner_name=item.get("ownerName"),
                 assessed_value=self._parse_decimal(str(item.get("assessedValue", ""))),
-                current_balance_due=self._parse_decimal(str(item.get("balanceDue", ""))),
+                current_balance_due=self._parse_decimal(
+                    str(item.get("balanceDue", ""))
+                ),
                 tax_status=self._parse_tax_status(item.get("status", "")),
                 source_system=self.SYSTEM_NAME,
             )
@@ -215,12 +217,11 @@ class OrangeCountyTreasurer(CountyTreasurerBase):
         )
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> TaxSearchResult:
         """Search for tax records by owner name."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -248,7 +249,9 @@ class OrangeCountyTreasurer(CountyTreasurerBase):
                 county=self.COUNTY_NAME,
                 owner_name=item.get("ownerName"),
                 assessed_value=self._parse_decimal(str(item.get("assessedValue", ""))),
-                current_balance_due=self._parse_decimal(str(item.get("balanceDue", ""))),
+                current_balance_due=self._parse_decimal(
+                    str(item.get("balanceDue", ""))
+                ),
                 tax_status=self._parse_tax_status(item.get("status", "")),
                 source_system=self.SYSTEM_NAME,
             )
@@ -268,32 +271,38 @@ class OrangeCountyTreasurer(CountyTreasurerBase):
 
 # Synchronous convenience functions
 
+
 def get_orange_county_tax_record(parcel_id: str) -> Optional[PropertyTaxRecord]:
     """Get Orange County property tax record by APN."""
+
     async def _get():
         async with OrangeCountyTreasurer() as treasurer:
             return await treasurer.get_tax_record(parcel_id)
+
     return asyncio.run(_get())
 
 
 def search_orange_county_tax_by_address(
-    address: str,
-    city: Optional[str] = None,
-    max_results: int = 100
+    address: str, city: Optional[str] = None, max_results: int = 100
 ) -> TaxSearchResult:
     """Search Orange County tax records by address."""
+
     async def _search():
         async with OrangeCountyTreasurer() as treasurer:
-            return await treasurer.search_by_address(address, city=city, max_results=max_results)
+            return await treasurer.search_by_address(
+                address, city=city, max_results=max_results
+            )
+
     return asyncio.run(_search())
 
 
 def search_orange_county_tax_by_owner(
-    owner_name: str,
-    max_results: int = 100
+    owner_name: str, max_results: int = 100
 ) -> TaxSearchResult:
     """Search Orange County tax records by owner name."""
+
     async def _search():
         async with OrangeCountyTreasurer() as treasurer:
             return await treasurer.search_by_owner(owner_name, max_results=max_results)
+
     return asyncio.run(_search())

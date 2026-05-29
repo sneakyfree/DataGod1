@@ -4,10 +4,11 @@ Field-Level Encryption (DNA Strand Gene 2.5)
 Provides Fernet symmetric encryption for PII fields at rest.
 """
 
+import base64
 import logging
 import os
-import base64
 from typing import Optional
+
 from cryptography.fernet import Fernet, InvalidToken
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,9 @@ class FieldEncryptor:
         if raw_key:
             # Ensure proper Fernet key format (url-safe base64, 32 bytes)
             try:
-                self._fernet = Fernet(raw_key.encode() if isinstance(raw_key, str) else raw_key)
+                self._fernet = Fernet(
+                    raw_key.encode() if isinstance(raw_key, str) else raw_key
+                )
             except Exception:
                 # Try treating it as a raw 32-byte key and encode it
                 padded = raw_key.ljust(32, "0")[:32]

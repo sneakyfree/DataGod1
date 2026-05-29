@@ -23,20 +23,21 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 from .base import (
-    CountyAssessorBase,
-    PropertyType,
-    PropertyClass,
-    ExemptionType,
-    PropertyAssessment,
-    PropertyCharacteristics,
-    TaxAssessment,
-    OwnershipRecord,
-    SaleRecord,
     AssessorSearchCriteria,
     AssessorSearchResult,
+    CountyAssessorBase,
+    ExemptionType,
+    OwnershipRecord,
+    PropertyAssessment,
+    PropertyCharacteristics,
+    PropertyClass,
+    PropertyType,
+    SaleRecord,
+    TaxAssessment,
 )
 
 logger = logging.getLogger(__name__)
@@ -96,10 +97,11 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> AssessorSearchResult:
         """Search for properties by address."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}parcel/search"
@@ -148,18 +150,13 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
             page_size=max_results,
             has_more=json_response.get("hasMore", False),
             search_criteria=AssessorSearchCriteria(
-                street_address=street_address,
-                city=city,
-                zip_code=zip_code
+                street_address=street_address, city=city, zip_code=zip_code
             ),
             search_time_ms=search_time,
             source_system=self.SYSTEM_NAME,
         )
 
-    async def search_by_parcel_id(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def search_by_parcel_id(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """Search for a property by APN."""
         formatted_apn = self._format_apn(parcel_id)
 
@@ -170,12 +167,11 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
         return await self.get_property_detail(formatted_apn)
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> AssessorSearchResult:
         """Search for properties by owner name."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}parcel/search"
@@ -220,10 +216,7 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
             source_system=self.SYSTEM_NAME,
         )
 
-    async def get_property_detail(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def get_property_detail(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """Get detailed property information."""
         formatted_apn = self._format_apn(parcel_id)
 
@@ -242,7 +235,9 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
 
         return self._parse_property_detail(json_response, formatted_apn)
 
-    def _parse_search_result(self, item: Dict[str, Any]) -> Optional[PropertyAssessment]:
+    def _parse_search_result(
+        self, item: Dict[str, Any]
+    ) -> Optional[PropertyAssessment]:
         """Parse a search result item."""
         apn = item.get("ain", item.get("apn", ""))
         if not apn:
@@ -258,37 +253,57 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
             zip_code=item.get("situsZip", item.get("zip", "")),
             county=self.COUNTY_NAME,
             property_type=self._parse_property_type(item.get("useCode", "")),
-            assessed_value=self._parse_decimal(str(item.get("assessedValue", item.get("totalValue", "")))),
+            assessed_value=self._parse_decimal(
+                str(item.get("assessedValue", item.get("totalValue", "")))
+            ),
             market_value=self._parse_decimal(str(item.get("marketValue", ""))),
-            current_owner=OwnershipRecord(
-                owner_name=item.get("ownerName", item.get("owner", "")),
-            ) if item.get("ownerName") or item.get("owner") else None,
+            current_owner=(
+                OwnershipRecord(
+                    owner_name=item.get("ownerName", item.get("owner", "")),
+                )
+                if item.get("ownerName") or item.get("owner")
+                else None
+            ),
             source_url=f"{self.PORTAL_URL}parceldetail/{self._format_apn(str(apn)).replace('-', '')}",
             source_system=self.SYSTEM_NAME,
             raw_data=item,
         )
 
     def _parse_property_detail(
-        self,
-        data: Dict[str, Any],
-        apn: str
+        self, data: Dict[str, Any], apn: str
     ) -> PropertyAssessment:
         """Parse detailed property data."""
         # Parse characteristics
         chars = data.get("characteristics", data.get("propertyInfo", {}))
         characteristics = PropertyCharacteristics(
-            year_built=self._parse_int(str(chars.get("yearBuilt", chars.get("effectiveYearBuilt", "")))),
-            building_sqft=self._parse_int(str(chars.get("buildingSqft", chars.get("improvementSqft", "")))),
-            living_sqft=self._parse_int(str(chars.get("livingSqft", chars.get("livingArea", "")))),
-            bedrooms=self._parse_int(str(chars.get("bedrooms", chars.get("numberOfBedrooms", "")))),
-            bathrooms=self._parse_float(str(chars.get("bathrooms", chars.get("totalBathrooms", "")))),
+            year_built=self._parse_int(
+                str(chars.get("yearBuilt", chars.get("effectiveYearBuilt", "")))
+            ),
+            building_sqft=self._parse_int(
+                str(chars.get("buildingSqft", chars.get("improvementSqft", "")))
+            ),
+            living_sqft=self._parse_int(
+                str(chars.get("livingSqft", chars.get("livingArea", "")))
+            ),
+            bedrooms=self._parse_int(
+                str(chars.get("bedrooms", chars.get("numberOfBedrooms", "")))
+            ),
+            bathrooms=self._parse_float(
+                str(chars.get("bathrooms", chars.get("totalBathrooms", "")))
+            ),
             full_baths=self._parse_int(str(chars.get("fullBaths", ""))),
             half_baths=self._parse_int(str(chars.get("halfBaths", ""))),
-            stories=self._parse_float(str(chars.get("stories", chars.get("numberOfStories", "")))),
+            stories=self._parse_float(
+                str(chars.get("stories", chars.get("numberOfStories", "")))
+            ),
             basement=chars.get("basement", chars.get("basementType")),
             garage_type=chars.get("garageType", chars.get("parkingType")),
-            garage_spaces=self._parse_int(str(chars.get("garageSpaces", chars.get("parkingSpaces", "")))),
-            lot_sqft=self._parse_int(str(chars.get("lotSqft", chars.get("landArea", "")))),
+            garage_spaces=self._parse_int(
+                str(chars.get("garageSpaces", chars.get("parkingSpaces", "")))
+            ),
+            lot_sqft=self._parse_int(
+                str(chars.get("lotSqft", chars.get("landArea", "")))
+            ),
             lot_acres=self._parse_float(str(chars.get("lotAcres", ""))),
             construction_type=chars.get("constructionType", chars.get("construction")),
             exterior_wall=chars.get("exteriorWall", chars.get("exterior")),
@@ -296,7 +311,9 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
             central_air=chars.get("centralAir", chars.get("airConditioning", False)),
             heating_type=chars.get("heatingType", chars.get("heating")),
             pool=chars.get("pool", chars.get("hasPool", False)),
-            fireplace_count=self._parse_int(str(chars.get("fireplaces", chars.get("numberOfFireplaces", "")))),
+            fireplace_count=self._parse_int(
+                str(chars.get("fireplaces", chars.get("numberOfFireplaces", "")))
+            ),
             raw_characteristics=chars,
         )
 
@@ -305,10 +322,22 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
         for assessment in data.get("valueHistory", data.get("assessmentHistory", [])):
             tax_assessment = TaxAssessment(
                 tax_year=assessment.get("rollYear", assessment.get("year", 0)),
-                assessed_value_land=self._parse_decimal(str(assessment.get("landValue", ""))),
-                assessed_value_improvements=self._parse_decimal(str(assessment.get("improvementValue", ""))),
-                assessed_value_total=self._parse_decimal(str(assessment.get("totalValue", assessment.get("assessedValue", "")))),
-                market_value_total=self._parse_decimal(str(assessment.get("marketValue", ""))),
+                assessed_value_land=self._parse_decimal(
+                    str(assessment.get("landValue", ""))
+                ),
+                assessed_value_improvements=self._parse_decimal(
+                    str(assessment.get("improvementValue", ""))
+                ),
+                assessed_value_total=self._parse_decimal(
+                    str(
+                        assessment.get(
+                            "totalValue", assessment.get("assessedValue", "")
+                        )
+                    )
+                ),
+                market_value_total=self._parse_decimal(
+                    str(assessment.get("marketValue", ""))
+                ),
             )
             assessment_history.append(tax_assessment)
 
@@ -316,8 +345,14 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
         sales_history = []
         for sale in data.get("salesHistory", data.get("transferHistory", [])):
             sale_record = SaleRecord(
-                sale_date=self._parse_date(sale.get("recordingDate", sale.get("saleDate", ""))) or date.today(),
-                sale_price=self._parse_decimal(str(sale.get("documentAmount", sale.get("salePrice", "")))) or Decimal(0),
+                sale_date=self._parse_date(
+                    sale.get("recordingDate", sale.get("saleDate", ""))
+                )
+                or date.today(),
+                sale_price=self._parse_decimal(
+                    str(sale.get("documentAmount", sale.get("salePrice", "")))
+                )
+                or Decimal(0),
                 buyer_name=sale.get("grantee", sale.get("buyer")),
                 seller_name=sale.get("grantor", sale.get("seller")),
                 document_number=sale.get("documentNumber", sale.get("docNumber")),
@@ -330,18 +365,26 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
         if isinstance(owner_data, str):
             owner_data = {"name": owner_data}
 
-        current_owner = OwnershipRecord(
-            owner_name=owner_data.get("name", owner_data.get("ownerName", "")),
-            mailing_address=owner_data.get("mailingAddress", owner_data.get("address")),
-            mailing_city=owner_data.get("mailingCity", owner_data.get("city")),
-            mailing_state=owner_data.get("mailingState", owner_data.get("state")),
-            mailing_zip=owner_data.get("mailingZip", owner_data.get("zip")),
-        ) if owner_data.get("name") or owner_data.get("ownerName") else None
+        current_owner = (
+            OwnershipRecord(
+                owner_name=owner_data.get("name", owner_data.get("ownerName", "")),
+                mailing_address=owner_data.get(
+                    "mailingAddress", owner_data.get("address")
+                ),
+                mailing_city=owner_data.get("mailingCity", owner_data.get("city")),
+                mailing_state=owner_data.get("mailingState", owner_data.get("state")),
+                mailing_zip=owner_data.get("mailingZip", owner_data.get("zip")),
+            )
+            if owner_data.get("name") or owner_data.get("ownerName")
+            else None
+        )
 
         # Parse exemptions
         exemptions = []
         for exemption in data.get("exemptions", []):
-            exemption_type = exemption.get("type", exemption.get("exemptionType", "")).upper()
+            exemption_type = exemption.get(
+                "type", exemption.get("exemptionType", "")
+            ).upper()
             if "HOMEOWNER" in exemption_type or "HOMESTEAD" in exemption_type:
                 exemptions.append(ExemptionType.HOMESTEAD)
             elif "SENIOR" in exemption_type:
@@ -370,13 +413,25 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
             county=self.COUNTY_NAME,
             legal_description=data.get("legalDescription"),
             subdivision=data.get("tractName", data.get("subdivision")),
-            property_type=self._parse_property_type(data.get("useCode", data.get("propertyType", ""))),
+            property_type=self._parse_property_type(
+                data.get("useCode", data.get("propertyType", ""))
+            ),
             property_use=data.get("useDescription", data.get("propertyUse")),
             zoning=data.get("zoning", data.get("zoningCode")),
-            assessed_value=current_assessment.assessed_value_total if current_assessment else None,
-            market_value=current_assessment.market_value_total if current_assessment else None,
-            land_value=current_assessment.assessed_value_land if current_assessment else None,
-            improvement_value=current_assessment.assessed_value_improvements if current_assessment else None,
+            assessed_value=(
+                current_assessment.assessed_value_total if current_assessment else None
+            ),
+            market_value=(
+                current_assessment.market_value_total if current_assessment else None
+            ),
+            land_value=(
+                current_assessment.assessed_value_land if current_assessment else None
+            ),
+            improvement_value=(
+                current_assessment.assessed_value_improvements
+                if current_assessment
+                else None
+            ),
             tax_year=current_assessment.tax_year if current_assessment else None,
             characteristics=characteristics,
             assessment_history=assessment_history,
@@ -386,7 +441,9 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
             last_sale_date=sales_history[0].sale_date if sales_history else None,
             last_sale_price=sales_history[0].sale_price if sales_history else None,
             latitude=self._parse_float(str(data.get("latitude", data.get("lat", "")))),
-            longitude=self._parse_float(str(data.get("longitude", data.get("lng", "")))),
+            longitude=self._parse_float(
+                str(data.get("longitude", data.get("lng", "")))
+            ),
             neighborhood=data.get("neighborhoodCode"),
             source_url=f"{self.PORTAL_URL}parceldetail/{apn_clean}",
             source_system=self.SYSTEM_NAME,
@@ -405,7 +462,11 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
             return PropertyType.SINGLE_FAMILY
         elif use_upper.startswith("02") or "DUPLEX" in use_upper:
             return PropertyType.MULTI_FAMILY
-        elif use_upper.startswith("03") or "TRIPLEX" in use_upper or "FOURPLEX" in use_upper:
+        elif (
+            use_upper.startswith("03")
+            or "TRIPLEX" in use_upper
+            or "FOURPLEX" in use_upper
+        ):
             return PropertyType.MULTI_FAMILY
         elif use_upper.startswith("04") or "APARTMENT" in use_upper:
             return PropertyType.MULTI_FAMILY
@@ -433,6 +494,7 @@ class LosAngelesCountyAssessor(CountyAssessorBase):
 
 # Convenience functions
 
+
 def search_la_county_address(address: str, **kwargs) -> AssessorSearchResult:
     """Search Los Angeles County properties by address."""
     assessor = LosAngelesCountyAssessor()
@@ -440,6 +502,7 @@ def search_la_county_address(address: str, **kwargs) -> AssessorSearchResult:
     async def _search():
         async with assessor:
             return await assessor.search_by_address(address, **kwargs)
+
     return asyncio.run(_search())
 
 
@@ -450,6 +513,7 @@ def search_la_county_owner(owner_name: str, **kwargs) -> AssessorSearchResult:
     async def _search():
         async with assessor:
             return await assessor.search_by_owner(owner_name, **kwargs)
+
     return asyncio.run(_search())
 
 
@@ -460,4 +524,5 @@ def get_la_county_property(apn: str) -> Optional[PropertyAssessment]:
     async def _get():
         async with assessor:
             return await assessor.get_property_detail(apn)
+
     return asyncio.run(_get())

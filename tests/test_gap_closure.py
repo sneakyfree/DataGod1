@@ -13,10 +13,11 @@ Tests that require DB auth are marked with @pytest.mark.skipif
 when auth is not available in the test environment.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
-from fastapi.testclient import TestClient
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock, patch
+
+import pytest
+from fastapi.testclient import TestClient
 
 
 # ---------------------------------------------------------------------------
@@ -27,6 +28,7 @@ def test_app():
     """Import the FastAPI app for testing and ensure demo users exist."""
     try:
         from api.src.api_v2 import app, ensure_demo_users_exist
+
         try:
             ensure_demo_users_exist()
         except Exception:
@@ -55,6 +57,7 @@ def auth_token(client):
     # Fallback
     try:
         from api.src.api_v2 import create_access_token
+
         return create_access_token(
             data={"sub": "admin", "user_id": 1, "role": "admin"},
             expires_delta=timedelta(hours=1),
@@ -73,11 +76,13 @@ def auth_headers(auth_token):
 
 def requires_auth(fn):
     """Decorator to skip tests that need auth when it's unavailable."""
+
     @pytest.mark.usefixtures("auth_headers")
     def wrapper(self, client, auth_headers, *args, **kwargs):
         if auth_headers is None:
             pytest.skip("Auth not available in test environment")
         return fn(self, client, auth_headers, *args, **kwargs)
+
     wrapper.__name__ = fn.__name__
     wrapper.__doc__ = fn.__doc__
     return wrapper
@@ -139,7 +144,11 @@ class TestPublicEndpoints:
     def test_auth_rejects_bad_credentials(self, client):
         response = client.post(
             "/token",
-            data={"username": "nonexistent", "password": "wrong", "grant_type": "password"},
+            data={
+                "username": "nonexistent",
+                "password": "wrong",
+                "grant_type": "password",
+            },
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         assert response.status_code in (401, 400, 500)
@@ -255,7 +264,9 @@ class TestRecentSearches:
     def test_recent_searches(self, client, auth_headers):
         if not auth_headers:
             pytest.skip("Auth not available")
-        response = client.get("/search/recent", params={"limit": 5}, headers=auth_headers)
+        response = client.get(
+            "/search/recent", params={"limit": 5}, headers=auth_headers
+        )
         assert response.status_code in (200, 401, 500)
 
 

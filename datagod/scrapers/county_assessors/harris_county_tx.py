@@ -24,20 +24,21 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 from .base import (
-    CountyAssessorBase,
-    PropertyType,
-    PropertyClass,
-    ExemptionType,
-    PropertyAssessment,
-    PropertyCharacteristics,
-    TaxAssessment,
-    OwnershipRecord,
-    SaleRecord,
     AssessorSearchCriteria,
     AssessorSearchResult,
+    CountyAssessorBase,
+    ExemptionType,
+    OwnershipRecord,
+    PropertyAssessment,
+    PropertyCharacteristics,
+    PropertyClass,
+    PropertyType,
+    SaleRecord,
+    TaxAssessment,
 )
 
 logger = logging.getLogger(__name__)
@@ -119,10 +120,11 @@ class HarrisCountyAssessor(CountyAssessorBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> AssessorSearchResult:
         """Search for properties by address."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}property/search"
@@ -170,18 +172,13 @@ class HarrisCountyAssessor(CountyAssessorBase):
             page_size=max_results,
             has_more=json_response.get("hasMore", False),
             search_criteria=AssessorSearchCriteria(
-                street_address=street_address,
-                city=city,
-                zip_code=zip_code
+                street_address=street_address, city=city, zip_code=zip_code
             ),
             search_time_ms=search_time,
             source_system=self.SYSTEM_NAME,
         )
 
-    async def search_by_parcel_id(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def search_by_parcel_id(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """Search for a property by account number."""
         normalized = self._normalize_account(parcel_id)
 
@@ -192,12 +189,11 @@ class HarrisCountyAssessor(CountyAssessorBase):
         return await self.get_property_detail(normalized)
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> AssessorSearchResult:
         """Search for properties by owner name."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}property/search"
@@ -245,10 +241,7 @@ class HarrisCountyAssessor(CountyAssessorBase):
             source_system=self.SYSTEM_NAME,
         )
 
-    async def get_property_detail(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def get_property_detail(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """Get detailed property information."""
         normalized = self._normalize_account(parcel_id)
 
@@ -265,7 +258,9 @@ class HarrisCountyAssessor(CountyAssessorBase):
 
         return self._parse_property_detail(json_response, normalized)
 
-    def _parse_search_result(self, item: Dict[str, Any]) -> Optional[PropertyAssessment]:
+    def _parse_search_result(
+        self, item: Dict[str, Any]
+    ) -> Optional[PropertyAssessment]:
         """Parse a search result item."""
         account = item.get("accountNumber", item.get("account", ""))
         if not account:
@@ -280,21 +275,27 @@ class HarrisCountyAssessor(CountyAssessorBase):
             state=self.STATE,
             zip_code=item.get("situsZip", item.get("zip", "")),
             county=self.COUNTY_NAME,
-            property_type=self._parse_property_type(item.get("stateCode", item.get("propertyType", ""))),
-            assessed_value=self._parse_decimal(str(item.get("appraisedValue", item.get("totalValue", "")))),
+            property_type=self._parse_property_type(
+                item.get("stateCode", item.get("propertyType", ""))
+            ),
+            assessed_value=self._parse_decimal(
+                str(item.get("appraisedValue", item.get("totalValue", "")))
+            ),
             market_value=self._parse_decimal(str(item.get("marketValue", ""))),
-            current_owner=OwnershipRecord(
-                owner_name=item.get("ownerName", item.get("owner", "")),
-            ) if item.get("ownerName") or item.get("owner") else None,
+            current_owner=(
+                OwnershipRecord(
+                    owner_name=item.get("ownerName", item.get("owner", "")),
+                )
+                if item.get("ownerName") or item.get("owner")
+                else None
+            ),
             source_url=f"{self.DETAIL_URL}?account={normalized}",
             source_system=self.SYSTEM_NAME,
             raw_data=item,
         )
 
     def _parse_property_detail(
-        self,
-        data: Dict[str, Any],
-        account: str
+        self, data: Dict[str, Any], account: str
     ) -> PropertyAssessment:
         """Parse detailed property data."""
         # Parse characteristics - HCAD provides extensive building data
@@ -302,27 +303,48 @@ class HarrisCountyAssessor(CountyAssessorBase):
         land_info = data.get("landInfo", {})
 
         characteristics = PropertyCharacteristics(
-            year_built=self._parse_int(str(chars.get("yearBuilt", chars.get("effectiveYear", "")))),
-            building_sqft=self._parse_int(str(chars.get("totalArea", chars.get("buildingSqft", "")))),
-            living_sqft=self._parse_int(str(chars.get("livingArea", chars.get("mainArea", "")))),
-            bedrooms=self._parse_int(str(chars.get("bedrooms", chars.get("numberOfBedrooms", "")))),
+            year_built=self._parse_int(
+                str(chars.get("yearBuilt", chars.get("effectiveYear", "")))
+            ),
+            building_sqft=self._parse_int(
+                str(chars.get("totalArea", chars.get("buildingSqft", "")))
+            ),
+            living_sqft=self._parse_int(
+                str(chars.get("livingArea", chars.get("mainArea", "")))
+            ),
+            bedrooms=self._parse_int(
+                str(chars.get("bedrooms", chars.get("numberOfBedrooms", "")))
+            ),
             bathrooms=self._parse_float(str(chars.get("bathrooms", ""))),
-            full_baths=self._parse_int(str(chars.get("fullBaths", chars.get("fullBathrooms", "")))),
-            half_baths=self._parse_int(str(chars.get("halfBaths", chars.get("halfBathrooms", "")))),
-            stories=self._parse_float(str(chars.get("stories", chars.get("numberOfStories", "")))),
+            full_baths=self._parse_int(
+                str(chars.get("fullBaths", chars.get("fullBathrooms", "")))
+            ),
+            half_baths=self._parse_int(
+                str(chars.get("halfBaths", chars.get("halfBathrooms", "")))
+            ),
+            stories=self._parse_float(
+                str(chars.get("stories", chars.get("numberOfStories", "")))
+            ),
             basement=chars.get("basement", chars.get("basementDescription")),
             garage_type=chars.get("garageType", chars.get("garageDescription")),
-            garage_spaces=self._parse_int(str(chars.get("garageCapacity", chars.get("garageSpaces", "")))),
-            lot_sqft=self._parse_int(str(land_info.get("landArea", land_info.get("lotSqft", "")))),
+            garage_spaces=self._parse_int(
+                str(chars.get("garageCapacity", chars.get("garageSpaces", "")))
+            ),
+            lot_sqft=self._parse_int(
+                str(land_info.get("landArea", land_info.get("lotSqft", "")))
+            ),
             lot_acres=self._parse_float(str(land_info.get("acres", ""))),
             construction_type=chars.get("constructionType", chars.get("frameType")),
             exterior_wall=chars.get("exteriorWall", chars.get("exteriorType")),
             roof_type=chars.get("roofType", chars.get("roofDescription")),
             foundation_type=chars.get("foundationType", chars.get("foundation")),
-            central_air=chars.get("centralAir") == "Y" or chars.get("airConditioning") == "Yes",
+            central_air=chars.get("centralAir") == "Y"
+            or chars.get("airConditioning") == "Yes",
             heating_type=chars.get("heatingType", chars.get("heatType")),
             pool=chars.get("pool") == "Y" or chars.get("hasPool", False),
-            fireplace_count=self._parse_int(str(chars.get("fireplaces", chars.get("numberOfFireplaces", "")))),
+            fireplace_count=self._parse_int(
+                str(chars.get("fireplaces", chars.get("numberOfFireplaces", "")))
+            ),
             raw_characteristics=chars,
         )
 
@@ -331,11 +353,31 @@ class HarrisCountyAssessor(CountyAssessorBase):
         for assessment in data.get("valueHistory", data.get("appraisalHistory", [])):
             tax_assessment = TaxAssessment(
                 tax_year=assessment.get("taxYear", assessment.get("year", 0)),
-                assessed_value_land=self._parse_decimal(str(assessment.get("landValue", assessment.get("landAppraisal", "")))),
-                assessed_value_improvements=self._parse_decimal(str(assessment.get("improvementValue", assessment.get("buildingAppraisal", "")))),
-                assessed_value_total=self._parse_decimal(str(assessment.get("totalAppraisal", assessment.get("appraisedValue", "")))),
-                market_value_total=self._parse_decimal(str(assessment.get("marketValue", ""))),
-                taxable_value=self._parse_decimal(str(assessment.get("taxableValue", ""))),
+                assessed_value_land=self._parse_decimal(
+                    str(
+                        assessment.get("landValue", assessment.get("landAppraisal", ""))
+                    )
+                ),
+                assessed_value_improvements=self._parse_decimal(
+                    str(
+                        assessment.get(
+                            "improvementValue", assessment.get("buildingAppraisal", "")
+                        )
+                    )
+                ),
+                assessed_value_total=self._parse_decimal(
+                    str(
+                        assessment.get(
+                            "totalAppraisal", assessment.get("appraisedValue", "")
+                        )
+                    )
+                ),
+                market_value_total=self._parse_decimal(
+                    str(assessment.get("marketValue", ""))
+                ),
+                taxable_value=self._parse_decimal(
+                    str(assessment.get("taxableValue", ""))
+                ),
             )
             assessment_history.append(tax_assessment)
 
@@ -343,8 +385,14 @@ class HarrisCountyAssessor(CountyAssessorBase):
         sales_history = []
         for sale in data.get("deedHistory", data.get("salesHistory", [])):
             sale_record = SaleRecord(
-                sale_date=self._parse_date(sale.get("deedDate", sale.get("saleDate", ""))) or date.today(),
-                sale_price=self._parse_decimal(str(sale.get("consideration", sale.get("salePrice", "")))) or Decimal(0),
+                sale_date=self._parse_date(
+                    sale.get("deedDate", sale.get("saleDate", ""))
+                )
+                or date.today(),
+                sale_price=self._parse_decimal(
+                    str(sale.get("consideration", sale.get("salePrice", "")))
+                )
+                or Decimal(0),
                 buyer_name=sale.get("grantee", sale.get("buyer")),
                 seller_name=sale.get("grantor", sale.get("seller")),
                 document_number=sale.get("deedVolPage", sale.get("docNumber")),
@@ -357,13 +405,23 @@ class HarrisCountyAssessor(CountyAssessorBase):
         if isinstance(owner_data, str):
             owner_data = {"name": owner_data}
 
-        current_owner = OwnershipRecord(
-            owner_name=owner_data.get("name", owner_data.get("ownerName", data.get("ownerName", ""))),
-            mailing_address=owner_data.get("mailingAddress", owner_data.get("address")),
-            mailing_city=owner_data.get("mailingCity", owner_data.get("city")),
-            mailing_state=owner_data.get("mailingState", owner_data.get("state")),
-            mailing_zip=owner_data.get("mailingZip", owner_data.get("zip")),
-        ) if owner_data.get("name") or owner_data.get("ownerName") or data.get("ownerName") else None
+        current_owner = (
+            OwnershipRecord(
+                owner_name=owner_data.get(
+                    "name", owner_data.get("ownerName", data.get("ownerName", ""))
+                ),
+                mailing_address=owner_data.get(
+                    "mailingAddress", owner_data.get("address")
+                ),
+                mailing_city=owner_data.get("mailingCity", owner_data.get("city")),
+                mailing_state=owner_data.get("mailingState", owner_data.get("state")),
+                mailing_zip=owner_data.get("mailingZip", owner_data.get("zip")),
+            )
+            if owner_data.get("name")
+            or owner_data.get("ownerName")
+            or data.get("ownerName")
+            else None
+        )
 
         # Parse exemptions - Texas has many exemption types
         exemptions = []
@@ -372,7 +430,9 @@ class HarrisCountyAssessor(CountyAssessorBase):
             exemption_list = [{"type": exemption_list}]
 
         for exemption in exemption_list:
-            exemption_type = str(exemption.get("type", exemption.get("code", ""))).upper()
+            exemption_type = str(
+                exemption.get("type", exemption.get("code", ""))
+            ).upper()
             if "HS" in exemption_type or "HOMESTEAD" in exemption_type:
                 exemptions.append(ExemptionType.HOMESTEAD)
             elif "OV65" in exemption_type or "OVER 65" in exemption_type:
@@ -404,16 +464,30 @@ class HarrisCountyAssessor(CountyAssessorBase):
             county=self.COUNTY_NAME,
             legal_description=data.get("legalDescription"),
             subdivision=data.get("subdivision", data.get("neighborhood")),
-            property_type=self._parse_property_type(data.get("stateCode", data.get("propertyType", ""))),
+            property_type=self._parse_property_type(
+                data.get("stateCode", data.get("propertyType", ""))
+            ),
             property_class=self._parse_property_class(data.get("stateCode", "")),
             property_use=data.get("useDescription", data.get("propertyUse")),
             zoning=data.get("zoning"),
-            assessed_value=current_assessment.assessed_value_total if current_assessment else None,
-            market_value=current_assessment.market_value_total if current_assessment else None,
-            land_value=current_assessment.assessed_value_land if current_assessment else None,
-            improvement_value=current_assessment.assessed_value_improvements if current_assessment else None,
+            assessed_value=(
+                current_assessment.assessed_value_total if current_assessment else None
+            ),
+            market_value=(
+                current_assessment.market_value_total if current_assessment else None
+            ),
+            land_value=(
+                current_assessment.assessed_value_land if current_assessment else None
+            ),
+            improvement_value=(
+                current_assessment.assessed_value_improvements
+                if current_assessment
+                else None
+            ),
             tax_year=current_assessment.tax_year if current_assessment else None,
-            taxable_value=current_assessment.taxable_value if current_assessment else None,
+            taxable_value=(
+                current_assessment.taxable_value if current_assessment else None
+            ),
             characteristics=characteristics,
             assessment_history=assessment_history,
             current_owner=current_owner,
@@ -422,7 +496,9 @@ class HarrisCountyAssessor(CountyAssessorBase):
             last_sale_date=sales_history[0].sale_date if sales_history else None,
             last_sale_price=sales_history[0].sale_price if sales_history else None,
             latitude=self._parse_float(str(data.get("latitude", data.get("lat", "")))),
-            longitude=self._parse_float(str(data.get("longitude", data.get("lng", "")))),
+            longitude=self._parse_float(
+                str(data.get("longitude", data.get("lng", "")))
+            ),
             neighborhood=data.get("neighborhood", data.get("neighborhoodCode")),
             school_district=school_district,
             source_url=f"{self.DETAIL_URL}?account={account}",
@@ -476,6 +552,7 @@ class HarrisCountyAssessor(CountyAssessorBase):
 
 # Convenience functions
 
+
 def search_harris_county_address(address: str, **kwargs) -> AssessorSearchResult:
     """Search Harris County properties by address."""
     assessor = HarrisCountyAssessor()
@@ -483,6 +560,7 @@ def search_harris_county_address(address: str, **kwargs) -> AssessorSearchResult
     async def _search():
         async with assessor:
             return await assessor.search_by_address(address, **kwargs)
+
     return asyncio.run(_search())
 
 
@@ -493,6 +571,7 @@ def search_harris_county_owner(owner_name: str, **kwargs) -> AssessorSearchResul
     async def _search():
         async with assessor:
             return await assessor.search_by_owner(owner_name, **kwargs)
+
     return asyncio.run(_search())
 
 
@@ -503,4 +582,5 @@ def get_harris_county_property(account: str) -> Optional[PropertyAssessment]:
     async def _get():
         async with assessor:
             return await assessor.get_property_detail(account)
+
     return asyncio.run(_get())

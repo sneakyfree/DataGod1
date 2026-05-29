@@ -6,17 +6,19 @@ courts, assessors, and other county-level public records.
 """
 
 import asyncio
-import aiohttp
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Tuple
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
+
+import aiohttp
 
 
 class RecordType(Enum):
     """Types of recorded documents."""
+
     DEED = "deed"
     MORTGAGE = "mortgage"
     DEED_OF_TRUST = "deed_of_trust"
@@ -38,6 +40,7 @@ class RecordType(Enum):
 
 class CaseType(Enum):
     """Types of court cases."""
+
     CIVIL = "civil"
     CRIMINAL = "criminal"
     FAMILY = "family"
@@ -53,6 +56,7 @@ class CaseType(Enum):
 
 class CaseStatus(Enum):
     """Court case status."""
+
     OPEN = "open"
     CLOSED = "closed"
     PENDING = "pending"
@@ -65,6 +69,7 @@ class CaseStatus(Enum):
 @dataclass
 class CountyConfig:
     """Configuration for a county scraper."""
+
     state: str
     county_name: str
     fips_code: str
@@ -100,6 +105,7 @@ class CountyConfig:
 @dataclass
 class PropertyRecord:
     """Property/parcel record from county assessor."""
+
     parcel_id: str
     address: Optional[str] = None
     city: Optional[str] = None
@@ -166,6 +172,7 @@ class PropertyRecord:
 @dataclass
 class DeedRecord:
     """Deed/document record from county recorder."""
+
     document_number: str
     record_type: str
     grantor: Optional[str] = None
@@ -191,8 +198,12 @@ class DeedRecord:
             "record_type": self.record_type,
             "grantor": self.grantor,
             "grantee": self.grantee,
-            "recording_date": self.recording_date.isoformat() if self.recording_date else None,
-            "document_date": self.document_date.isoformat() if self.document_date else None,
+            "recording_date": (
+                self.recording_date.isoformat() if self.recording_date else None
+            ),
+            "document_date": (
+                self.document_date.isoformat() if self.document_date else None
+            ),
             "book": self.book,
             "page": self.page,
             "consideration": self.consideration,
@@ -210,6 +221,7 @@ class DeedRecord:
 @dataclass
 class MortgageRecord:
     """Mortgage/deed of trust record."""
+
     document_number: str
     borrower: Optional[str] = None
     lender: Optional[str] = None
@@ -236,9 +248,15 @@ class MortgageRecord:
             "borrower": self.borrower,
             "lender": self.lender,
             "loan_amount": self.loan_amount,
-            "recording_date": self.recording_date.isoformat() if self.recording_date else None,
-            "document_date": self.document_date.isoformat() if self.document_date else None,
-            "maturity_date": self.maturity_date.isoformat() if self.maturity_date else None,
+            "recording_date": (
+                self.recording_date.isoformat() if self.recording_date else None
+            ),
+            "document_date": (
+                self.document_date.isoformat() if self.document_date else None
+            ),
+            "maturity_date": (
+                self.maturity_date.isoformat() if self.maturity_date else None
+            ),
             "interest_rate": self.interest_rate,
             "loan_type": self.loan_type,
             "parcel_id": self.parcel_id,
@@ -256,6 +274,7 @@ class MortgageRecord:
 @dataclass
 class TaxRecord:
     """Property tax record from county treasurer."""
+
     parcel_id: str
     tax_year: int
     owner_name: Optional[str] = None
@@ -300,6 +319,7 @@ class TaxRecord:
 @dataclass
 class CourtCase:
     """Court case record."""
+
     case_number: str
     case_type: str
     court: Optional[str] = None
@@ -335,7 +355,9 @@ class CourtCase:
             "parties": self.parties,
             "judge": self.judge,
             "disposition": self.disposition,
-            "disposition_date": self.disposition_date.isoformat() if self.disposition_date else None,
+            "disposition_date": (
+                self.disposition_date.isoformat() if self.disposition_date else None
+            ),
             "amount_claimed": self.amount_claimed,
             "judgment_amount": self.judgment_amount,
             "attorney_plaintiff": self.attorney_plaintiff,
@@ -352,6 +374,7 @@ class CourtCase:
 @dataclass
 class LienRecord:
     """Lien record (tax lien, mechanic's lien, judgment lien, etc.)."""
+
     document_number: str
     lien_type: str
     creditor: Optional[str] = None
@@ -377,8 +400,12 @@ class LienRecord:
             "creditor": self.creditor,
             "debtor": self.debtor,
             "amount": self.amount,
-            "recording_date": self.recording_date.isoformat() if self.recording_date else None,
-            "release_date": self.release_date.isoformat() if self.release_date else None,
+            "recording_date": (
+                self.recording_date.isoformat() if self.recording_date else None
+            ),
+            "release_date": (
+                self.release_date.isoformat() if self.release_date else None
+            ),
             "status": self.status,
             "parcel_id": self.parcel_id,
             "property_address": self.property_address,
@@ -401,9 +428,7 @@ class BaseCountyScraper(ABC):
     """
 
     def __init__(
-        self,
-        config: CountyConfig,
-        session: Optional[aiohttp.ClientSession] = None
+        self, config: CountyConfig, session: Optional[aiohttp.ClientSession] = None
     ):
         """
         Initialize the county scraper.
@@ -420,9 +445,7 @@ class BaseCountyScraper(ABC):
 
     async def __aenter__(self):
         if self._owns_session:
-            self.session = aiohttp.ClientSession(
-                headers=self._get_default_headers()
-            )
+            self.session = aiohttp.ClientSession(headers=self._get_default_headers())
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -432,9 +455,7 @@ class BaseCountyScraper(ABC):
     async def _ensure_session(self):
         """Ensure we have an active session."""
         if self.session is None:
-            self.session = aiohttp.ClientSession(
-                headers=self._get_default_headers()
-            )
+            self.session = aiohttp.ClientSession(headers=self._get_default_headers())
             self._owns_session = True
 
     def _get_default_headers(self) -> Dict[str, str]:
@@ -450,6 +471,7 @@ class BaseCountyScraper(ABC):
     async def _rate_limit_wait(self):
         """Wait if needed to respect rate limits."""
         import time
+
         now = time.time()
         elapsed = now - self._last_request_time
         if elapsed < self.rate_limit:
@@ -460,7 +482,7 @@ class BaseCountyScraper(ABC):
         self,
         url: str,
         params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None
+        headers: Optional[Dict[str, str]] = None,
     ) -> Optional[str]:
         """
         Make a GET request with rate limiting.
@@ -471,7 +493,9 @@ class BaseCountyScraper(ABC):
         await self._rate_limit_wait()
 
         try:
-            async with self.session.get(url, params=params, headers=headers) as response:
+            async with self.session.get(
+                url, params=params, headers=headers
+            ) as response:
                 if response.status == 200:
                     return await response.text()
         except aiohttp.ClientError:
@@ -484,7 +508,7 @@ class BaseCountyScraper(ABC):
         url: str,
         data: Optional[Dict[str, Any]] = None,
         json_data: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None
+        headers: Optional[Dict[str, str]] = None,
     ) -> Optional[str]:
         """
         Make a POST request with rate limiting.
@@ -496,10 +520,7 @@ class BaseCountyScraper(ABC):
 
         try:
             async with self.session.post(
-                url,
-                data=data,
-                json=json_data,
-                headers=headers
+                url, data=data, json=json_data, headers=headers
             ) as response:
                 if response.status == 200:
                     return await response.text()
@@ -509,9 +530,7 @@ class BaseCountyScraper(ABC):
         return None
 
     async def _get_json(
-        self,
-        url: str,
-        params: Optional[Dict[str, Any]] = None
+        self, url: str, params: Optional[Dict[str, Any]] = None
     ) -> Optional[Dict[str, Any]]:
         """Make a GET request and return JSON response."""
         await self._ensure_session()
@@ -526,7 +545,9 @@ class BaseCountyScraper(ABC):
 
         return None
 
-    def _parse_date(self, date_str: Optional[str], formats: List[str] = None) -> Optional[datetime]:
+    def _parse_date(
+        self, date_str: Optional[str], formats: List[str] = None
+    ) -> Optional[datetime]:
         """Parse a date string using common formats."""
         if not date_str:
             return None
@@ -557,11 +578,11 @@ class BaseCountyScraper(ABC):
             return 0.0
 
         # Remove currency symbols, commas, and whitespace
-        cleaned = re.sub(r'[$,\s]', '', str(value_str))
+        cleaned = re.sub(r"[$,\s]", "", str(value_str))
 
         # Handle parentheses for negative numbers
-        if cleaned.startswith('(') and cleaned.endswith(')'):
-            cleaned = '-' + cleaned[1:-1]
+        if cleaned.startswith("(") and cleaned.endswith(")"):
+            cleaned = "-" + cleaned[1:-1]
 
         try:
             return float(cleaned)
@@ -574,7 +595,7 @@ class BaseCountyScraper(ABC):
             return None
 
         # Remove extra whitespace
-        name = ' '.join(name.split())
+        name = " ".join(name.split())
 
         # Title case if all uppercase
         if name.isupper():
@@ -587,26 +608,19 @@ class BaseCountyScraper(ABC):
 
     @abstractmethod
     async def search_property_by_address(
-        self,
-        address: str,
-        city: Optional[str] = None,
-        zip_code: Optional[str] = None
+        self, address: str, city: Optional[str] = None, zip_code: Optional[str] = None
     ) -> List[PropertyRecord]:
         """Search property records by address."""
         pass
 
     @abstractmethod
-    async def search_property_by_owner(
-        self,
-        owner_name: str
-    ) -> List[PropertyRecord]:
+    async def search_property_by_owner(self, owner_name: str) -> List[PropertyRecord]:
         """Search property records by owner name."""
         pass
 
     @abstractmethod
     async def search_property_by_parcel(
-        self,
-        parcel_id: str
+        self, parcel_id: str
     ) -> Optional[PropertyRecord]:
         """Get property record by parcel/PIN number."""
         pass
@@ -618,7 +632,7 @@ class BaseCountyScraper(ABC):
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         as_grantor: bool = True,
-        as_grantee: bool = True
+        as_grantee: bool = True,
     ) -> List[DeedRecord]:
         """Search recorded documents by name."""
         pass
@@ -628,7 +642,7 @@ class BaseCountyScraper(ABC):
         self,
         parcel_id: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[DeedRecord]:
         """Search recorded documents by parcel ID."""
         pass
@@ -639,15 +653,14 @@ class BaseCountyScraper(ABC):
         name: str,
         case_type: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """Search court cases by party name."""
         pass
 
     @abstractmethod
     async def search_court_cases_by_number(
-        self,
-        case_number: str
+        self, case_number: str
     ) -> Optional[CourtCase]:
         """Get court case by case number."""
         pass
@@ -660,17 +673,12 @@ class BaseCountyScraper(ABC):
         return None
 
     async def search_liens_by_name(
-        self,
-        name: str,
-        lien_type: Optional[str] = None
+        self, name: str, lien_type: Optional[str] = None
     ) -> List[LienRecord]:
         """Search liens by debtor/creditor name."""
         return []
 
-    async def search_liens_by_parcel(
-        self,
-        parcel_id: str
-    ) -> List[LienRecord]:
+    async def search_liens_by_parcel(self, parcel_id: str) -> List[LienRecord]:
         """Search liens by parcel ID."""
         return []
 
@@ -679,7 +687,7 @@ class BaseCountyScraper(ABC):
         address: Optional[str] = None,
         owner: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """Search foreclosure cases."""
         return []
@@ -690,17 +698,14 @@ class BaseCountyScraper(ABC):
         tenant: Optional[str] = None,
         landlord: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """Search eviction cases."""
         return []
 
     # ==================== Convenience Methods ====================
 
-    async def get_full_property_profile(
-        self,
-        parcel_id: str
-    ) -> Dict[str, Any]:
+    async def get_full_property_profile(self, parcel_id: str) -> Dict[str, Any]:
         """
         Get a complete property profile including ownership,
         tax info, recorded documents, and any liens.
@@ -725,7 +730,7 @@ class BaseCountyScraper(ABC):
         name: str,
         include_property: bool = True,
         include_deeds: bool = True,
-        include_court: bool = True
+        include_court: bool = True,
     ) -> Dict[str, Any]:
         """
         Get all available records for a person across

@@ -4,10 +4,11 @@ Integration Tests for API Endpoints
 Tests the FastAPI endpoints with real HTTP requests.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from fastapi.testclient import TestClient
 import json
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -23,6 +24,7 @@ def client():
     # Import here to avoid import errors
     try:
         from api.src.api_v2 import app
+
         return TestClient(app)
     except ImportError:
         pytest.skip("API module not available")
@@ -48,7 +50,7 @@ class TestHealthEndpoints:
 class TestJurisdictionEndpoints:
     """Tests for jurisdiction API endpoints"""
 
-    @patch('api.src.api_v2.get_db')
+    @patch("api.src.api_v2.get_db")
     def test_get_jurisdictions(self, mock_get_db, client):
         """Test getting list of jurisdictions"""
         mock_session = MagicMock()
@@ -64,14 +66,16 @@ class TestJurisdictionEndpoints:
         # May or may not exist, just verify no crash
         assert response.status_code in [200, 404, 500]
 
-    @patch('api.src.api_v2.get_db')
+    @patch("api.src.api_v2.get_db")
     def test_get_jurisdiction_by_id(self, mock_get_db, client):
         """Test getting a specific jurisdiction"""
         mock_session = MagicMock()
         mock_get_db.return_value = iter([mock_session])
 
         mock_jurisdiction = Mock(id=1, name="California", state="CA")
-        mock_session.query.return_value.filter.return_value.first.return_value = mock_jurisdiction
+        mock_session.query.return_value.filter.return_value.first.return_value = (
+            mock_jurisdiction
+        )
 
         response = client.get("/api/v2/jurisdictions/1")
         assert response.status_code in [200, 404, 500]
@@ -80,7 +84,7 @@ class TestJurisdictionEndpoints:
 class TestPropertyEndpoints:
     """Tests for property search endpoints"""
 
-    @patch('api.src.api_v2.get_db')
+    @patch("api.src.api_v2.get_db")
     def test_search_properties(self, mock_get_db, client):
         """Test property search endpoint"""
         mock_session = MagicMock()
@@ -89,7 +93,7 @@ class TestPropertyEndpoints:
         response = client.get("/api/v2/properties/search?address=123+Main+St")
         assert response.status_code in [200, 404, 422, 500]
 
-    @patch('api.src.api_v2.get_db')
+    @patch("api.src.api_v2.get_db")
     def test_get_property_by_id(self, mock_get_db, client):
         """Test getting a specific property"""
         mock_session = MagicMock()
@@ -102,7 +106,7 @@ class TestPropertyEndpoints:
 class TestRecordEndpoints:
     """Tests for record API endpoints"""
 
-    @patch('api.src.api_v2.get_db')
+    @patch("api.src.api_v2.get_db")
     def test_get_records(self, mock_get_db, client):
         """Test getting records"""
         mock_session = MagicMock()
@@ -111,7 +115,7 @@ class TestRecordEndpoints:
         response = client.get("/api/v2/records")
         assert response.status_code in [200, 404, 500]
 
-    @patch('api.src.api_v2.get_db')
+    @patch("api.src.api_v2.get_db")
     def test_create_record(self, mock_get_db, client):
         """Test creating a new record"""
         mock_session = MagicMock()
@@ -120,7 +124,7 @@ class TestRecordEndpoints:
         record_data = {
             "jurisdiction_id": 1,
             "record_type": "property",
-            "data": {"address": "123 Main St"}
+            "data": {"address": "123 Main St"},
         }
 
         response = client.post("/api/v2/records", json=record_data)
@@ -130,7 +134,7 @@ class TestRecordEndpoints:
 class TestDataSourceEndpoints:
     """Tests for data source endpoints"""
 
-    @patch('api.src.api_v2.get_db')
+    @patch("api.src.api_v2.get_db")
     def test_get_data_sources(self, mock_get_db, client):
         """Test getting data sources"""
         mock_session = MagicMock()
@@ -152,8 +156,8 @@ class TestValidationEndpoints:
                 "address": "123 Main Street",
                 "city": "Springfield",
                 "state": "IL",
-                "zip_code": "62701"
-            }
+                "zip_code": "62701",
+            },
         }
 
         response = client.post("/api/v2/validate", json=record_data)
@@ -177,7 +181,7 @@ class TestMonitoringEndpoints:
 class TestSearchEndpoints:
     """Tests for search endpoints"""
 
-    @patch('api.src.api_v2.get_db')
+    @patch("api.src.api_v2.get_db")
     def test_global_search(self, mock_get_db, client):
         """Test global search endpoint"""
         mock_session = MagicMock()
@@ -192,10 +196,7 @@ class TestAuthenticationEndpoints:
 
     def test_login(self, client):
         """Test login endpoint"""
-        login_data = {
-            "email": "test@example.com",
-            "password": "testpassword"
-        }
+        login_data = {"email": "test@example.com", "password": "testpassword"}
 
         response = client.post("/api/v2/auth/login", json=login_data)
         assert response.status_code in [200, 401, 404, 422, 500]
@@ -205,7 +206,7 @@ class TestAuthenticationEndpoints:
         register_data = {
             "email": "newuser@example.com",
             "password": "newpassword123",
-            "name": "New User"
+            "name": "New User",
         }
 
         response = client.post("/api/v2/auth/register", json=register_data)
@@ -230,7 +231,7 @@ class TestErrorHandling:
         response = client.post(
             "/api/v2/records",
             content="invalid json{",
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
         assert response.status_code in [400, 404, 422, 500]
 
@@ -238,7 +239,7 @@ class TestErrorHandling:
 class TestPagination:
     """Tests for API pagination"""
 
-    @patch('api.src.api_v2.get_db')
+    @patch("api.src.api_v2.get_db")
     def test_pagination_params(self, mock_get_db, client):
         """Test pagination parameters"""
         mock_session = MagicMock()
@@ -247,7 +248,7 @@ class TestPagination:
         response = client.get("/api/v2/records?page=1&per_page=10")
         assert response.status_code in [200, 404, 500]
 
-    @patch('api.src.api_v2.get_db')
+    @patch("api.src.api_v2.get_db")
     def test_pagination_invalid_page(self, mock_get_db, client):
         """Test pagination with invalid page"""
         mock_session = MagicMock()
@@ -278,8 +279,8 @@ class TestCORS:
             "/api/v2/health",
             headers={
                 "Origin": "http://localhost:3000",
-                "Access-Control-Request-Method": "GET"
-            }
+                "Access-Control-Request-Method": "GET",
+            },
         )
         # Should not fail
         assert response.status_code in [200, 204, 404, 405]

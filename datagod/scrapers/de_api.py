@@ -6,16 +6,16 @@ Generated: 2025-12-31T17:39:32.333163
 """
 
 import logging
-from typing import Dict, List, Any, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from datagod.scrapers.base_api_integration import (
-    BaseAPIIntegration,
-    APIKeyAuthentication,
-    OAuth2Authentication,
-    HMACAuthentication,
     APIDataError,
-    RateLimitExceeded
+    APIKeyAuthentication,
+    BaseAPIIntegration,
+    HMACAuthentication,
+    OAuth2Authentication,
+    RateLimitExceeded,
 )
 
 logger = logging.getLogger(__name__)
@@ -23,32 +23,32 @@ logger = logging.getLogger(__name__)
 
 # County-specific API configurations
 COUNTY_APIS = {
-    'new_castle': {
-        'name': 'New Castle',
-        'base_url': 'https://www.nccde.org/recorder/api',
-        'property_endpoint': '/property/search',
-        'deed_endpoint': '/deed/search',
-        'lien_endpoint': '/lien/search',
-        'requires_auth': True,
-        'rate_limit': 60,
+    "new_castle": {
+        "name": "New Castle",
+        "base_url": "https://www.nccde.org/recorder/api",
+        "property_endpoint": "/property/search",
+        "deed_endpoint": "/deed/search",
+        "lien_endpoint": "/lien/search",
+        "requires_auth": True,
+        "rate_limit": 60,
     },
-    'sussex': {
-        'name': 'Sussex',
-        'base_url': 'https://www.sussexcountyde.gov/recorder/api',
-        'property_endpoint': '/property/search',
-        'deed_endpoint': '/deed/search',
-        'lien_endpoint': '/lien/search',
-        'requires_auth': True,
-        'rate_limit': 60,
+    "sussex": {
+        "name": "Sussex",
+        "base_url": "https://www.sussexcountyde.gov/recorder/api",
+        "property_endpoint": "/property/search",
+        "deed_endpoint": "/deed/search",
+        "lien_endpoint": "/lien/search",
+        "requires_auth": True,
+        "rate_limit": 60,
     },
-    'kent': {
-        'name': 'Kent',
-        'base_url': 'https://www.co.kent.de.us/recorder/api',
-        'property_endpoint': '/property/search',
-        'deed_endpoint': '/deed/search',
-        'lien_endpoint': '/lien/search',
-        'requires_auth': False,
-        'rate_limit': 30,
+    "kent": {
+        "name": "Kent",
+        "base_url": "https://www.co.kent.de.us/recorder/api",
+        "property_endpoint": "/property/search",
+        "deed_endpoint": "/deed/search",
+        "lien_endpoint": "/lien/search",
+        "requires_auth": False,
+        "rate_limit": 30,
     },
 }
 
@@ -66,8 +66,8 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
     Counties covered: See COUNTY_APIS dictionary above.
     """
 
-    STATE_CODE = 'DE'
-    STATE_NAME = 'Delaware'
+    STATE_CODE = "DE"
+    STATE_NAME = "Delaware"
 
     # Default rate limits
     DEFAULT_REQUESTS_PER_MINUTE = 60
@@ -84,10 +84,10 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
         """
         # Build default config
         default_config = {
-            'base_url': config.get('base_url', '') if config else '',
-            'requests_per_minute': self.DEFAULT_REQUESTS_PER_MINUTE,
-            'requests_per_hour': self.DEFAULT_REQUESTS_PER_HOUR,
-            'timeout': self.DEFAULT_TIMEOUT,
+            "base_url": config.get("base_url", "") if config else "",
+            "requests_per_minute": self.DEFAULT_REQUESTS_PER_MINUTE,
+            "requests_per_hour": self.DEFAULT_REQUESTS_PER_HOUR,
+            "timeout": self.DEFAULT_TIMEOUT,
         }
 
         # Merge with provided config
@@ -99,7 +99,9 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
         # Track which county we're querying
         self.current_county = None
 
-        logger.info(f"Initialized {self.STATE_NAME} API for jurisdiction {jurisdiction_id}")
+        logger.info(
+            f"Initialized {self.STATE_NAME} API for jurisdiction {jurisdiction_id}"
+        )
 
     def authenticate(self) -> bool:
         """
@@ -109,7 +111,7 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
             True if authentication successful
         """
         # Try parent class authentication first
-        if hasattr(super(), 'authenticate'):
+        if hasattr(super(), "authenticate"):
             return super().authenticate()
 
         # If no API key required, return True
@@ -130,18 +132,20 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
         Returns:
             True if county is valid and configured
         """
-        county_key = county_name.lower().replace(' ', '_').replace("'", "")
+        county_key = county_name.lower().replace(" ", "_").replace("'", "")
 
         if county_key not in COUNTY_APIS:
-            logger.warning(f"County '{county_name}' not found in {self.STATE_NAME} configuration")
+            logger.warning(
+                f"County '{county_name}' not found in {self.STATE_NAME} configuration"
+            )
             return False
 
         self.current_county = county_key
         county_config = COUNTY_APIS[county_key]
 
         # Update base URL if county has specific URL
-        if county_config.get('base_url'):
-            self.base_url = county_config['base_url']
+        if county_config.get("base_url"):
+            self.base_url = county_config["base_url"]
 
         logger.info(f"Set active county to {county_name}")
         return True
@@ -149,7 +153,7 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
     def get_county_config(self, county_name: str = None) -> Optional[Dict[str, Any]]:
         """Get configuration for a specific county."""
         if county_name:
-            county_key = county_name.lower().replace(' ', '_').replace("'", "")
+            county_key = county_name.lower().replace(" ", "_").replace("'", "")
         else:
             county_key = self.current_county
 
@@ -157,7 +161,7 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
 
     def list_counties(self) -> List[str]:
         """List all supported counties."""
-        return [config['name'] for config in COUNTY_APIS.values()]
+        return [config["name"] for config in COUNTY_APIS.values()]
 
     def search_records(self, query: Dict[str, Any], **kwargs) -> List[Dict[str, Any]]:
         """
@@ -177,21 +181,21 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
         Returns:
             List of matching records
         """
-        county = kwargs.get('county')
+        county = kwargs.get("county")
         if county:
             self.set_county(county)
 
-        record_type = query.get('record_type', 'all')
+        record_type = query.get("record_type", "all")
 
         results = []
 
-        if record_type in ('all', 'property'):
+        if record_type in ("all", "property"):
             results.extend(self.search_property(query))
 
-        if record_type in ('all', 'deed'):
+        if record_type in ("all", "deed"):
             results.extend(self.search_deeds(query))
 
-        if record_type in ('all', 'lien'):
+        if record_type in ("all", "lien"):
             results.extend(self.search_liens(query))
 
         logger.info(f"Search returned {len(results)} total records")
@@ -212,26 +216,26 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
             logger.warning("No county configured for property search")
             return []
 
-        endpoint = county_config.get('property_endpoint', '/property/search')
+        endpoint = county_config.get("property_endpoint", "/property/search")
 
         # Build request parameters
         params = {}
-        if query.get('name'):
-            params['owner_name'] = query['name']
-        if query.get('address'):
-            params['property_address'] = query['address']
-        if query.get('parcel_id'):
-            params['parcel_number'] = query['parcel_id']
+        if query.get("name"):
+            params["owner_name"] = query["name"]
+        if query.get("address"):
+            params["property_address"] = query["address"]
+        if query.get("parcel_id"):
+            params["parcel_number"] = query["parcel_id"]
 
         try:
-            response = self.make_request('GET', endpoint, params=params)
+            response = self.make_request("GET", endpoint, params=params)
             data = self.validate_response(response)
 
             results = []
-            for record in data.get('results', data.get('properties', [])):
+            for record in data.get("results", data.get("properties", [])):
                 mapped = self.map_api_data_to_standard_format(record)
-                mapped['record_type'] = 'property'
-                mapped['source_county'] = county_config['name']
+                mapped["record_type"] = "property"
+                mapped["source_county"] = county_config["name"]
                 results.append(mapped)
 
             logger.info(f"Property search returned {len(results)} records")
@@ -256,28 +260,28 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
             logger.warning("No county configured for deed search")
             return []
 
-        endpoint = county_config.get('deed_endpoint', '/deed/search')
+        endpoint = county_config.get("deed_endpoint", "/deed/search")
 
         # Build request parameters
         params = {}
-        if query.get('name'):
-            params['party_name'] = query['name']
-        if query.get('date_from'):
-            params['start_date'] = query['date_from']
-        if query.get('date_to'):
-            params['end_date'] = query['date_to']
-        if query.get('document_number'):
-            params['doc_number'] = query['document_number']
+        if query.get("name"):
+            params["party_name"] = query["name"]
+        if query.get("date_from"):
+            params["start_date"] = query["date_from"]
+        if query.get("date_to"):
+            params["end_date"] = query["date_to"]
+        if query.get("document_number"):
+            params["doc_number"] = query["document_number"]
 
         try:
-            response = self.make_request('GET', endpoint, params=params)
+            response = self.make_request("GET", endpoint, params=params)
             data = self.validate_response(response)
 
             results = []
-            for record in data.get('results', data.get('deeds', [])):
+            for record in data.get("results", data.get("deeds", [])):
                 mapped = self.map_api_data_to_standard_format(record)
-                mapped['record_type'] = 'deed'
-                mapped['source_county'] = county_config['name']
+                mapped["record_type"] = "deed"
+                mapped["source_county"] = county_config["name"]
                 results.append(mapped)
 
             logger.info(f"Deed search returned {len(results)} records")
@@ -302,26 +306,26 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
             logger.warning("No county configured for lien search")
             return []
 
-        endpoint = county_config.get('lien_endpoint', '/lien/search')
+        endpoint = county_config.get("lien_endpoint", "/lien/search")
 
         # Build request parameters
         params = {}
-        if query.get('name'):
-            params['debtor_name'] = query['name']
-        if query.get('date_from'):
-            params['filed_from'] = query['date_from']
-        if query.get('date_to'):
-            params['filed_to'] = query['date_to']
+        if query.get("name"):
+            params["debtor_name"] = query["name"]
+        if query.get("date_from"):
+            params["filed_from"] = query["date_from"]
+        if query.get("date_to"):
+            params["filed_to"] = query["date_to"]
 
         try:
-            response = self.make_request('GET', endpoint, params=params)
+            response = self.make_request("GET", endpoint, params=params)
             data = self.validate_response(response)
 
             results = []
-            for record in data.get('results', data.get('liens', [])):
+            for record in data.get("results", data.get("liens", [])):
                 mapped = self.map_api_data_to_standard_format(record)
-                mapped['record_type'] = 'lien'
-                mapped['source_county'] = county_config['name']
+                mapped["record_type"] = "lien"
+                mapped["source_county"] = county_config["name"]
                 results.append(mapped)
 
             logger.info(f"Lien search returned {len(results)} records")
@@ -349,7 +353,7 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
         endpoint = f"/record/{record_id}"
 
         try:
-            response = self.make_request('GET', endpoint)
+            response = self.make_request("GET", endpoint)
             data = self.validate_response(response)
 
             return self.map_api_data_to_standard_format(data)
@@ -358,7 +362,9 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
             logger.error(f"Get record details failed: {e}")
             return {}
 
-    def map_api_data_to_standard_format(self, api_data: Dict[str, Any]) -> Dict[str, Any]:
+    def map_api_data_to_standard_format(
+        self, api_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Map Delaware-specific API data to standard DataGod format.
 
@@ -370,24 +376,46 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
         """
         # Standard field mappings - adjust based on actual API responses
         standard = {
-            'source_state': self.STATE_CODE,
-            'source_api': self.__class__.__name__,
-            'raw_data': api_data,
-            'fetched_at': datetime.now().isoformat(),
+            "source_state": self.STATE_CODE,
+            "source_api": self.__class__.__name__,
+            "raw_data": api_data,
+            "fetched_at": datetime.now().isoformat(),
         }
 
         # Map common fields with various possible names
         field_mappings = {
-            'record_id': ['id', 'record_id', 'document_id', 'doc_id', 'reference_number'],
-            'document_number': ['document_number', 'doc_number', 'instrument_number', 'book_page'],
-            'record_date': ['record_date', 'recorded_date', 'filing_date', 'date', 'date_recorded'],
-            'document_type': ['document_type', 'doc_type', 'type', 'instrument_type'],
-            'grantor': ['grantor', 'seller', 'from_party', 'party1'],
-            'grantee': ['grantee', 'buyer', 'to_party', 'party2'],
-            'property_address': ['property_address', 'address', 'situs_address', 'location'],
-            'parcel_id': ['parcel_id', 'apn', 'parcel_number', 'tax_id', 'pin'],
-            'amount': ['amount', 'consideration', 'value', 'sale_price', 'loan_amount'],
-            'legal_description': ['legal_description', 'legal_desc', 'legal'],
+            "record_id": [
+                "id",
+                "record_id",
+                "document_id",
+                "doc_id",
+                "reference_number",
+            ],
+            "document_number": [
+                "document_number",
+                "doc_number",
+                "instrument_number",
+                "book_page",
+            ],
+            "record_date": [
+                "record_date",
+                "recorded_date",
+                "filing_date",
+                "date",
+                "date_recorded",
+            ],
+            "document_type": ["document_type", "doc_type", "type", "instrument_type"],
+            "grantor": ["grantor", "seller", "from_party", "party1"],
+            "grantee": ["grantee", "buyer", "to_party", "party2"],
+            "property_address": [
+                "property_address",
+                "address",
+                "situs_address",
+                "location",
+            ],
+            "parcel_id": ["parcel_id", "apn", "parcel_number", "tax_id", "pin"],
+            "amount": ["amount", "consideration", "value", "sale_price", "loan_amount"],
+            "legal_description": ["legal_description", "legal_desc", "legal"],
         }
 
         for standard_field, possible_names in field_mappings.items():
@@ -397,22 +425,22 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
                     break
 
         # Parse amount to float if present
-        if 'amount' in standard:
+        if "amount" in standard:
             try:
-                amount_str = str(standard['amount']).replace('$', '').replace(',', '')
-                standard['amount'] = float(amount_str)
+                amount_str = str(standard["amount"]).replace("$", "").replace(",", "")
+                standard["amount"] = float(amount_str)
             except (ValueError, TypeError):
                 pass
 
         # Parse date if present
-        if 'record_date' in standard:
+        if "record_date" in standard:
             try:
-                if isinstance(standard['record_date'], str):
+                if isinstance(standard["record_date"], str):
                     # Try common date formats
-                    for fmt in ['%Y-%m-%d', '%m/%d/%Y', '%Y%m%d', '%d-%m-%Y']:
+                    for fmt in ["%Y-%m-%d", "%m/%d/%Y", "%Y%m%d", "%d-%m-%Y"]:
                         try:
-                            dt = datetime.strptime(standard['record_date'], fmt)
-                            standard['record_date'] = dt.date().isoformat()
+                            dt = datetime.strptime(standard["record_date"], fmt)
+                            standard["record_date"] = dt.date().isoformat()
                             break
                         except ValueError:
                             continue
@@ -421,81 +449,83 @@ class DelawareAPI(APIKeyAuthentication, BaseAPIIntegration):
 
         return standard
 
-    
-    def search_property(self, query: Dict[str, Any], county: str = None) -> List[Dict[str, Any]]:
+    def search_property(
+        self, query: Dict[str, Any], county: str = None
+    ) -> List[Dict[str, Any]]:
         """Search property records."""
         endpoint = "/property/search"
         if county:
-            county_config = self.COUNTY_APIS.get(county.lower().replace(' ', '_'))
+            county_config = self.COUNTY_APIS.get(county.lower().replace(" ", "_"))
             if county_config:
-                endpoint = county_config.get('property_endpoint', endpoint)
+                endpoint = county_config.get("property_endpoint", endpoint)
 
-        response = self.make_request('GET', endpoint, params=query)
+        response = self.make_request("GET", endpoint, params=query)
         data = self.validate_response(response)
 
         results = []
-        for record in data.get('results', []):
+        for record in data.get("results", []):
             mapped = self.map_api_data_to_standard_format(record)
-            mapped['record_type'] = 'property'
+            mapped["record_type"] = "property"
             results.append(mapped)
 
         return results
 
-
-    def search_deed(self, query: Dict[str, Any], county: str = None) -> List[Dict[str, Any]]:
+    def search_deed(
+        self, query: Dict[str, Any], county: str = None
+    ) -> List[Dict[str, Any]]:
         """Search deed records."""
         endpoint = "/deed/search"
         if county:
-            county_config = self.COUNTY_APIS.get(county.lower().replace(' ', '_'))
+            county_config = self.COUNTY_APIS.get(county.lower().replace(" ", "_"))
             if county_config:
-                endpoint = county_config.get('deed_endpoint', endpoint)
+                endpoint = county_config.get("deed_endpoint", endpoint)
 
-        response = self.make_request('GET', endpoint, params=query)
+        response = self.make_request("GET", endpoint, params=query)
         data = self.validate_response(response)
 
         results = []
-        for record in data.get('results', []):
+        for record in data.get("results", []):
             mapped = self.map_api_data_to_standard_format(record)
-            mapped['record_type'] = 'deed'
+            mapped["record_type"] = "deed"
             results.append(mapped)
 
         return results
 
-
-    def search_lien(self, query: Dict[str, Any], county: str = None) -> List[Dict[str, Any]]:
+    def search_lien(
+        self, query: Dict[str, Any], county: str = None
+    ) -> List[Dict[str, Any]]:
         """Search lien records."""
         endpoint = "/lien/search"
         if county:
-            county_config = self.COUNTY_APIS.get(county.lower().replace(' ', '_'))
+            county_config = self.COUNTY_APIS.get(county.lower().replace(" ", "_"))
             if county_config:
-                endpoint = county_config.get('lien_endpoint', endpoint)
+                endpoint = county_config.get("lien_endpoint", endpoint)
 
-        response = self.make_request('GET', endpoint, params=query)
+        response = self.make_request("GET", endpoint, params=query)
         data = self.validate_response(response)
 
         results = []
-        for record in data.get('results', []):
+        for record in data.get("results", []):
             mapped = self.map_api_data_to_standard_format(record)
-            mapped['record_type'] = 'lien'
+            mapped["record_type"] = "lien"
             results.append(mapped)
 
         return results
 
-
     def get_supported_record_types(self) -> List[str]:
         """Get list of supported record types for this state."""
-        return ['property', 'deed', 'lien', 'mortgage', 'tax']
+        return ["property", "deed", "lien", "mortgage", "tax"]
 
     def get_state_info(self) -> Dict[str, Any]:
         """Get information about this state integration."""
         return {
-            'state_code': self.STATE_CODE,
-            'state_name': self.STATE_NAME,
-            'counties_supported': len(COUNTY_APIS),
-            'counties': self.list_counties(),
-            'record_types': self.get_supported_record_types(),
-            'api_class': self.__class__.__name__,
-            'metrics': self.get_metrics()
+            "state_code": self.STATE_CODE,
+            "state_name": self.STATE_NAME,
+            "counties_supported": len(COUNTY_APIS),
+            "counties": self.list_counties(),
+            "record_types": self.get_supported_record_types(),
+            "api_class": self.__class__.__name__,
+            "metrics": self.get_metrics(),
         }
 
 

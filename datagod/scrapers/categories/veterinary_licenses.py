@@ -28,21 +28,23 @@ Licensed Professionals Covered:
 """
 
 import asyncio
+import json
+import logging
+import re
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
 import aiohttp
 from bs4 import BeautifulSoup
-from dataclasses import dataclass, field
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List, Dict, Any
-import json
-import re
-import logging
 
 logger = logging.getLogger(__name__)
 
 
 class LicenseType(Enum):
     """Types of veterinary licenses"""
+
     # Veterinarians
     VETERINARIAN = "veterinarian"
     VETERINARIAN_LIMITED = "veterinarian_limited"
@@ -67,6 +69,7 @@ class LicenseType(Enum):
 
 class LicenseStatus(Enum):
     """License status"""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
     EXPIRED = "expired"
@@ -82,6 +85,7 @@ class LicenseStatus(Enum):
 
 class Specialty(Enum):
     """Veterinary specialties (AVMA recognized)"""
+
     # Clinical Specialties
     ANESTHESIA = "anesthesia"
     BEHAVIOR = "behavior"
@@ -122,6 +126,7 @@ class Specialty(Enum):
 
 class DisciplinaryAction(Enum):
     """Types of disciplinary actions"""
+
     REPRIMAND = "reprimand"
     FINE = "fine"
     PROBATION = "probation"
@@ -138,6 +143,7 @@ class DisciplinaryAction(Enum):
 @dataclass
 class DisciplinaryRecord:
     """Disciplinary action record"""
+
     action_type: DisciplinaryAction = DisciplinaryAction.OTHER
     action_date: Optional[date] = None
     effective_date: Optional[date] = None
@@ -152,6 +158,7 @@ class DisciplinaryRecord:
 @dataclass
 class VeterinaryLicense:
     """Veterinary license record"""
+
     # Licensee information
     first_name: str
     last_name: str
@@ -206,6 +213,7 @@ class VeterinaryLicense:
 @dataclass
 class SearchCriteria:
     """Search criteria for veterinary licenses"""
+
     last_name: Optional[str] = None
     first_name: Optional[str] = None
     license_number: Optional[str] = None
@@ -220,6 +228,7 @@ class SearchCriteria:
 @dataclass
 class SearchResult:
     """Search result container"""
+
     licenses: List[VeterinaryLicense] = field(default_factory=list)
     total_count: int = 0
     page: int = 1
@@ -360,22 +369,18 @@ class BaseVeterinaryBoardAPI:
         license_number: Optional[str] = None,
         city: Optional[str] = None,
         license_type: Optional[LicenseType] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for veterinary licenses - override in subclass"""
         raise NotImplementedError
 
     async def get_license_detail(
-        self,
-        license_number: str
+        self, license_number: str
     ) -> Optional[VeterinaryLicense]:
         """Get detailed license information - override in subclass"""
         raise NotImplementedError
 
-    async def verify_license(
-        self,
-        license_number: str
-    ) -> bool:
+    async def verify_license(self, license_number: str) -> bool:
         """Verify a license is active"""
         license_info = await self.get_license_detail(license_number)
         if license_info:
@@ -399,16 +404,14 @@ class CaliforniaVetBoardAPI(BaseVeterinaryBoardAPI):
         license_number: Optional[str] = None,
         city: Optional[str] = None,
         license_type: Optional[LicenseType] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search California veterinary licenses"""
         import time
+
         start_time = time.time()
 
-        params = {
-            "boardCode": "VMB",
-            "pageSize": min(max_results, 100)
-        }
+        params = {"boardCode": "VMB", "pageSize": min(max_results, 100)}
 
         if last_name:
             params["lastName"] = last_name
@@ -484,10 +487,11 @@ class TexasVetBoardAPI(BaseVeterinaryBoardAPI):
         license_number: Optional[str] = None,
         city: Optional[str] = None,
         license_type: Optional[LicenseType] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Texas veterinary licenses"""
         import time
+
         start_time = time.time()
 
         params = {"pageSize": min(max_results, 100)}
@@ -552,7 +556,9 @@ class FloridaVetBoardAPI(BaseVeterinaryBoardAPI):
     STATE_CODE = "FL"
     STATE_NAME = "Florida"
     BASE_URL = "https://flhealthsource.gov"
-    API_URL = "https://mqa-internet.doh.state.fl.us/MQASearchServices/HealthCareProviders"
+    API_URL = (
+        "https://mqa-internet.doh.state.fl.us/MQASearchServices/HealthCareProviders"
+    )
     SYSTEM_NAME = "Florida DOH MQA"
 
     async def search_licenses(
@@ -562,16 +568,14 @@ class FloridaVetBoardAPI(BaseVeterinaryBoardAPI):
         license_number: Optional[str] = None,
         city: Optional[str] = None,
         license_type: Optional[LicenseType] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Florida veterinary licenses"""
         import time
+
         start_time = time.time()
 
-        params = {
-            "board": "Veterinary Medicine",
-            "pageSize": min(max_results, 100)
-        }
+        params = {"board": "Veterinary Medicine", "pageSize": min(max_results, 100)}
 
         if last_name:
             params["lastName"] = last_name
@@ -645,15 +649,16 @@ class NewYorkVetBoardAPI(BaseVeterinaryBoardAPI):
         license_number: Optional[str] = None,
         city: Optional[str] = None,
         license_type: Optional[LicenseType] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search New York veterinary licenses"""
         import time
+
         start_time = time.time()
 
         params = {
             "profession": "Veterinary Medicine",
-            "pageSize": min(max_results, 100)
+            "pageSize": min(max_results, 100),
         }
 
         if last_name:
@@ -729,15 +734,17 @@ def get_vet_board_api(state: str) -> Optional[BaseVeterinaryBoardAPI]:
 
 # Convenience functions
 
+
 def search_veterinary_licenses(
     state: str,
     last_name: Optional[str] = None,
     first_name: Optional[str] = None,
     license_number: Optional[str] = None,
     city: Optional[str] = None,
-    max_results: int = 100
+    max_results: int = 100,
 ) -> SearchResult:
     """Search veterinary licenses in a state"""
+
     async def _search():
         api = get_vet_board_api(state)
         if not api:
@@ -752,31 +759,32 @@ def search_veterinary_licenses(
                 first_name=first_name,
                 license_number=license_number,
                 city=city,
-                max_results=max_results
+                max_results=max_results,
             )
+
     return asyncio.run(_search())
 
 
-def verify_veterinary_license(
-    state: str,
-    license_number: str
-) -> bool:
+def verify_veterinary_license(state: str, license_number: str) -> bool:
     """Verify a veterinary license is active"""
+
     async def _verify():
         api = get_vet_board_api(state)
         if not api:
             return False
         async with api:
             return await api.verify_license(license_number)
+
     return asyncio.run(_verify())
 
 
 def search_all_states_vet_licenses(
     last_name: Optional[str] = None,
     first_name: Optional[str] = None,
-    max_results_per_state: int = 50
+    max_results_per_state: int = 50,
 ) -> List[SearchResult]:
     """Search veterinary licenses across all available states"""
+
     async def _search_all():
         results = []
         for state_code, api_class in STATE_VET_BOARD_APIS.items():
@@ -785,15 +793,18 @@ def search_all_states_vet_licenses(
                     result = await api.search_licenses(
                         last_name=last_name,
                         first_name=first_name,
-                        max_results=max_results_per_state
+                        max_results=max_results_per_state,
                     )
                     results.append(result)
             except Exception as e:
                 logger.error(f"Error searching {state_code}: {e}")
-                results.append(SearchResult(
-                    licenses=[],
-                    total_count=0,
-                    warnings=[f"{state_code}: {str(e)}"],
-                ))
+                results.append(
+                    SearchResult(
+                        licenses=[],
+                        total_count=0,
+                        warnings=[f"{state_code}: {str(e)}"],
+                    )
+                )
         return results
+
     return asyncio.run(_search_all())

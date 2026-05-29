@@ -4,24 +4,26 @@ Tests for datagod/utils/caching.py
 Comprehensive tests for the caching utilities.
 """
 
-import pytest
 import time
 from datetime import datetime, timedelta
+
+import pytest
+
 from datagod.utils.caching import (
-    LRUCache,
     CacheEntry,
-    CacheWarmer,
     CacheInvalidator,
-    cached,
+    CacheWarmer,
+    LRUCache,
     async_cached,
-    make_cache_key,
-    get_default_cache,
-    configure_default_cache,
+    cache_clear,
+    cache_delete,
     cache_get,
     cache_set,
-    cache_delete,
-    cache_clear,
     cache_stats,
+    cached,
+    configure_default_cache,
+    get_default_cache,
+    make_cache_key,
 )
 
 
@@ -181,10 +183,10 @@ class TestLRUCache:
         cache.get("key2")  # Miss
 
         stats = cache.get_stats()
-        assert stats['size'] == 1
-        assert stats['hits'] == 1
-        assert stats['misses'] == 1
-        assert stats['hit_rate'] == 50.0
+        assert stats["size"] == 1
+        assert stats["hits"] == 1
+        assert stats["misses"] == 1
+        assert stats["hit_rate"] == 50.0
 
     def test_keys(self):
         """Test getting all keys"""
@@ -246,6 +248,7 @@ class TestCachedDecorator:
 
     def test_cached_invalidate(self):
         """Test cache invalidation"""
+
         @cached(ttl_seconds=60)
         def expensive_function(x):
             return x * 2
@@ -309,9 +312,9 @@ class TestCacheWarmer:
 
         results = warmer.warm()
 
-        assert results['total'] == 2
-        assert results['success'] == 2
-        assert results['failed'] == 0
+        assert results["total"] == 2
+        assert results["success"] == 2
+        assert results["failed"] == 0
 
         assert cache.get("key1") == "value1"
         assert cache.get("key2") == "value2"
@@ -325,7 +328,7 @@ class TestCacheWarmer:
         warmer.register("high", lambda: "high", priority=10)
 
         # High priority should be first in list
-        assert warmer._warming_tasks[0]['key'] == "high"
+        assert warmer._warming_tasks[0]["key"] == "high"
 
     def test_warm_with_failure(self):
         """Test warming handles failures"""
@@ -333,13 +336,13 @@ class TestCacheWarmer:
         warmer = CacheWarmer(cache)
 
         warmer.register("good", lambda: "value")
-        warmer.register("bad", lambda: 1/0)  # Will raise
+        warmer.register("bad", lambda: 1 / 0)  # Will raise
 
         results = warmer.warm()
 
-        assert results['success'] == 1
-        assert results['failed'] == 1
-        assert len(results['errors']) == 1
+        assert results["success"] == 1
+        assert results["failed"] == 1
+        assert len(results["errors"]) == 1
 
 
 class TestCacheInvalidator:
@@ -413,8 +416,8 @@ class TestConvenienceFunctions:
         cache_get("key1")
 
         stats = cache_stats()
-        assert 'size' in stats
-        assert 'hits' in stats
+        assert "size" in stats
+        assert "hits" in stats
 
 
 @pytest.mark.asyncio

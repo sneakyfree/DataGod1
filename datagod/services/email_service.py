@@ -7,8 +7,8 @@ real email providers (SMTP, SendGrid, SES, etc.).
 """
 
 import logging
-from typing import Optional, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class EmailService:
         smtp_user: str = None,
         smtp_password: str = None,
         from_email: str = "noreply@datagod.com",
-        from_name: str = "DataGod"
+        from_name: str = "DataGod",
     ):
         """
         Initialize the email service.
@@ -60,7 +60,7 @@ class EmailService:
         body_text: str,
         body_html: Optional[str] = None,
         from_email: Optional[str] = None,
-        from_name: Optional[str] = None
+        from_name: Optional[str] = None,
     ) -> bool:
         """
         Send an email.
@@ -80,9 +80,13 @@ class EmailService:
         sender_name = from_name or self.from_name
 
         if self.provider == "stub":
-            return self._send_stub(to_email, subject, body_text, body_html, sender_email, sender_name)
+            return self._send_stub(
+                to_email, subject, body_text, body_html, sender_email, sender_name
+            )
         elif self.provider == "smtp":
-            return self._send_smtp(to_email, subject, body_text, body_html, sender_email, sender_name)
+            return self._send_smtp(
+                to_email, subject, body_text, body_html, sender_email, sender_name
+            )
         else:
             logger.error(f"Unknown email provider: {self.provider}")
             return False
@@ -94,7 +98,7 @@ class EmailService:
         body_text: str,
         body_html: Optional[str],
         from_email: str,
-        from_name: str
+        from_name: str,
     ) -> bool:
         """Stub implementation - logs email content instead of sending."""
         logger.info("=" * 60)
@@ -115,26 +119,26 @@ class EmailService:
         body_text: str,
         body_html: Optional[str],
         from_email: str,
-        from_name: str
+        from_name: str,
     ) -> bool:
         """Send email via SMTP."""
         try:
             import smtplib
-            from email.mime.text import MIMEText
             from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText
 
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = f"{from_name} <{from_email}>"
-            msg['To'] = to_email
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"{from_name} <{from_email}>"
+            msg["To"] = to_email
 
             # Attach text part
-            part1 = MIMEText(body_text, 'plain')
+            part1 = MIMEText(body_text, "plain")
             msg.attach(part1)
 
             # Attach HTML part if provided
             if body_html:
-                part2 = MIMEText(body_html, 'html')
+                part2 = MIMEText(body_html, "html")
                 msg.attach(part2)
 
             # Send email
@@ -157,7 +161,7 @@ class EmailService:
         username: str,
         reset_token: str,
         reset_url: str = None,
-        expires_hours: int = 1
+        expires_hours: int = 1,
     ) -> bool:
         """
         Send password reset email.
@@ -236,11 +240,7 @@ The DataGod Team
 
         return self.send_email(to_email, subject, body_text, body_html)
 
-    def send_welcome_email(
-        self,
-        to_email: str,
-        username: str
-    ) -> bool:
+    def send_welcome_email(self, to_email: str, username: str) -> bool:
         """
         Send welcome email to new users.
 
@@ -317,7 +317,7 @@ The DataGod Team
         to_email: str,
         username: str,
         verification_token: str,
-        verification_url: str = None
+        verification_url: str = None,
     ) -> bool:
         """
         Send email verification link.
@@ -332,7 +332,9 @@ The DataGod Team
             bool: True if email was sent successfully
         """
         if verification_url is None:
-            verification_url = f"https://datagod.com/verify-email?token={verification_token}"
+            verification_url = (
+                f"https://datagod.com/verify-email?token={verification_token}"
+            )
 
         subject = "DataGod - Verify Your Email Address"
 
@@ -357,6 +359,7 @@ The DataGod Team
 def _create_default_service() -> EmailService:
     """Create email service from environment configuration."""
     import os
+
     smtp_host = os.getenv("SMTP_HOST", "")
     smtp_user = os.getenv("SMTP_USERNAME", "")
     smtp_pass = os.getenv("SMTP_PASSWORD", "")
@@ -395,4 +398,3 @@ def configure_email_service(**kwargs):
     global email_service
     email_service = EmailService(**kwargs)
     return email_service
-

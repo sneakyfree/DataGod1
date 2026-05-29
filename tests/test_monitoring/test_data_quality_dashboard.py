@@ -5,20 +5,22 @@ Comprehensive tests for coverage tracking, quality scoring,
 error logging, and quota management.
 """
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
+
 from datagod.monitoring.data_quality_dashboard import (
-    DataQualityDashboard,
     CoverageMetrics,
-    QualityScore,
-    QualityGrade,
-    FreshnessStatus,
+    DataQualityDashboard,
     ErrorLogEntry,
+    FreshnessStatus,
+    QualityGrade,
+    QualityScore,
     QuotaStatus,
     get_dashboard,
-    update_coverage,
-    log_data_error,
     get_dashboard_summary,
+    log_data_error,
+    update_coverage,
 )
 
 
@@ -135,11 +137,11 @@ class TestCoverageMetrics:
             last_updated=datetime.now(),
         )
         result = metrics.to_dict()
-        assert result['jurisdiction_id'] == "CA"
-        assert result['jurisdiction_name'] == "California"
-        assert result['total_records'] == 1000
-        assert result['coverage_percent'] == 60.0
-        assert 'freshness_status' in result
+        assert result["jurisdiction_id"] == "CA"
+        assert result["jurisdiction_name"] == "California"
+        assert result["total_records"] == 1000
+        assert result["coverage_percent"] == 60.0
+        assert "freshness_status" in result
 
 
 class TestQualityScore:
@@ -164,10 +166,10 @@ class TestQualityScore:
         """Test overall score calculation with weights"""
         score = QualityScore(
             completeness=100.0,  # 25% weight
-            accuracy=100.0,     # 30% weight
+            accuracy=100.0,  # 30% weight
             consistency=100.0,  # 20% weight
-            timeliness=100.0,   # 15% weight
-            uniqueness=100.0,   # 10% weight
+            timeliness=100.0,  # 15% weight
+            uniqueness=100.0,  # 10% weight
         )
         assert score.overall_score == 100.0
 
@@ -247,10 +249,10 @@ class TestQualityScore:
             uniqueness=95.0,
         )
         result = score.to_dict()
-        assert result['completeness'] == 90.0
-        assert result['accuracy'] == 85.0
-        assert 'overall_score' in result
-        assert 'grade' in result
+        assert result["completeness"] == 90.0
+        assert result["accuracy"] == 85.0
+        assert "overall_score" in result
+        assert "grade" in result
 
 
 class TestErrorLogEntry:
@@ -293,9 +295,9 @@ class TestErrorLogEntry:
             message="Request timed out",
         )
         result = entry.to_dict()
-        assert result['source'] == "api"
-        assert result['error_type'] == "timeout"
-        assert result['resolved'] is False
+        assert result["source"] == "api"
+        assert result["error_type"] == "timeout"
+        assert result["resolved"] is False
 
 
 class TestQuotaStatus:
@@ -357,10 +359,10 @@ class TestQuotaStatus:
             reset_at=datetime.now() + timedelta(hours=1),
         )
         result = status.to_dict()
-        assert result['api_name'] == "API"
-        assert result['used'] == 500
-        assert result['remaining'] == 500
-        assert result['usage_percent'] == 50.0
+        assert result["api_name"] == "API"
+        assert result["used"] == 500
+        assert result["remaining"] == 500
+        assert result["usage_percent"] == 50.0
 
 
 class TestDataQualityDashboard:
@@ -382,10 +384,10 @@ class TestDataQualityDashboard:
     def test_all_states_list(self, dashboard):
         """Test all states list includes all US states and territories"""
         assert len(dashboard.ALL_STATES) == 56  # 50 states + DC + 5 territories
-        assert 'CA' in dashboard.ALL_STATES
-        assert 'TX' in dashboard.ALL_STATES
-        assert 'DC' in dashboard.ALL_STATES
-        assert 'PR' in dashboard.ALL_STATES
+        assert "CA" in dashboard.ALL_STATES
+        assert "TX" in dashboard.ALL_STATES
+        assert "DC" in dashboard.ALL_STATES
+        assert "PR" in dashboard.ALL_STATES
 
     def test_update_coverage(self, dashboard):
         """Test updating coverage metrics"""
@@ -393,9 +395,9 @@ class TestDataQualityDashboard:
             jurisdiction_id="CA",
             jurisdiction_name="California",
             record_counts={
-                'property': 1000,
-                'deed': 500,
-                'court': 300,
+                "property": 1000,
+                "deed": 500,
+                "court": 300,
             },
         )
 
@@ -412,20 +414,20 @@ class TestDataQualityDashboard:
         dashboard.update_coverage(
             jurisdiction_id="TX",
             jurisdiction_name="Texas",
-            record_counts={'property': 500},
-            data_sources=['county_api', 'state_portal'],
+            record_counts={"property": 500},
+            data_sources=["county_api", "state_portal"],
         )
 
         metrics = dashboard.get_coverage("TX")
-        assert 'county_api' in metrics.data_sources
-        assert 'state_portal' in metrics.data_sources
+        assert "county_api" in metrics.data_sources
+        assert "state_portal" in metrics.data_sources
 
     def test_update_coverage_explicit_percent(self, dashboard):
         """Test coverage with explicit percentage"""
         dashboard.update_coverage(
             jurisdiction_id="FL",
             jurisdiction_name="Florida",
-            record_counts={'property': 1000},
+            record_counts={"property": 1000},
             coverage_percent=85.5,
         )
 
@@ -438,11 +440,11 @@ class TestDataQualityDashboard:
             jurisdiction_id="NY",
             jurisdiction_name="New York",
             record_counts={
-                'property': 100,
-                'deed': 100,
-                'court': 0,
-                'business': 100,
-                'license': 0,
+                "property": 100,
+                "deed": 100,
+                "court": 0,
+                "business": 100,
+                "license": 0,
             },
         )
 
@@ -452,8 +454,8 @@ class TestDataQualityDashboard:
 
     def test_get_all_coverage(self, dashboard):
         """Test getting all coverage metrics"""
-        dashboard.update_coverage("CA", "California", {'property': 100})
-        dashboard.update_coverage("TX", "Texas", {'property': 200})
+        dashboard.update_coverage("CA", "California", {"property": 100})
+        dashboard.update_coverage("TX", "Texas", {"property": 200})
 
         all_coverage = dashboard.get_all_coverage()
         assert len(all_coverage) == 2
@@ -462,27 +464,30 @@ class TestDataQualityDashboard:
 
     def test_get_state_coverage_summary(self, dashboard):
         """Test getting state coverage summary"""
-        dashboard.update_coverage("CA", "California", {'property': 1000})
-        dashboard.update_coverage("CA-LOS_ANGELES", "Los Angeles County",
-                                 {'property': 500, 'deed': 200})
+        dashboard.update_coverage("CA", "California", {"property": 1000})
+        dashboard.update_coverage(
+            "CA-LOS_ANGELES", "Los Angeles County", {"property": 500, "deed": 200}
+        )
 
         summary = dashboard.get_state_coverage_summary()
 
         assert "CA" in summary
-        assert summary["CA"]['has_coverage'] is True
-        assert summary["CA"]['county_count'] == 2
-        assert summary["CA"]['total_records'] == 1700
+        assert summary["CA"]["has_coverage"] is True
+        assert summary["CA"]["county_count"] == 2
+        assert summary["CA"]["total_records"] == 1700
 
         # States without coverage
-        assert summary["MT"]['has_coverage'] is False
-        assert summary["MT"]['county_count'] == 0
+        assert summary["MT"]["has_coverage"] is False
+        assert summary["MT"]["county_count"] == 0
 
     def test_get_coverage_heatmap_data(self, dashboard):
         """Test getting heatmap data"""
-        dashboard.update_coverage("CA", "California",
-                                 {'property': 100}, coverage_percent=80.0)
-        dashboard.update_coverage("TX", "Texas",
-                                 {'property': 100}, coverage_percent=60.0)
+        dashboard.update_coverage(
+            "CA", "California", {"property": 100}, coverage_percent=80.0
+        )
+        dashboard.update_coverage(
+            "TX", "Texas", {"property": 100}, coverage_percent=60.0
+        )
 
         heatmap = dashboard.get_coverage_heatmap_data()
 
@@ -524,23 +529,35 @@ class TestDataQualityDashboard:
 
     def test_get_quality_summary(self, dashboard):
         """Test getting quality summary"""
-        dashboard.update_quality_score("data1", completeness=95.0, accuracy=95.0,
-                                       consistency=95.0, timeliness=95.0, uniqueness=95.0)
-        dashboard.update_quality_score("data2", completeness=50.0, accuracy=50.0,
-                                       consistency=50.0, timeliness=50.0, uniqueness=50.0)
+        dashboard.update_quality_score(
+            "data1",
+            completeness=95.0,
+            accuracy=95.0,
+            consistency=95.0,
+            timeliness=95.0,
+            uniqueness=95.0,
+        )
+        dashboard.update_quality_score(
+            "data2",
+            completeness=50.0,
+            accuracy=50.0,
+            consistency=50.0,
+            timeliness=50.0,
+            uniqueness=50.0,
+        )
 
         summary = dashboard.get_quality_summary()
 
-        assert summary['dataset_count'] == 2
-        assert len(summary['lowest_scoring']) > 0
-        assert len(summary['highest_scoring']) > 0
-        assert 'grade_distribution' in summary
+        assert summary["dataset_count"] == 2
+        assert len(summary["lowest_scoring"]) > 0
+        assert len(summary["highest_scoring"]) > 0
+        assert "grade_distribution" in summary
 
     def test_get_quality_summary_empty(self, dashboard):
         """Test quality summary with no data"""
         summary = dashboard.get_quality_summary()
-        assert summary['dataset_count'] == 0
-        assert summary['avg_score'] == 0.0
+        assert summary["dataset_count"] == 0
+        assert summary["avg_score"] == 0.0
 
     # ===== Error Logging Tests =====
 
@@ -648,11 +665,11 @@ class TestDataQualityDashboard:
 
         summary = dashboard.get_error_summary()
 
-        assert summary['total_errors'] == 3
-        assert summary['unresolved_count'] == 3
-        assert summary['by_source']['api1'] == 2
-        assert summary['by_type']['timeout'] == 2
-        assert summary['by_jurisdiction']['CA'] == 2
+        assert summary["total_errors"] == 3
+        assert summary["unresolved_count"] == 3
+        assert summary["by_source"]["api1"] == 2
+        assert summary["by_type"]["timeout"] == 2
+        assert summary["by_jurisdiction"]["CA"] == 2
 
     def test_cleanup_old_errors(self, dashboard):
         """Test cleaning up old errors"""
@@ -695,56 +712,56 @@ class TestDataQualityDashboard:
     def test_get_quota_summary(self, dashboard):
         """Test getting quota summary"""
         dashboard.update_quota("Critical", used=950, limit=1000)  # Critical
-        dashboard.update_quota("Warning", used=800, limit=1000)   # Warning
-        dashboard.update_quota("Normal", used=500, limit=1000)    # Normal
+        dashboard.update_quota("Warning", used=800, limit=1000)  # Warning
+        dashboard.update_quota("Normal", used=500, limit=1000)  # Normal
 
         summary = dashboard.get_quota_summary()
 
-        assert summary['api_count'] == 3
-        assert summary['critical_count'] == 1
-        assert summary['warning_count'] == 1
-        assert "Critical" in summary['critical_apis']
-        assert "Warning" in summary['warning_apis']
+        assert summary["api_count"] == 3
+        assert summary["critical_count"] == 1
+        assert summary["warning_count"] == 1
+        assert "Critical" in summary["critical_apis"]
+        assert "Warning" in summary["warning_apis"]
 
     def test_get_quota_summary_empty(self, dashboard):
         """Test quota summary with no data"""
         summary = dashboard.get_quota_summary()
-        assert summary['api_count'] == 0
+        assert summary["api_count"] == 0
 
     # ===== Dashboard Export Tests =====
 
     def test_get_dashboard_data(self, dashboard):
         """Test getting complete dashboard data"""
-        dashboard.update_coverage("CA", "California", {'property': 1000})
+        dashboard.update_coverage("CA", "California", {"property": 1000})
         dashboard.update_quality_score("data1", completeness=90.0)
         dashboard.log_error("api", "error", "msg")
         dashboard.update_quota("API", used=500, limit=1000)
 
         data = dashboard.get_dashboard_data()
 
-        assert 'timestamp' in data
-        assert 'overview' in data
-        assert 'coverage' in data
-        assert 'quality' in data
-        assert 'errors' in data
-        assert 'quotas' in data
+        assert "timestamp" in data
+        assert "overview" in data
+        assert "coverage" in data
+        assert "quality" in data
+        assert "errors" in data
+        assert "quotas" in data
 
     def test_dashboard_overview(self, dashboard):
         """Test dashboard overview"""
-        dashboard.update_coverage("CA", "California", {'property': 1000})
-        dashboard.update_coverage("TX", "Texas", {'property': 500})
+        dashboard.update_coverage("CA", "California", {"property": 1000})
+        dashboard.update_coverage("TX", "Texas", {"property": 500})
 
         data = dashboard.get_dashboard_data()
-        overview = data['overview']
+        overview = data["overview"]
 
-        assert overview['states_covered'] == 2
-        assert overview['total_states'] == 56
-        assert overview['total_records'] == 1500
-        assert overview['jurisdictions_tracked'] == 2
+        assert overview["states_covered"] == 2
+        assert overview["total_states"] == 56
+        assert overview["total_records"] == 1500
+        assert overview["jurisdictions_tracked"] == 2
 
     def test_export_to_json(self, dashboard, tmp_path):
         """Test exporting to JSON"""
-        dashboard.update_coverage("CA", "California", {'property': 1000})
+        dashboard.update_coverage("CA", "California", {"property": 1000})
 
         json_str = dashboard.export_to_json()
         assert '"CA"' in json_str
@@ -753,7 +770,7 @@ class TestDataQualityDashboard:
 
     def test_export_to_json_file(self, dashboard, tmp_path):
         """Test exporting to JSON file"""
-        dashboard.update_coverage("CA", "California", {'property': 1000})
+        dashboard.update_coverage("CA", "California", {"property": 1000})
 
         filepath = tmp_path / "dashboard.json"
         dashboard.export_to_json(str(filepath))
@@ -764,7 +781,7 @@ class TestDataQualityDashboard:
 
     def test_reset(self, dashboard):
         """Test resetting dashboard"""
-        dashboard.update_coverage("CA", "California", {'property': 1000})
+        dashboard.update_coverage("CA", "California", {"property": 1000})
         dashboard.update_quality_score("data1", completeness=90.0)
         dashboard.log_error("api", "error", "msg")
         dashboard.update_quota("API", used=500, limit=1000)
@@ -791,7 +808,7 @@ class TestConvenienceFunctions:
         dashboard = get_dashboard()
         dashboard.reset()
 
-        update_coverage("CA", "California", {'property': 100})
+        update_coverage("CA", "California", {"property": 100})
 
         metrics = dashboard.get_coverage("CA")
         assert metrics is not None
@@ -812,12 +829,12 @@ class TestConvenienceFunctions:
         """Test get_dashboard_summary convenience function"""
         dashboard = get_dashboard()
         dashboard.reset()
-        dashboard.update_coverage("CA", "California", {'property': 100})
+        dashboard.update_coverage("CA", "California", {"property": 100})
 
         summary = get_dashboard_summary()
 
-        assert 'overview' in summary
-        assert summary['overview']['jurisdictions_tracked'] == 1
+        assert "overview" in summary
+        assert summary["overview"]["jurisdictions_tracked"] == 1
 
 
 class TestHistoricalTracking:
@@ -829,10 +846,12 @@ class TestHistoricalTracking:
 
     def test_coverage_history_recorded(self, dashboard):
         """Test that coverage history is recorded"""
-        dashboard.update_coverage("CA", "California",
-                                 {'property': 100}, coverage_percent=50.0)
-        dashboard.update_coverage("CA", "California",
-                                 {'property': 200}, coverage_percent=60.0)
+        dashboard.update_coverage(
+            "CA", "California", {"property": 100}, coverage_percent=50.0
+        )
+        dashboard.update_coverage(
+            "CA", "California", {"property": 200}, coverage_percent=60.0
+        )
 
         history = dashboard._historical_coverage["CA"]
         assert len(history) == 2
@@ -841,7 +860,7 @@ class TestHistoricalTracking:
 
     def test_coverage_history_timestamps(self, dashboard):
         """Test coverage history has timestamps"""
-        dashboard.update_coverage("TX", "Texas", {'property': 100})
+        dashboard.update_coverage("TX", "Texas", {"property": 100})
 
         history = dashboard._historical_coverage["TX"]
         assert len(history) == 1

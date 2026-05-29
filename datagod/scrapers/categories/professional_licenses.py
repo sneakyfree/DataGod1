@@ -28,16 +28,17 @@ import re
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Dict, List, Any, Optional
-from urllib.parse import urlencode, quote_plus
+from typing import Any, Dict, List, Optional
+from urllib.parse import quote_plus, urlencode
 
 logger = logging.getLogger(__name__)
 
 # Try to import aiohttp for async requests
 try:
     import aiohttp
+
     AIOHTTP_AVAILABLE = True
 except ImportError:
     AIOHTTP_AVAILABLE = False
@@ -46,6 +47,7 @@ except ImportError:
 
 class LicenseType(Enum):
     """Types of professional licenses"""
+
     # Real Estate
     REAL_ESTATE_AGENT = "real_estate_agent"
     REAL_ESTATE_BROKER = "real_estate_broker"
@@ -91,6 +93,7 @@ class LicenseType(Enum):
 
 class LicenseStatus(Enum):
     """License status values"""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
     EXPIRED = "expired"
@@ -108,6 +111,7 @@ class LicenseStatus(Enum):
 @dataclass
 class DisciplinaryAction:
     """Represents a disciplinary action on a license"""
+
     action_date: date
     action_type: str
     description: Optional[str] = None
@@ -118,19 +122,22 @@ class DisciplinaryAction:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'action_date': self.action_date.isoformat() if self.action_date else None,
-            'action_type': self.action_type,
-            'description': self.description,
-            'case_number': self.case_number,
-            'effective_date': self.effective_date.isoformat() if self.effective_date else None,
-            'end_date': self.end_date.isoformat() if self.end_date else None,
-            'fine_amount': self.fine_amount
+            "action_date": self.action_date.isoformat() if self.action_date else None,
+            "action_type": self.action_type,
+            "description": self.description,
+            "case_number": self.case_number,
+            "effective_date": (
+                self.effective_date.isoformat() if self.effective_date else None
+            ),
+            "end_date": self.end_date.isoformat() if self.end_date else None,
+            "fine_amount": self.fine_amount,
         }
 
 
 @dataclass
 class Employer:
     """Employer/sponsoring entity information"""
+
     name: str
     address: Optional[str] = None
     city: Optional[str] = None
@@ -144,22 +151,23 @@ class Employer:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'name': self.name,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'zip_code': self.zip_code,
-            'phone': self.phone,
-            'license_number': self.license_number,
-            'nmls_id': self.nmls_id,
-            'start_date': self.start_date.isoformat() if self.start_date else None,
-            'end_date': self.end_date.isoformat() if self.end_date else None
+            "name": self.name,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "zip_code": self.zip_code,
+            "phone": self.phone,
+            "license_number": self.license_number,
+            "nmls_id": self.nmls_id,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "end_date": self.end_date.isoformat() if self.end_date else None,
         }
 
 
 @dataclass
 class ProfessionalLicense:
     """Represents a professional license record"""
+
     license_number: str
     license_type: LicenseType
     licensee_name: str
@@ -197,39 +205,45 @@ class ProfessionalLicense:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'license_number': self.license_number,
-            'license_type': self.license_type.value,
-            'licensee_name': self.licensee_name,
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-            'middle_name': self.middle_name,
-            'credential': self.credential,
-            'state': self.state,
-            'status': self.status.value,
-            'issue_date': self.issue_date.isoformat() if self.issue_date else None,
-            'expiration_date': self.expiration_date.isoformat() if self.expiration_date else None,
-            'address': self.address,
-            'address_line_2': self.address_line_2,
-            'city': self.city,
-            'zip_code': self.zip_code,
-            'county': self.county,
-            'phone': self.phone,
-            'fax': self.fax,
-            'email': self.email,
-            'employer': self.employer.to_dict() if self.employer else None,
-            'organization_name': self.organization_name,
-            'specializations': self.specializations,
-            'taxonomy_codes': self.taxonomy_codes,
-            'disciplinary_actions': [d.to_dict() for d in self.disciplinary_actions],
-            'ce_hours': self.ce_hours,
-            'nmls_id': self.nmls_id,
-            'bar_number': self.bar_number,
-            'npi': self.npi,
-            'enumeration_date': self.enumeration_date.isoformat() if self.enumeration_date else None,
-            'last_updated': self.last_updated.isoformat() if self.last_updated else None,
-            'data_source': self.data_source,
-            'source_url': self.source_url,
-            'fetched_at': self.fetched_at.isoformat()
+            "license_number": self.license_number,
+            "license_type": self.license_type.value,
+            "licensee_name": self.licensee_name,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "middle_name": self.middle_name,
+            "credential": self.credential,
+            "state": self.state,
+            "status": self.status.value,
+            "issue_date": self.issue_date.isoformat() if self.issue_date else None,
+            "expiration_date": (
+                self.expiration_date.isoformat() if self.expiration_date else None
+            ),
+            "address": self.address,
+            "address_line_2": self.address_line_2,
+            "city": self.city,
+            "zip_code": self.zip_code,
+            "county": self.county,
+            "phone": self.phone,
+            "fax": self.fax,
+            "email": self.email,
+            "employer": self.employer.to_dict() if self.employer else None,
+            "organization_name": self.organization_name,
+            "specializations": self.specializations,
+            "taxonomy_codes": self.taxonomy_codes,
+            "disciplinary_actions": [d.to_dict() for d in self.disciplinary_actions],
+            "ce_hours": self.ce_hours,
+            "nmls_id": self.nmls_id,
+            "bar_number": self.bar_number,
+            "npi": self.npi,
+            "enumeration_date": (
+                self.enumeration_date.isoformat() if self.enumeration_date else None
+            ),
+            "last_updated": (
+                self.last_updated.isoformat() if self.last_updated else None
+            ),
+            "data_source": self.data_source,
+            "source_url": self.source_url,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
     @property
@@ -250,6 +264,7 @@ class ProfessionalLicense:
 @dataclass
 class LicenseSearch:
     """Search parameters for license searches"""
+
     name: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -280,19 +295,19 @@ STATE_LICENSE_CONFIGS: Dict[str, Dict[str, Any]] = {
             "real_estate": {
                 "name": "California DRE",
                 "url": "https://www2.dre.ca.gov/PublicASP/pplinfo.asp",
-                "api_available": False
+                "api_available": False,
             },
             "contractors": {
                 "name": "CSLB",
                 "url": "https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx",
-                "api_available": False
+                "api_available": False,
             },
             "medical": {
                 "name": "Medical Board of California",
                 "url": "https://mbc.ca.gov/breeze/",
-                "api_available": False
-            }
-        }
+                "api_available": False,
+            },
+        },
     },
     "TX": {
         "name": "Texas",
@@ -300,14 +315,14 @@ STATE_LICENSE_CONFIGS: Dict[str, Dict[str, Any]] = {
             "real_estate": {
                 "name": "TREC",
                 "url": "https://www.trec.texas.gov/apps/license-holder-search/",
-                "api_available": False
+                "api_available": False,
             },
             "medical": {
                 "name": "Texas Medical Board",
                 "url": "https://profile.tmb.state.tx.us/",
-                "api_available": False
-            }
-        }
+                "api_available": False,
+            },
+        },
     },
     "FL": {
         "name": "Florida",
@@ -316,14 +331,14 @@ STATE_LICENSE_CONFIGS: Dict[str, Dict[str, Any]] = {
                 "name": "FREC",
                 "url": "https://www.myfloridalicense.com/wl11.asp",
                 "api_url": "https://www.myfloridalicense.com/licensesearch/",
-                "api_available": True
+                "api_available": True,
             },
             "contractors": {
                 "name": "Florida CILB",
                 "url": "https://www.myfloridalicense.com/wl11.asp?mode=2&search=Name&SID=&brd=&typ=",
-                "api_available": False
-            }
-        }
+                "api_available": False,
+            },
+        },
     },
     "NY": {
         "name": "New York",
@@ -331,15 +346,15 @@ STATE_LICENSE_CONFIGS: Dict[str, Dict[str, Any]] = {
             "real_estate": {
                 "name": "DOS",
                 "url": "https://appext20.dos.ny.gov/lcns_public/cos_search",
-                "api_available": False
+                "api_available": False,
             },
             "medical": {
                 "name": "NYSED",
                 "url": "http://www.op.nysed.gov/opsearches.htm",
-                "api_available": False
-            }
-        }
-    }
+                "api_available": False,
+            },
+        },
+    },
 }
 
 # Healthcare taxonomy codes for NPI searches
@@ -353,13 +368,14 @@ HEALTHCARE_TAXONOMY_CODES: Dict[str, str] = {
     "psychologist": "103T",  # Psychologist
     "chiropractor": "111N",  # Chiropractor
     "optometrist": "152W",  # Optometrist
-    "podiatrist": "213E"  # Podiatrist
+    "podiatrist": "213E",  # Podiatrist
 }
 
 
 # =============================================================================
 # Professional Licenses API (Main Implementation)
 # =============================================================================
+
 
 class ProfessionalLicensesAPI:
     """
@@ -399,8 +415,8 @@ class ProfessionalLicensesAPI:
                 timeout=timeout,
                 headers={
                     "User-Agent": "DataGod/1.0 Professional License Verification",
-                    "Accept": "application/json"
-                }
+                    "Accept": "application/json",
+                },
             )
         return self._session
 
@@ -433,7 +449,7 @@ class ProfessionalLicensesAPI:
         zip_code: str = "",
         taxonomy_description: str = "",
         limit: int = 50,
-        skip: int = 0
+        skip: int = 0,
     ) -> List[ProfessionalLicense]:
         """
         Search the NPI Registry for healthcare providers.
@@ -463,10 +479,7 @@ class ProfessionalLicensesAPI:
         await self._rate_limit(0.5)  # NPI API is generous with rate limits
 
         # Build query parameters
-        params = {
-            "version": "2.1",
-            "limit": min(limit, 200)
-        }
+        params = {"version": "2.1", "limit": min(limit, 200)}
 
         if skip > 0:
             params["skip"] = skip
@@ -510,7 +523,9 @@ class ProfessionalLicensesAPI:
             logger.error(f"NPI search error: {e}")
             return []
 
-    def _parse_npi_result(self, result: Dict[str, Any]) -> Optional[ProfessionalLicense]:
+    def _parse_npi_result(
+        self, result: Dict[str, Any]
+    ) -> Optional[ProfessionalLicense]:
         """Parse NPI API result into ProfessionalLicense."""
         try:
             npi_number = result.get("number", "")
@@ -627,7 +642,7 @@ class ProfessionalLicensesAPI:
                 last_updated=last_updated,
                 data_source="NPI Registry",
                 source_url=f"https://npiregistry.cms.hhs.gov/provider-view/{npi_number}",
-                raw_data=result
+                raw_data=result,
             )
 
         except Exception as e:
@@ -698,7 +713,7 @@ class ProfessionalLicensesAPI:
             "provider_name": None,
             "provider_type": None,
             "state": None,
-            "error": None
+            "error": None,
         }
 
         license = await self.get_npi_details(npi)
@@ -718,8 +733,7 @@ class ProfessionalLicensesAPI:
             name_lower = name.lower()
             licensee_lower = license.licensee_name.lower()
             result["name_match"] = (
-                name_lower in licensee_lower or
-                licensee_lower in name_lower
+                name_lower in licensee_lower or licensee_lower in name_lower
             )
 
         return result
@@ -737,7 +751,7 @@ class ProfessionalLicensesAPI:
         state: str = "",
         company_name: str = "",
         company_nmls_id: str = "",
-        limit: int = 50
+        limit: int = 50,
     ) -> List[ProfessionalLicense]:
         """
         Search NMLS Consumer Access for mortgage professionals.
@@ -773,13 +787,17 @@ class ProfessionalLicensesAPI:
         if nmls_id:
             # Direct lookup by NMLS ID - construct the profile URL
             profile_url = f"{self.NMLS_BASE_URL}/EntityDetails.aspx/COMPANY/{nmls_id}"
-            individual_url = f"{self.NMLS_BASE_URL}/EntityDetails.aspx/INDIVIDUAL/{nmls_id}"
+            individual_url = (
+                f"{self.NMLS_BASE_URL}/EntityDetails.aspx/INDIVIDUAL/{nmls_id}"
+            )
 
             try:
                 session = await self._get_session()
 
                 # Try individual first
-                async with session.get(individual_url, allow_redirects=True) as response:
+                async with session.get(
+                    individual_url, allow_redirects=True
+                ) as response:
                     if response.status == 200:
                         text = await response.text()
                         license = self._parse_nmls_page(text, nmls_id, "INDIVIDUAL")
@@ -788,7 +806,9 @@ class ProfessionalLicensesAPI:
 
                 # If not individual, try company
                 if not licenses:
-                    async with session.get(profile_url, allow_redirects=True) as response:
+                    async with session.get(
+                        profile_url, allow_redirects=True
+                    ) as response:
                         if response.status == 200:
                             text = await response.text()
                             license = self._parse_nmls_page(text, nmls_id, "COMPANY")
@@ -815,18 +835,15 @@ class ProfessionalLicensesAPI:
                 raw_data={
                     "search_instructions": "Visit source_url and search manually",
                     "search_name": search_name,
-                    "search_state": state
-                }
+                    "search_state": state,
+                },
             )
             licenses.append(license)
 
         return licenses
 
     def _parse_nmls_page(
-        self,
-        html: str,
-        nmls_id: str,
-        entity_type: str
+        self, html: str, nmls_id: str, entity_type: str
     ) -> Optional[ProfessionalLicense]:
         """Parse NMLS profile page HTML."""
         try:
@@ -837,12 +854,14 @@ class ProfessionalLicensesAPI:
             # Extract name (usually in a header or specific div)
             name_match = re.search(
                 r'<h\d[^>]*class="[^"]*entity-name[^"]*"[^>]*>([^<]+)</h\d>',
-                html, re.IGNORECASE
+                html,
+                re.IGNORECASE,
             )
             if not name_match:
                 name_match = re.search(
                     r'<span[^>]*id="[^"]*EntityName[^"]*"[^>]*>([^<]+)</span>',
-                    html, re.IGNORECASE
+                    html,
+                    re.IGNORECASE,
                 )
 
             name = name_match.group(1).strip() if name_match else f"NMLS #{nmls_id}"
@@ -855,18 +874,19 @@ class ProfessionalLicensesAPI:
 
             # Extract status if visible
             status = LicenseStatus.UNKNOWN
-            if re.search(r'\bactive\b', html, re.IGNORECASE):
+            if re.search(r"\bactive\b", html, re.IGNORECASE):
                 status = LicenseStatus.ACTIVE
-            elif re.search(r'\binactive\b', html, re.IGNORECASE):
+            elif re.search(r"\binactive\b", html, re.IGNORECASE):
                 status = LicenseStatus.INACTIVE
-            elif re.search(r'\bsurrendered\b', html, re.IGNORECASE):
+            elif re.search(r"\bsurrendered\b", html, re.IGNORECASE):
                 status = LicenseStatus.SURRENDERED
 
             # Extract state licenses
             states = []
             state_matches = re.findall(
-                r'<td[^>]*>([A-Z]{2})</td>\s*<td[^>]*>(Active|Inactive|Approved)',
-                html, re.IGNORECASE
+                r"<td[^>]*>([A-Z]{2})</td>\s*<td[^>]*>(Active|Inactive|Approved)",
+                html,
+                re.IGNORECASE,
             )
             for st, st_status in state_matches:
                 if st_status.lower() == "active":
@@ -881,7 +901,7 @@ class ProfessionalLicensesAPI:
                 nmls_id=nmls_id,
                 data_source="NMLS Consumer Access",
                 source_url=f"{self.NMLS_BASE_URL}/EntityDetails.aspx/{entity_type}/{nmls_id}",
-                raw_data={"entity_type": entity_type, "licensed_states": states}
+                raw_data={"entity_type": entity_type, "licensed_states": states},
             )
 
         except Exception as e:
@@ -889,10 +909,7 @@ class ProfessionalLicensesAPI:
             return None
 
     async def verify_nmls(
-        self,
-        nmls_id: str,
-        name: str = "",
-        state: str = ""
+        self, nmls_id: str, name: str = "", state: str = ""
     ) -> Dict[str, Any]:
         """
         Verify a mortgage professional's NMLS status.
@@ -912,14 +929,16 @@ class ProfessionalLicensesAPI:
             "name_match": None,
             "profile_name": None,
             "profile_url": None,
-            "error": None
+            "error": None,
         }
 
         licenses = await self.search_nmls(nmls_id=nmls_id)
 
         if not licenses or licenses[0].license_number == "SEARCH_REQUIRED":
             result["error"] = "NMLS ID not found or requires manual verification"
-            result["profile_url"] = f"{self.NMLS_BASE_URL}/EntityDetails.aspx/INDIVIDUAL/{nmls_id}"
+            result["profile_url"] = (
+                f"{self.NMLS_BASE_URL}/EntityDetails.aspx/INDIVIDUAL/{nmls_id}"
+            )
             return result
 
         license = licenses[0]
@@ -934,8 +953,7 @@ class ProfessionalLicensesAPI:
             name_lower = name.lower()
             licensee_lower = license.licensee_name.lower()
             result["name_match"] = (
-                name_lower in licensee_lower or
-                licensee_lower in name_lower
+                name_lower in licensee_lower or licensee_lower in name_lower
             )
 
         if state and state.upper() not in active_states:
@@ -956,7 +974,7 @@ class ProfessionalLicensesAPI:
         license_number: str = "",
         license_type: LicenseType = None,
         include_inactive: bool = False,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[ProfessionalLicense]:
         """
         Search state licensing board for professional licenses.
@@ -979,7 +997,9 @@ class ProfessionalLicensesAPI:
 
         if state not in STATE_LICENSE_CONFIGS:
             logger.warning(f"State {state} not configured, using generic search")
-            return self._create_generic_state_search(state, name, license_number, license_type)
+            return self._create_generic_state_search(
+                state, name, license_number, license_type
+            )
 
         config = STATE_LICENSE_CONFIGS[state]
         licenses = []
@@ -987,15 +1007,24 @@ class ProfessionalLicensesAPI:
         # Determine which board to use based on license type
         board_key = None
         if license_type:
-            if license_type in [LicenseType.REAL_ESTATE_AGENT, LicenseType.REAL_ESTATE_BROKER]:
+            if license_type in [
+                LicenseType.REAL_ESTATE_AGENT,
+                LicenseType.REAL_ESTATE_BROKER,
+            ]:
                 board_key = "real_estate"
-            elif license_type in [LicenseType.GENERAL_CONTRACTOR, LicenseType.ELECTRICIAN, LicenseType.PLUMBER]:
+            elif license_type in [
+                LicenseType.GENERAL_CONTRACTOR,
+                LicenseType.ELECTRICIAN,
+                LicenseType.PLUMBER,
+            ]:
                 board_key = "contractors"
             elif license_type in [LicenseType.PHYSICIAN, LicenseType.NURSE]:
                 board_key = "medical"
 
         # Search specific board or all boards
-        boards_to_search = [board_key] if board_key else list(config.get("boards", {}).keys())
+        boards_to_search = (
+            [board_key] if board_key else list(config.get("boards", {}).keys())
+        )
 
         for board in boards_to_search:
             board_config = config.get("boards", {}).get(board, {})
@@ -1025,7 +1054,7 @@ class ProfessionalLicensesAPI:
         board_config: Dict[str, Any],
         name: str,
         license_number: str,
-        limit: int
+        limit: int,
     ) -> List[ProfessionalLicense]:
         """Search state API where available."""
         licenses = []
@@ -1056,12 +1085,14 @@ class ProfessionalLicensesAPI:
 
         return licenses
 
-    def _parse_florida_results(self, html: str, state: str) -> List[ProfessionalLicense]:
+    def _parse_florida_results(
+        self, html: str, state: str
+    ) -> List[ProfessionalLicense]:
         """Parse Florida MyFloridaLicense search results."""
         licenses = []
 
         # Look for license rows in the results table
-        pattern = r'<tr[^>]*>\s*<td[^>]*>([^<]+)</td>\s*<td[^>]*>([^<]+)</td>\s*<td[^>]*>([^<]+)</td>'
+        pattern = r"<tr[^>]*>\s*<td[^>]*>([^<]+)</td>\s*<td[^>]*>([^<]+)</td>\s*<td[^>]*>([^<]+)</td>"
         matches = re.findall(pattern, html, re.IGNORECASE)
 
         for match in matches:
@@ -1071,17 +1102,23 @@ class ProfessionalLicensesAPI:
                 status_text = match[2].strip()
 
                 if name and license_num and "license" not in name.lower():
-                    status = LicenseStatus.ACTIVE if "active" in status_text.lower() else LicenseStatus.INACTIVE
+                    status = (
+                        LicenseStatus.ACTIVE
+                        if "active" in status_text.lower()
+                        else LicenseStatus.INACTIVE
+                    )
 
-                    licenses.append(ProfessionalLicense(
-                        license_number=license_num,
-                        license_type=LicenseType.REAL_ESTATE_AGENT,
-                        licensee_name=name,
-                        state=state,
-                        status=status,
-                        data_source="Florida DBPR",
-                        source_url=f"https://www.myfloridalicense.com/wl11.asp?mode=1&search=LicNbr&SID=&brd=&typ=N&LicNbr={license_num}"
-                    ))
+                    licenses.append(
+                        ProfessionalLicense(
+                            license_number=license_num,
+                            license_type=LicenseType.REAL_ESTATE_AGENT,
+                            licensee_name=name,
+                            state=state,
+                            status=status,
+                            data_source="Florida DBPR",
+                            source_url=f"https://www.myfloridalicense.com/wl11.asp?mode=1&search=LicNbr&SID=&brd=&typ=N&LicNbr={license_num}",
+                        )
+                    )
 
         return licenses
 
@@ -1092,10 +1129,12 @@ class ProfessionalLicensesAPI:
         board_config: Dict[str, Any],
         name: str,
         license_number: str,
-        license_type: LicenseType
+        license_type: LicenseType,
     ) -> ProfessionalLicense:
         """Create guidance for manual state license lookup."""
-        board_name = board_config.get("name", f"{state} {board.replace('_', ' ').title()}")
+        board_name = board_config.get(
+            "name", f"{state} {board.replace('_', ' ').title()}"
+        )
         url = board_config.get("url", "")
 
         return ProfessionalLicense(
@@ -1111,59 +1150,63 @@ class ProfessionalLicensesAPI:
                 "board_name": board_name,
                 "search_name": name,
                 "search_license": license_number,
-                "state": state
-            }
+                "state": state,
+            },
         )
 
     def _create_generic_state_search(
-        self,
-        state: str,
-        name: str,
-        license_number: str,
-        license_type: LicenseType
+        self, state: str, name: str, license_number: str, license_type: LicenseType
     ) -> List[ProfessionalLicense]:
         """Create generic search guidance for unconfigured states."""
         # Common search URL patterns
         search_urls = {
             "real_estate": f"https://www.google.com/search?q={state}+real+estate+commission+license+lookup",
             "contractors": f"https://www.google.com/search?q={state}+contractor+license+verification",
-            "medical": f"https://www.google.com/search?q={state}+medical+board+license+lookup"
+            "medical": f"https://www.google.com/search?q={state}+medical+board+license+lookup",
         }
 
         board_type = "general"
         if license_type:
-            if license_type in [LicenseType.REAL_ESTATE_AGENT, LicenseType.REAL_ESTATE_BROKER]:
+            if license_type in [
+                LicenseType.REAL_ESTATE_AGENT,
+                LicenseType.REAL_ESTATE_BROKER,
+            ]:
                 board_type = "real_estate"
-            elif license_type in [LicenseType.GENERAL_CONTRACTOR, LicenseType.ELECTRICIAN]:
+            elif license_type in [
+                LicenseType.GENERAL_CONTRACTOR,
+                LicenseType.ELECTRICIAN,
+            ]:
                 board_type = "contractors"
             elif license_type in [LicenseType.PHYSICIAN, LicenseType.NURSE]:
                 board_type = "medical"
 
-        url = search_urls.get(board_type, search_urls["general"] if "general" in search_urls else "")
+        url = search_urls.get(
+            board_type, search_urls["general"] if "general" in search_urls else ""
+        )
 
-        return [ProfessionalLicense(
-            license_number="STATE_LOOKUP_REQUIRED",
-            license_type=license_type or LicenseType.OTHER,
-            licensee_name=name or "Search Required",
-            state=state,
-            status=LicenseStatus.UNKNOWN,
-            data_source=f"{state} Licensing Board",
-            source_url=url or f"https://www.google.com/search?q={state}+professional+license+lookup",
-            raw_data={
-                "search_instructions": "State not configured - use search URL to find licensing board",
-                "search_name": name,
-                "search_license": license_number
-            }
-        )]
+        return [
+            ProfessionalLicense(
+                license_number="STATE_LOOKUP_REQUIRED",
+                license_type=license_type or LicenseType.OTHER,
+                licensee_name=name or "Search Required",
+                state=state,
+                status=LicenseStatus.UNKNOWN,
+                data_source=f"{state} Licensing Board",
+                source_url=url
+                or f"https://www.google.com/search?q={state}+professional+license+lookup",
+                raw_data={
+                    "search_instructions": "State not configured - use search URL to find licensing board",
+                    "search_name": name,
+                    "search_license": license_number,
+                },
+            )
+        ]
 
     # =========================================================================
     # Unified Search Interface
     # =========================================================================
 
-    async def search_licenses(
-        self,
-        search: LicenseSearch
-    ) -> List[ProfessionalLicense]:
+    async def search_licenses(self, search: LicenseSearch) -> List[ProfessionalLicense]:
         """
         Unified search across all license databases.
 
@@ -1185,18 +1228,30 @@ class ProfessionalLicensesAPI:
 
         # Healthcare - search NPI
         healthcare_types = [
-            LicenseType.PHYSICIAN, LicenseType.NURSE, LicenseType.NURSE_PRACTITIONER,
-            LicenseType.DENTIST, LicenseType.PHARMACIST, LicenseType.PHYSICAL_THERAPIST,
-            LicenseType.PSYCHOLOGIST, LicenseType.CHIROPRACTOR, LicenseType.OPTOMETRIST,
-            LicenseType.PODIATRIST
+            LicenseType.PHYSICIAN,
+            LicenseType.NURSE,
+            LicenseType.NURSE_PRACTITIONER,
+            LicenseType.DENTIST,
+            LicenseType.PHARMACIST,
+            LicenseType.PHYSICAL_THERAPIST,
+            LicenseType.PSYCHOLOGIST,
+            LicenseType.CHIROPRACTOR,
+            LicenseType.OPTOMETRIST,
+            LicenseType.PODIATRIST,
         ]
 
         mortgage_types = [
-            LicenseType.LOAN_OFFICER, LicenseType.MORTGAGE_BROKER, LicenseType.MORTGAGE_LENDER
+            LicenseType.LOAN_OFFICER,
+            LicenseType.MORTGAGE_BROKER,
+            LicenseType.MORTGAGE_LENDER,
         ]
 
-        search_healthcare = license_type in healthcare_types if license_type else search.npi
-        search_mortgage = license_type in mortgage_types if license_type else search.nmls_id
+        search_healthcare = (
+            license_type in healthcare_types if license_type else search.npi
+        )
+        search_mortgage = (
+            license_type in mortgage_types if license_type else search.nmls_id
+        )
         search_state = not search_healthcare and not search_mortgage
 
         if search.npi:
@@ -1213,7 +1268,7 @@ class ProfessionalLicensesAPI:
                 state=search.state or "",
                 city=search.city or "",
                 zip_code=search.zip_code or "",
-                limit=search.limit
+                limit=search.limit,
             )
             results.extend(npi_results)
 
@@ -1229,7 +1284,7 @@ class ProfessionalLicensesAPI:
                 last_name=search.last_name or "",
                 state=search.state or "",
                 company_name=search.employer_name or "",
-                limit=search.limit
+                limit=search.limit,
             )
             results.extend(nmls_results)
 
@@ -1237,11 +1292,12 @@ class ProfessionalLicensesAPI:
             # State license board search
             state_results = await self.search_state_licenses(
                 state=search.state,
-                name=search.name or f"{search.first_name or ''} {search.last_name or ''}".strip(),
+                name=search.name
+                or f"{search.first_name or ''} {search.last_name or ''}".strip(),
                 license_number=search.license_number or "",
                 license_type=license_type,
                 include_inactive=search.include_inactive,
-                limit=search.limit
+                limit=search.limit,
             )
             results.extend(state_results)
 
@@ -1249,14 +1305,14 @@ class ProfessionalLicensesAPI:
         if search.status and not search.include_inactive:
             results = [r for r in results if r.status == search.status]
 
-        return results[:search.limit]
+        return results[: search.limit]
 
     async def verify_license(
         self,
         license_number: str,
         license_type: LicenseType,
         state: str = "",
-        licensee_name: str = ""
+        licensee_name: str = "",
     ) -> Dict[str, Any]:
         """
         Verify a professional license.
@@ -1271,12 +1327,17 @@ class ProfessionalLicensesAPI:
             Verification result dict
         """
         healthcare_types = [
-            LicenseType.PHYSICIAN, LicenseType.NURSE, LicenseType.NURSE_PRACTITIONER,
-            LicenseType.DENTIST, LicenseType.PHARMACIST
+            LicenseType.PHYSICIAN,
+            LicenseType.NURSE,
+            LicenseType.NURSE_PRACTITIONER,
+            LicenseType.DENTIST,
+            LicenseType.PHARMACIST,
         ]
 
         mortgage_types = [
-            LicenseType.LOAN_OFFICER, LicenseType.MORTGAGE_BROKER, LicenseType.MORTGAGE_LENDER
+            LicenseType.LOAN_OFFICER,
+            LicenseType.MORTGAGE_BROKER,
+            LicenseType.MORTGAGE_LENDER,
         ]
 
         if license_type in healthcare_types:
@@ -1290,7 +1351,7 @@ class ProfessionalLicensesAPI:
                 license_type=license_type,
                 state=state,
                 name=licensee_name,
-                exact_match=True
+                exact_match=True,
             )
             results = await self.search_licenses(search)
 
@@ -1298,7 +1359,7 @@ class ProfessionalLicensesAPI:
                 return {
                     "license_number": license_number,
                     "verified": False,
-                    "error": "License not found"
+                    "error": "License not found",
                 }
 
             license = results[0]
@@ -1308,17 +1369,27 @@ class ProfessionalLicensesAPI:
                 "active": license.is_active,
                 "status": license.status.value,
                 "licensee_name": license.licensee_name,
-                "expiration_date": license.expiration_date.isoformat() if license.expiration_date else None,
-                "source": license.data_source
+                "expiration_date": (
+                    license.expiration_date.isoformat()
+                    if license.expiration_date
+                    else None
+                ),
+                "source": license.data_source,
             }
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get API usage statistics."""
         return {
             "request_count": self.request_count,
-            "last_request_time": self.last_request_time.isoformat() if self.last_request_time else None,
+            "last_request_time": (
+                self.last_request_time.isoformat() if self.last_request_time else None
+            ),
             "configured_states": list(STATE_LICENSE_CONFIGS.keys()),
-            "supported_sources": ["NPI Registry", "NMLS Consumer Access", "State Boards"]
+            "supported_sources": [
+                "NPI Registry",
+                "NMLS Consumer Access",
+                "State Boards",
+            ],
         }
 
 
@@ -1326,13 +1397,14 @@ class ProfessionalLicensesAPI:
 # Synchronous Wrappers
 # =============================================================================
 
+
 def search_healthcare_providers(
     first_name: str = "",
     last_name: str = "",
     organization_name: str = "",
     state: str = "",
     specialty: str = "",
-    limit: int = 50
+    limit: int = 50,
 ) -> List[ProfessionalLicense]:
     """
     Search for healthcare providers in the NPI Registry.
@@ -1360,7 +1432,7 @@ def search_healthcare_providers(
                 organization_name=organization_name,
                 state=state,
                 taxonomy_description=specialty,
-                limit=limit
+                limit=limit,
             )
             return results
         finally:
@@ -1412,9 +1484,7 @@ def verify_npi_number(npi: str, name: str = "") -> Dict[str, Any]:
 
 
 def search_mortgage_professionals(
-    nmls_id: str = "",
-    name: str = "",
-    state: str = ""
+    nmls_id: str = "", name: str = "", state: str = ""
 ) -> List[ProfessionalLicense]:
     """
     Search for mortgage professionals in NMLS.
@@ -1433,11 +1503,7 @@ def search_mortgage_professionals(
 
     async def _search():
         try:
-            return await api.search_nmls(
-                nmls_id=nmls_id,
-                name=name,
-                state=state
-            )
+            return await api.search_nmls(nmls_id=nmls_id, name=name, state=state)
         finally:
             await api.close()
 
@@ -1453,7 +1519,9 @@ def search_mortgage_professionals(
         return asyncio.run(_search())
 
 
-def verify_nmls_license(nmls_id: str, name: str = "", state: str = "") -> Dict[str, Any]:
+def verify_nmls_license(
+    nmls_id: str, name: str = "", state: str = ""
+) -> Dict[str, Any]:
     """
     Verify a mortgage professional's NMLS license.
 
@@ -1491,7 +1559,7 @@ def search_professional_licenses(
     name: str,
     license_types: List[LicenseType] = None,
     states: List[str] = None,
-    include_inactive: bool = False
+    include_inactive: bool = False,
 ) -> List[ProfessionalLicense]:
     """
     Search for professional licenses across multiple sources.
@@ -1520,7 +1588,7 @@ def search_professional_licenses(
             # Search each combination
             types_to_search = license_types or [
                 LicenseType.PHYSICIAN,
-                LicenseType.LOAN_OFFICER
+                LicenseType.LOAN_OFFICER,
             ]
             states_to_search = states or [""]
 
@@ -1533,7 +1601,7 @@ def search_professional_licenses(
                         license_type=license_type,
                         state=state,
                         include_inactive=include_inactive,
-                        limit=50
+                        limit=50,
                     )
                     results = await api.search_licenses(search)
                     all_results.extend(results)
@@ -1558,7 +1626,7 @@ def verify_professional_license(
     license_number: str,
     license_type: LicenseType,
     state: str,
-    licensee_name: str = None
+    licensee_name: str = None,
 ) -> Dict[str, Any]:
     """
     Verify a professional license.
@@ -1582,7 +1650,7 @@ def verify_professional_license(
                 license_number=license_number,
                 license_type=license_type,
                 state=state,
-                licensee_name=licensee_name or ""
+                licensee_name=licensee_name or "",
             )
         finally:
             await api.close()
@@ -1603,6 +1671,7 @@ def verify_professional_license(
 # Legacy Abstract Base Classes (for backward compatibility)
 # =============================================================================
 
+
 class ProfessionalLicensesScraper(ABC):
     """
     Abstract base class for professional license scrapers.
@@ -1614,7 +1683,9 @@ class ProfessionalLicensesScraper(ABC):
     def __init__(self, state_code: str = None, config: Dict[str, Any] = None):
         self.state_code = state_code.upper() if state_code else None
         self.config = config or {}
-        logger.info(f"Initialized ProfessionalLicensesScraper for {state_code or 'national'}")
+        logger.info(
+            f"Initialized ProfessionalLicensesScraper for {state_code or 'national'}"
+        )
 
     @abstractmethod
     def search_licenses(self, search: LicenseSearch) -> List[ProfessionalLicense]:
@@ -1630,71 +1701,80 @@ class ProfessionalLicensesScraper(ABC):
 
     def parse_license_status(self, status_text: str) -> LicenseStatus:
         status_lower = status_text.lower().strip()
-        if any(s in status_lower for s in ['active', 'current', 'valid', 'good standing']):
+        if any(
+            s in status_lower for s in ["active", "current", "valid", "good standing"]
+        ):
             return LicenseStatus.ACTIVE
-        elif any(s in status_lower for s in ['inactive', 'not active']):
+        elif any(s in status_lower for s in ["inactive", "not active"]):
             return LicenseStatus.INACTIVE
-        elif 'expired' in status_lower:
+        elif "expired" in status_lower:
             return LicenseStatus.EXPIRED
-        elif 'suspended' in status_lower:
+        elif "suspended" in status_lower:
             return LicenseStatus.SUSPENDED
-        elif 'revoked' in status_lower:
+        elif "revoked" in status_lower:
             return LicenseStatus.REVOKED
-        elif 'surrendered' in status_lower:
+        elif "surrendered" in status_lower:
             return LicenseStatus.SURRENDERED
-        elif 'pending' in status_lower:
+        elif "pending" in status_lower:
             return LicenseStatus.PENDING
-        elif 'probation' in status_lower:
+        elif "probation" in status_lower:
             return LicenseStatus.PROBATION
-        elif 'deceased' in status_lower:
+        elif "deceased" in status_lower:
             return LicenseStatus.DECEASED
         return LicenseStatus.UNKNOWN
 
     def classify_license_type(self, license_text: str) -> LicenseType:
         text_lower = license_text.lower()
-        if 'real estate' in text_lower:
-            if 'broker' in text_lower:
+        if "real estate" in text_lower:
+            if "broker" in text_lower:
                 return LicenseType.REAL_ESTATE_BROKER
-            elif 'appraiser' in text_lower:
+            elif "appraiser" in text_lower:
                 return LicenseType.REAL_ESTATE_APPRAISER
             return LicenseType.REAL_ESTATE_AGENT
-        if any(t in text_lower for t in ['loan officer', 'mlo', 'mortgage loan originator']):
+        if any(
+            t in text_lower for t in ["loan officer", "mlo", "mortgage loan originator"]
+        ):
             return LicenseType.LOAN_OFFICER
-        if 'mortgage broker' in text_lower:
+        if "mortgage broker" in text_lower:
             return LicenseType.MORTGAGE_BROKER
-        if any(t in text_lower for t in ['attorney', 'lawyer', 'counsel']):
+        if any(t in text_lower for t in ["attorney", "lawyer", "counsel"]):
             return LicenseType.ATTORNEY
-        if 'notary' in text_lower:
+        if "notary" in text_lower:
             return LicenseType.NOTARY
-        if 'general contractor' in text_lower:
+        if "general contractor" in text_lower:
             return LicenseType.GENERAL_CONTRACTOR
-        if 'electrician' in text_lower:
+        if "electrician" in text_lower:
             return LicenseType.ELECTRICIAN
-        if 'plumber' in text_lower:
+        if "plumber" in text_lower:
             return LicenseType.PLUMBER
-        if any(t in text_lower for t in ['physician', 'doctor', 'md']):
+        if any(t in text_lower for t in ["physician", "doctor", "md"]):
             return LicenseType.PHYSICIAN
-        if 'nurse' in text_lower:
+        if "nurse" in text_lower:
             return LicenseType.NURSE
-        if 'dentist' in text_lower:
+        if "dentist" in text_lower:
             return LicenseType.DENTIST
-        if 'pharmacist' in text_lower:
+        if "pharmacist" in text_lower:
             return LicenseType.PHARMACIST
-        if 'cpa' in text_lower or 'accountant' in text_lower:
+        if "cpa" in text_lower or "accountant" in text_lower:
             return LicenseType.CPA
-        if 'insurance' in text_lower:
+        if "insurance" in text_lower:
             return LicenseType.INSURANCE_AGENT
         return LicenseType.OTHER
 
     def normalize_name(self, name: str) -> str:
-        name = re.sub(r'\b(jr|sr|ii|iii|iv|md|dds|esq|phd|rn|np)\b\.?', '', name, flags=re.IGNORECASE)
-        name = ' '.join(name.split())
+        name = re.sub(
+            r"\b(jr|sr|ii|iii|iv|md|dds|esq|phd|rn|np)\b\.?",
+            "",
+            name,
+            flags=re.IGNORECASE,
+        )
+        name = " ".join(name.split())
         return name.strip()
 
     def parse_date(self, date_str: str) -> Optional[date]:
         if not date_str:
             return None
-        formats = ['%Y-%m-%d', '%m/%d/%Y', '%m-%d-%Y', '%Y%m%d', '%d-%b-%Y']
+        formats = ["%Y-%m-%d", "%m/%d/%Y", "%m-%d-%Y", "%Y%m%d", "%d-%b-%Y"]
         for fmt in formats:
             try:
                 return datetime.strptime(date_str.strip(), fmt).date()
@@ -1704,29 +1784,37 @@ class ProfessionalLicensesScraper(ABC):
 
     def get_statistics(self) -> Dict[str, Any]:
         return {
-            'state': self.state_code,
-            'scraper_class': self.__class__.__name__,
+            "state": self.state_code,
+            "scraper_class": self.__class__.__name__,
         }
 
 
 class StateLicenseBoardScraper(ProfessionalLicensesScraper):
     """Generic state licensing board scraper - DEPRECATED."""
 
-    def __init__(self, state_code: str, license_type: LicenseType, config: Dict[str, Any] = None):
+    def __init__(
+        self, state_code: str, license_type: LicenseType, config: Dict[str, Any] = None
+    ):
         super().__init__(state_code=state_code, config=config)
         self.license_type = license_type
-        self.base_url = config.get('base_url', '') if config else ''
+        self.base_url = config.get("base_url", "") if config else ""
 
     def search_licenses(self, search: LicenseSearch) -> List[ProfessionalLicense]:
-        logger.warning("StateLicenseBoardScraper.search_licenses is deprecated - use ProfessionalLicensesAPI")
+        logger.warning(
+            "StateLicenseBoardScraper.search_licenses is deprecated - use ProfessionalLicensesAPI"
+        )
         return []
 
     def get_license_details(self, license_number: str) -> Optional[ProfessionalLicense]:
-        logger.warning("StateLicenseBoardScraper.get_license_details is deprecated - use ProfessionalLicensesAPI")
+        logger.warning(
+            "StateLicenseBoardScraper.get_license_details is deprecated - use ProfessionalLicensesAPI"
+        )
         return None
 
     def verify_license(self, license_number: str, licensee_name: str = None) -> bool:
-        logger.warning("StateLicenseBoardScraper.verify_license is deprecated - use ProfessionalLicensesAPI")
+        logger.warning(
+            "StateLicenseBoardScraper.verify_license is deprecated - use ProfessionalLicensesAPI"
+        )
         return False
 
 
@@ -1739,14 +1827,17 @@ class NMLSScraper(ProfessionalLicensesScraper):
         super().__init__(state_code=None, config=config)
 
     def search_licenses(self, search: LicenseSearch) -> List[ProfessionalLicense]:
-        logger.warning("NMLSScraper.search_licenses is deprecated - use ProfessionalLicensesAPI")
+        logger.warning(
+            "NMLSScraper.search_licenses is deprecated - use ProfessionalLicensesAPI"
+        )
         return search_mortgage_professionals(
-            nmls_id=search.nmls_id or "",
-            name=search.name or ""
+            nmls_id=search.nmls_id or "", name=search.name or ""
         )
 
     def get_license_details(self, license_number: str) -> Optional[ProfessionalLicense]:
-        logger.warning("NMLSScraper.get_license_details is deprecated - use ProfessionalLicensesAPI")
+        logger.warning(
+            "NMLSScraper.get_license_details is deprecated - use ProfessionalLicensesAPI"
+        )
         results = search_mortgage_professionals(nmls_id=license_number)
         return results[0] if results else None
 

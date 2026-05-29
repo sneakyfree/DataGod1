@@ -2,9 +2,10 @@
 Tests for BaseScraper class
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
 import json
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestBaseScraperInitialization:
@@ -19,11 +20,7 @@ class TestBaseScraperInitialization:
             def scrape(self, **kwargs):
                 return []
 
-        scraper = TestScraper(
-            base_url="https://example.com",
-            delay=0.5,
-            timeout=60
-        )
+        scraper = TestScraper(base_url="https://example.com", delay=0.5, timeout=60)
 
         assert scraper.base_url == "https://example.com"
         assert scraper.delay == 0.5
@@ -81,11 +78,11 @@ class TestMakeRequest:
 
         scraper = TestScraper(base_url="https://example.com", delay=0)
 
-        with patch.object(scraper.session, 'get') as mock_get:
+        with patch.object(scraper.session, "get") as mock_get:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"data": "test"}
-            mock_response.headers = {'Content-Type': 'application/json'}
+            mock_response.headers = {"Content-Type": "application/json"}
             mock_response.raise_for_status = MagicMock()
             mock_get.return_value = mock_response
 
@@ -105,7 +102,7 @@ class TestMakeRequest:
 
         scraper = TestScraper(base_url="https://example.com", delay=0)
 
-        with patch.object(scraper.session, 'post') as mock_post:
+        with patch.object(scraper.session, "post") as mock_post:
             mock_response = MagicMock()
             mock_response.status_code = 201
             mock_response.json.return_value = {"created": True}
@@ -126,7 +123,7 @@ class TestMakeRequest:
 
         scraper = TestScraper(base_url="https://example.com", delay=0)
 
-        with patch.object(scraper.session, 'get') as mock_get:
+        with patch.object(scraper.session, "get") as mock_get:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.side_effect = ValueError("Invalid JSON")
@@ -155,8 +152,9 @@ class TestMakeRequest:
 
     def test_make_request_handles_request_exception(self):
         """Test request handles exceptions gracefully"""
-        from datagod.scrapers.base_scraper import BaseScraper
         import requests
+
+        from datagod.scrapers.base_scraper import BaseScraper
 
         class TestScraper(BaseScraper):
             def scrape(self, **kwargs):
@@ -164,8 +162,10 @@ class TestMakeRequest:
 
         scraper = TestScraper(base_url="https://example.com", delay=0)
 
-        with patch.object(scraper.session, 'get') as mock_get:
-            mock_get.side_effect = requests.exceptions.ConnectionError("Connection failed")
+        with patch.object(scraper.session, "get") as mock_get:
+            mock_get.side_effect = requests.exceptions.ConnectionError(
+                "Connection failed"
+            )
 
             result = scraper._make_request("https://example.com/api")
 
@@ -263,7 +263,7 @@ class TestValidateData:
         data = {
             "source": "test_source",
             "scraped_at": "2024-01-01T00:00:00",
-            "data": {"record": "value"}
+            "data": {"record": "value"},
         }
         assert scraper.validate_data(data) is True
 
@@ -324,12 +324,12 @@ class TestExtractLinks:
 
         scraper = TestScraper(base_url="https://example.com")
 
-        html = '''
+        html = """
         <html>
             <a href="https://other.com/page">External</a>
             <a href="http://another.com/path">Another</a>
         </html>
-        '''
+        """
 
         links = scraper._extract_links(html, "https://example.com")
 
@@ -346,12 +346,12 @@ class TestExtractLinks:
 
         scraper = TestScraper(base_url="https://example.com")
 
-        html = '''
+        html = """
         <html>
             <a href="/page1">Page 1</a>
             <a href="page2">Page 2</a>
         </html>
-        '''
+        """
 
         links = scraper._extract_links(html, "https://example.com")
 

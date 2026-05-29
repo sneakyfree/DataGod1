@@ -10,28 +10,30 @@ Features:
 - Financial reasonableness checks
 """
 
-import re
 import logging
-from datetime import date, datetime, timedelta
+import re
 from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional, Callable, Tuple
+from datetime import date, datetime, timedelta
 from enum import Enum
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 
 class RuleSeverity(Enum):
     """Severity levels for rule violations"""
-    CRITICAL = "critical"    # Data is invalid
-    HIGH = "high"            # Likely data error
-    MEDIUM = "medium"        # Possible issue
-    LOW = "low"              # Minor concern
-    INFO = "info"            # Informational only
+
+    CRITICAL = "critical"  # Data is invalid
+    HIGH = "high"  # Likely data error
+    MEDIUM = "medium"  # Possible issue
+    LOW = "low"  # Minor concern
+    INFO = "info"  # Informational only
 
 
 @dataclass
 class RuleViolation:
     """Represents a business rule violation"""
+
     rule_id: str
     rule_name: str
     message: str
@@ -43,49 +45,58 @@ class RuleViolation:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'rule_id': self.rule_id,
-            'rule_name': self.rule_name,
-            'message': self.message,
-            'severity': self.severity.value,
-            'field': self.field,
-            'actual_value': str(self.actual_value) if self.actual_value else None,
-            'expected_range': self.expected_range,
+            "rule_id": self.rule_id,
+            "rule_name": self.rule_name,
+            "message": self.message,
+            "severity": self.severity.value,
+            "field": self.field,
+            "actual_value": str(self.actual_value) if self.actual_value else None,
+            "expected_range": self.expected_range,
         }
 
 
 @dataclass
 class RuleResult:
     """Result of business rule validation"""
+
     is_valid: bool = True
     violations: List[RuleViolation] = field(default_factory=list)
     record_type: Optional[str] = None
     record_id: Optional[str] = None
 
-    def add_violation(self, rule_id: str, rule_name: str, message: str,
-                      severity: RuleSeverity = RuleSeverity.MEDIUM,
-                      field: str = None, actual_value: Any = None,
-                      expected_range: str = None):
+    def add_violation(
+        self,
+        rule_id: str,
+        rule_name: str,
+        message: str,
+        severity: RuleSeverity = RuleSeverity.MEDIUM,
+        field: str = None,
+        actual_value: Any = None,
+        expected_range: str = None,
+    ):
         """Add a violation"""
-        self.violations.append(RuleViolation(
-            rule_id=rule_id,
-            rule_name=rule_name,
-            message=message,
-            severity=severity,
-            field=field,
-            actual_value=actual_value,
-            expected_range=expected_range
-        ))
+        self.violations.append(
+            RuleViolation(
+                rule_id=rule_id,
+                rule_name=rule_name,
+                message=message,
+                severity=severity,
+                field=field,
+                actual_value=actual_value,
+                expected_range=expected_range,
+            )
+        )
         if severity in (RuleSeverity.CRITICAL, RuleSeverity.HIGH):
             self.is_valid = False
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'is_valid': self.is_valid,
-            'violation_count': len(self.violations),
-            'violations': [v.to_dict() for v in self.violations],
-            'record_type': self.record_type,
-            'record_id': self.record_id,
+            "is_valid": self.is_valid,
+            "violation_count": len(self.violations),
+            "violations": [v.to_dict() for v in self.violations],
+            "record_type": self.record_type,
+            "record_id": self.record_id,
         }
 
 
@@ -102,12 +113,62 @@ class BusinessRuleValidator:
 
     # US State codes
     US_STATES = {
-        'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-        'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-        'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-        'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-        'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
-        'DC', 'PR', 'VI', 'GU', 'AS', 'MP'
+        "AL",
+        "AK",
+        "AZ",
+        "AR",
+        "CA",
+        "CO",
+        "CT",
+        "DE",
+        "FL",
+        "GA",
+        "HI",
+        "ID",
+        "IL",
+        "IN",
+        "IA",
+        "KS",
+        "KY",
+        "LA",
+        "ME",
+        "MD",
+        "MA",
+        "MI",
+        "MN",
+        "MS",
+        "MO",
+        "MT",
+        "NE",
+        "NV",
+        "NH",
+        "NJ",
+        "NM",
+        "NY",
+        "NC",
+        "ND",
+        "OH",
+        "OK",
+        "OR",
+        "PA",
+        "RI",
+        "SC",
+        "SD",
+        "TN",
+        "TX",
+        "UT",
+        "VT",
+        "VA",
+        "WA",
+        "WV",
+        "WI",
+        "WY",
+        "DC",
+        "PR",
+        "VI",
+        "GU",
+        "AS",
+        "MP",
     }
 
     # Reasonable value ranges
@@ -133,12 +194,12 @@ class BusinessRuleValidator:
             RuleResult with violations
         """
         result = RuleResult(
-            record_type='property',
-            record_id=record.get('parcel_id') or record.get('id')
+            record_type="property",
+            record_id=record.get("parcel_id") or record.get("id"),
         )
 
         # Rule: Year built must be reasonable
-        year_built = record.get('year_built')
+        year_built = record.get("year_built")
         if year_built:
             if year_built < self.MIN_YEAR_BUILT:
                 result.add_violation(
@@ -148,7 +209,7 @@ class BusinessRuleValidator:
                     severity=RuleSeverity.HIGH,
                     field="year_built",
                     actual_value=year_built,
-                    expected_range=f"{self.MIN_YEAR_BUILT}-{self.current_year}"
+                    expected_range=f"{self.MIN_YEAR_BUILT}-{self.current_year}",
                 )
             elif year_built > self.current_year:
                 result.add_violation(
@@ -157,11 +218,11 @@ class BusinessRuleValidator:
                     message=f"Year built {year_built} is in the future",
                     severity=RuleSeverity.HIGH,
                     field="year_built",
-                    actual_value=year_built
+                    actual_value=year_built,
                 )
 
         # Rule: Property value must be reasonable
-        for value_field in ['assessed_value', 'market_value', 'last_sale_price']:
+        for value_field in ["assessed_value", "market_value", "last_sale_price"]:
             value = record.get(value_field)
             if value:
                 if value < self.MIN_PROPERTY_VALUE:
@@ -172,7 +233,7 @@ class BusinessRuleValidator:
                         severity=RuleSeverity.MEDIUM,
                         field=value_field,
                         actual_value=value,
-                        expected_range=f">${self.MIN_PROPERTY_VALUE:,}"
+                        expected_range=f">${self.MIN_PROPERTY_VALUE:,}",
                     )
                 elif value > self.MAX_PROPERTY_VALUE:
                     result.add_violation(
@@ -181,11 +242,11 @@ class BusinessRuleValidator:
                         message=f"{value_field} of ${value:,.0f} is unusually high",
                         severity=RuleSeverity.MEDIUM,
                         field=value_field,
-                        actual_value=value
+                        actual_value=value,
                     )
 
         # Rule: Square footage must be reasonable
-        sqft = record.get('square_feet') or record.get('building_sqft')
+        sqft = record.get("square_feet") or record.get("building_sqft")
         if sqft:
             if sqft > self.MAX_SQFT:
                 result.add_violation(
@@ -194,12 +255,12 @@ class BusinessRuleValidator:
                     message=f"Square footage of {sqft:,.0f} is unusually high",
                     severity=RuleSeverity.MEDIUM,
                     field="square_feet",
-                    actual_value=sqft
+                    actual_value=sqft,
                 )
 
         # Rule: Price per square foot should be reasonable
         if sqft and sqft > 0:
-            for value_field in ['market_value', 'last_sale_price']:
+            for value_field in ["market_value", "last_sale_price"]:
                 value = record.get(value_field)
                 if value:
                     price_per_sqft = value / sqft
@@ -210,7 +271,7 @@ class BusinessRuleValidator:
                             message=f"Price per sqft (${price_per_sqft:,.2f}) is unusually low",
                             severity=RuleSeverity.LOW,
                             field=value_field,
-                            actual_value=price_per_sqft
+                            actual_value=price_per_sqft,
                         )
                     elif price_per_sqft > self.MAX_PRICE_PER_SQFT:
                         result.add_violation(
@@ -219,11 +280,11 @@ class BusinessRuleValidator:
                             message=f"Price per sqft (${price_per_sqft:,.2f}) is unusually high",
                             severity=RuleSeverity.MEDIUM,
                             field=value_field,
-                            actual_value=price_per_sqft
+                            actual_value=price_per_sqft,
                         )
 
         # Rule: State must be valid
-        state = record.get('state')
+        state = record.get("state")
         if state and state.upper() not in self.US_STATES:
             result.add_violation(
                 rule_id="PROP-008",
@@ -231,11 +292,11 @@ class BusinessRuleValidator:
                 message=f"State '{state}' is not a valid US state code",
                 severity=RuleSeverity.HIGH,
                 field="state",
-                actual_value=state
+                actual_value=state,
             )
 
         # Rule: Last sale date should not be in the future
-        last_sale_date = self._parse_date(record.get('last_sale_date'))
+        last_sale_date = self._parse_date(record.get("last_sale_date"))
         if last_sale_date and last_sale_date > date.today():
             result.add_violation(
                 rule_id="PROP-009",
@@ -243,12 +304,12 @@ class BusinessRuleValidator:
                 message="Last sale date is in the future",
                 severity=RuleSeverity.HIGH,
                 field="last_sale_date",
-                actual_value=record.get('last_sale_date')
+                actual_value=record.get("last_sale_date"),
             )
 
         # Rule: Assessed vs Market value ratio
-        assessed = record.get('assessed_value')
-        market = record.get('market_value')
+        assessed = record.get("assessed_value")
+        market = record.get("market_value")
         if assessed and market and market > 0:
             ratio = assessed / market
             if ratio > 1.5:
@@ -258,7 +319,7 @@ class BusinessRuleValidator:
                     message=f"Assessed value is {ratio:.1f}x market value",
                     severity=RuleSeverity.LOW,
                     actual_value=ratio,
-                    expected_range="0.5-1.5"
+                    expected_range="0.5-1.5",
                 )
             elif ratio < 0.3:
                 result.add_violation(
@@ -266,12 +327,12 @@ class BusinessRuleValidator:
                     rule_name="Assessment Ratio Low",
                     message=f"Assessed value is only {ratio:.1%} of market value",
                     severity=RuleSeverity.LOW,
-                    actual_value=ratio
+                    actual_value=ratio,
                 )
 
         # Rule: Bedrooms and bathrooms should be reasonable
-        bedrooms = record.get('bedrooms')
-        bathrooms = record.get('bathrooms')
+        bedrooms = record.get("bedrooms")
+        bathrooms = record.get("bathrooms")
         if bedrooms and bedrooms > 20:
             result.add_violation(
                 rule_id="PROP-012",
@@ -279,7 +340,7 @@ class BusinessRuleValidator:
                 message=f"{bedrooms} bedrooms is unusually high",
                 severity=RuleSeverity.MEDIUM,
                 field="bedrooms",
-                actual_value=bedrooms
+                actual_value=bedrooms,
             )
         if bathrooms and bathrooms > 20:
             result.add_violation(
@@ -288,12 +349,12 @@ class BusinessRuleValidator:
                 message=f"{bathrooms} bathrooms is unusually high",
                 severity=RuleSeverity.MEDIUM,
                 field="bathrooms",
-                actual_value=bathrooms
+                actual_value=bathrooms,
             )
 
         # Rule: Coordinates should be in US bounds
-        lat = record.get('latitude')
-        lon = record.get('longitude')
+        lat = record.get("latitude")
+        lon = record.get("longitude")
         if lat and lon:
             # Continental US approximate bounds
             if not (24 <= lat <= 50 and -125 <= lon <= -66):
@@ -304,7 +365,7 @@ class BusinessRuleValidator:
                         rule_name="Coordinates Outside US",
                         message=f"Coordinates ({lat}, {lon}) are outside US bounds",
                         severity=RuleSeverity.MEDIUM,
-                        actual_value=f"({lat}, {lon})"
+                        actual_value=f"({lat}, {lon})",
                     )
 
         return result
@@ -320,12 +381,12 @@ class BusinessRuleValidator:
             RuleResult with violations
         """
         result = RuleResult(
-            record_type='deed',
-            record_id=record.get('document_number') or record.get('id')
+            record_type="deed",
+            record_id=record.get("document_number") or record.get("id"),
         )
 
         # Rule: Recording date should not be in the future
-        recording_date = self._parse_date(record.get('recording_date'))
+        recording_date = self._parse_date(record.get("recording_date"))
         if recording_date and recording_date > date.today():
             result.add_violation(
                 rule_id="DEED-001",
@@ -333,7 +394,7 @@ class BusinessRuleValidator:
                 message="Recording date is in the future",
                 severity=RuleSeverity.CRITICAL,
                 field="recording_date",
-                actual_value=record.get('recording_date')
+                actual_value=record.get("recording_date"),
             )
 
         # Rule: Recording date should not be too old
@@ -344,11 +405,11 @@ class BusinessRuleValidator:
                 message="Recording date is before 1800",
                 severity=RuleSeverity.HIGH,
                 field="recording_date",
-                actual_value=record.get('recording_date')
+                actual_value=record.get("recording_date"),
             )
 
         # Rule: Consideration amount should be reasonable
-        consideration = record.get('consideration')
+        consideration = record.get("consideration")
         if consideration:
             if consideration < 0:
                 result.add_violation(
@@ -357,7 +418,7 @@ class BusinessRuleValidator:
                     message="Consideration amount is negative",
                     severity=RuleSeverity.CRITICAL,
                     field="consideration",
-                    actual_value=consideration
+                    actual_value=consideration,
                 )
             elif consideration > self.MAX_PROPERTY_VALUE:
                 result.add_violation(
@@ -366,23 +427,23 @@ class BusinessRuleValidator:
                     message=f"Consideration of ${consideration:,.0f} is unusually high",
                     severity=RuleSeverity.MEDIUM,
                     field="consideration",
-                    actual_value=consideration
+                    actual_value=consideration,
                 )
 
         # Rule: Grantor and grantee should be different
-        grantor = record.get('grantor', '').strip().lower()
-        grantee = record.get('grantee', '').strip().lower()
+        grantor = record.get("grantor", "").strip().lower()
+        grantee = record.get("grantee", "").strip().lower()
         if grantor and grantee and grantor == grantee:
             result.add_violation(
                 rule_id="DEED-005",
                 rule_name="Same Grantor Grantee",
                 message="Grantor and grantee are the same",
                 severity=RuleSeverity.MEDIUM,
-                actual_value=grantor
+                actual_value=grantor,
             )
 
         # Rule: State must be valid
-        state = record.get('state')
+        state = record.get("state")
         if state and state.upper() not in self.US_STATES:
             result.add_violation(
                 rule_id="DEED-006",
@@ -390,7 +451,7 @@ class BusinessRuleValidator:
                 message=f"State '{state}' is not a valid US state code",
                 severity=RuleSeverity.HIGH,
                 field="state",
-                actual_value=state
+                actual_value=state,
             )
 
         return result
@@ -406,12 +467,12 @@ class BusinessRuleValidator:
             RuleResult with violations
         """
         result = RuleResult(
-            record_type='court_case',
-            record_id=record.get('case_number') or record.get('id')
+            record_type="court_case",
+            record_id=record.get("case_number") or record.get("id"),
         )
 
         # Rule: Filing date should not be in the future
-        filing_date = self._parse_date(record.get('filing_date'))
+        filing_date = self._parse_date(record.get("filing_date"))
         if filing_date and filing_date > date.today():
             result.add_violation(
                 rule_id="COURT-001",
@@ -419,11 +480,11 @@ class BusinessRuleValidator:
                 message="Filing date is in the future",
                 severity=RuleSeverity.CRITICAL,
                 field="filing_date",
-                actual_value=record.get('filing_date')
+                actual_value=record.get("filing_date"),
             )
 
         # Rule: Disposition date should be after filing date
-        disposition_date = self._parse_date(record.get('disposition_date'))
+        disposition_date = self._parse_date(record.get("disposition_date"))
         if filing_date and disposition_date:
             if disposition_date < filing_date:
                 result.add_violation(
@@ -432,11 +493,11 @@ class BusinessRuleValidator:
                     message="Disposition date is before filing date",
                     severity=RuleSeverity.HIGH,
                     field="disposition_date",
-                    actual_value=f"Filed: {filing_date}, Disposed: {disposition_date}"
+                    actual_value=f"Filed: {filing_date}, Disposed: {disposition_date}",
                 )
 
         # Rule: Amount claimed should be reasonable
-        amount_claimed = record.get('amount_claimed')
+        amount_claimed = record.get("amount_claimed")
         if amount_claimed:
             if amount_claimed < 0:
                 result.add_violation(
@@ -445,7 +506,7 @@ class BusinessRuleValidator:
                     message="Amount claimed is negative",
                     severity=RuleSeverity.HIGH,
                     field="amount_claimed",
-                    actual_value=amount_claimed
+                    actual_value=amount_claimed,
                 )
             elif amount_claimed > 10_000_000_000:  # $10B
                 result.add_violation(
@@ -454,11 +515,11 @@ class BusinessRuleValidator:
                     message=f"Amount claimed of ${amount_claimed:,.0f} is unusually high",
                     severity=RuleSeverity.MEDIUM,
                     field="amount_claimed",
-                    actual_value=amount_claimed
+                    actual_value=amount_claimed,
                 )
 
         # Rule: Judgment should not exceed amount claimed (if both present)
-        judgment_amount = record.get('judgment_amount')
+        judgment_amount = record.get("judgment_amount")
         if amount_claimed and judgment_amount:
             if judgment_amount > amount_claimed * 10:
                 result.add_violation(
@@ -466,22 +527,22 @@ class BusinessRuleValidator:
                     rule_name="Judgment Exceeds Claim",
                     message="Judgment amount greatly exceeds amount claimed",
                     severity=RuleSeverity.LOW,
-                    actual_value=f"Claimed: ${amount_claimed:,.0f}, Judgment: ${judgment_amount:,.0f}"
+                    actual_value=f"Claimed: ${amount_claimed:,.0f}, Judgment: ${judgment_amount:,.0f}",
                 )
 
         # Rule: Case status should match dates
-        case_status = record.get('case_status')
-        if case_status == 'CLOSED' and not disposition_date:
+        case_status = record.get("case_status")
+        if case_status == "CLOSED" and not disposition_date:
             result.add_violation(
                 rule_id="COURT-006",
                 rule_name="Closed Without Disposition",
                 message="Case is closed but has no disposition date",
                 severity=RuleSeverity.LOW,
-                field="case_status"
+                field="case_status",
             )
 
         # Rule: State must be valid
-        state = record.get('state')
+        state = record.get("state")
         if state and state.upper() not in self.US_STATES:
             result.add_violation(
                 rule_id="COURT-007",
@@ -489,7 +550,7 @@ class BusinessRuleValidator:
                 message=f"State '{state}' is not a valid US state code",
                 severity=RuleSeverity.HIGH,
                 field="state",
-                actual_value=state
+                actual_value=state,
             )
 
         return result
@@ -505,12 +566,12 @@ class BusinessRuleValidator:
             RuleResult with violations
         """
         result = RuleResult(
-            record_type='business_entity',
-            record_id=record.get('entity_id') or record.get('id')
+            record_type="business_entity",
+            record_id=record.get("entity_id") or record.get("id"),
         )
 
         # Rule: Formation date should not be in the future
-        formation_date = self._parse_date(record.get('formation_date'))
+        formation_date = self._parse_date(record.get("formation_date"))
         if formation_date and formation_date > date.today():
             result.add_violation(
                 rule_id="BUS-001",
@@ -518,7 +579,7 @@ class BusinessRuleValidator:
                 message="Formation date is in the future",
                 severity=RuleSeverity.CRITICAL,
                 field="formation_date",
-                actual_value=record.get('formation_date')
+                actual_value=record.get("formation_date"),
             )
 
         # Rule: Formation date should not be too old
@@ -529,11 +590,11 @@ class BusinessRuleValidator:
                 message="Formation date is before 1800",
                 severity=RuleSeverity.MEDIUM,
                 field="formation_date",
-                actual_value=record.get('formation_date')
+                actual_value=record.get("formation_date"),
             )
 
         # Rule: Dissolution date should be after formation date
-        dissolution_date = self._parse_date(record.get('dissolution_date'))
+        dissolution_date = self._parse_date(record.get("dissolution_date"))
         if formation_date and dissolution_date:
             if dissolution_date < formation_date:
                 result.add_violation(
@@ -542,44 +603,44 @@ class BusinessRuleValidator:
                     message="Dissolution date is before formation date",
                     severity=RuleSeverity.HIGH,
                     field="dissolution_date",
-                    actual_value=f"Formed: {formation_date}, Dissolved: {dissolution_date}"
+                    actual_value=f"Formed: {formation_date}, Dissolved: {dissolution_date}",
                 )
 
         # Rule: Active status should not have dissolution date
-        status = record.get('status')
-        if status == 'ACTIVE' and dissolution_date:
+        status = record.get("status")
+        if status == "ACTIVE" and dissolution_date:
             result.add_violation(
                 rule_id="BUS-004",
                 rule_name="Active With Dissolution",
                 message="Entity is active but has a dissolution date",
                 severity=RuleSeverity.MEDIUM,
-                field="status"
+                field="status",
             )
 
         # Rule: Dissolved status should have dissolution date
-        if status == 'DISSOLVED' and not dissolution_date:
+        if status == "DISSOLVED" and not dissolution_date:
             result.add_violation(
                 rule_id="BUS-005",
                 rule_name="Dissolved Without Date",
                 message="Entity is dissolved but has no dissolution date",
                 severity=RuleSeverity.LOW,
-                field="status"
+                field="status",
             )
 
         # Rule: EIN format validation
-        ein = record.get('ein')
-        if ein and not re.match(r'^\d{2}-\d{7}$', ein):
+        ein = record.get("ein")
+        if ein and not re.match(r"^\d{2}-\d{7}$", ein):
             result.add_violation(
                 rule_id="BUS-006",
                 rule_name="Invalid EIN Format",
                 message=f"EIN '{ein}' is not in valid format (XX-XXXXXXX)",
                 severity=RuleSeverity.HIGH,
                 field="ein",
-                actual_value=ein
+                actual_value=ein,
             )
 
         # Rule: State must be valid
-        state = record.get('state')
+        state = record.get("state")
         if state and state.upper() not in self.US_STATES:
             result.add_violation(
                 rule_id="BUS-007",
@@ -587,7 +648,7 @@ class BusinessRuleValidator:
                 message=f"State '{state}' is not a valid US state code",
                 severity=RuleSeverity.HIGH,
                 field="state",
-                actual_value=state
+                actual_value=state,
             )
 
         return result
@@ -601,7 +662,7 @@ class BusinessRuleValidator:
         if isinstance(value, datetime):
             return value.date()
         if isinstance(value, str):
-            for fmt in ['%Y-%m-%d', '%m/%d/%Y', '%m-%d-%Y']:
+            for fmt in ["%Y-%m-%d", "%m/%d/%Y", "%m-%d-%Y"]:
                 try:
                     return datetime.strptime(value, fmt).date()
                 except ValueError:
@@ -642,13 +703,13 @@ class BusinessRuleValidator:
                 by_rule[violation.rule_id] = by_rule.get(violation.rule_id, 0) + 1
 
         return {
-            'total_records': total,
-            'valid_records': valid,
-            'invalid_records': total - valid,
-            'validation_rate': valid / total if total > 0 else 0,
-            'total_violations': sum(len(r.violations) for r in results),
-            'violations_by_severity': by_severity,
-            'violations_by_rule': by_rule,
+            "total_records": total,
+            "valid_records": valid,
+            "invalid_records": total - valid,
+            "validation_rate": valid / total if total > 0 else 0,
+            "total_violations": sum(len(r.violations) for r in results),
+            "violations_by_severity": by_severity,
+            "violations_by_rule": by_rule,
         }
 
 

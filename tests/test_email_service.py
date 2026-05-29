@@ -2,8 +2,9 @@
 Tests for DataGod Email Service
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 
 class TestEmailService:
@@ -29,7 +30,7 @@ class TestEmailService:
             smtp_user="user@example.com",
             smtp_password="password123",
             from_email="custom@example.com",
-            from_name="Custom Sender"
+            from_name="Custom Sender",
         )
 
         assert service.provider == "smtp"
@@ -47,7 +48,7 @@ class TestEmailService:
         result = service.send_email(
             to_email="test@example.com",
             subject="Test Subject",
-            body_text="This is a test email."
+            body_text="This is a test email.",
         )
 
         assert result is True
@@ -61,7 +62,7 @@ class TestEmailService:
             to_email="test@example.com",
             subject="Test Subject",
             body_text="This is a test email.",
-            body_html="<html><body><h1>Test</h1></body></html>"
+            body_html="<html><body><h1>Test</h1></body></html>",
         )
 
         assert result is True
@@ -74,7 +75,7 @@ class TestEmailService:
         result = service.send_email(
             to_email="test@example.com",
             subject="Test Subject",
-            body_text="This is a test email."
+            body_text="This is a test email.",
         )
 
         assert result is False
@@ -89,7 +90,7 @@ class TestEmailService:
             subject="Test Subject",
             body_text="This is a test email.",
             from_email="custom@datagod.com",
-            from_name="Custom Name"
+            from_name="Custom Name",
         )
 
         assert result is True
@@ -100,9 +101,7 @@ class TestEmailService:
 
         service = EmailService(provider="stub")
         result = service.send_password_reset(
-            to_email="user@example.com",
-            reset_token="abc123",
-            username="testuser"
+            to_email="user@example.com", reset_token="abc123", username="testuser"
         )
 
         assert result is True
@@ -113,8 +112,7 @@ class TestEmailService:
 
         service = EmailService(provider="stub")
         result = service.send_welcome_email(
-            to_email="newuser@example.com",
-            username="newuser"
+            to_email="newuser@example.com", username="newuser"
         )
 
         assert result is True
@@ -127,7 +125,7 @@ class TestEmailService:
         result = service.send_email_verification(
             to_email="user@example.com",
             verification_token="verify123",
-            username="testuser"
+            username="testuser",
         )
 
         assert result is True
@@ -140,21 +138,16 @@ class TestEmailServiceSMTP:
         """Test SMTP email without configuration"""
         from datagod.services.email_service import EmailService
 
-        service = EmailService(
-            provider="smtp",
-            smtp_host=None  # Not configured
-        )
+        service = EmailService(provider="smtp", smtp_host=None)  # Not configured
 
         result = service.send_email(
-            to_email="test@example.com",
-            subject="Test",
-            body_text="Test"
+            to_email="test@example.com", subject="Test", body_text="Test"
         )
 
         # Should fail gracefully without SMTP config
         assert result is False
 
-    @patch('smtplib.SMTP')
+    @patch("smtplib.SMTP")
     def test_smtp_email_configured(self, mock_smtp):
         """Test SMTP email with mocked SMTP server"""
         from datagod.services.email_service import EmailService
@@ -169,13 +162,11 @@ class TestEmailServiceSMTP:
             smtp_host="smtp.example.com",
             smtp_port=587,
             smtp_user="user@example.com",
-            smtp_password="password"
+            smtp_password="password",
         )
 
         result = service.send_email(
-            to_email="test@example.com",
-            subject="Test",
-            body_text="Test message"
+            to_email="test@example.com", subject="Test", body_text="Test message"
         )
 
         # May succeed or fail depending on implementation
@@ -193,9 +184,7 @@ class TestEmailTemplates:
 
         # The method should work without errors
         result = service.send_password_reset(
-            to_email="user@example.com",
-            reset_token="token123",
-            username="testuser"
+            to_email="user@example.com", reset_token="token123", username="testuser"
         )
 
         assert result is True
@@ -207,8 +196,7 @@ class TestEmailTemplates:
         service = EmailService(provider="stub")
 
         result = service.send_welcome_email(
-            to_email="user@example.com",
-            username="newuser"
+            to_email="user@example.com", username="newuser"
         )
 
         assert result is True
@@ -222,7 +210,7 @@ class TestEmailTemplates:
         result = service.send_email_verification(
             to_email="user@example.com",
             verification_token="verify456",
-            username="testuser"
+            username="testuser",
         )
 
         assert result is True
@@ -237,7 +225,7 @@ class TestEmailTemplates:
             username="testuser",
             reset_token="abc123",
             reset_url="https://custom.example.com/reset/abc123",
-            expires_hours=24
+            expires_hours=24,
         )
 
         assert result is True
@@ -251,7 +239,7 @@ class TestEmailTemplates:
             to_email="user@example.com",
             username="testuser",
             verification_token="verify123",
-            verification_url="https://custom.example.com/verify/verify123"
+            verification_url="https://custom.example.com/verify/verify123",
         )
 
         assert result is True
@@ -262,7 +250,7 @@ class TestEmailServiceHelpers:
 
     def test_get_email_service(self):
         """Test get_email_service returns singleton"""
-        from datagod.services.email_service import get_email_service, EmailService
+        from datagod.services.email_service import EmailService, get_email_service
 
         service = get_email_service()
         assert isinstance(service, EmailService)
@@ -278,12 +266,14 @@ class TestEmailServiceHelpers:
 
     def test_configure_email_service(self):
         """Test configure_email_service creates new instance"""
-        from datagod.services.email_service import configure_email_service, get_email_service
+        from datagod.services.email_service import (
+            configure_email_service,
+            get_email_service,
+        )
 
         # Configure with custom settings
         new_service = configure_email_service(
-            provider="stub",
-            from_email="custom@example.com"
+            provider="stub", from_email="custom@example.com"
         )
 
         assert new_service.from_email == "custom@example.com"
@@ -299,14 +289,17 @@ class TestServicesInit:
     def test_email_service_export(self):
         """Test EmailService is exported from services module"""
         from datagod.services import EmailService
+
         assert EmailService is not None
 
     def test_get_email_service_export(self):
         """Test get_email_service is exported from services module"""
         from datagod.services import get_email_service
+
         assert get_email_service is not None
 
     def test_configure_email_service_export(self):
         """Test configure_email_service is exported from services module"""
         from datagod.services import configure_email_service
+
         assert configure_email_service is not None

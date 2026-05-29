@@ -6,17 +6,18 @@ across jurisdictions, entity types, and demographic proxies.
 """
 
 import logging
-from typing import Dict, Any, List, Optional
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from collections import defaultdict
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class FairnessMetric(str, Enum):
     """Types of fairness metrics."""
+
     DISPARATE_IMPACT = "disparate_impact"
     STATISTICAL_PARITY = "statistical_parity"
     EQUAL_OPPORTUNITY = "equal_opportunity"
@@ -25,6 +26,7 @@ class FairnessMetric(str, Enum):
 
 class FairnessStatus(str, Enum):
     """Pass/fail status for fairness checks."""
+
     PASS = "pass"
     WARNING = "warning"
     FAIL = "fail"
@@ -33,6 +35,7 @@ class FairnessStatus(str, Enum):
 @dataclass
 class FairnessCheck:
     """Result of a single fairness check."""
+
     metric: FairnessMetric
     protected_attribute: str
     group_a: str
@@ -62,6 +65,7 @@ class FairnessCheck:
 @dataclass
 class FairnessReport:
     """Complete fairness assessment report."""
+
     report_id: str
     checks: List[FairnessCheck] = field(default_factory=list)
     overall_status: FairnessStatus = FairnessStatus.PASS
@@ -117,10 +121,13 @@ class FairnessMonitor:
             FairnessReport with all pairwise comparisons
         """
         import uuid
+
         report_id = f"fair-{uuid.uuid4().hex[:8]}"
 
         # Group outcomes by protected attribute
-        groups: Dict[str, Dict[str, int]] = defaultdict(lambda: {"total": 0, "favorable": 0})
+        groups: Dict[str, Dict[str, int]] = defaultdict(
+            lambda: {"total": 0, "favorable": 0}
+        )
         for outcome in outcomes:
             group = str(outcome.get(protected_attribute, "unknown"))
             groups[group]["total"] += 1
@@ -139,7 +146,7 @@ class FairnessMonitor:
         checks = []
         group_names = sorted(rates.keys())
         for i, g_a in enumerate(group_names):
-            for g_b in group_names[i + 1:]:
+            for g_b in group_names[i + 1 :]:
                 rate_a, rate_b = rates[g_a], rates[g_b]
                 # DI ratio: min(rate) / max(rate)
                 if max(rate_a, rate_b) > 0:
@@ -154,22 +161,24 @@ class FairnessMonitor:
                 else:
                     status = FairnessStatus.PASS
 
-                checks.append(FairnessCheck(
-                    metric=FairnessMetric.DISPARATE_IMPACT,
-                    protected_attribute=protected_attribute,
-                    group_a=g_a,
-                    group_b=g_b,
-                    group_a_rate=rate_a,
-                    group_b_rate=rate_b,
-                    ratio=ratio,
-                    threshold=self.DI_THRESHOLD,
-                    status=status,
-                    description=(
-                        f"Disparate impact ratio between '{g_a}' and '{g_b}': "
-                        f"{ratio:.2%} ({'PASS' if status == FairnessStatus.PASS else 'FAIL'} "
-                        f"at {self.DI_THRESHOLD:.0%} threshold)"
-                    ),
-                ))
+                checks.append(
+                    FairnessCheck(
+                        metric=FairnessMetric.DISPARATE_IMPACT,
+                        protected_attribute=protected_attribute,
+                        group_a=g_a,
+                        group_b=g_b,
+                        group_a_rate=rate_a,
+                        group_b_rate=rate_b,
+                        ratio=ratio,
+                        threshold=self.DI_THRESHOLD,
+                        status=status,
+                        description=(
+                            f"Disparate impact ratio between '{g_a}' and '{g_b}': "
+                            f"{ratio:.2%} ({'PASS' if status == FairnessStatus.PASS else 'FAIL'} "
+                            f"at {self.DI_THRESHOLD:.0%} threshold)"
+                        ),
+                    )
+                )
 
         # Aggregate report
         pass_count = sum(1 for c in checks if c.status == FairnessStatus.PASS)
@@ -185,10 +194,16 @@ class FairnessMonitor:
 
         recommendations = []
         if fail_count > 0:
-            recommendations.append("CRITICAL: Disparate impact violations detected. Review decision criteria for bias.")
-            recommendations.append("Consider additional data sources to reduce proxy discrimination.")
+            recommendations.append(
+                "CRITICAL: Disparate impact violations detected. Review decision criteria for bias."
+            )
+            recommendations.append(
+                "Consider additional data sources to reduce proxy discrimination."
+            )
         if warning_count > 0:
-            recommendations.append("WARNING: Near-threshold ratios detected. Monitor closely for drift.")
+            recommendations.append(
+                "WARNING: Near-threshold ratios detected. Monitor closely for drift."
+            )
 
         report = FairnessReport(
             report_id=report_id,
@@ -214,8 +229,8 @@ class FairnessMonitor:
         Flags jurisdictions with anomaly detection rates significantly
         higher or lower than the mean.
         """
-        import uuid
         import statistics
+        import uuid
 
         report_id = f"fair-jur-{uuid.uuid4().hex[:8]}"
 
@@ -249,25 +264,29 @@ class FairnessMonitor:
             else:
                 status = FairnessStatus.PASS
 
-            checks.append(FairnessCheck(
-                metric=FairnessMetric.STATISTICAL_PARITY,
-                protected_attribute="jurisdiction",
-                group_a=jur,
-                group_b="population_mean",
-                group_a_rate=avg,
-                group_b_rate=overall_mean,
-                ratio=avg / overall_mean if overall_mean > 0 else 1.0,
-                threshold=2.0,
-                status=status,
-                description=f"Jurisdiction '{jur}': z-score={z_score:.2f}",
-            ))
+            checks.append(
+                FairnessCheck(
+                    metric=FairnessMetric.STATISTICAL_PARITY,
+                    protected_attribute="jurisdiction",
+                    group_a=jur,
+                    group_b="population_mean",
+                    group_a_rate=avg,
+                    group_b_rate=overall_mean,
+                    ratio=avg / overall_mean if overall_mean > 0 else 1.0,
+                    threshold=2.0,
+                    status=status,
+                    description=f"Jurisdiction '{jur}': z-score={z_score:.2f}",
+                )
+            )
 
         pass_count = sum(1 for c in checks if c.status == FairnessStatus.PASS)
         warning_count = sum(1 for c in checks if c.status == FairnessStatus.WARNING)
         fail_count = sum(1 for c in checks if c.status == FairnessStatus.FAIL)
 
-        overall = FairnessStatus.FAIL if fail_count else (
-            FairnessStatus.WARNING if warning_count else FairnessStatus.PASS
+        overall = (
+            FairnessStatus.FAIL
+            if fail_count
+            else (FairnessStatus.WARNING if warning_count else FairnessStatus.PASS)
         )
 
         report = FairnessReport(

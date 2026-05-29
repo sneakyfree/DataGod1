@@ -18,27 +18,30 @@ Free Sources:
 """
 
 import asyncio
-import aiohttp
-from dataclasses import dataclass, field
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List, Dict, Any
 import logging
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
 
 class BankruptcyChapter(Enum):
     """Bankruptcy chapter types"""
-    CHAPTER_7 = "Chapter 7"      # Liquidation
-    CHAPTER_11 = "Chapter 11"   # Reorganization (business)
-    CHAPTER_12 = "Chapter 12"   # Family farmer/fisherman
-    CHAPTER_13 = "Chapter 13"   # Wage earner plan
-    CHAPTER_15 = "Chapter 15"   # Cross-border insolvency
+
+    CHAPTER_7 = "Chapter 7"  # Liquidation
+    CHAPTER_11 = "Chapter 11"  # Reorganization (business)
+    CHAPTER_12 = "Chapter 12"  # Family farmer/fisherman
+    CHAPTER_13 = "Chapter 13"  # Wage earner plan
+    CHAPTER_15 = "Chapter 15"  # Cross-border insolvency
 
 
 class BankruptcyStatus(Enum):
     """Bankruptcy case status"""
+
     OPEN = "Open"
     CLOSED = "Closed"
     DISMISSED = "Dismissed"
@@ -48,6 +51,7 @@ class BankruptcyStatus(Enum):
 
 class LienType(Enum):
     """Types of liens"""
+
     TAX_FEDERAL = "Federal Tax Lien"
     TAX_STATE = "State Tax Lien"
     TAX_PROPERTY = "Property Tax Lien"
@@ -61,6 +65,7 @@ class LienType(Enum):
 
 class NonprofitType(Enum):
     """IRS nonprofit classifications"""
+
     C501C3 = "501(c)(3)"  # Charitable
     C501C4 = "501(c)(4)"  # Social Welfare
     C501C5 = "501(c)(5)"  # Labor Organizations
@@ -72,6 +77,7 @@ class NonprofitType(Enum):
 @dataclass
 class BankruptcyCase:
     """Federal bankruptcy case record"""
+
     case_number: str
     court: str
     chapter: Optional[BankruptcyChapter] = None
@@ -100,6 +106,7 @@ class BankruptcyCase:
 @dataclass
 class TaxLien:
     """Tax lien record"""
+
     lien_number: str
     lien_type: Optional[LienType] = None
     debtor_name: Optional[str] = None
@@ -119,6 +126,7 @@ class TaxLien:
 @dataclass
 class Judgment:
     """Civil judgment record"""
+
     case_number: str
     court: str
     judgment_date: Optional[date] = None
@@ -138,6 +146,7 @@ class Judgment:
 @dataclass
 class NonprofitOrg:
     """IRS exempt organization (from 990 filings)"""
+
     ein: str
     name: str
     city: Optional[str] = None
@@ -165,6 +174,7 @@ class NonprofitOrg:
 @dataclass
 class UnclaimedProperty:
     """State unclaimed property record"""
+
     property_id: str
     state: str
     owner_name: Optional[str] = None
@@ -243,7 +253,7 @@ class FinancialRecordsScraper:
         "WV": "https://www.wvtreasury.com/Banking-Services/Unclaimed-Property",
         "WI": "https://statetreasurer.wi.gov/Pages/UnclaimedProperty.aspx",
         "WY": "https://treasurer.wyo.gov/unclaimed-property/",
-        "DC": "https://otr.cfo.dc.gov/page/unclaimed-property"
+        "DC": "https://otr.cfo.dc.gov/page/unclaimed-property",
     }
 
     def __init__(self, courtlistener_api_key: Optional[str] = None):
@@ -260,9 +270,7 @@ class FinancialRecordsScraper:
         """Get or create aiohttp session"""
         if self._session is None or self._session.closed:
             timeout = aiohttp.ClientTimeout(total=30)
-            headers = {
-                "User-Agent": "DataGod/1.0 (Public Records Research)"
-            }
+            headers = {"User-Agent": "DataGod/1.0 (Public Records Research)"}
             if self.courtlistener_api_key:
                 headers["Authorization"] = f"Token {self.courtlistener_api_key}"
             self._session = aiohttp.ClientSession(timeout=timeout, headers=headers)
@@ -296,7 +304,7 @@ class FinancialRecordsScraper:
         chapter: Optional[BankruptcyChapter] = None,
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[BankruptcyCase]:
         """
         Search federal bankruptcy cases
@@ -332,7 +340,7 @@ class FinancialRecordsScraper:
         state: Optional[str] = None,
         city: Optional[str] = None,
         ntee_code: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[NonprofitOrg]:
         """
         Search nonprofit organizations (IRS 990 filers)
@@ -394,13 +402,11 @@ class FinancialRecordsScraper:
             total_revenue=data.get("income_amount"),
             total_assets=data.get("asset_amount"),
             ntee_code=data.get("ntee_code"),
-            latest_990_year=data.get("tax_period")
+            latest_990_year=data.get("tax_period"),
         )
 
     async def get_nonprofit_990s(
-        self,
-        ein: str,
-        limit: int = 10
+        self, ein: str, limit: int = 10
     ) -> List[Dict[str, Any]]:
         """
         Get 990 filings for a nonprofit
@@ -443,10 +449,7 @@ class FinancialRecordsScraper:
         return self.STATE_UNCLAIMED_URLS.get(state.upper())
 
     async def search_unclaimed_property(
-        self,
-        state: str,
-        owner_name: str,
-        city: Optional[str] = None
+        self, state: str, owner_name: str, city: Optional[str] = None
     ) -> List[UnclaimedProperty]:
         """
         Search state unclaimed property
@@ -484,7 +487,7 @@ class FinancialRecordsScraper:
         county: str,
         debtor_name: Optional[str] = None,
         lien_type: Optional[LienType] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[TaxLien]:
         """
         Search tax lien records
@@ -517,7 +520,7 @@ class FinancialRecordsScraper:
         defendant_name: Optional[str] = None,
         plaintiff_name: Optional[str] = None,
         min_amount: Optional[float] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[Judgment]:
         """
         Search civil judgment records
@@ -535,7 +538,9 @@ class FinancialRecordsScraper:
         """
         results = []
 
-        logger.info(f"Searching judgments in {state} for: {defendant_name or plaintiff_name}")
+        logger.info(
+            f"Searching judgments in {state} for: {defendant_name or plaintiff_name}"
+        )
 
         # Would integrate with court record systems
 
@@ -555,11 +560,12 @@ class FinancialRecordsScraper:
             "propublica_nonprofits": "https://projects.propublica.org/nonprofits/",
             "propublica_api": "https://projects.propublica.org/nonprofits/api",
             "naupa_unclaimed": "https://unclaimed.org/",  # Multi-state search
-            "missingmoney": "https://www.missingmoney.com/"  # Multi-state search
+            "missingmoney": "https://www.missingmoney.com/",  # Multi-state search
         }
 
 
 # Convenience functions
+
 
 def get_unclaimed_property_url(state: str) -> Optional[str]:
     """Get state unclaimed property URL"""
@@ -571,17 +577,15 @@ def search_nonprofits_sync(
     name: Optional[str] = None,
     ein: Optional[str] = None,
     state: Optional[str] = None,
-    limit: int = 100
+    limit: int = 100,
 ) -> List[NonprofitOrg]:
     """Synchronous nonprofit search"""
+
     async def _search():
         scraper = FinancialRecordsScraper()
         try:
             return await scraper.search_nonprofits(
-                name=name,
-                ein=ein,
-                state=state,
-                limit=limit
+                name=name, ein=ein, state=state, limit=limit
             )
         finally:
             await scraper.close()
@@ -591,6 +595,7 @@ def search_nonprofits_sync(
 
 def get_nonprofit_990s_sync(ein: str, limit: int = 10) -> List[Dict[str, Any]]:
     """Synchronous 990 lookup"""
+
     async def _get():
         scraper = FinancialRecordsScraper()
         try:

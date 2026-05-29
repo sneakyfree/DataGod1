@@ -9,19 +9,20 @@ Tests cover:
 - Convenience functions
 """
 
-import pytest
 from datetime import date, datetime
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from datagod.scrapers.categories.court_records import (
-    CaseType,
-    CaseStatus,
-    PartyType,
     CaseParty,
-    CourtCase,
     CaseSearch,
-    PartySearch,
+    CaseStatus,
+    CaseType,
+    CourtCase,
     CourtRecordsScraper,
+    PartySearch,
+    PartyType,
     StateCourtScraper,
     search_court_records,
 )
@@ -33,8 +34,17 @@ class TestCaseTypeEnum:
     def test_all_case_types_exist(self):
         """Verify all expected case types are defined"""
         expected_types = [
-            'CIVIL', 'CRIMINAL', 'FAMILY', 'PROBATE', 'BANKRUPTCY',
-            'SMALL_CLAIMS', 'TAX', 'TRAFFIC', 'JUVENILE', 'APPELLATE', 'UNKNOWN'
+            "CIVIL",
+            "CRIMINAL",
+            "FAMILY",
+            "PROBATE",
+            "BANKRUPTCY",
+            "SMALL_CLAIMS",
+            "TAX",
+            "TRAFFIC",
+            "JUVENILE",
+            "APPELLATE",
+            "UNKNOWN",
         ]
         for case_type in expected_types:
             assert hasattr(CaseType, case_type)
@@ -59,8 +69,14 @@ class TestCaseStatusEnum:
     def test_all_case_statuses_exist(self):
         """Verify all expected case statuses are defined"""
         expected_statuses = [
-            'OPEN', 'CLOSED', 'PENDING', 'DISMISSED', 'SETTLED',
-            'APPEALED', 'ON_HOLD', 'UNKNOWN'
+            "OPEN",
+            "CLOSED",
+            "PENDING",
+            "DISMISSED",
+            "SETTLED",
+            "APPEALED",
+            "ON_HOLD",
+            "UNKNOWN",
         ]
         for status in expected_statuses:
             assert hasattr(CaseStatus, status)
@@ -79,9 +95,18 @@ class TestPartyTypeEnum:
     def test_all_party_types_exist(self):
         """Verify all expected party types are defined"""
         expected_types = [
-            'PLAINTIFF', 'DEFENDANT', 'PETITIONER', 'RESPONDENT',
-            'APPELLANT', 'APPELLEE', 'CREDITOR', 'DEBTOR',
-            'WITNESS', 'ATTORNEY', 'JUDGE', 'OTHER'
+            "PLAINTIFF",
+            "DEFENDANT",
+            "PETITIONER",
+            "RESPONDENT",
+            "APPELLANT",
+            "APPELLEE",
+            "CREDITOR",
+            "DEBTOR",
+            "WITNESS",
+            "ATTORNEY",
+            "JUDGE",
+            "OTHER",
         ]
         for party_type in expected_types:
             assert hasattr(PartyType, party_type)
@@ -97,10 +122,7 @@ class TestCaseParty:
 
     def test_create_basic_party(self):
         """Test creating a basic case party"""
-        party = CaseParty(
-            name="John Doe",
-            party_type=PartyType.PLAINTIFF
-        )
+        party = CaseParty(name="John Doe", party_type=PartyType.PLAINTIFF)
         assert party.name == "John Doe"
         assert party.party_type == PartyType.PLAINTIFF
         assert party.party_id is None
@@ -116,7 +138,7 @@ class TestCaseParty:
             address="123 Main St, City, ST 12345",
             attorney_name="Jane Smith",
             attorney_firm="Smith & Associates",
-            is_business=True
+            is_business=True,
         )
         assert party.name == "ABC Corporation"
         assert party.party_id == "P123"
@@ -125,15 +147,13 @@ class TestCaseParty:
     def test_party_to_dict(self):
         """Test converting party to dictionary"""
         party = CaseParty(
-            name="John Doe",
-            party_type=PartyType.PLAINTIFF,
-            attorney_name="Jane Smith"
+            name="John Doe", party_type=PartyType.PLAINTIFF, attorney_name="Jane Smith"
         )
         result = party.to_dict()
-        assert result['name'] == "John Doe"
-        assert result['party_type'] == "plaintiff"
-        assert result['attorney_name'] == "Jane Smith"
-        assert result['is_business'] is False
+        assert result["name"] == "John Doe"
+        assert result["party_type"] == "plaintiff"
+        assert result["attorney_name"] == "Jane Smith"
+        assert result["is_business"] is False
 
 
 class TestCourtCase:
@@ -144,7 +164,7 @@ class TestCourtCase:
         case = CourtCase(
             case_number="2024-CV-001234",
             case_type=CaseType.CIVIL,
-            court_name="Superior Court"
+            court_name="Superior Court",
         )
         assert case.case_number == "2024-CV-001234"
         assert case.case_type == CaseType.CIVIL
@@ -156,7 +176,7 @@ class TestCourtCase:
         """Test creating a court case with all fields"""
         parties = [
             CaseParty(name="John Doe", party_type=PartyType.PLAINTIFF),
-            CaseParty(name="ABC Corp", party_type=PartyType.DEFENDANT)
+            CaseParty(name="ABC Corp", party_type=PartyType.DEFENDANT),
         ]
         case = CourtCase(
             case_number="2024-CV-001234",
@@ -170,7 +190,7 @@ class TestCourtCase:
             jurisdiction="California",
             county="Los Angeles",
             state="CA",
-            amount_claimed=100000.00
+            amount_claimed=100000.00,
         )
         assert case.filing_date == date(2024, 1, 15)
         assert case.amount_claimed == 100000.00
@@ -182,26 +202,26 @@ class TestCourtCase:
             case_number="2024-CV-001234",
             case_type=CaseType.CIVIL,
             court_name="Superior Court",
-            filing_date=date(2024, 1, 15)
+            filing_date=date(2024, 1, 15),
         )
         result = case.to_dict()
-        assert result['case_number'] == "2024-CV-001234"
-        assert result['case_type'] == "civil"
-        assert result['filing_date'] == "2024-01-15"
-        assert 'fetched_at' in result
+        assert result["case_number"] == "2024-CV-001234"
+        assert result["case_type"] == "civil"
+        assert result["filing_date"] == "2024-01-15"
+        assert "fetched_at" in result
 
     def test_plaintiffs_property(self):
         """Test getting plaintiffs from parties"""
         parties = [
             CaseParty(name="John Doe", party_type=PartyType.PLAINTIFF),
             CaseParty(name="Jane Doe", party_type=PartyType.PETITIONER),
-            CaseParty(name="ABC Corp", party_type=PartyType.DEFENDANT)
+            CaseParty(name="ABC Corp", party_type=PartyType.DEFENDANT),
         ]
         case = CourtCase(
             case_number="2024-CV-001234",
             case_type=CaseType.CIVIL,
             court_name="Superior Court",
-            parties=parties
+            parties=parties,
         )
         plaintiffs = case.plaintiffs
         assert len(plaintiffs) == 2
@@ -213,13 +233,13 @@ class TestCourtCase:
         parties = [
             CaseParty(name="John Doe", party_type=PartyType.PLAINTIFF),
             CaseParty(name="ABC Corp", party_type=PartyType.DEFENDANT),
-            CaseParty(name="XYZ Inc", party_type=PartyType.RESPONDENT)
+            CaseParty(name="XYZ Inc", party_type=PartyType.RESPONDENT),
         ]
         case = CourtCase(
             case_number="2024-CV-001234",
             case_type=CaseType.CIVIL,
             court_name="Superior Court",
-            parties=parties
+            parties=parties,
         )
         defendants = case.defendants
         assert len(defendants) == 2
@@ -247,7 +267,7 @@ class TestCaseSearch:
             date_from=date(2024, 1, 1),
             date_to=date(2024, 12, 31),
             status=CaseStatus.OPEN,
-            include_closed=False
+            include_closed=False,
         )
         assert search.case_number == "2024-CV-001234"
         assert search.include_closed is False
@@ -273,7 +293,7 @@ class TestPartySearch:
             case_type=CaseType.CIVIL,
             date_from=date(2024, 1, 1),
             date_to=date(2024, 12, 31),
-            exact_match=True
+            exact_match=True,
         )
         assert search.exact_match is True
         assert search.party_type == PartyType.DEFENDANT
@@ -285,7 +305,7 @@ class TestCourtRecordsScraperUtils:
     @pytest.fixture
     def scraper(self):
         """Create a StateCourtScraper for testing utility methods"""
-        return StateCourtScraper("CA", config={'base_url': 'https://example.com'})
+        return StateCourtScraper("CA", config={"base_url": "https://example.com"})
 
     def test_classify_case_type_civil(self, scraper):
         """Test classifying civil cases"""
@@ -340,7 +360,10 @@ class TestCourtRecordsScraperUtils:
     def test_parse_case_status_other(self, scraper):
         """Test parsing other case statuses"""
         assert scraper.parse_case_status("Pending Review") == CaseStatus.PENDING
-        assert scraper.parse_case_status("Dismissed with Prejudice") == CaseStatus.DISMISSED
+        assert (
+            scraper.parse_case_status("Dismissed with Prejudice")
+            == CaseStatus.DISMISSED
+        )
         assert scraper.parse_case_status("Settled out of court") == CaseStatus.SETTLED
         assert scraper.parse_case_status("On Appeal") == CaseStatus.APPEALED
         assert scraper.parse_case_status("On Hold") == CaseStatus.ON_HOLD
@@ -373,7 +396,10 @@ class TestCourtRecordsScraperUtils:
         assert scraper.normalize_case_number("2024-cv-001234") == "2024-CV-001234"
         assert scraper.normalize_case_number("2024 - cv - 001234") == "2024-CV-001234"
         assert scraper.normalize_case_number("2024 / cv / 001234") == "2024/CV/001234"
-        assert scraper.normalize_case_number("  spaces  in  number  ") == "SPACES IN NUMBER"
+        assert (
+            scraper.normalize_case_number("  spaces  in  number  ")
+            == "SPACES IN NUMBER"
+        )
 
     def test_parse_amount_valid(self, scraper):
         """Test parsing valid amounts"""
@@ -406,8 +432,8 @@ class TestCourtRecordsScraperUtils:
     def test_get_statistics(self, scraper):
         """Test getting scraper statistics"""
         stats = scraper.get_statistics()
-        assert stats['jurisdiction'] == "CA"
-        assert stats['scraper_class'] == "StateCourtScraper"
+        assert stats["jurisdiction"] == "CA"
+        assert stats["scraper_class"] == "StateCourtScraper"
 
 
 class TestStateCourtScraper:
@@ -416,8 +442,8 @@ class TestStateCourtScraper:
     def test_initialization(self):
         """Test StateCourtScraper initialization"""
         config = {
-            'base_url': 'https://courts.ca.gov',
-            'court_api': 'https://api.courts.ca.gov'
+            "base_url": "https://courts.ca.gov",
+            "court_api": "https://api.courts.ca.gov",
         }
         scraper = StateCourtScraper("CA", config=config)
         assert scraper.state_code == "CA"
@@ -472,7 +498,7 @@ class TestSearchCourtRecordsFunction:
             states=["CA", "TX"],
             case_types=[CaseType.CIVIL, CaseType.CRIMINAL],
             date_from=date(2024, 1, 1),
-            date_to=date(2024, 12, 31)
+            date_to=date(2024, 12, 31),
         )
         assert isinstance(results, list)
 
@@ -483,17 +509,18 @@ class TestCourtRecordsImports:
     def test_all_exports_available(self):
         """Test that all expected exports are available"""
         from datagod.scrapers.categories.court_records import (
-            CaseType,
-            CaseStatus,
-            PartyType,
             CaseParty,
-            CourtCase,
             CaseSearch,
-            PartySearch,
+            CaseStatus,
+            CaseType,
+            CourtCase,
             CourtRecordsScraper,
+            PartySearch,
+            PartyType,
             StateCourtScraper,
-            search_court_records
+            search_court_records,
         )
+
         # All imports should succeed
         assert CaseType is not None
         assert CaseStatus is not None
@@ -510,7 +537,7 @@ class TestCourtRecordsEdgeCases:
         case = CourtCase(
             case_number="2024-CV-001234",
             case_type=CaseType.CIVIL,
-            court_name="Superior Court"
+            court_name="Superior Court",
         )
         assert case.plaintiffs == []
         assert case.defendants == []
@@ -519,13 +546,13 @@ class TestCourtRecordsEdgeCases:
         """Test court case with only plaintiffs"""
         parties = [
             CaseParty(name="John Doe", party_type=PartyType.PLAINTIFF),
-            CaseParty(name="Jane Doe", party_type=PartyType.PLAINTIFF)
+            CaseParty(name="Jane Doe", party_type=PartyType.PLAINTIFF),
         ]
         case = CourtCase(
             case_number="2024-CV-001234",
             case_type=CaseType.CIVIL,
             court_name="Superior Court",
-            parties=parties
+            parties=parties,
         )
         assert len(case.plaintiffs) == 2
         assert len(case.defendants) == 0
@@ -533,23 +560,22 @@ class TestCourtRecordsEdgeCases:
     def test_party_with_special_characters(self):
         """Test party name with special characters"""
         party = CaseParty(
-            name="O'Brien & Associates, LLC",
-            party_type=PartyType.PLAINTIFF
+            name="O'Brien & Associates, LLC", party_type=PartyType.PLAINTIFF
         )
         assert party.name == "O'Brien & Associates, LLC"
         result = party.to_dict()
-        assert result['name'] == "O'Brien & Associates, LLC"
+        assert result["name"] == "O'Brien & Associates, LLC"
 
     def test_court_case_null_dates(self):
         """Test court case to_dict with null dates"""
         case = CourtCase(
             case_number="2024-CV-001234",
             case_type=CaseType.CIVIL,
-            court_name="Superior Court"
+            court_name="Superior Court",
         )
         result = case.to_dict()
-        assert result['filing_date'] is None
-        assert result['disposition_date'] is None
+        assert result["filing_date"] is None
+        assert result["disposition_date"] is None
 
     def test_case_type_priority(self):
         """Test that criminal takes precedence over civil in classification"""

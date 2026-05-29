@@ -11,13 +11,15 @@ Tests cover:
 - Record selection strategies
 """
 
-import pytest
 from datetime import date, datetime
+
+import pytest
+
 from datagod.services.deduplication_service import (
-    MergeStrategy,
+    DeduplicationService,
     DuplicateGroup,
     MergeResult,
-    DeduplicationService,
+    MergeStrategy,
     deduplicate_records,
 )
 from datagod.services.entity_linker import EntityLinker
@@ -50,14 +52,14 @@ class TestDuplicateGroup:
         """Test creating a duplicate group"""
         records = [
             {"id": "1", "name": "John Smith"},
-            {"id": "2", "name": "John A. Smith"}
+            {"id": "2", "name": "John A. Smith"},
         ]
         group = DuplicateGroup(
             group_id="G123",
             records=records,
             confidence=0.95,
             match_fields=["name"],
-            recommended_strategy=MergeStrategy.MERGE
+            recommended_strategy=MergeStrategy.MERGE,
         )
         assert group.group_id == "G123"
         assert len(group.records) == 2
@@ -68,14 +70,14 @@ class TestDuplicateGroup:
         """Test duplicate group with match fields"""
         records = [
             {"id": "1", "name": "John Smith", "dob": "1980-01-15"},
-            {"id": "2", "name": "John Smith", "dob": "1980-01-15"}
+            {"id": "2", "name": "John Smith", "dob": "1980-01-15"},
         ]
         group = DuplicateGroup(
             group_id="G123",
             records=records,
             confidence=0.98,
             match_fields=["name", "dob"],
-            recommended_strategy=MergeStrategy.KEEP_NEWEST
+            recommended_strategy=MergeStrategy.KEEP_NEWEST,
         )
         assert "name" in group.match_fields
         assert "dob" in group.match_fields
@@ -88,12 +90,12 @@ class TestDuplicateGroup:
             records=records,
             confidence=0.95,
             match_fields=["name"],
-            recommended_strategy=MergeStrategy.MERGE
+            recommended_strategy=MergeStrategy.MERGE,
         )
         result = group.to_dict()
-        assert result['group_id'] == "G123"
-        assert result['confidence'] == 0.95
-        assert result['record_count'] == 1
+        assert result["group_id"] == "G123"
+        assert result["confidence"] == 0.95
+        assert result["record_count"] == 1
 
 
 class TestMergeResult:
@@ -107,10 +109,10 @@ class TestMergeResult:
             kept_record=merged,
             removed_records=["1", "2"],
             strategy_used=MergeStrategy.MERGE,
-            audit_info={"merge_date": "2024-01-15"}
+            audit_info={"merge_date": "2024-01-15"},
         )
         assert result.success is True
-        assert result.kept_record['id'] == "M001"
+        assert result.kept_record["id"] == "M001"
         assert len(result.removed_records) == 2
         assert result.strategy_used == MergeStrategy.MERGE
 
@@ -131,7 +133,9 @@ class TestDeduplicationService:
 
     def test_initialization_with_threshold(self):
         """Test DeduplicationService with custom thresholds"""
-        service = DeduplicationService(duplicate_threshold=0.90, possible_threshold=0.80)
+        service = DeduplicationService(
+            duplicate_threshold=0.90, possible_threshold=0.80
+        )
         assert service.duplicate_threshold == 0.90
         assert service.possible_threshold == 0.80
 
@@ -140,7 +144,7 @@ class TestDeduplicationService:
         record = {"id": "1", "name": "John Smith", "dob": "1980-01-15"}
         existing = [
             {"id": "2", "name": "John Smith", "dob": "1980-01-15"},
-            {"id": "3", "name": "Jane Doe", "dob": "1985-05-20"}
+            {"id": "3", "name": "Jane Doe", "dob": "1985-05-20"},
         ]
         duplicates = service.find_duplicates(record, existing)
         assert isinstance(duplicates, list)
@@ -196,7 +200,7 @@ class TestDeduplicationServiceMerge:
             records=records,
             confidence=0.95,
             match_fields=["name"],
-            recommended_strategy=MergeStrategy.KEEP_NEWEST
+            recommended_strategy=MergeStrategy.KEEP_NEWEST,
         )
         result = service.merge_duplicates(group, MergeStrategy.KEEP_NEWEST)
         assert isinstance(result, MergeResult)
@@ -212,7 +216,7 @@ class TestDeduplicationServiceMerge:
             records=records,
             confidence=0.95,
             match_fields=["name"],
-            recommended_strategy=MergeStrategy.KEEP_OLDEST
+            recommended_strategy=MergeStrategy.KEEP_OLDEST,
         )
         result = service.merge_duplicates(group, MergeStrategy.KEEP_OLDEST)
         assert result.strategy_used == MergeStrategy.KEEP_OLDEST
@@ -221,14 +225,19 @@ class TestDeduplicationServiceMerge:
         """Test merging with KEEP_MOST_COMPLETE strategy"""
         records = [
             {"id": "1", "name": "John Smith"},
-            {"id": "2", "name": "John Smith", "dob": "1980-01-15", "address": "123 Main St"},
+            {
+                "id": "2",
+                "name": "John Smith",
+                "dob": "1980-01-15",
+                "address": "123 Main St",
+            },
         ]
         group = DuplicateGroup(
             group_id="G001",
             records=records,
             confidence=0.95,
             match_fields=["name"],
-            recommended_strategy=MergeStrategy.KEEP_MOST_COMPLETE
+            recommended_strategy=MergeStrategy.KEEP_MOST_COMPLETE,
         )
         result = service.merge_duplicates(group, MergeStrategy.KEEP_MOST_COMPLETE)
         assert result.strategy_used == MergeStrategy.KEEP_MOST_COMPLETE
@@ -244,7 +253,7 @@ class TestDeduplicationServiceMerge:
             records=records,
             confidence=0.95,
             match_fields=["name"],
-            recommended_strategy=MergeStrategy.MERGE
+            recommended_strategy=MergeStrategy.MERGE,
         )
         result = service.merge_duplicates(group, MergeStrategy.MERGE)
         assert result.strategy_used == MergeStrategy.MERGE
@@ -266,7 +275,7 @@ class TestDeduplicationServiceRecordSelection:
             {"id": "3", "name": "John Smith", "created_at": "2024-03-15"},
         ]
         newest = service._select_newest(records)
-        assert newest['id'] == "2"
+        assert newest["id"] == "2"
 
     def test_select_oldest(self, service):
         """Test selecting oldest record"""
@@ -276,17 +285,23 @@ class TestDeduplicationServiceRecordSelection:
             {"id": "3", "name": "John Smith", "created_at": "2024-03-15"},
         ]
         oldest = service._select_oldest(records)
-        assert oldest['id'] == "1"
+        assert oldest["id"] == "1"
 
     def test_select_most_complete(self, service):
         """Test selecting most complete record"""
         records = [
             {"id": "1", "name": "John Smith"},
             {"id": "2", "name": "John Smith", "dob": "1980-01-15"},
-            {"id": "3", "name": "John Smith", "dob": "1980-01-15", "address": "123 Main St", "phone": "555-1234"},
+            {
+                "id": "3",
+                "name": "John Smith",
+                "dob": "1980-01-15",
+                "address": "123 Main St",
+                "phone": "555-1234",
+            },
         ]
         most_complete = service._select_most_complete(records)
-        assert most_complete['id'] == "3"
+        assert most_complete["id"] == "3"
 
 
 class TestDeduplicationServiceStatistics:
@@ -301,7 +316,7 @@ class TestDeduplicationServiceStatistics:
         """Test getting service statistics"""
         stats = service.get_statistics()
         assert isinstance(stats, dict)
-        assert 'total_duplicate_groups' in stats
+        assert "total_duplicate_groups" in stats
 
     def test_get_pending_review(self, service):
         """Test getting pending review items"""
@@ -405,7 +420,7 @@ class TestDeduplicationServiceEdgeCases:
             records=records,
             confidence=1.0,
             match_fields=["name"],
-            recommended_strategy=MergeStrategy.KEEP_NEWEST
+            recommended_strategy=MergeStrategy.KEEP_NEWEST,
         )
         result = service.merge_duplicates(group, MergeStrategy.KEEP_NEWEST)
         # Single record group returns a MergeResult but may have kept_record as None

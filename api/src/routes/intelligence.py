@@ -5,8 +5,9 @@ FastAPI routes for intelligence layer capabilities.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
@@ -19,8 +20,10 @@ router = APIRouter(prefix="/intelligence", tags=["intelligence"])
 # REQUEST/RESPONSE MODELS
 # =============================================================================
 
+
 class ScenarioAnalysisRequest(BaseModel):
     """Request for scenario analysis."""
+
     property_data: Dict[str, Any] = Field(default_factory=dict)
     entity_data: Optional[Dict[str, Any]] = None
     lien_data: Optional[Dict[str, Any]] = None
@@ -29,6 +32,7 @@ class ScenarioAnalysisRequest(BaseModel):
 
 class ScenarioResult(BaseModel):
     """A single scenario result."""
+
     scenario_id: str
     scenario_name: str
     category: str
@@ -40,6 +44,7 @@ class ScenarioResult(BaseModel):
 
 class ScenarioAnalysisResponse(BaseModel):
     """Response from scenario analysis."""
+
     total_scenarios: int
     high_confidence_count: int
     by_category: Dict[str, int]
@@ -50,6 +55,7 @@ class ScenarioAnalysisResponse(BaseModel):
 
 class BlockerAnalysisRequest(BaseModel):
     """Request for blocker analysis."""
+
     property_data: Dict[str, Any] = Field(default_factory=dict)
     lien_data: Optional[Dict[str, Any]] = None
     title_data: Optional[Dict[str, Any]] = None
@@ -58,6 +64,7 @@ class BlockerAnalysisRequest(BaseModel):
 
 class BlockerResult(BaseModel):
     """A single blocker result."""
+
     blocker_id: str
     blocker_type: str
     name: str
@@ -68,6 +75,7 @@ class BlockerResult(BaseModel):
 
 class FixOption(BaseModel):
     """A fix option for a blocker."""
+
     action: str
     description: str
     cost_range: Optional[str] = None
@@ -77,6 +85,7 @@ class FixOption(BaseModel):
 
 class BlockerAnalysisResponse(BaseModel):
     """Response from blocker analysis."""
+
     total_blockers: int
     critical_count: int
     high_count: int
@@ -90,28 +99,29 @@ class BlockerAnalysisResponse(BaseModel):
 # ROUTES
 # =============================================================================
 
+
 @router.post("/scenarios", response_model=ScenarioAnalysisResponse)
 async def analyze_scenarios(request: ScenarioAnalysisRequest):
     """
     Run scenario analysis using the ScenarioUniverseBuilder.
-    
+
     Identifies all possible scenarios for a property/entity and ranks
     by confidence and relevance.
     """
     try:
         from datagod.intelligence import ScenarioUniverseBuilder
-        
+
         builder = ScenarioUniverseBuilder()
-        
+
         scenarios = await builder.analyze(
             property_data=request.property_data,
             entity_data=request.entity_data,
             lien_data=request.lien_data,
-            risk_data=request.risk_data
+            risk_data=request.risk_data,
         )
-        
+
         summary = builder.get_scenario_summary(scenarios)
-        
+
         # Convert to response format
         scenario_results = [
             ScenarioResult(
@@ -121,25 +131,25 @@ async def analyze_scenarios(request: ScenarioAnalysisRequest):
                 confidence=s.confidence.value,
                 confidence_score=s.confidence_score,
                 description=s.description,
-                recommended_actions=s.recommended_actions
+                recommended_actions=s.recommended_actions,
             )
             for s in scenarios[:20]  # Limit to top 20
         ]
-        
+
         return ScenarioAnalysisResponse(
             total_scenarios=len(scenarios),
             high_confidence_count=summary.get("high_confidence_count", 0),
             by_category=summary.get("by_category", {}),
             scenarios=scenario_results,
             summary=summary,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat(),
         )
-        
+
     except Exception as e:
         logger.error(f"Scenario analysis failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Scenario analysis failed: {str(e)}"
+            detail=f"Scenario analysis failed: {str(e)}",
         )
 
 
@@ -147,27 +157,27 @@ async def analyze_scenarios(request: ScenarioAnalysisRequest):
 async def analyze_blockers(request: BlockerAnalysisRequest):
     """
     Run blocker analysis using the BlockerUnlockerEngine.
-    
+
     Identifies all blockers and generates prioritized fix lists.
     """
     try:
         from datagod.intelligence import BlockerUnlockerEngine
-        
+
         engine = BlockerUnlockerEngine()
-        
+
         blockers, unlockers = engine.analyze(
             property_data=request.property_data,
             lien_data=request.lien_data,
             title_data=request.title_data,
-            legal_data=request.legal_data
+            legal_data=request.legal_data,
         )
-        
+
         fix_list = engine.generate_fix_list(blockers)
-        
+
         # Count by severity
         critical_count = len([b for b in blockers if b.severity.value == "critical"])
         high_count = len([b for b in blockers if b.severity.value == "high"])
-        
+
         # Convert to response format
         blocker_results = [
             BlockerResult(
@@ -176,22 +186,22 @@ async def analyze_blockers(request: BlockerAnalysisRequest):
                 name=b.name,
                 severity=b.severity.value,
                 why_not=b.why_not,
-                priority_score=b.priority_score
+                priority_score=b.priority_score,
             )
             for b in blockers
         ]
-        
+
         unlocker_results = [
             {
                 "signal_type": u.signal_type,
                 "name": u.name,
                 "description": u.description,
                 "opportunity": u.opportunity,
-                "confidence": u.confidence
+                "confidence": u.confidence,
             }
             for u in unlockers
         ]
-        
+
         return BlockerAnalysisResponse(
             total_blockers=len(blockers),
             critical_count=critical_count,
@@ -199,14 +209,14 @@ async def analyze_blockers(request: BlockerAnalysisRequest):
             blockers=blocker_results,
             fix_list=fix_list,
             unlockers=unlocker_results,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat(),
         )
-        
+
     except Exception as e:
         logger.error(f"Blocker analysis failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Blocker analysis failed: {str(e)}"
+            detail=f"Blocker analysis failed: {str(e)}",
         )
 
 
@@ -217,16 +227,16 @@ async def get_scenario_details(scenario_id: str):
     """
     try:
         from datagod.intelligence import ScenarioUniverseBuilder
-        
+
         builder = ScenarioUniverseBuilder()
         scenario_type = builder.SCENARIO_TAXONOMY.get(scenario_id)
-        
+
         if not scenario_type:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Scenario type not found: {scenario_id}"
+                detail=f"Scenario type not found: {scenario_id}",
             )
-        
+
         return {
             "id": scenario_type.id,
             "name": scenario_type.name,
@@ -235,16 +245,15 @@ async def get_scenario_details(scenario_id: str):
             "required_data": scenario_type.required_data,
             "indicators": scenario_type.indicators,
             "risk_level": scenario_type.risk_level,
-            "actionable": scenario_type.actionable
+            "actionable": scenario_type.actionable,
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Get scenario details failed: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
 
 
@@ -255,16 +264,16 @@ async def get_blocker_details(blocker_id: str):
     """
     try:
         from datagod.intelligence import BlockerUnlockerEngine
-        
+
         engine = BlockerUnlockerEngine()
         blocker_type = engine.BLOCKER_CATALOG.get(blocker_id)
-        
+
         if not blocker_type:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Blocker type not found: {blocker_id}"
+                detail=f"Blocker type not found: {blocker_id}",
             )
-        
+
         return {
             "id": blocker_type.id,
             "name": blocker_type.name,
@@ -272,14 +281,13 @@ async def get_blocker_details(blocker_id: str):
             "severity": blocker_type.severity.value,
             "description": blocker_type.description,
             "requires_professional": blocker_type.requires_professional,
-            "default_fix_options": blocker_type.default_fix_options
+            "default_fix_options": blocker_type.default_fix_options,
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Get blocker details failed: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )

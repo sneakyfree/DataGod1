@@ -12,11 +12,12 @@ This module tests:
 Coverage target: 100% of record-related code in api_v2_simple.py
 """
 
-import pytest
 import os
 import sys
-from datetime import datetime, date
-from unittest.mock import patch, MagicMock
+from datetime import date, datetime
+from unittest.mock import MagicMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 
 # Set test environment before imports
@@ -24,8 +25,8 @@ os.environ["TESTING"] = "1"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 # Add paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'api', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "api", "src"))
 
 
 class TestJurisdictionEndpoints:
@@ -36,6 +37,7 @@ class TestJurisdictionEndpoints:
         """Create test client."""
         from api.src.api_v2_simple import app
         from api.src.db import init_db
+
         try:
             init_db()
         except Exception:
@@ -103,27 +105,26 @@ class TestJurisdictionEndpoints:
 
     def test_create_jurisdiction(self, client):
         """Test creating a jurisdiction."""
-        response = client.post("/jurisdictions", json={
-            "name": "Test County",
-            "state": "TX",
-            "county": "Test",
-            "jurisdiction_type": "county"
-        })
+        response = client.post(
+            "/jurisdictions",
+            json={
+                "name": "Test County",
+                "state": "TX",
+                "county": "Test",
+                "jurisdiction_type": "county",
+            },
+        )
         # May succeed or require auth
         assert response.status_code in [200, 201, 401, 422]
 
     def test_create_jurisdiction_missing_fields(self, client):
         """Test creating jurisdiction with missing required fields."""
-        response = client.post("/jurisdictions", json={
-            "name": "Test County"
-        })
+        response = client.post("/jurisdictions", json={"name": "Test County"})
         assert response.status_code in [401, 422]
 
     def test_update_jurisdiction_not_found(self, client):
         """Test updating non-existent jurisdiction."""
-        response = client.put("/jurisdictions/99999", json={
-            "name": "Updated Name"
-        })
+        response = client.put("/jurisdictions/99999", json={"name": "Updated Name"})
         assert response.status_code in [401, 404, 500]
 
     def test_delete_jurisdiction_unauthorized(self, client):
@@ -140,6 +141,7 @@ class TestRecordEndpoints:
         """Create test client."""
         from api.src.api_v2_simple import app
         from api.src.db import init_db
+
         try:
             init_db()
         except Exception:
@@ -215,27 +217,26 @@ class TestRecordEndpoints:
 
     def test_create_record(self, client):
         """Test creating a record."""
-        response = client.post("/records", json={
-            "jurisdiction_id": 1,
-            "record_type": "mortgage",
-            "title": "Test Mortgage Record",
-            "description": "Test description"
-        })
+        response = client.post(
+            "/records",
+            json={
+                "jurisdiction_id": 1,
+                "record_type": "mortgage",
+                "title": "Test Mortgage Record",
+                "description": "Test description",
+            },
+        )
         assert response.status_code in [200, 201, 401, 422]
 
     def test_create_record_missing_fields(self, client):
         """Test creating record with missing required fields."""
-        response = client.post("/records", json={
-            "title": "Test Record"
-        })
+        response = client.post("/records", json={"title": "Test Record"})
         assert response.status_code in [401, 422]
 
     def test_update_record_not_found(self, client):
         """Test updating non-existent record."""
         try:
-            response = client.put("/records/99999", json={
-                "title": "Updated Title"
-            })
+            response = client.put("/records/99999", json={"title": "Updated Title"})
             assert response.status_code in [401, 404, 500]
         except Exception:
             pass
@@ -257,6 +258,7 @@ class TestDataSourceEndpoints:
         """Create test client."""
         from api.src.api_v2_simple import app
         from api.src.db import init_db
+
         try:
             init_db()
         except Exception:
@@ -315,6 +317,7 @@ class TestEntityEndpoints:
         """Create test client."""
         from api.src.api_v2_simple import app
         from api.src.db import init_db
+
         try:
             init_db()
         except Exception:
@@ -360,10 +363,10 @@ class TestEntityEndpoints:
     def test_create_entity(self, client):
         """Test creating an entity."""
         try:
-            response = client.post("/entities", json={
-                "entity_name": "Test Corporation",
-                "entity_type": "company"
-            })
+            response = client.post(
+                "/entities",
+                json={"entity_name": "Test Corporation", "entity_type": "company"},
+            )
             assert response.status_code in [200, 201, 401, 422, 500]
         except Exception:
             pass
@@ -377,6 +380,7 @@ class TestRelationshipEndpoints:
         """Create test client."""
         from api.src.api_v2_simple import app
         from api.src.db import init_db
+
         try:
             init_db()
         except Exception:
@@ -419,6 +423,7 @@ class TestSearchEndpoint:
         """Create test client."""
         from api.src.api_v2_simple import app
         from api.src.db import init_db
+
         try:
             init_db()
         except Exception:
@@ -427,9 +432,7 @@ class TestSearchEndpoint:
 
     def test_search_basic(self, client):
         """Test basic search."""
-        response = client.post("/search", json={
-            "query": "test"
-        })
+        response = client.post("/search", json={"query": "test"})
         assert response.status_code in [200, 401, 422]
         if response.status_code == 200:
             data = response.json()
@@ -437,34 +440,28 @@ class TestSearchEndpoint:
 
     def test_search_with_entity_types(self, client):
         """Test search with entity type filter."""
-        response = client.post("/search", json={
-            "query": "test",
-            "entity_types": ["person"]
-        })
+        response = client.post(
+            "/search", json={"query": "test", "entity_types": ["person"]}
+        )
         assert response.status_code in [200, 401, 422]
 
     def test_search_with_record_types(self, client):
         """Test search with record type filter."""
-        response = client.post("/search", json={
-            "query": "test",
-            "record_types": ["mortgage"]
-        })
+        response = client.post(
+            "/search", json={"query": "test", "record_types": ["mortgage"]}
+        )
         assert response.status_code in [200, 401, 422]
 
     def test_search_with_pagination(self, client):
         """Test search with pagination."""
-        response = client.post("/search", json={
-            "query": "test",
-            "page": 1,
-            "page_size": 10
-        })
+        response = client.post(
+            "/search", json={"query": "test", "page": 1, "page_size": 10}
+        )
         assert response.status_code in [200, 401, 422]
 
     def test_search_empty_query(self, client):
         """Test search with empty query."""
-        response = client.post("/search", json={
-            "query": ""
-        })
+        response = client.post("/search", json={"query": ""})
         # May return empty results or all results
         assert response.status_code in [200, 401, 422]
 
@@ -474,8 +471,9 @@ class TestPydanticRecordModels:
 
     def test_jurisdiction_create_model(self):
         """Test JurisdictionCreate model."""
+        from typing import Any, Dict, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, Dict, Any
 
         class JurisdictionCreate(BaseModel):
             name: str
@@ -486,18 +484,16 @@ class TestPydanticRecordModels:
             metadata: Optional[Dict[str, Any]] = None
 
         jurisdiction = JurisdictionCreate(
-            name="Test County",
-            state="TX",
-            county="Test",
-            jurisdiction_type="county"
+            name="Test County", state="TX", county="Test", jurisdiction_type="county"
         )
         assert jurisdiction.name == "Test County"
         assert jurisdiction.state == "TX"
 
     def test_jurisdiction_update_model(self):
         """Test JurisdictionUpdate model with partial data."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class JurisdictionUpdate(BaseModel):
             name: Optional[str] = None
@@ -509,9 +505,10 @@ class TestPydanticRecordModels:
 
     def test_record_create_model(self):
         """Test RecordCreate model."""
-        from pydantic import BaseModel
-        from typing import Optional, Dict, Any
         from datetime import date
+        from typing import Any, Dict, Optional
+
+        from pydantic import BaseModel
 
         class RecordCreate(BaseModel):
             jurisdiction_id: int
@@ -522,17 +519,16 @@ class TestPydanticRecordModels:
             date: Optional[date] = None
 
         record = RecordCreate(
-            jurisdiction_id=1,
-            record_type="mortgage",
-            title="Test Record"
+            jurisdiction_id=1, record_type="mortgage", title="Test Record"
         )
         assert record.jurisdiction_id == 1
         assert record.record_type == "mortgage"
 
     def test_record_update_model(self):
         """Test RecordUpdate model with partial data."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class RecordUpdate(BaseModel):
             title: Optional[str] = None
@@ -544,8 +540,9 @@ class TestPydanticRecordModels:
 
     def test_data_source_create_model(self):
         """Test DataSourceCreate model."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class DataSourceCreate(BaseModel):
             jurisdiction_id: int
@@ -555,33 +552,30 @@ class TestPydanticRecordModels:
             status: str = "active"
 
         source = DataSourceCreate(
-            jurisdiction_id=1,
-            source_name="County API",
-            source_type="api"
+            jurisdiction_id=1, source_name="County API", source_type="api"
         )
         assert source.source_name == "County API"
         assert source.status == "active"
 
     def test_entity_create_model(self):
         """Test EntityCreate model."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class EntityCreate(BaseModel):
             entity_name: str
             entity_type: str
             address: Optional[str] = None
 
-        entity = EntityCreate(
-            entity_name="Test Corp",
-            entity_type="company"
-        )
+        entity = EntityCreate(entity_name="Test Corp", entity_type="company")
         assert entity.entity_name == "Test Corp"
 
     def test_relationship_create_model(self):
         """Test RelationshipCreate model."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class RelationshipCreate(BaseModel):
             entity1_id: int
@@ -590,17 +584,16 @@ class TestPydanticRecordModels:
             confidence_score: Optional[float] = None
 
         relationship = RelationshipCreate(
-            entity1_id=1,
-            entity2_id=2,
-            relationship_type="ownership"
+            entity1_id=1, entity2_id=2, relationship_type="ownership"
         )
         assert relationship.entity1_id == 1
         assert relationship.relationship_type == "ownership"
 
     def test_search_query_model(self):
         """Test SearchQuery model."""
+        from typing import List, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, List
 
         class SearchQuery(BaseModel):
             query: Optional[str] = None
@@ -677,11 +670,7 @@ class TestDatabaseQueryHelpers:
 
     def test_filter_none_values(self):
         """Test filtering None values from query params."""
-        params = {
-            "name": "test",
-            "state": None,
-            "county": "Harris"
-        }
+        params = {"name": "test", "state": None, "county": "Harris"}
 
         filtered = {k: v for k, v in params.items() if v is not None}
         assert "name" in filtered
@@ -787,7 +776,7 @@ class TestJurisdictionMetadata:
         metadata = {
             "website": "https://example.com",
             "contact_email": "info@example.com",
-            "last_updated": "2024-01-01"
+            "last_updated": "2024-01-01",
         }
 
         assert "website" in metadata
@@ -809,7 +798,7 @@ class TestRecordRawData:
         raw_data = {
             "source_id": "ABC123",
             "fetched_at": "2024-01-01T00:00:00",
-            "original_format": "json"
+            "original_format": "json",
         }
 
         assert "source_id" in raw_data
@@ -818,11 +807,7 @@ class TestRecordRawData:
         """Test raw data is JSON serializable."""
         import json
 
-        raw_data = {
-            "field1": "value1",
-            "field2": 123,
-            "nested": {"key": "value"}
-        }
+        raw_data = {"field1": "value1", "field2": 123, "nested": {"key": "value"}}
 
         json_str = json.dumps(raw_data)
         decoded = json.loads(json_str)
@@ -840,7 +825,7 @@ class TestSearchResultFormat:
             "total": 0,
             "page": 1,
             "page_size": 50,
-            "filters_applied": {}
+            "filters_applied": {},
         }
 
         assert "results" in result
@@ -852,9 +837,9 @@ class TestSearchResultFormat:
         result = {
             "results": [
                 {"id": 1, "type": "record", "title": "Test Record"},
-                {"id": 2, "type": "entity", "name": "Test Entity"}
+                {"id": 2, "type": "entity", "name": "Test Entity"},
             ],
-            "total": 2
+            "total": 2,
         }
 
         assert len(result["results"]) == 2
@@ -868,6 +853,7 @@ class TestCacheEndpoints:
     def client(self):
         """Create test client."""
         from api.src.api_v2_simple import app
+
         return TestClient(app)
 
     def test_cache_stats(self, client):
@@ -889,6 +875,7 @@ class TestStatisticsEndpoints:
         """Create test client."""
         from api.src.api_v2_simple import app
         from api.src.db import init_db
+
         try:
             init_db()
         except Exception:
@@ -914,7 +901,7 @@ class TestBulkOperations:
         records = [
             {"title": "Record 1", "type": "mortgage"},
             {"title": "Record 2", "type": "property"},
-            {"title": "Record 3", "type": "tax"}
+            {"title": "Record 3", "type": "tax"},
         ]
 
         assert len(records) == 3
@@ -925,7 +912,7 @@ class TestBulkOperations:
         updates = {
             1: {"title": "Updated 1"},
             2: {"title": "Updated 2"},
-            3: {"title": "Updated 3"}
+            3: {"title": "Updated 3"},
         }
 
         assert len(updates) == 3

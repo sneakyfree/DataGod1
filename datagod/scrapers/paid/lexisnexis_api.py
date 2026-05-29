@@ -22,15 +22,16 @@ regulations. Usage is restricted to permissible purposes.
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class PermissiblePurpose(Enum):
     """FCRA permissible purposes for data access"""
+
     CREDIT = "credit"  # Credit decisions
     EMPLOYMENT = "employment"  # Employment screening
     INSURANCE = "insurance"  # Insurance underwriting
@@ -43,6 +44,7 @@ class PermissiblePurpose(Enum):
 
 class RecordType(Enum):
     """Types of records available"""
+
     PERSON = "person"
     BUSINESS = "business"
     PROPERTY = "property"
@@ -58,6 +60,7 @@ class RecordType(Enum):
 @dataclass
 class PersonRecord:
     """Person search result from LexisNexis"""
+
     lexis_id: str
 
     # Name
@@ -125,33 +128,36 @@ class PersonRecord:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'lexis_id': self.lexis_id,
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-            'middle_name': self.middle_name,
-            'aliases': self.aliases,
-            'date_of_birth': self.date_of_birth.isoformat() if self.date_of_birth else None,
-            'age': self.age,
-            'deceased': self.deceased,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'zip_code': self.zip_code,
-            'phones': self.phones,
-            'emails': self.emails,
-            'address_history_count': len(self.address_history),
-            'relatives_count': len(self.relatives),
-            'properties_count': len(self.properties),
-            'bankruptcies_count': len(self.bankruptcies),
-            'liens_judgments_count': len(self.liens_judgments),
-            'match_score': self.match_score,
-            'fetched_at': self.fetched_at.isoformat()
+            "lexis_id": self.lexis_id,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "middle_name": self.middle_name,
+            "aliases": self.aliases,
+            "date_of_birth": (
+                self.date_of_birth.isoformat() if self.date_of_birth else None
+            ),
+            "age": self.age,
+            "deceased": self.deceased,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "zip_code": self.zip_code,
+            "phones": self.phones,
+            "emails": self.emails,
+            "address_history_count": len(self.address_history),
+            "relatives_count": len(self.relatives),
+            "properties_count": len(self.properties),
+            "bankruptcies_count": len(self.bankruptcies),
+            "liens_judgments_count": len(self.liens_judgments),
+            "match_score": self.match_score,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class BusinessRecord:
     """Business report from LexisNexis"""
+
     lexis_id: str
     business_name: str
 
@@ -217,30 +223,31 @@ class BusinessRecord:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'lexis_id': self.lexis_id,
-            'business_name': self.business_name,
-            'dba_names': self.dba_names,
-            'duns_number': self.duns_number,
-            'ein': self.ein,
-            'business_type': self.business_type,
-            'status': self.status,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'employee_count': self.employee_count,
-            'annual_revenue': self.annual_revenue,
-            'sic_code': self.sic_code,
-            'sic_description': self.sic_description,
-            'officers_count': len(self.officers),
-            'ucc_filings_count': len(self.ucc_filings),
-            'liens_judgments_count': len(self.liens_judgments),
-            'fetched_at': self.fetched_at.isoformat()
+            "lexis_id": self.lexis_id,
+            "business_name": self.business_name,
+            "dba_names": self.dba_names,
+            "duns_number": self.duns_number,
+            "ein": self.ein,
+            "business_type": self.business_type,
+            "status": self.status,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "employee_count": self.employee_count,
+            "annual_revenue": self.annual_revenue,
+            "sic_code": self.sic_code,
+            "sic_description": self.sic_description,
+            "officers_count": len(self.officers),
+            "ucc_filings_count": len(self.ucc_filings),
+            "liens_judgments_count": len(self.liens_judgments),
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class CourtRecord:
     """Court record from LexisNexis"""
+
     lexis_id: str
     case_number: str
     case_type: str  # civil, criminal, bankruptcy, etc.
@@ -282,26 +289,27 @@ class CourtRecord:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'lexis_id': self.lexis_id,
-            'case_number': self.case_number,
-            'case_type': self.case_type,
-            'court_name': self.court_name,
-            'court_state': self.court_state,
-            'filing_date': self.filing_date.isoformat() if self.filing_date else None,
-            'case_title': self.case_title,
-            'case_status': self.case_status,
-            'disposition': self.disposition,
-            'plaintiffs_count': len(self.plaintiffs),
-            'defendants_count': len(self.defendants),
-            'amount_claimed': self.amount_claimed,
-            'amount_awarded': self.amount_awarded,
-            'fetched_at': self.fetched_at.isoformat()
+            "lexis_id": self.lexis_id,
+            "case_number": self.case_number,
+            "case_type": self.case_type,
+            "court_name": self.court_name,
+            "court_state": self.court_state,
+            "filing_date": self.filing_date.isoformat() if self.filing_date else None,
+            "case_title": self.case_title,
+            "case_status": self.case_status,
+            "disposition": self.disposition,
+            "plaintiffs_count": len(self.plaintiffs),
+            "defendants_count": len(self.defendants),
+            "amount_claimed": self.amount_claimed,
+            "amount_awarded": self.amount_awarded,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class AssetRecord:
     """Asset (property, vehicle, aircraft) record"""
+
     lexis_id: str
     asset_type: str  # property, vehicle, aircraft, watercraft
 
@@ -336,24 +344,25 @@ class AssetRecord:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'lexis_id': self.lexis_id,
-            'asset_type': self.asset_type,
-            'owner_name': self.owner_name,
-            'property_address': self.property_address,
-            'property_state': self.property_state,
-            'assessed_value': self.assessed_value,
-            'vin': self.vin,
-            'make': self.make,
-            'model': self.model,
-            'year': self.year,
-            'tail_number': self.tail_number,
-            'fetched_at': self.fetched_at.isoformat()
+            "lexis_id": self.lexis_id,
+            "asset_type": self.asset_type,
+            "owner_name": self.owner_name,
+            "property_address": self.property_address,
+            "property_state": self.property_state,
+            "assessed_value": self.assessed_value,
+            "vin": self.vin,
+            "make": self.make,
+            "model": self.model,
+            "year": self.year,
+            "tail_number": self.tail_number,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class PersonSearch:
     """Search parameters for person lookup"""
+
     # Name
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -389,6 +398,7 @@ class PersonSearch:
 @dataclass
 class BusinessSearch:
     """Search parameters for business lookup"""
+
     # Name
     business_name: Optional[str] = None
     dba_name: Optional[str] = None
@@ -432,11 +442,13 @@ class LexisNexisAPI(ABC):
 
     BASE_URL = "https://risk.lexisnexis.com/api/v1"
 
-    def __init__(self,
-                 api_key: str,
-                 api_secret: str,
-                 customer_id: str,
-                 config: Dict[str, Any] = None):
+    def __init__(
+        self,
+        api_key: str,
+        api_secret: str,
+        customer_id: str,
+        config: Dict[str, Any] = None,
+    ):
         """
         Initialize LexisNexis API client.
 
@@ -472,8 +484,9 @@ class LexisNexisAPI(ABC):
         pass
 
     @abstractmethod
-    def get_person_report(self, lexis_id: str,
-                         purpose: PermissiblePurpose) -> Optional[PersonRecord]:
+    def get_person_report(
+        self, lexis_id: str, purpose: PermissiblePurpose
+    ) -> Optional[PersonRecord]:
         """
         Get comprehensive person report.
 
@@ -513,12 +526,14 @@ class LexisNexisAPI(ABC):
         pass
 
     @abstractmethod
-    def search_court_records(self,
-                            party_name: str,
-                            state: str = None,
-                            case_type: str = None,
-                            date_from: date = None,
-                            date_to: date = None) -> List[CourtRecord]:
+    def search_court_records(
+        self,
+        party_name: str,
+        state: str = None,
+        case_type: str = None,
+        date_from: date = None,
+        date_to: date = None,
+    ) -> List[CourtRecord]:
         """
         Search court records by party name.
 
@@ -548,10 +563,9 @@ class LexisNexisAPI(ABC):
         pass
 
     @abstractmethod
-    def search_assets(self,
-                     owner_name: str,
-                     asset_type: str = None,
-                     state: str = None) -> List[AssetRecord]:
+    def search_assets(
+        self, owner_name: str, asset_type: str = None, state: str = None
+    ) -> List[AssetRecord]:
         """
         Search for assets by owner name.
 
@@ -566,11 +580,13 @@ class LexisNexisAPI(ABC):
         pass
 
     @abstractmethod
-    def search_bankruptcies(self,
-                           party_name: str,
-                           state: str = None,
-                           date_from: date = None,
-                           date_to: date = None) -> List[CourtRecord]:
+    def search_bankruptcies(
+        self,
+        party_name: str,
+        state: str = None,
+        date_from: date = None,
+        date_to: date = None,
+    ) -> List[CourtRecord]:
         """
         Search bankruptcy records.
 
@@ -586,11 +602,13 @@ class LexisNexisAPI(ABC):
         pass
 
     @abstractmethod
-    def search_liens_judgments(self,
-                              party_name: str,
-                              state: str = None,
-                              date_from: date = None,
-                              date_to: date = None) -> List[Dict[str, Any]]:
+    def search_liens_judgments(
+        self,
+        party_name: str,
+        state: str = None,
+        date_from: date = None,
+        date_to: date = None,
+    ) -> List[Dict[str, Any]]:
         """
         Search liens and judgments.
 
@@ -627,11 +645,14 @@ class LexisNexisAPIClient(LexisNexisAPI):
     def search_person(self, search: PersonSearch) -> List[PersonRecord]:
         """Search for a person."""
         self.validate_permissible_purpose(search.permissible_purpose)
-        logger.info(f"Searching LexisNexis person: {search.first_name} {search.last_name}")
+        logger.info(
+            f"Searching LexisNexis person: {search.first_name} {search.last_name}"
+        )
         return []
 
-    def get_person_report(self, lexis_id: str,
-                         purpose: PermissiblePurpose) -> Optional[PersonRecord]:
+    def get_person_report(
+        self, lexis_id: str, purpose: PermissiblePurpose
+    ) -> Optional[PersonRecord]:
         """Get comprehensive person report."""
         self.validate_permissible_purpose(purpose)
         logger.info(f"Getting LexisNexis person report: {lexis_id}")
@@ -647,12 +668,14 @@ class LexisNexisAPIClient(LexisNexisAPI):
         logger.info(f"Getting LexisNexis business report: {lexis_id}")
         return None
 
-    def search_court_records(self,
-                            party_name: str,
-                            state: str = None,
-                            case_type: str = None,
-                            date_from: date = None,
-                            date_to: date = None) -> List[CourtRecord]:
+    def search_court_records(
+        self,
+        party_name: str,
+        state: str = None,
+        case_type: str = None,
+        date_from: date = None,
+        date_to: date = None,
+    ) -> List[CourtRecord]:
         """Search court records by party name."""
         logger.info(f"Searching LexisNexis court records: {party_name}")
         return []
@@ -662,42 +685,41 @@ class LexisNexisAPIClient(LexisNexisAPI):
         logger.info(f"Getting LexisNexis court case: {lexis_id}")
         return None
 
-    def search_assets(self,
-                     owner_name: str,
-                     asset_type: str = None,
-                     state: str = None) -> List[AssetRecord]:
+    def search_assets(
+        self, owner_name: str, asset_type: str = None, state: str = None
+    ) -> List[AssetRecord]:
         """Search for assets by owner name."""
         logger.info(f"Searching LexisNexis assets: {owner_name}")
         return []
 
-    def search_bankruptcies(self,
-                           party_name: str,
-                           state: str = None,
-                           date_from: date = None,
-                           date_to: date = None) -> List[CourtRecord]:
+    def search_bankruptcies(
+        self,
+        party_name: str,
+        state: str = None,
+        date_from: date = None,
+        date_to: date = None,
+    ) -> List[CourtRecord]:
         """Search bankruptcy records."""
         logger.info(f"Searching LexisNexis bankruptcies: {party_name}")
         return []
 
-    def search_liens_judgments(self,
-                              party_name: str,
-                              state: str = None,
-                              date_from: date = None,
-                              date_to: date = None) -> List[Dict[str, Any]]:
+    def search_liens_judgments(
+        self,
+        party_name: str,
+        state: str = None,
+        date_from: date = None,
+        date_to: date = None,
+    ) -> List[Dict[str, Any]]:
         """Search liens and judgments."""
         logger.info(f"Searching LexisNexis liens/judgments: {party_name}")
         return []
 
 
 # Factory function
-def create_lexisnexis_client(api_key: str,
-                             api_secret: str,
-                             customer_id: str,
-                             config: Dict[str, Any] = None) -> LexisNexisAPIClient:
+def create_lexisnexis_client(
+    api_key: str, api_secret: str, customer_id: str, config: Dict[str, Any] = None
+) -> LexisNexisAPIClient:
     """Create a LexisNexis API client instance."""
     return LexisNexisAPIClient(
-        api_key=api_key,
-        api_secret=api_secret,
-        customer_id=customer_id,
-        config=config
+        api_key=api_key, api_secret=api_secret, customer_id=customer_id, config=config
     )

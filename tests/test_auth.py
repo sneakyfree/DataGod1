@@ -10,10 +10,11 @@ Tests cover:
 - Account lockout
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
-from datetime import datetime, timedelta
 import uuid
+from datetime import datetime, timedelta
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestUserRegistration:
@@ -22,6 +23,7 @@ class TestUserRegistration:
     def test_registration_success(self):
         """Test successful user registration with valid data."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         # Valid registration data
@@ -29,7 +31,7 @@ class TestUserRegistration:
             "username": "newuser",
             "email": "newuser@example.com",
             "password": "SecurePass123",
-            "full_name": "New User"
+            "full_name": "New User",
         }
 
         # Validate password hashing
@@ -54,29 +56,33 @@ class TestUserRegistration:
     def test_registration_invalid_email_format(self):
         """Test registration fails with invalid email format."""
         import re
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
         invalid_emails = [
             "notanemail",
             "missing@domain",
             "@nodomain.com",
             "spaces in@email.com",
-            "no.at" "sign.com"
+            "no.at" "sign.com",
         ]
 
         for email in invalid_emails:
-            assert not re.match(email_regex, email), f"Email '{email}' should be invalid"
+            assert not re.match(
+                email_regex, email
+            ), f"Email '{email}' should be invalid"
 
     def test_registration_valid_email_format(self):
         """Test valid email formats are accepted."""
         import re
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
         valid_emails = [
             "user@example.com",
             "user.name@example.com",
             "user+tag@example.org",
-            "user123@subdomain.example.co.uk"
+            "user123@subdomain.example.co.uk",
         ]
 
         for email in valid_emails:
@@ -85,10 +91,10 @@ class TestUserRegistration:
     def test_registration_weak_password(self):
         """Test registration fails with weak password."""
         weak_passwords = [
-            "short",      # Too short
-            "12345678",   # No letters
-            "abcdefgh",   # No numbers
-            "abc123",     # Too short
+            "short",  # Too short
+            "12345678",  # No letters
+            "abcdefgh",  # No numbers
+            "abc123",  # Too short
         ]
 
         for password in weak_passwords:
@@ -119,16 +125,21 @@ class TestUserRegistration:
     def test_registration_username_validation(self):
         """Test username format validation."""
         import re
-        username_regex = r'^[a-zA-Z0-9_]+$'
+
+        username_regex = r"^[a-zA-Z0-9_]+$"
 
         valid_usernames = ["user123", "test_user", "Admin", "user_name_123"]
         invalid_usernames = ["user@name", "user name", "user-name", "user.name"]
 
         for username in valid_usernames:
-            assert re.match(username_regex, username), f"Username '{username}' should be valid"
+            assert re.match(
+                username_regex, username
+            ), f"Username '{username}' should be valid"
 
         for username in invalid_usernames:
-            assert not re.match(username_regex, username), f"Username '{username}' should be invalid"
+            assert not re.match(
+                username_regex, username
+            ), f"Username '{username}' should be invalid"
 
 
 class TestUserLogin:
@@ -137,6 +148,7 @@ class TestUserLogin:
     def test_login_success(self):
         """Test successful login with correct credentials."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         stored_hash = pwd_context.hash("correctpassword")
@@ -145,6 +157,7 @@ class TestUserLogin:
     def test_login_wrong_password(self):
         """Test login fails with wrong password."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         stored_hash = pwd_context.hash("correctpassword")
@@ -159,10 +172,7 @@ class TestUserLogin:
 
     def test_login_disabled_user(self):
         """Test login fails for disabled user."""
-        user = {
-            "username": "disableduser",
-            "disabled": True
-        }
+        user = {"username": "disableduser", "disabled": True}
 
         assert user["disabled"] is True
 
@@ -204,7 +214,7 @@ class TestJWTTokens:
 
     def test_jwt_token_expired(self):
         """Test expired JWT token is rejected."""
-        from jose import jwt, JWTError
+        from jose import JWTError, jwt
 
         SECRET_KEY = "test-secret-key"
         ALGORITHM = "HS256"
@@ -220,7 +230,7 @@ class TestJWTTokens:
 
     def test_jwt_token_invalid_signature(self):
         """Test JWT token with wrong secret is rejected."""
-        from jose import jwt, JWTError
+        from jose import JWTError, jwt
 
         SECRET_KEY = "correct-secret-key"
         WRONG_SECRET = "wrong-secret-key"
@@ -245,7 +255,7 @@ class TestPasswordReset:
 
         assert token is not None
         assert len(token) == 36  # UUID format
-        assert '-' in token
+        assert "-" in token
 
     def test_password_reset_token_unique(self):
         """Test password reset tokens are unique."""
@@ -293,6 +303,7 @@ class TestPasswordReset:
     def test_password_reset_success(self):
         """Test successful password reset."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         old_password = "OldPass123"
@@ -312,20 +323,14 @@ class TestRoleBasedAccess:
 
     def test_admin_has_all_roles(self):
         """Test admin user has admin role."""
-        admin_user = {
-            "username": "admin",
-            "roles": ["admin", "user"]
-        }
+        admin_user = {"username": "admin", "roles": ["admin", "user"]}
 
         assert "admin" in admin_user["roles"]
         assert "user" in admin_user["roles"]
 
     def test_regular_user_roles(self):
         """Test regular user has only user role."""
-        regular_user = {
-            "username": "user",
-            "roles": ["user"]
-        }
+        regular_user = {"username": "user", "roles": ["user"]}
 
         assert "user" in regular_user["roles"]
         assert "admin" not in regular_user["roles"]
@@ -362,13 +367,12 @@ class TestAccountLockout:
 
     def test_account_not_locked_initially(self):
         """Test new account is not locked."""
-        user = {
-            "username": "newuser",
-            "failed_login_count": 0,
-            "locked_until": None
-        }
+        user = {"username": "newuser", "failed_login_count": 0, "locked_until": None}
 
-        is_locked = user["locked_until"] is not None and user["locked_until"] > datetime.utcnow()
+        is_locked = (
+            user["locked_until"] is not None
+            and user["locked_until"] > datetime.utcnow()
+        )
         assert not is_locked
 
     def test_account_locked_after_failures(self):
@@ -377,11 +381,14 @@ class TestAccountLockout:
         user = {
             "username": "testuser",
             "failed_login_count": 5,
-            "locked_until": datetime.utcnow() + timedelta(minutes=30)
+            "locked_until": datetime.utcnow() + timedelta(minutes=30),
         }
 
         assert user["failed_login_count"] >= MAX_FAILED_ATTEMPTS
-        is_locked = user["locked_until"] is not None and user["locked_until"] > datetime.utcnow()
+        is_locked = (
+            user["locked_until"] is not None
+            and user["locked_until"] > datetime.utcnow()
+        )
         assert is_locked
 
     def test_account_unlocked_after_timeout(self):
@@ -389,10 +396,13 @@ class TestAccountLockout:
         user = {
             "username": "testuser",
             "failed_login_count": 5,
-            "locked_until": datetime.utcnow() - timedelta(minutes=1)  # Expired
+            "locked_until": datetime.utcnow() - timedelta(minutes=1),  # Expired
         }
 
-        is_locked = user["locked_until"] is not None and user["locked_until"] > datetime.utcnow()
+        is_locked = (
+            user["locked_until"] is not None
+            and user["locked_until"] > datetime.utcnow()
+        )
         assert not is_locked
 
     def test_failed_login_count_increments(self):
@@ -404,10 +414,7 @@ class TestAccountLockout:
 
     def test_failed_login_count_resets_on_success(self):
         """Test failed login count resets on successful login."""
-        user = {
-            "failed_login_count": 3,
-            "locked_until": None
-        }
+        user = {"failed_login_count": 3, "locked_until": None}
 
         # Simulate successful login
         user["failed_login_count"] = 0
@@ -422,6 +429,7 @@ class TestPasswordHashing:
     def test_password_hash_is_different(self):
         """Test hashed password is different from plain password."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         password = "TestPassword123"
@@ -433,6 +441,7 @@ class TestPasswordHashing:
     def test_same_password_different_hashes(self):
         """Test same password produces different hashes (salt)."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         password = "TestPassword123"
@@ -448,6 +457,7 @@ class TestPasswordHashing:
     def test_bcrypt_hash_format(self):
         """Test password hash uses bcrypt format."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         password = "TestPassword123"
@@ -505,7 +515,7 @@ class TestEmailService:
             to_email="user@example.com",
             username="testuser",
             reset_token="test-token-123",
-            expires_hours=1
+            expires_hours=1,
         )
 
         assert result is True
@@ -516,8 +526,7 @@ class TestEmailService:
 
         email_service = EmailService(provider="stub")
         result = email_service.send_welcome_email(
-            to_email="user@example.com",
-            username="newuser"
+            to_email="user@example.com", username="newuser"
         )
 
         assert result is True

@@ -14,18 +14,20 @@ Rate Limit: 240 requests/minute without API key, 120,000/day with free key
 """
 
 import asyncio
-import aiohttp
-from dataclasses import dataclass, field
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List, Dict, Any
 import logging
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
 
 class FDAEndpoint(Enum):
     """FDA API endpoints"""
+
     # Drug endpoints
     DRUG_EVENT = "drug/event"
     DRUG_LABEL = "drug/label"
@@ -48,13 +50,15 @@ class FDAEndpoint(Enum):
 
 class RecallClassification(Enum):
     """FDA recall classification levels"""
-    CLASS_I = "Class I"      # Serious health hazard
-    CLASS_II = "Class II"    # Temporary/reversible health effects
+
+    CLASS_I = "Class I"  # Serious health hazard
+    CLASS_II = "Class II"  # Temporary/reversible health effects
     CLASS_III = "Class III"  # Unlikely to cause adverse health
 
 
 class RecallStatus(Enum):
     """FDA recall status"""
+
     ONGOING = "Ongoing"
     COMPLETED = "Completed"
     TERMINATED = "Terminated"
@@ -64,6 +68,7 @@ class RecallStatus(Enum):
 @dataclass
 class DrugAdverseEvent:
     """Drug adverse event report from FAERS"""
+
     report_id: str
     receive_date: Optional[date] = None
     receipt_date: Optional[date] = None
@@ -84,6 +89,7 @@ class DrugAdverseEvent:
 @dataclass
 class DrugRecall:
     """Drug recall/enforcement record"""
+
     recall_number: str
     product_description: str
     reason_for_recall: str
@@ -106,6 +112,7 @@ class DrugRecall:
 @dataclass
 class DeviceRecall:
     """Medical device recall record"""
+
     recall_number: str
     product_description: str
     reason_for_recall: str
@@ -123,6 +130,7 @@ class DeviceRecall:
 @dataclass
 class FoodRecall:
     """Food recall/enforcement record"""
+
     recall_number: str
     product_description: str
     reason_for_recall: str
@@ -141,6 +149,7 @@ class FoodRecall:
 @dataclass
 class DrugLabel:
     """Drug product label information"""
+
     set_id: str
     spl_id: str
     effective_time: Optional[date] = None
@@ -203,7 +212,7 @@ class FDAApiClient:
         search: Optional[str] = None,
         count: Optional[str] = None,
         limit: int = 100,
-        skip: int = 0
+        skip: int = 0,
     ) -> Dict[str, Any]:
         """
         Make request to FDA API
@@ -222,9 +231,7 @@ class FDAApiClient:
 
         url = f"{self.BASE_URL}/{endpoint.value}.json"
 
-        params = {
-            "limit": min(limit, 1000)
-        }
+        params = {"limit": min(limit, 1000)}
 
         if skip > 0:
             params["skip"] = skip
@@ -279,7 +286,7 @@ class FDAApiClient:
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
         limit: int = 100,
-        skip: int = 0
+        skip: int = 0,
     ) -> List[DrugAdverseEvent]:
         """
         Search drug adverse event reports
@@ -316,10 +323,7 @@ class FDAApiClient:
         search = "+AND+".join(search_parts) if search_parts else None
 
         response = await self._make_request(
-            FDAEndpoint.DRUG_EVENT,
-            search=search,
-            limit=limit,
-            skip=skip
+            FDAEndpoint.DRUG_EVENT, search=search, limit=limit, skip=skip
         )
 
         events = []
@@ -328,36 +332,54 @@ class FDAApiClient:
 
             drugs = []
             for drug in patient.get("drug", []):
-                drugs.append({
-                    "name": drug.get("medicinalproduct"),
-                    "generic_name": drug.get("openfda", {}).get("generic_name", [None])[0],
-                    "brand_name": drug.get("openfda", {}).get("brand_name", [None])[0],
-                    "manufacturer": drug.get("openfda", {}).get("manufacturer_name", [None])[0],
-                    "characterization": drug.get("drugcharacterization"),
-                    "indication": drug.get("drugindication"),
-                    "route": drug.get("drugadministrationroute"),
-                    "dose": drug.get("drugdosagetext")
-                })
+                drugs.append(
+                    {
+                        "name": drug.get("medicinalproduct"),
+                        "generic_name": drug.get("openfda", {}).get(
+                            "generic_name", [None]
+                        )[0],
+                        "brand_name": drug.get("openfda", {}).get("brand_name", [None])[
+                            0
+                        ],
+                        "manufacturer": drug.get("openfda", {}).get(
+                            "manufacturer_name", [None]
+                        )[0],
+                        "characterization": drug.get("drugcharacterization"),
+                        "indication": drug.get("drugindication"),
+                        "route": drug.get("drugadministrationroute"),
+                        "dose": drug.get("drugdosagetext"),
+                    }
+                )
 
             reactions = [r.get("reactionmeddrapt") for r in patient.get("reaction", [])]
 
-            events.append(DrugAdverseEvent(
-                report_id=result.get("safetyreportid", ""),
-                receive_date=self._parse_date(result.get("receivedate")),
-                receipt_date=self._parse_date(result.get("receiptdate")),
-                serious=result.get("serious") == "1",
-                serious_death=result.get("seriousnessdeath") == "1",
-                serious_hospitalization=result.get("seriousnesshospitalization") == "1",
-                serious_disability=result.get("seriousnessdisabling") == "1",
-                patient_age=patient.get("patientonsetage"),
-                patient_sex=patient.get("patientsex"),
-                patient_weight=patient.get("patientweight"),
-                drugs=drugs,
-                reactions=[r for r in reactions if r],
-                outcomes=[o.get("patientoutcome") for o in patient.get("patientoutcome", [])],
-                reporter_qualification=result.get("primarysource", {}).get("qualification"),
-                sender_organization=result.get("sender", {}).get("senderorganization")
-            ))
+            events.append(
+                DrugAdverseEvent(
+                    report_id=result.get("safetyreportid", ""),
+                    receive_date=self._parse_date(result.get("receivedate")),
+                    receipt_date=self._parse_date(result.get("receiptdate")),
+                    serious=result.get("serious") == "1",
+                    serious_death=result.get("seriousnessdeath") == "1",
+                    serious_hospitalization=result.get("seriousnesshospitalization")
+                    == "1",
+                    serious_disability=result.get("seriousnessdisabling") == "1",
+                    patient_age=patient.get("patientonsetage"),
+                    patient_sex=patient.get("patientsex"),
+                    patient_weight=patient.get("patientweight"),
+                    drugs=drugs,
+                    reactions=[r for r in reactions if r],
+                    outcomes=[
+                        o.get("patientoutcome")
+                        for o in patient.get("patientoutcome", [])
+                    ],
+                    reporter_qualification=result.get("primarysource", {}).get(
+                        "qualification"
+                    ),
+                    sender_organization=result.get("sender", {}).get(
+                        "senderorganization"
+                    ),
+                )
+            )
 
         return events
 
@@ -373,7 +395,7 @@ class FDAApiClient:
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
         limit: int = 100,
-        skip: int = 0
+        skip: int = 0,
     ) -> List[DrugRecall]:
         """
         Search drug recall/enforcement records
@@ -416,10 +438,7 @@ class FDAApiClient:
         search = "+AND+".join(search_parts) if search_parts else None
 
         response = await self._make_request(
-            FDAEndpoint.DRUG_ENFORCEMENT,
-            search=search,
-            limit=limit,
-            skip=skip
+            FDAEndpoint.DRUG_ENFORCEMENT, search=search, limit=limit, skip=skip
         )
 
         recalls = []
@@ -438,25 +457,31 @@ class FDAApiClient:
                     recall_status = rs
                     break
 
-            recalls.append(DrugRecall(
-                recall_number=result.get("recall_number", ""),
-                product_description=result.get("product_description", ""),
-                reason_for_recall=result.get("reason_for_recall", ""),
-                classification=recall_classification,
-                status=recall_status,
-                recalling_firm=result.get("recalling_firm"),
-                city=result.get("city"),
-                state=result.get("state"),
-                country=result.get("country"),
-                voluntary_mandated=result.get("voluntary_mandated"),
-                initial_firm_notification=result.get("initial_firm_notification"),
-                distribution_pattern=result.get("distribution_pattern"),
-                recall_initiation_date=self._parse_date(result.get("recall_initiation_date")),
-                center_classification_date=self._parse_date(result.get("center_classification_date")),
-                report_date=self._parse_date(result.get("report_date")),
-                product_quantity=result.get("product_quantity"),
-                code_info=result.get("code_info")
-            ))
+            recalls.append(
+                DrugRecall(
+                    recall_number=result.get("recall_number", ""),
+                    product_description=result.get("product_description", ""),
+                    reason_for_recall=result.get("reason_for_recall", ""),
+                    classification=recall_classification,
+                    status=recall_status,
+                    recalling_firm=result.get("recalling_firm"),
+                    city=result.get("city"),
+                    state=result.get("state"),
+                    country=result.get("country"),
+                    voluntary_mandated=result.get("voluntary_mandated"),
+                    initial_firm_notification=result.get("initial_firm_notification"),
+                    distribution_pattern=result.get("distribution_pattern"),
+                    recall_initiation_date=self._parse_date(
+                        result.get("recall_initiation_date")
+                    ),
+                    center_classification_date=self._parse_date(
+                        result.get("center_classification_date")
+                    ),
+                    report_date=self._parse_date(result.get("report_date")),
+                    product_quantity=result.get("product_quantity"),
+                    code_info=result.get("code_info"),
+                )
+            )
 
         return recalls
 
@@ -470,7 +495,7 @@ class FDAApiClient:
         classification: Optional[RecallClassification] = None,
         state: Optional[str] = None,
         limit: int = 100,
-        skip: int = 0
+        skip: int = 0,
     ) -> List[DeviceRecall]:
         """
         Search medical device recall records
@@ -507,27 +532,34 @@ class FDAApiClient:
         search = "+AND+".join(search_parts) if search_parts else None
 
         response = await self._make_request(
-            FDAEndpoint.DEVICE_RECALL,
-            search=search,
-            limit=limit,
-            skip=skip
+            FDAEndpoint.DEVICE_RECALL, search=search, limit=limit, skip=skip
         )
 
         recalls = []
         for result in response.get("results", []):
-            recalls.append(DeviceRecall(
-                recall_number=result.get("res_event_number", ""),
-                product_description=result.get("product_description", ""),
-                reason_for_recall=result.get("reason_for_recall", ""),
-                product_code=result.get("product_code"),
-                k_number=result.get("k_numbers", [None])[0] if result.get("k_numbers") else None,
-                pma_number=result.get("pma_numbers", [None])[0] if result.get("pma_numbers") else None,
-                recalling_firm=result.get("recalling_firm"),
-                city=result.get("city"),
-                state=result.get("state"),
-                event_date=self._parse_date(result.get("event_date_initiated")),
-                root_cause_description=result.get("root_cause_description")
-            ))
+            recalls.append(
+                DeviceRecall(
+                    recall_number=result.get("res_event_number", ""),
+                    product_description=result.get("product_description", ""),
+                    reason_for_recall=result.get("reason_for_recall", ""),
+                    product_code=result.get("product_code"),
+                    k_number=(
+                        result.get("k_numbers", [None])[0]
+                        if result.get("k_numbers")
+                        else None
+                    ),
+                    pma_number=(
+                        result.get("pma_numbers", [None])[0]
+                        if result.get("pma_numbers")
+                        else None
+                    ),
+                    recalling_firm=result.get("recalling_firm"),
+                    city=result.get("city"),
+                    state=result.get("state"),
+                    event_date=self._parse_date(result.get("event_date_initiated")),
+                    root_cause_description=result.get("root_cause_description"),
+                )
+            )
 
         return recalls
 
@@ -543,7 +575,7 @@ class FDAApiClient:
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
         limit: int = 100,
-        skip: int = 0
+        skip: int = 0,
     ) -> List[FoodRecall]:
         """
         Search food recall/enforcement records
@@ -586,10 +618,7 @@ class FDAApiClient:
         search = "+AND+".join(search_parts) if search_parts else None
 
         response = await self._make_request(
-            FDAEndpoint.FOOD_ENFORCEMENT,
-            search=search,
-            limit=limit,
-            skip=skip
+            FDAEndpoint.FOOD_ENFORCEMENT, search=search, limit=limit, skip=skip
         )
 
         recalls = []
@@ -608,21 +637,25 @@ class FDAApiClient:
                     recall_status = rs
                     break
 
-            recalls.append(FoodRecall(
-                recall_number=result.get("recall_number", ""),
-                product_description=result.get("product_description", ""),
-                reason_for_recall=result.get("reason_for_recall", ""),
-                classification=recall_classification,
-                status=recall_status,
-                recalling_firm=result.get("recalling_firm"),
-                city=result.get("city"),
-                state=result.get("state"),
-                distribution_pattern=result.get("distribution_pattern"),
-                recall_initiation_date=self._parse_date(result.get("recall_initiation_date")),
-                report_date=self._parse_date(result.get("report_date")),
-                product_quantity=result.get("product_quantity"),
-                code_info=result.get("code_info")
-            ))
+            recalls.append(
+                FoodRecall(
+                    recall_number=result.get("recall_number", ""),
+                    product_description=result.get("product_description", ""),
+                    reason_for_recall=result.get("reason_for_recall", ""),
+                    classification=recall_classification,
+                    status=recall_status,
+                    recalling_firm=result.get("recalling_firm"),
+                    city=result.get("city"),
+                    state=result.get("state"),
+                    distribution_pattern=result.get("distribution_pattern"),
+                    recall_initiation_date=self._parse_date(
+                        result.get("recall_initiation_date")
+                    ),
+                    report_date=self._parse_date(result.get("report_date")),
+                    product_quantity=result.get("product_quantity"),
+                    code_info=result.get("code_info"),
+                )
+            )
 
         return recalls
 
@@ -636,7 +669,7 @@ class FDAApiClient:
         pharm_class: Optional[str] = None,
         route: Optional[str] = None,
         limit: int = 100,
-        skip: int = 0
+        skip: int = 0,
     ) -> List[DrugLabel]:
         """
         Search drug product labels (SPL)
@@ -656,7 +689,9 @@ class FDAApiClient:
         search_parts = []
 
         if drug_name:
-            search_parts.append(f'(openfda.brand_name:"{drug_name}" OR openfda.generic_name:"{drug_name}")')
+            search_parts.append(
+                f'(openfda.brand_name:"{drug_name}" OR openfda.generic_name:"{drug_name}")'
+            )
 
         if manufacturer:
             search_parts.append(f'openfda.manufacturer_name:"{manufacturer}"')
@@ -673,43 +708,76 @@ class FDAApiClient:
         search = "+AND+".join(search_parts) if search_parts else None
 
         response = await self._make_request(
-            FDAEndpoint.DRUG_LABEL,
-            search=search,
-            limit=limit,
-            skip=skip
+            FDAEndpoint.DRUG_LABEL, search=search, limit=limit, skip=skip
         )
 
         labels = []
         for result in response.get("results", []):
             openfda = result.get("openfda", {})
 
-            labels.append(DrugLabel(
-                set_id=result.get("set_id", ""),
-                spl_id=result.get("id", ""),
-                effective_time=self._parse_date(result.get("effective_time")),
-                brand_name=openfda.get("brand_name", [None])[0] if openfda.get("brand_name") else None,
-                generic_name=openfda.get("generic_name", [None])[0] if openfda.get("generic_name") else None,
-                manufacturer_name=openfda.get("manufacturer_name", [None])[0] if openfda.get("manufacturer_name") else None,
-                product_ndc=openfda.get("product_ndc", []),
-                product_type=openfda.get("product_type", [None])[0] if openfda.get("product_type") else None,
-                route=openfda.get("route", []),
-                substance_name=openfda.get("substance_name", []),
-                pharm_class=openfda.get("pharm_class_epc", []),
-                dosage_form=result.get("dosage_and_administration", [None])[0] if result.get("dosage_and_administration") else None,
-                indications_and_usage=result.get("indications_and_usage", [None])[0] if result.get("indications_and_usage") else None,
-                warnings=result.get("warnings", [None])[0] if result.get("warnings") else None,
-                adverse_reactions=result.get("adverse_reactions", [None])[0] if result.get("adverse_reactions") else None,
-                boxed_warning=result.get("boxed_warning", [None])[0] if result.get("boxed_warning") else None
-            ))
+            labels.append(
+                DrugLabel(
+                    set_id=result.get("set_id", ""),
+                    spl_id=result.get("id", ""),
+                    effective_time=self._parse_date(result.get("effective_time")),
+                    brand_name=(
+                        openfda.get("brand_name", [None])[0]
+                        if openfda.get("brand_name")
+                        else None
+                    ),
+                    generic_name=(
+                        openfda.get("generic_name", [None])[0]
+                        if openfda.get("generic_name")
+                        else None
+                    ),
+                    manufacturer_name=(
+                        openfda.get("manufacturer_name", [None])[0]
+                        if openfda.get("manufacturer_name")
+                        else None
+                    ),
+                    product_ndc=openfda.get("product_ndc", []),
+                    product_type=(
+                        openfda.get("product_type", [None])[0]
+                        if openfda.get("product_type")
+                        else None
+                    ),
+                    route=openfda.get("route", []),
+                    substance_name=openfda.get("substance_name", []),
+                    pharm_class=openfda.get("pharm_class_epc", []),
+                    dosage_form=(
+                        result.get("dosage_and_administration", [None])[0]
+                        if result.get("dosage_and_administration")
+                        else None
+                    ),
+                    indications_and_usage=(
+                        result.get("indications_and_usage", [None])[0]
+                        if result.get("indications_and_usage")
+                        else None
+                    ),
+                    warnings=(
+                        result.get("warnings", [None])[0]
+                        if result.get("warnings")
+                        else None
+                    ),
+                    adverse_reactions=(
+                        result.get("adverse_reactions", [None])[0]
+                        if result.get("adverse_reactions")
+                        else None
+                    ),
+                    boxed_warning=(
+                        result.get("boxed_warning", [None])[0]
+                        if result.get("boxed_warning")
+                        else None
+                    ),
+                )
+            )
 
         return labels
 
     # Aggregate/Count Methods
 
     async def get_adverse_event_counts_by_reaction(
-        self,
-        drug_name: str,
-        limit: int = 10
+        self, drug_name: str, limit: int = 10
     ) -> Dict[str, int]:
         """Get top adverse reactions for a drug"""
         search = f'patient.drug.medicinalproduct:"{drug_name}"'
@@ -718,50 +786,39 @@ class FDAApiClient:
             FDAEndpoint.DRUG_EVENT,
             search=search,
             count="patient.reaction.reactionmeddrapt.exact",
-            limit=limit
+            limit=limit,
         )
 
-        return {
-            item["term"]: item["count"]
-            for item in response.get("results", [])
-        }
+        return {item["term"]: item["count"] for item in response.get("results", [])}
 
     async def get_recall_counts_by_state(
         self,
         endpoint: FDAEndpoint = FDAEndpoint.DRUG_ENFORCEMENT,
-        limit: int = 56  # All states + territories
+        limit: int = 56,  # All states + territories
     ) -> Dict[str, int]:
         """Get recall counts by state"""
-        response = await self._make_request(
-            endpoint,
-            count="state",
-            limit=limit
-        )
+        response = await self._make_request(endpoint, count="state", limit=limit)
 
-        return {
-            item["term"]: item["count"]
-            for item in response.get("results", [])
-        }
+        return {item["term"]: item["count"] for item in response.get("results", [])}
 
 
 # Convenience functions for synchronous usage
+
 
 def search_drug_adverse_events_sync(
     drug_name: Optional[str] = None,
     reaction: Optional[str] = None,
     serious: Optional[bool] = None,
     limit: int = 100,
-    api_key: Optional[str] = None
+    api_key: Optional[str] = None,
 ) -> List[DrugAdverseEvent]:
     """Synchronous wrapper for drug adverse event search"""
+
     async def _search():
         client = FDAApiClient(api_key=api_key)
         try:
             return await client.search_drug_adverse_events(
-                drug_name=drug_name,
-                reaction=reaction,
-                serious=serious,
-                limit=limit
+                drug_name=drug_name, reaction=reaction, serious=serious, limit=limit
             )
         finally:
             await client.close()
@@ -774,17 +831,15 @@ def search_drug_recalls_sync(
     product: Optional[str] = None,
     state: Optional[str] = None,
     limit: int = 100,
-    api_key: Optional[str] = None
+    api_key: Optional[str] = None,
 ) -> List[DrugRecall]:
     """Synchronous wrapper for drug recall search"""
+
     async def _search():
         client = FDAApiClient(api_key=api_key)
         try:
             return await client.search_drug_recalls(
-                firm_name=firm_name,
-                product=product,
-                state=state,
-                limit=limit
+                firm_name=firm_name, product=product, state=state, limit=limit
             )
         finally:
             await client.close()
@@ -797,17 +852,15 @@ def search_food_recalls_sync(
     product: Optional[str] = None,
     state: Optional[str] = None,
     limit: int = 100,
-    api_key: Optional[str] = None
+    api_key: Optional[str] = None,
 ) -> List[FoodRecall]:
     """Synchronous wrapper for food recall search"""
+
     async def _search():
         client = FDAApiClient(api_key=api_key)
         try:
             return await client.search_food_recalls(
-                firm_name=firm_name,
-                product=product,
-                state=state,
-                limit=limit
+                firm_name=firm_name, product=product, state=state, limit=limit
             )
         finally:
             await client.close()
@@ -824,9 +877,7 @@ if __name__ == "__main__":
             # Search for drug adverse events
             print("Searching drug adverse events for 'aspirin'...")
             events = await client.search_drug_adverse_events(
-                drug_name="aspirin",
-                serious=True,
-                limit=5
+                drug_name="aspirin", serious=True, limit=5
             )
             for event in events:
                 print(f"  Report {event.report_id}: {len(event.reactions)} reactions")
@@ -835,11 +886,15 @@ if __name__ == "__main__":
             print("\nSearching recent drug recalls...")
             recalls = await client.search_drug_recalls(limit=5)
             for recall in recalls:
-                print(f"  {recall.recall_number}: {recall.recalling_firm} - {recall.classification}")
+                print(
+                    f"  {recall.recall_number}: {recall.recalling_firm} - {recall.classification}"
+                )
 
             # Get top adverse reactions for a drug
             print("\nTop adverse reactions for 'ibuprofen'...")
-            counts = await client.get_adverse_event_counts_by_reaction("ibuprofen", limit=5)
+            counts = await client.get_adverse_event_counts_by_reaction(
+                "ibuprofen", limit=5
+            )
             for reaction, count in counts.items():
                 print(f"  {reaction}: {count}")
 

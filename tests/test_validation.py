@@ -2,36 +2,36 @@
 Tests for Validation modules — coverage for validation/ (0% → 50%+)
 """
 
-import pytest
 from datetime import date, datetime
 
-from datagod.validation.schema_validator import (
-    FieldType,
-    ValidationSeverity,
-    ValidationError,
-    ValidationResult,
-    FieldSchema,
-    BaseSchema,
-    PropertySchema,
-    DeedSchema,
-    CourtCaseSchema,
-    SchemaValidator,
-)
+import pytest
 
 from datagod.validation.business_rules import (
+    BusinessRuleValidator,
+    RuleResult,
     RuleSeverity,
     RuleViolation,
-    RuleResult,
-    BusinessRuleValidator,
-    validate_property_record,
-    validate_court_record,
     validate_business_record,
+    validate_court_record,
+    validate_property_record,
 )
-
+from datagod.validation.schema_validator import (
+    BaseSchema,
+    CourtCaseSchema,
+    DeedSchema,
+    FieldSchema,
+    FieldType,
+    PropertySchema,
+    SchemaValidator,
+    ValidationError,
+    ValidationResult,
+    ValidationSeverity,
+)
 
 # ============================================================
 # Schema Validator Tests
 # ============================================================
+
 
 class TestFieldType:
     def test_enum_values(self):
@@ -50,7 +50,9 @@ class TestValidationError:
         assert err.severity == ValidationSeverity.ERROR
 
     def test_to_dict(self):
-        err = ValidationError(field="age", message="Too low", expected="18", actual="15")
+        err = ValidationError(
+            field="age", message="Too low", expected="18", actual="15"
+        )
         d = err.to_dict()
         assert d["field"] == "age"
         assert d["expected"] == "18"
@@ -189,6 +191,7 @@ class TestSchemaValidator:
 # Business Rules Tests
 # ============================================================
 
+
 class TestRuleSeverity:
     def test_values(self):
         assert RuleSeverity.CRITICAL.value == "critical"
@@ -203,8 +206,12 @@ class TestRuleViolation:
         assert v.rule_id == "R001"
 
     def test_to_dict(self):
-        v = RuleViolation(rule_id="R001", rule_name="Test", message="Failed",
-                         severity=RuleSeverity.HIGH)
+        v = RuleViolation(
+            rule_id="R001",
+            rule_name="Test",
+            message="Failed",
+            severity=RuleSeverity.HIGH,
+        )
         d = v.to_dict()
         assert d["rule_id"] == "R001"
 
@@ -217,7 +224,9 @@ class TestRuleResult:
     def test_add_violation_medium_stays_valid(self):
         # MEDIUM severity does NOT set is_valid=False per actual code
         result = RuleResult()
-        result.add_violation("R001", "Test Rule", "Something wrong", severity=RuleSeverity.MEDIUM)
+        result.add_violation(
+            "R001", "Test Rule", "Something wrong", severity=RuleSeverity.MEDIUM
+        )
         assert len(result.violations) == 1
         assert result.is_valid is True
 
@@ -228,7 +237,9 @@ class TestRuleResult:
 
     def test_add_violation_critical_invalidates(self):
         result = RuleResult()
-        result.add_violation("R001", "Test Rule", "Critical", severity=RuleSeverity.CRITICAL)
+        result.add_violation(
+            "R001", "Test Rule", "Critical", severity=RuleSeverity.CRITICAL
+        )
         assert result.is_valid is False
 
     def test_to_dict(self):
@@ -324,7 +335,9 @@ class TestBusinessRuleValidator:
     def test_get_statistics(self):
         results = [
             self.validator.validate_property({"parcel_id": "A"}),
-            self.validator.validate_property({"parcel_id": "B", "assessed_value": 100000}),
+            self.validator.validate_property(
+                {"parcel_id": "B", "assessed_value": 100000}
+            ),
         ]
         stats = self.validator.get_statistics(results)
         assert isinstance(stats, dict)
@@ -332,7 +345,9 @@ class TestBusinessRuleValidator:
 
 class TestConvenienceFunctions:
     def test_validate_property_record(self):
-        result = validate_property_record({"parcel_id": "P001", "assessed_value": 200000})
+        result = validate_property_record(
+            {"parcel_id": "P001", "assessed_value": 200000}
+        )
         assert isinstance(result, RuleResult)
 
     def test_validate_court_record(self):

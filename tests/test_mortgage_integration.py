@@ -2,9 +2,10 @@
 Tests for mortgage neural network integration.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
 from datetime import datetime
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestMortgageIntegrationCreation:
@@ -16,8 +17,8 @@ class TestMortgageIntegrationCreation:
 
         integration = MortgageNeuralNetworkIntegration()
         assert integration is not None
-        assert hasattr(integration, 'neural_network')
-        assert hasattr(integration, 'config')
+        assert hasattr(integration, "neural_network")
+        assert hasattr(integration, "config")
 
     def test_integration_has_required_methods(self):
         """Test integration has required methods."""
@@ -25,10 +26,10 @@ class TestMortgageIntegrationCreation:
 
         integration = MortgageNeuralNetworkIntegration()
 
-        assert callable(getattr(integration, 'process_mortgage_data', None))
-        assert callable(getattr(integration, 'train_neural_network', None))
-        assert callable(getattr(integration, 'get_data_quality_report', None))
-        assert callable(getattr(integration, 'create_entity_relationships', None))
+        assert callable(getattr(integration, "process_mortgage_data", None))
+        assert callable(getattr(integration, "train_neural_network", None))
+        assert callable(getattr(integration, "get_data_quality_report", None))
+        assert callable(getattr(integration, "create_entity_relationships", None))
 
 
 class TestMortgageDataProcessing:
@@ -39,20 +40,21 @@ class TestMortgageDataProcessing:
         from datagod.ml.mortgage.integration import MortgageNeuralNetworkIntegration
 
         integration = MortgageNeuralNetworkIntegration()
-        assert hasattr(integration, 'process_mortgage_data')
+        assert hasattr(integration, "process_mortgage_data")
         assert callable(integration.process_mortgage_data)
 
     def test_process_mortgage_data_signature(self):
         """Test processing method signature."""
-        from datagod.ml.mortgage.integration import MortgageNeuralNetworkIntegration
         import inspect
+
+        from datagod.ml.mortgage.integration import MortgageNeuralNetworkIntegration
 
         integration = MortgageNeuralNetworkIntegration()
         sig = inspect.signature(integration.process_mortgage_data)
 
         params = list(sig.parameters.keys())
-        assert 'raw_data' in params
-        assert 'source_type' in params
+        assert "raw_data" in params
+        assert "source_type" in params
 
 
 class TestNeuralNetworkTraining:
@@ -88,7 +90,7 @@ class TestNeuralNetworkTraining:
                 "property_value": 300000.0 + i * 10000,
                 "status": "active",
                 "data_source": "test",
-                "scraped_at": datetime.now().isoformat()
+                "scraped_at": datetime.now().isoformat(),
             }
             for i in range(5)
         ]
@@ -116,13 +118,15 @@ class TestDataQualityReport:
 
         integration = MortgageNeuralNetworkIntegration()
 
-        sample_data = [{
-            "property_id": "PROP-001",
-            "borrower_name": "Test Borrower",
-            "lender_name": "Test Bank",
-            "loan_amount": 350000.0,
-            "loan_type": "Conventional"
-        }]
+        sample_data = [
+            {
+                "property_id": "PROP-001",
+                "borrower_name": "Test Borrower",
+                "lender_name": "Test Bank",
+                "loan_amount": 350000.0,
+                "loan_type": "Conventional",
+            }
+        ]
 
         result = integration.get_data_quality_report(sample_data)
         assert result is not None
@@ -138,21 +142,22 @@ class TestEntityRelationships:
         integration = MortgageNeuralNetworkIntegration()
 
         # The method requires a db session, so just verify it exists
-        assert hasattr(integration, 'create_entity_relationships')
+        assert hasattr(integration, "create_entity_relationships")
         assert callable(integration.create_entity_relationships)
 
     def test_create_entity_relationships_signature(self):
         """Test relationship creation method signature."""
-        from datagod.ml.mortgage.integration import MortgageNeuralNetworkIntegration
         import inspect
+
+        from datagod.ml.mortgage.integration import MortgageNeuralNetworkIntegration
 
         integration = MortgageNeuralNetworkIntegration()
         sig = inspect.signature(integration.create_entity_relationships)
 
         # Method should accept db and processed_data parameters
         params = list(sig.parameters.keys())
-        assert 'db' in params
-        assert 'processed_data' in params
+        assert "db" in params
+        assert "processed_data" in params
 
 
 class TestMortgageNeuralNetwork:
@@ -160,23 +165,27 @@ class TestMortgageNeuralNetwork:
 
     def test_neural_network_creation(self):
         """Test neural network can be created."""
-        from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+        from datagod.ml.mortgage.neural_network import (
+            MortgageDataGatheringNeuralNetwork,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
         assert nn is not None
 
     def test_neural_network_has_patterns(self):
         """Test neural network has extraction patterns."""
-        from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+        from datagod.ml.mortgage.neural_network import (
+            MortgageDataGatheringNeuralNetwork,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
-        assert hasattr(nn, 'patterns')
+        assert hasattr(nn, "patterns")
 
     def test_validate_mortgage_data(self):
         """Test mortgage data validation."""
         from datagod.ml.mortgage.neural_network import (
             MortgageDataGatheringNeuralNetwork,
-            MortgageDataPoint
+            MortgageDataPoint,
         )
 
         nn = MortgageDataGatheringNeuralNetwork()
@@ -194,7 +203,7 @@ class TestMortgageNeuralNetwork:
             property_value=400000.0,
             status="active",
             data_source="test",
-            scraped_at=datetime.now().isoformat()
+            scraped_at=datetime.now().isoformat(),
         )
 
         result = nn.validate_mortgage_data(valid_data)
@@ -204,7 +213,7 @@ class TestMortgageNeuralNetwork:
         """Test mortgage data validation with invalid data."""
         from datagod.ml.mortgage.neural_network import (
             MortgageDataGatheringNeuralNetwork,
-            MortgageDataPoint
+            MortgageDataPoint,
         )
 
         nn = MortgageDataGatheringNeuralNetwork()
@@ -222,7 +231,7 @@ class TestMortgageNeuralNetwork:
             property_value=0,
             status="",
             data_source="",
-            scraped_at=""
+            scraped_at="",
         )
 
         result = nn.validate_mortgage_data(invalid_data)
@@ -232,7 +241,7 @@ class TestMortgageNeuralNetwork:
         """Test data quality scoring."""
         from datagod.ml.mortgage.neural_network import (
             MortgageDataGatheringNeuralNetwork,
-            MortgageDataPoint
+            MortgageDataPoint,
         )
 
         nn = MortgageDataGatheringNeuralNetwork()
@@ -250,7 +259,7 @@ class TestMortgageNeuralNetwork:
             property_value=400000.0,
             status="active",
             data_source="test",
-            scraped_at=datetime.now().isoformat()
+            scraped_at=datetime.now().isoformat(),
         )
 
         score = nn.get_data_quality_score(data)
@@ -275,8 +284,8 @@ class TestMortgageConfig:
         config = MortgageNeuralNetworkConfig()
 
         # Check for actual config fields (learning_rate, max_iterations, etc.)
-        assert hasattr(config, 'learning_rate')
-        assert hasattr(config, 'max_iterations')
+        assert hasattr(config, "learning_rate")
+        assert hasattr(config, "max_iterations")
 
     def test_config_constant_exists(self):
         """Test config constant exists."""
@@ -305,7 +314,7 @@ class TestMortgageDataPoint:
             property_value=400000.0,
             status="active",
             data_source="test",
-            scraped_at=datetime.now().isoformat()
+            scraped_at=datetime.now().isoformat(),
         )
 
         assert data.property_id == "PROP-001"
@@ -317,10 +326,19 @@ class TestMortgageDataPoint:
         from datagod.ml.mortgage.neural_network import MortgageDataPoint
 
         required_fields = [
-            'property_id', 'borrower_name', 'lender_name',
-            'loan_amount', 'loan_type', 'interest_rate',
-            'loan_term', 'loan_date', 'property_address',
-            'property_value', 'status', 'data_source', 'scraped_at'
+            "property_id",
+            "borrower_name",
+            "lender_name",
+            "loan_amount",
+            "loan_type",
+            "interest_rate",
+            "loan_term",
+            "loan_date",
+            "property_address",
+            "property_value",
+            "status",
+            "data_source",
+            "scraped_at",
         ]
 
         data = MortgageDataPoint(
@@ -336,7 +354,7 @@ class TestMortgageDataPoint:
             property_value=0,
             status="",
             data_source="",
-            scraped_at=""
+            scraped_at="",
         )
 
         for field in required_fields:
@@ -348,16 +366,17 @@ class TestMortgageIntegrationProcessing:
 
     def test_process_mortgage_data_signature(self):
         """Test process method has correct signature."""
-        from datagod.ml.mortgage.integration import MortgageNeuralNetworkIntegration
         import inspect
+
+        from datagod.ml.mortgage.integration import MortgageNeuralNetworkIntegration
 
         integration = MortgageNeuralNetworkIntegration()
         sig = inspect.signature(integration.process_mortgage_data)
         params = list(sig.parameters.keys())
 
-        assert 'raw_data' in params
-        assert 'source_type' in params
-        assert 'jurisdiction_id' in params
+        assert "raw_data" in params
+        assert "source_type" in params
+        assert "jurisdiction_id" in params
 
     def test_process_mortgage_data_with_mocked_nn(self):
         """Test processing with mocked neural network."""
@@ -374,9 +393,10 @@ class TestMortgageIntegrationProcessing:
 
     def test_process_mortgage_data_with_data_point(self):
         """Test processing with mocked data point."""
+        from datetime import datetime
+
         from datagod.ml.mortgage.integration import MortgageNeuralNetworkIntegration
         from datagod.ml.mortgage.neural_network import MortgageDataPoint
-        from datetime import datetime
 
         integration = MortgageNeuralNetworkIntegration()
 
@@ -393,11 +413,13 @@ class TestMortgageIntegrationProcessing:
             property_value=400000.0,
             status="active",
             data_source="test",
-            scraped_at=datetime.now().isoformat()
+            scraped_at=datetime.now().isoformat(),
         )
 
         # Mock extract method and quality score
-        integration.neural_network.extract_mortgage_data = MagicMock(return_value=[mock_data_point])
+        integration.neural_network.extract_mortgage_data = MagicMock(
+            return_value=[mock_data_point]
+        )
         integration.neural_network.get_data_quality_score = MagicMock(return_value=85.0)
 
         result = integration.process_mortgage_data("test data", "property_records")
@@ -429,7 +451,7 @@ class TestMortgageDataQualityReportExtended:
         sample_data = [
             {"property_id": "PROP-001", "quality_score": 80},
             {"property_id": "PROP-002", "quality_score": 90},
-            {"property_id": "PROP-003", "quality_score": 70}
+            {"property_id": "PROP-003", "quality_score": 70},
         ]
 
         result = integration.get_data_quality_report(sample_data)
@@ -480,11 +502,13 @@ class TestMortgageEntityRelationshipsExtended:
         mock_entity.id = 1
         mock_db.query.return_value.filter.return_value.first.return_value = mock_entity
 
-        sample_data = [{
-            "borrower_name": "John Doe",
-            "lender_name": "Test Bank",
-            "property_address": "123 Main St"
-        }]
+        sample_data = [
+            {
+                "borrower_name": "John Doe",
+                "lender_name": "Test Bank",
+                "property_address": "123 Main St",
+            }
+        ]
 
         result = integration.create_entity_relationships(mock_db, sample_data)
         assert result is None  # Method doesn't return anything
@@ -499,11 +523,13 @@ class TestMortgageEntityRelationshipsExtended:
         mock_db.query.side_effect = Exception("Database error")
         mock_db.rollback = MagicMock()
 
-        sample_data = [{
-            "borrower_name": "John Doe",
-            "lender_name": "Test Bank",
-            "property_address": "123 Main St"
-        }]
+        sample_data = [
+            {
+                "borrower_name": "John Doe",
+                "lender_name": "Test Bank",
+                "property_address": "123 Main St",
+            }
+        ]
 
         # Should not raise exception
         result = integration.create_entity_relationships(mock_db, sample_data)
@@ -521,7 +547,7 @@ class TestMortgageEntityRelationshipsExtended:
 
         # Verify the method signature and call sequence
         # (Actual Entity creation requires full SQLAlchemy setup)
-        with patch('datagod.ml.mortgage.integration.Entity') as MockEntity:
+        with patch("datagod.ml.mortgage.integration.Entity") as MockEntity:
             mock_entity_instance = MagicMock()
             mock_entity_instance.id = 1
             MockEntity.return_value = mock_entity_instance
@@ -541,7 +567,9 @@ class TestMortgageEntityRelationshipsExtended:
         mock_existing_entity = MagicMock()
         mock_existing_entity.id = 42
         mock_existing_entity.entity_name = "John Doe"
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_existing_entity
+        mock_db.query.return_value.filter.return_value.first.return_value = (
+            mock_existing_entity
+        )
 
         result = integration._create_or_get_entity(mock_db, "John Doe", "person")
         assert result == mock_existing_entity
@@ -555,7 +583,7 @@ class TestMortgageEntityRelationshipsExtended:
 
         mock_db = MagicMock()
 
-        with patch('datagod.ml.mortgage.integration.Relationship') as MockRelationship:
+        with patch("datagod.ml.mortgage.integration.Relationship") as MockRelationship:
             mock_relationship_instance = MagicMock()
             MockRelationship.return_value = mock_relationship_instance
 
@@ -586,7 +614,7 @@ class TestMortgageStoreProcessedData:
 
         mock_db = MagicMock()
 
-        with patch('datagod.ml.mortgage.integration.Record') as MockRecord:
+        with patch("datagod.ml.mortgage.integration.Record") as MockRecord:
             mock_record_instance = MagicMock()
             mock_record_instance.id = 1
             MockRecord.return_value = mock_record_instance
@@ -596,15 +624,19 @@ class TestMortgageStoreProcessedData:
 
             mock_db.refresh = mock_refresh
 
-            processed_data = [{
-                "property_id": "PROP-001",
-                "loan_amount": 350000.0,
-                "loan_date": "2023-01-15",
-                "status": "active",
-                "quality_score": 85
-            }]
+            processed_data = [
+                {
+                    "property_id": "PROP-001",
+                    "loan_amount": 350000.0,
+                    "loan_date": "2023-01-15",
+                    "status": "active",
+                    "quality_score": 85,
+                }
+            ]
 
-            result = integration.store_processed_data(mock_db, processed_data, jurisdiction_id=1)
+            result = integration.store_processed_data(
+                mock_db, processed_data, jurisdiction_id=1
+            )
             assert isinstance(result, list)
             assert len(result) == 1
             assert result[0]["property_id"] == "PROP-001"
@@ -619,12 +651,11 @@ class TestMortgageStoreProcessedData:
         mock_db.add.side_effect = Exception("Database error")
         mock_db.rollback = MagicMock()
 
-        processed_data = [{
-            "property_id": "PROP-001",
-            "loan_amount": 350000.0
-        }]
+        processed_data = [{"property_id": "PROP-001", "loan_amount": 350000.0}]
 
-        result = integration.store_processed_data(mock_db, processed_data, jurisdiction_id=1)
+        result = integration.store_processed_data(
+            mock_db, processed_data, jurisdiction_id=1
+        )
         assert result == []  # Should return empty list on error
         mock_db.rollback.assert_called()
 
@@ -634,26 +665,30 @@ class TestMortgageNeuralNetworkExtended:
 
     def test_neural_network_extract_mortgage_data_method_exists(self):
         """Test extracting mortgage data method exists."""
-        from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+        from datagod.ml.mortgage.neural_network import (
+            MortgageDataGatheringNeuralNetwork,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
-        assert hasattr(nn, 'extract_mortgage_data')
+        assert hasattr(nn, "extract_mortgage_data")
         assert callable(nn.extract_mortgage_data)
 
     def test_neural_network_has_layers(self):
         """Test neural network has layers."""
-        from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+        from datagod.ml.mortgage.neural_network import (
+            MortgageDataGatheringNeuralNetwork,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
-        assert hasattr(nn, 'layer1')
-        assert hasattr(nn, 'layer2')
-        assert hasattr(nn, 'layer3')
+        assert hasattr(nn, "layer1")
+        assert hasattr(nn, "layer2")
+        assert hasattr(nn, "layer3")
 
     def test_neural_network_learn_patterns(self):
         """Test learning patterns from data points."""
         from datagod.ml.mortgage.neural_network import (
             MortgageDataGatheringNeuralNetwork,
-            MortgageDataPoint
+            MortgageDataPoint,
         )
 
         nn = MortgageDataGatheringNeuralNetwork()
@@ -672,7 +707,7 @@ class TestMortgageNeuralNetworkExtended:
                 property_value=300000.0 + i * 10000,
                 status="active",
                 data_source="test",
-                scraped_at=datetime.now().isoformat()
+                scraped_at=datetime.now().isoformat(),
             )
             for i in range(3)
         ]
@@ -688,7 +723,7 @@ class TestMortgageConfigExtended:
         """Test config has min_data_quality_score field."""
         from datagod.ml.mortgage.config import MORTGAGE_NN_CONFIG
 
-        assert hasattr(MORTGAGE_NN_CONFIG, 'min_data_quality_score')
+        assert hasattr(MORTGAGE_NN_CONFIG, "min_data_quality_score")
         assert isinstance(MORTGAGE_NN_CONFIG.min_data_quality_score, (int, float))
 
     def test_config_default_values(self):

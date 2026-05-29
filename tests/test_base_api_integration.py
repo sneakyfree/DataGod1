@@ -2,9 +2,10 @@
 Tests for BaseAPIIntegration classes.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 def create_test_integration_class():
@@ -171,8 +172,9 @@ class TestBaseAPIIntegration:
 
     def test_base_api_integration_is_abstract(self):
         """Test BaseAPIIntegration is abstract."""
-        from datagod.scrapers.base_api_integration import BaseAPIIntegration
         from abc import ABC
+
+        from datagod.scrapers.base_api_integration import BaseAPIIntegration
 
         assert issubclass(BaseAPIIntegration, ABC)
 
@@ -208,15 +210,12 @@ class TestBaseAPIIntegration:
             def map_api_data_to_standard_format(self, data):
                 return data
 
-        config = {
-            'base_url': 'https://api.example.com',
-            'api_key': 'test_key'
-        }
+        config = {"base_url": "https://api.example.com", "api_key": "test_key"}
 
         integration = TestIntegration(jurisdiction_id=1, config=config)
         assert integration is not None
         assert integration.jurisdiction_id == 1
-        assert integration.base_url == 'https://api.example.com'
+        assert integration.base_url == "https://api.example.com"
 
     def test_integration_default_config(self):
         """Test integration uses default config values."""
@@ -234,7 +233,7 @@ class TestBaseAPIIntegration:
         """Test integration creates HTTP session."""
         TestIntegration = create_test_integration_class()
 
-        config = {'base_url': 'https://api.example.com'}
+        config = {"base_url": "https://api.example.com"}
         integration = TestIntegration(jurisdiction_id=1, config=config)
 
         assert integration.session is not None
@@ -243,7 +242,7 @@ class TestBaseAPIIntegration:
         """Test integration has metrics tracking."""
         TestIntegration = create_test_integration_class()
 
-        config = {'base_url': 'https://api.example.com'}
+        config = {"base_url": "https://api.example.com"}
         integration = TestIntegration(jurisdiction_id=1, config=config)
 
         assert integration.metrics is not None
@@ -256,7 +255,7 @@ class TestBaseAPIIntegrationRateLimiting:
         """Test rate limit check with no requests."""
         TestIntegration = create_test_integration_class()
 
-        config = {'requests_per_minute': 10, 'requests_per_hour': 100}
+        config = {"requests_per_minute": 10, "requests_per_hour": 100}
         integration = TestIntegration(jurisdiction_id=1, config=config)
 
         assert integration._check_rate_limit() is True
@@ -265,7 +264,7 @@ class TestBaseAPIIntegrationRateLimiting:
         """Test rate limit when per-minute limit is exceeded."""
         TestIntegration = create_test_integration_class()
 
-        config = {'requests_per_minute': 5, 'requests_per_hour': 100}
+        config = {"requests_per_minute": 5, "requests_per_hour": 100}
         integration = TestIntegration(jurisdiction_id=1, config=config)
 
         # Add timestamps to exceed per-minute limit
@@ -278,7 +277,7 @@ class TestBaseAPIIntegrationRateLimiting:
         """Test rate limit when per-hour limit is exceeded."""
         TestIntegration = create_test_integration_class()
 
-        config = {'requests_per_minute': 100, 'requests_per_hour': 5}
+        config = {"requests_per_minute": 100, "requests_per_hour": 5}
         integration = TestIntegration(jurisdiction_id=1, config=config)
 
         # Add timestamps to exceed per-hour limit
@@ -302,7 +301,7 @@ class TestBaseAPIIntegrationRateLimiting:
         """Test rate limit check cleans old timestamps."""
         TestIntegration = create_test_integration_class()
 
-        config = {'requests_per_hour': 100}
+        config = {"requests_per_hour": 100}
         integration = TestIntegration(jurisdiction_id=1, config=config)
 
         # Add old timestamps (older than 1 hour)
@@ -321,4 +320,5 @@ class TestAPIKeyAuthentication:
     def test_api_key_authentication_import(self):
         """Test APIKeyAuthentication can be imported."""
         from datagod.scrapers.base_api_integration import APIKeyAuthentication
+
         assert APIKeyAuthentication is not None

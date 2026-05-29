@@ -2,8 +2,9 @@
 Shared fixtures for monitoring tests.
 """
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
 
 
 @pytest.fixture

@@ -12,22 +12,24 @@ Tests cover:
 - Convenience functions
 """
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
+
 from datagod.monitoring.alerts import (
+    DEFAULT_RULES,
+    Alert,
+    AlertManager,
+    AlertRule,
     AlertSeverity,
     AlertStatus,
     ComparisonOperator,
-    Alert,
-    AlertRule,
-    AlertManager,
+    EmailNotificationChannel,
     LogNotificationChannel,
     WebhookNotificationChannel,
-    EmailNotificationChannel,
+    check_alert_rules,
     get_alert_manager,
     send_alert,
-    check_alert_rules,
-    DEFAULT_RULES,
 )
 
 
@@ -90,7 +92,7 @@ class TestAlert:
             rule_id="rule-001",
             severity=AlertSeverity.WARNING,
             title="Test Alert",
-            message="This is a test alert"
+            message="This is a test alert",
         )
         assert alert.alert_id == "test-001"
         assert alert.severity == AlertSeverity.WARNING
@@ -103,7 +105,7 @@ class TestAlert:
             rule_id="rule-001",
             severity=AlertSeverity.WARNING,
             title="Test",
-            message="Test"
+            message="Test",
         )
         alert.acknowledge(user="admin")
 
@@ -118,7 +120,7 @@ class TestAlert:
             rule_id="rule-001",
             severity=AlertSeverity.WARNING,
             title="Test",
-            message="Test"
+            message="Test",
         )
         alert.resolve()
 
@@ -132,7 +134,7 @@ class TestAlert:
             rule_id="rule-001",
             severity=AlertSeverity.WARNING,
             title="Test",
-            message="Test"
+            message="Test",
         )
         alert.silence()
         assert alert.status == AlertStatus.SILENCED
@@ -145,14 +147,14 @@ class TestAlert:
             severity=AlertSeverity.CRITICAL,
             title="Test Alert",
             message="Critical issue",
-            metadata={"value": 100}
+            metadata={"value": 100},
         )
         result = alert.to_dict()
 
-        assert result['alert_id'] == "test-001"
-        assert result['severity'] == "critical"
-        assert result['status'] == "active"
-        assert result['metadata'] == {"value": 100}
+        assert result["alert_id"] == "test-001"
+        assert result["severity"] == "critical"
+        assert result["status"] == "active"
+        assert result["metadata"] == {"value": 100}
 
 
 class TestAlertRule:
@@ -166,7 +168,7 @@ class TestAlertRule:
             description="Test description",
             metric_name="test.metric",
             operator=ComparisonOperator.GREATER_THAN,
-            threshold=100.0
+            threshold=100.0,
         )
         assert rule.rule_id == "test-rule"
         assert rule.enabled is True
@@ -179,7 +181,7 @@ class TestAlertRule:
             description="Test",
             metric_name="test",
             operator=ComparisonOperator.GREATER_THAN,
-            threshold=100.0
+            threshold=100.0,
         )
         assert rule.evaluate(150.0) is True
         assert rule.evaluate(100.0) is False
@@ -193,7 +195,7 @@ class TestAlertRule:
             description="Test",
             metric_name="test",
             operator=ComparisonOperator.LESS_THAN,
-            threshold=100.0
+            threshold=100.0,
         )
         assert rule.evaluate(50.0) is True
         assert rule.evaluate(100.0) is False
@@ -207,7 +209,7 @@ class TestAlertRule:
             description="Test",
             metric_name="test",
             operator=ComparisonOperator.GREATER_EQUAL,
-            threshold=100.0
+            threshold=100.0,
         )
         assert rule.evaluate(150.0) is True
         assert rule.evaluate(100.0) is True
@@ -221,7 +223,7 @@ class TestAlertRule:
             description="Test",
             metric_name="test",
             operator=ComparisonOperator.LESS_EQUAL,
-            threshold=100.0
+            threshold=100.0,
         )
         assert rule.evaluate(50.0) is True
         assert rule.evaluate(100.0) is True
@@ -235,7 +237,7 @@ class TestAlertRule:
             description="Test",
             metric_name="test",
             operator=ComparisonOperator.EQUALS,
-            threshold=100.0
+            threshold=100.0,
         )
         assert rule.evaluate(100.0) is True
         assert rule.evaluate(99.0) is False
@@ -248,7 +250,7 @@ class TestAlertRule:
             description="Test",
             metric_name="test",
             operator=ComparisonOperator.NOT_EQUALS,
-            threshold=100.0
+            threshold=100.0,
         )
         assert rule.evaluate(50.0) is True
         assert rule.evaluate(100.0) is False
@@ -262,13 +264,13 @@ class TestAlertRule:
             metric_name="test.metric",
             operator=ComparisonOperator.GREATER_THAN,
             threshold=100.0,
-            severity=AlertSeverity.WARNING
+            severity=AlertSeverity.WARNING,
         )
         result = rule.to_dict()
 
-        assert result['rule_id'] == "test"
-        assert result['operator'] == "gt"
-        assert result['severity'] == "warning"
+        assert result["rule_id"] == "test"
+        assert result["operator"] == "gt"
+        assert result["severity"] == "warning"
 
 
 class TestNotificationChannels:
@@ -282,7 +284,7 @@ class TestNotificationChannels:
             rule_id="test",
             severity=AlertSeverity.WARNING,
             title="Test",
-            message="Test message"
+            message="Test message",
         )
         result = channel.send(alert)
         assert result is True
@@ -291,7 +293,7 @@ class TestNotificationChannels:
         """Test webhook channel creation"""
         channel = WebhookNotificationChannel(
             webhook_url="https://example.com/webhook",
-            headers={"Authorization": "Bearer token"}
+            headers={"Authorization": "Bearer token"},
         )
         assert channel.webhook_url == "https://example.com/webhook"
 
@@ -303,7 +305,7 @@ class TestNotificationChannels:
             from_email="alerts@example.com",
             to_emails=["admin@example.com"],
             username="user",
-            password="pass"
+            password="pass",
         )
         assert channel.smtp_host == "smtp.example.com"
 
@@ -331,7 +333,7 @@ class TestAlertManager:
             description="Test",
             metric_name="test.metric",
             operator=ComparisonOperator.GREATER_THAN,
-            threshold=100.0
+            threshold=100.0,
         )
         manager.add_rule(rule)
         assert manager.get_rule("test") is not None
@@ -344,7 +346,7 @@ class TestAlertManager:
             description="Test",
             metric_name="test",
             operator=ComparisonOperator.GREATER_THAN,
-            threshold=100.0
+            threshold=100.0,
         )
         manager.add_rule(rule)
         manager.remove_rule("test")
@@ -359,7 +361,7 @@ class TestAlertManager:
                 description="Test",
                 metric_name="test",
                 operator=ComparisonOperator.GREATER_THAN,
-                threshold=100.0
+                threshold=100.0,
             )
             manager.add_rule(rule)
 
@@ -381,7 +383,7 @@ class TestAlertManager:
             metric_name="test.value",
             operator=ComparisonOperator.GREATER_THAN,
             threshold=100.0,
-            severity=AlertSeverity.WARNING
+            severity=AlertSeverity.WARNING,
         )
         manager.add_rule(rule)
 
@@ -397,7 +399,7 @@ class TestAlertManager:
             description="Test",
             metric_name="test.value",
             operator=ComparisonOperator.GREATER_THAN,
-            threshold=100.0
+            threshold=100.0,
         )
         manager.add_rule(rule)
 
@@ -413,7 +415,7 @@ class TestAlertManager:
             metric_name="test.value",
             operator=ComparisonOperator.GREATER_THAN,
             threshold=100.0,
-            enabled=False
+            enabled=False,
         )
         manager.add_rule(rule)
 
@@ -428,7 +430,7 @@ class TestAlertManager:
             description="Test",
             metric_name="test.value",
             operator=ComparisonOperator.GREATER_THAN,
-            threshold=100.0
+            threshold=100.0,
         )
         manager.add_rule(rule)
 
@@ -444,7 +446,7 @@ class TestAlertManager:
             metric_name="test.value",
             operator=ComparisonOperator.GREATER_THAN,
             threshold=100.0,
-            tags_filter={"env": "prod"}
+            tags_filter={"env": "prod"},
         )
         manager.add_rule(rule)
 
@@ -465,7 +467,7 @@ class TestAlertManager:
             metric_name="test.value",
             operator=ComparisonOperator.GREATER_THAN,
             threshold=100.0,
-            cooldown_minutes=5
+            cooldown_minutes=5,
         )
         manager.add_rule(rule)
 
@@ -485,7 +487,7 @@ class TestAlertManager:
             description="Test",
             metric_name="test",
             operator=ComparisonOperator.GREATER_THAN,
-            threshold=100.0
+            threshold=100.0,
         )
         manager.add_rule(rule)
         alerts = manager.evaluate("test", 150.0)
@@ -502,7 +504,7 @@ class TestAlertManager:
             metric_name="test",
             operator=ComparisonOperator.GREATER_THAN,
             threshold=100.0,
-            cooldown_minutes=0
+            cooldown_minutes=0,
         )
         manager.add_rule(rule)
 
@@ -521,7 +523,7 @@ class TestAlertManager:
             metric_name="test",
             operator=ComparisonOperator.GREATER_THAN,
             threshold=100.0,
-            severity=AlertSeverity.CRITICAL
+            severity=AlertSeverity.CRITICAL,
         )
         manager.add_rule(rule)
         manager.evaluate("test", 150.0)
@@ -540,7 +542,7 @@ class TestAlertManager:
             description="Test",
             metric_name="test",
             operator=ComparisonOperator.GREATER_THAN,
-            threshold=100.0
+            threshold=100.0,
         )
         manager.add_rule(rule)
         alerts = manager.evaluate("test", 150.0)
@@ -559,7 +561,7 @@ class TestAlertManager:
             description="Test",
             metric_name="test",
             operator=ComparisonOperator.GREATER_THAN,
-            threshold=100.0
+            threshold=100.0,
         )
         manager.add_rule(rule)
         alerts = manager.evaluate("test", 150.0)
@@ -578,7 +580,7 @@ class TestAlertManager:
             description="Test",
             metric_name="test",
             operator=ComparisonOperator.GREATER_THAN,
-            threshold=100.0
+            threshold=100.0,
         )
         manager.add_rule(rule)
         alerts = manager.evaluate("test", 150.0)
@@ -594,16 +596,16 @@ class TestAlertManager:
             description="Test",
             metric_name="test",
             operator=ComparisonOperator.GREATER_THAN,
-            threshold=100.0
+            threshold=100.0,
         )
         manager.add_rule(rule)
         manager.evaluate("test", 150.0)
 
         summary = manager.get_alert_summary()
-        assert 'total_alerts' in summary
-        assert 'active_alerts' in summary
-        assert 'by_status' in summary
-        assert 'by_severity' in summary
+        assert "total_alerts" in summary
+        assert "active_alerts" in summary
+        assert "by_status" in summary
+        assert "by_severity" in summary
 
     def test_cleanup_old_alerts(self, manager):
         """Test cleaning up old alerts"""
@@ -613,7 +615,7 @@ class TestAlertManager:
             description="Test",
             metric_name="test",
             operator=ComparisonOperator.GREATER_THAN,
-            threshold=100.0
+            threshold=100.0,
         )
         manager.add_rule(rule)
         alerts = manager.evaluate("test", 150.0)
@@ -622,7 +624,9 @@ class TestAlertManager:
         manager.resolve_alert(alerts[0].alert_id)
 
         # Manually set old timestamp
-        manager._alerts[alerts[0].alert_id].created_at = datetime.now() - timedelta(days=60)
+        manager._alerts[alerts[0].alert_id].created_at = datetime.now() - timedelta(
+            days=60
+        )
 
         manager.cleanup_old_alerts(days=30)
         assert manager.get_alert(alerts[0].alert_id) is None
@@ -659,7 +663,7 @@ class TestConvenienceFunctions:
             severity=AlertSeverity.WARNING,
             title="Test Alert",
             message="Test message",
-            metadata={"key": "value"}
+            metadata={"key": "value"},
         )
         assert isinstance(alert, Alert)
         assert alert.severity == AlertSeverity.WARNING

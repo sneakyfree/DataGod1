@@ -5,10 +5,11 @@ Tests all functions including database setup, sample data creation, and data col
 Since main.py has dependencies that may not be available, we mock at import level
 """
 
-import pytest
-import sys
-from unittest.mock import MagicMock, patch, call
 import logging
+import sys
+from unittest.mock import MagicMock, call, patch
+
+import pytest
 
 
 # Mock the entire import chain before importing main module
@@ -32,24 +33,29 @@ def mock_dependencies():
     mock_property_scraper = MagicMock()
 
     # Setup sys.modules mocks
-    with patch.dict('sys.modules', {
-        'datagod.db_manager': mock_db_manager,
-        'datagod.models.jurisdiction': MagicMock(Jurisdiction=mock_jurisdiction),
-        'datagod.models.data_source': MagicMock(DataSource=mock_data_source),
-        'datagod.models.record': MagicMock(Record=mock_record),
-        'datagod.utils.data_validation': MagicMock(validator=mock_validator),
-        'datagod.utils.data_processor': MagicMock(processor=mock_processor),
-        'datagod.scrapers.property_scraper': MagicMock(PropertyScraper=mock_property_scraper),
-    }):
+    with patch.dict(
+        "sys.modules",
+        {
+            "datagod.db_manager": mock_db_manager,
+            "datagod.models.jurisdiction": MagicMock(Jurisdiction=mock_jurisdiction),
+            "datagod.models.data_source": MagicMock(DataSource=mock_data_source),
+            "datagod.models.record": MagicMock(Record=mock_record),
+            "datagod.utils.data_validation": MagicMock(validator=mock_validator),
+            "datagod.utils.data_processor": MagicMock(processor=mock_processor),
+            "datagod.scrapers.property_scraper": MagicMock(
+                PropertyScraper=mock_property_scraper
+            ),
+        },
+    ):
         yield {
-            'init_db': mock_init_db,
-            'get_db_session': mock_get_db_session,
-            'Jurisdiction': mock_jurisdiction,
-            'DataSource': mock_data_source,
-            'Record': mock_record,
-            'validator': mock_validator,
-            'processor': mock_processor,
-            'PropertyScraper': mock_property_scraper,
+            "init_db": mock_init_db,
+            "get_db_session": mock_get_db_session,
+            "Jurisdiction": mock_jurisdiction,
+            "DataSource": mock_data_source,
+            "Record": mock_record,
+            "validator": mock_validator,
+            "processor": mock_processor,
+            "PropertyScraper": mock_property_scraper,
         }
 
 
@@ -58,7 +64,7 @@ class TestMainModuleFunctions:
 
     def test_setup_database_logic(self, mock_dependencies):
         """Test setup_database function logic"""
-        mock_init_db = mock_dependencies['init_db']
+        mock_init_db = mock_dependencies["init_db"]
         mock_logger = MagicMock()
 
         # Simulate the setup_database function behavior
@@ -78,7 +84,7 @@ class TestMainModuleFunctions:
 
     def test_setup_database_failure_logic(self, mock_dependencies):
         """Test setup_database failure handling"""
-        mock_init_db = mock_dependencies['init_db']
+        mock_init_db = mock_dependencies["init_db"]
         mock_init_db.side_effect = Exception("Database error")
         mock_logger = MagicMock()
 
@@ -99,8 +105,8 @@ class TestMainModuleFunctions:
 
     def test_create_sample_jurisdiction_new_logic(self, mock_dependencies):
         """Test creating new sample jurisdiction logic"""
-        mock_get_db_session = mock_dependencies['get_db_session']
-        mock_jurisdiction_class = mock_dependencies['Jurisdiction']
+        mock_get_db_session = mock_dependencies["get_db_session"]
+        mock_jurisdiction_class = mock_dependencies["Jurisdiction"]
 
         mock_session = MagicMock()
         mock_query = MagicMock()
@@ -115,13 +121,15 @@ class TestMainModuleFunctions:
         def create_sample_jurisdiction():
             session = mock_get_db_session()
             try:
-                jurisdiction = session.query(mock_jurisdiction_class).filter_by(name="Sample County").first()
+                jurisdiction = (
+                    session.query(mock_jurisdiction_class)
+                    .filter_by(name="Sample County")
+                    .first()
+                )
 
                 if not jurisdiction:
                     jurisdiction = mock_jurisdiction_class(
-                        name="Sample County",
-                        state="CA",
-                        county="Sample County"
+                        name="Sample County", state="CA", county="Sample County"
                     )
                     session.add(jurisdiction)
                     session.commit()
@@ -144,8 +152,8 @@ class TestMainModuleFunctions:
 
     def test_create_sample_jurisdiction_exists_logic(self, mock_dependencies):
         """Test when sample jurisdiction already exists"""
-        mock_get_db_session = mock_dependencies['get_db_session']
-        mock_jurisdiction_class = mock_dependencies['Jurisdiction']
+        mock_get_db_session = mock_dependencies["get_db_session"]
+        mock_jurisdiction_class = mock_dependencies["Jurisdiction"]
 
         mock_session = MagicMock()
         mock_query = MagicMock()
@@ -163,7 +171,11 @@ class TestMainModuleFunctions:
         def create_sample_jurisdiction():
             session = mock_get_db_session()
             try:
-                jurisdiction = session.query(mock_jurisdiction_class).filter_by(name="Sample County").first()
+                jurisdiction = (
+                    session.query(mock_jurisdiction_class)
+                    .filter_by(name="Sample County")
+                    .first()
+                )
 
                 if not jurisdiction:
                     jurisdiction = mock_jurisdiction_class(name="Sample County")
@@ -185,7 +197,7 @@ class TestMainModuleFunctions:
 
     def test_create_sample_jurisdiction_exception_logic(self, mock_dependencies):
         """Test exception handling in create_sample_jurisdiction"""
-        mock_get_db_session = mock_dependencies['get_db_session']
+        mock_get_db_session = mock_dependencies["get_db_session"]
 
         mock_session = MagicMock()
         mock_session.query.side_effect = Exception("Database error")
@@ -196,7 +208,9 @@ class TestMainModuleFunctions:
         def create_sample_jurisdiction():
             session = mock_get_db_session()
             try:
-                jurisdiction = session.query(MagicMock()).filter_by(name="Sample County").first()
+                jurisdiction = (
+                    session.query(MagicMock()).filter_by(name="Sample County").first()
+                )
             except Exception as e:
                 mock_logger.error(f"Failed: {str(e)}")
                 session.rollback()
@@ -212,9 +226,9 @@ class TestMainModuleFunctions:
 
     def test_create_sample_data_source_new_logic(self, mock_dependencies):
         """Test creating new sample data source logic"""
-        mock_get_db_session = mock_dependencies['get_db_session']
-        mock_jurisdiction_class = mock_dependencies['Jurisdiction']
-        mock_data_source_class = mock_dependencies['DataSource']
+        mock_get_db_session = mock_dependencies["get_db_session"]
+        mock_jurisdiction_class = mock_dependencies["Jurisdiction"]
+        mock_data_source_class = mock_dependencies["DataSource"]
 
         mock_session = MagicMock()
         mock_query = MagicMock()
@@ -246,17 +260,24 @@ class TestMainModuleFunctions:
         def create_sample_data_source():
             session = mock_get_db_session()
             try:
-                jurisdiction = session.query(mock_jurisdiction_class).filter_by(name="Sample County").first()
+                jurisdiction = (
+                    session.query(mock_jurisdiction_class)
+                    .filter_by(name="Sample County")
+                    .first()
+                )
                 if not jurisdiction:
                     mock_logger.error("No jurisdiction found")
                     return
 
-                data_source = session.query(mock_data_source_class).filter_by(source_name="Sample Source").first()
+                data_source = (
+                    session.query(mock_data_source_class)
+                    .filter_by(source_name="Sample Source")
+                    .first()
+                )
 
                 if not data_source:
                     data_source = mock_data_source_class(
-                        jurisdiction_id=jurisdiction.id,
-                        source_name="Sample Source"
+                        jurisdiction_id=jurisdiction.id, source_name="Sample Source"
                     )
                     session.add(data_source)
                     session.commit()
@@ -274,8 +295,8 @@ class TestMainModuleFunctions:
 
     def test_create_sample_data_source_no_jurisdiction_logic(self, mock_dependencies):
         """Test when no jurisdiction exists"""
-        mock_get_db_session = mock_dependencies['get_db_session']
-        mock_jurisdiction_class = mock_dependencies['Jurisdiction']
+        mock_get_db_session = mock_dependencies["get_db_session"]
+        mock_jurisdiction_class = mock_dependencies["Jurisdiction"]
 
         mock_session = MagicMock()
         mock_query = MagicMock()
@@ -290,7 +311,11 @@ class TestMainModuleFunctions:
         def create_sample_data_source():
             session = mock_get_db_session()
             try:
-                jurisdiction = session.query(mock_jurisdiction_class).filter_by(name="Sample County").first()
+                jurisdiction = (
+                    session.query(mock_jurisdiction_class)
+                    .filter_by(name="Sample County")
+                    .first()
+                )
                 if not jurisdiction:
                     mock_logger.error("No jurisdiction found for data source")
                     return
@@ -309,19 +334,19 @@ class TestRunDataCollectionLogic:
 
     def test_run_data_collection_with_data(self, mock_dependencies):
         """Test successful data collection with scraped data"""
-        mock_scraper_class = mock_dependencies['PropertyScraper']
-        mock_validator = mock_dependencies['validator']
-        mock_processor = mock_dependencies['processor']
+        mock_scraper_class = mock_dependencies["PropertyScraper"]
+        mock_validator = mock_dependencies["validator"]
+        mock_processor = mock_dependencies["processor"]
 
         mock_scraper = MagicMock()
         mock_scraper.scrape.return_value = [
-            {'address': '123 Main St', 'price': 500000},
-            {'address': '456 Oak Ave', 'price': 600000}
+            {"address": "123 Main St", "price": 500000},
+            {"address": "456 Oak Ave", "price": 600000},
         ]
         mock_scraper_class.return_value = mock_scraper
 
-        mock_validator.validate_record.return_value = {'valid': True, 'errors': []}
-        mock_processor.enrich_data.return_value = {'enriched': True}
+        mock_validator.validate_record.return_value = {"valid": True, "errors": []}
+        mock_processor.enrich_data.return_value = {"enriched": True}
 
         mock_logger = MagicMock()
         mock_setup = MagicMock()
@@ -343,8 +368,10 @@ class TestRunDataCollectionLogic:
 
                 for record in property_data:
                     validation_result = mock_validator.validate_record(record)
-                    if not validation_result['valid']:
-                        mock_logger.warning(f"Validation errors: {validation_result['errors']}")
+                    if not validation_result["valid"]:
+                        mock_logger.warning(
+                            f"Validation errors: {validation_result['errors']}"
+                        )
                     else:
                         mock_logger.info("Record validation passed")
 
@@ -365,7 +392,7 @@ class TestRunDataCollectionLogic:
 
     def test_run_data_collection_no_data(self, mock_dependencies):
         """Test data collection when no data is scraped"""
-        mock_scraper_class = mock_dependencies['PropertyScraper']
+        mock_scraper_class = mock_dependencies["PropertyScraper"]
 
         mock_scraper = MagicMock()
         mock_scraper.scrape.return_value = []
@@ -388,17 +415,17 @@ class TestRunDataCollectionLogic:
 
     def test_run_data_collection_validation_errors(self, mock_dependencies):
         """Test data collection with validation errors"""
-        mock_scraper_class = mock_dependencies['PropertyScraper']
-        mock_validator = mock_dependencies['validator']
-        mock_processor = mock_dependencies['processor']
+        mock_scraper_class = mock_dependencies["PropertyScraper"]
+        mock_validator = mock_dependencies["validator"]
+        mock_processor = mock_dependencies["processor"]
 
         mock_scraper = MagicMock()
-        mock_scraper.scrape.return_value = [{'address': '', 'price': -100}]
+        mock_scraper.scrape.return_value = [{"address": "", "price": -100}]
         mock_scraper_class.return_value = mock_scraper
 
         mock_validator.validate_record.return_value = {
-            'valid': False,
-            'errors': ['Address required', 'Price must be positive']
+            "valid": False,
+            "errors": ["Address required", "Price must be positive"],
         }
         mock_processor.enrich_data.return_value = {}
 
@@ -411,8 +438,10 @@ class TestRunDataCollectionLogic:
             if property_data:
                 for record in property_data:
                     validation_result = mock_validator.validate_record(record)
-                    if not validation_result['valid']:
-                        mock_logger.warning(f"Validation errors: {validation_result['errors']}")
+                    if not validation_result["valid"]:
+                        mock_logger.warning(
+                            f"Validation errors: {validation_result['errors']}"
+                        )
                     else:
                         mock_logger.info("Record validation passed")
 
@@ -423,7 +452,7 @@ class TestRunDataCollectionLogic:
 
         mock_logger.warning.assert_called()
         warning_msg = str(mock_logger.warning.call_args)
-        assert 'Validation errors' in warning_msg
+        assert "Validation errors" in warning_msg
 
 
 class TestMainFunctionLogic:
@@ -472,21 +501,21 @@ class TestDataCollectionFlow:
 
     def test_full_flow_with_valid_data(self, mock_dependencies):
         """Test complete flow with valid scraped data"""
-        mock_scraper_class = mock_dependencies['PropertyScraper']
-        mock_validator = mock_dependencies['validator']
-        mock_processor = mock_dependencies['processor']
+        mock_scraper_class = mock_dependencies["PropertyScraper"]
+        mock_validator = mock_dependencies["validator"]
+        mock_processor = mock_dependencies["processor"]
 
         mock_scraper = MagicMock()
         mock_scraper.scrape.return_value = [
-            {'address': '123 Main St', 'price': 500000, 'bedrooms': 3}
+            {"address": "123 Main St", "price": 500000, "bedrooms": 3}
         ]
         mock_scraper_class.return_value = mock_scraper
 
-        mock_validator.validate_record.return_value = {'valid': True, 'errors': []}
+        mock_validator.validate_record.return_value = {"valid": True, "errors": []}
         mock_processor.enrich_data.return_value = {
-            'address': '123 Main St',
-            'price': 500000,
-            'enriched': True
+            "address": "123 Main St",
+            "price": 500000,
+            "enriched": True,
         }
 
         # Run flow
@@ -496,31 +525,30 @@ class TestDataCollectionFlow:
         processed_data = []
         for record in property_data:
             validation_result = mock_validator.validate_record(record)
-            assert validation_result['valid'] == True
+            assert validation_result["valid"] == True
 
             enriched_data = mock_processor.enrich_data(record)
             processed_data.append(enriched_data)
 
         assert len(processed_data) == 1
-        assert processed_data[0]['enriched'] == True
+        assert processed_data[0]["enriched"] == True
 
     def test_full_flow_multiple_records(self, mock_dependencies):
         """Test flow with multiple records"""
-        mock_scraper_class = mock_dependencies['PropertyScraper']
-        mock_validator = mock_dependencies['validator']
-        mock_processor = mock_dependencies['processor']
+        mock_scraper_class = mock_dependencies["PropertyScraper"]
+        mock_validator = mock_dependencies["validator"]
+        mock_processor = mock_dependencies["processor"]
 
         records = [
-            {'address': f'{i} Street', 'price': 100000 * i}
-            for i in range(1, 11)
+            {"address": f"{i} Street", "price": 100000 * i} for i in range(1, 11)
         ]
 
         mock_scraper = MagicMock()
         mock_scraper.scrape.return_value = records
         mock_scraper_class.return_value = mock_scraper
 
-        mock_validator.validate_record.return_value = {'valid': True, 'errors': []}
-        mock_processor.enrich_data.side_effect = lambda x: {**x, 'enriched': True}
+        mock_validator.validate_record.return_value = {"valid": True, "errors": []}
+        mock_processor.enrich_data.side_effect = lambda x: {**x, "enriched": True}
 
         # Run flow
         scraper = mock_scraper_class(base_url="https://example.com")
@@ -542,7 +570,7 @@ class TestEdgeCases:
 
     def test_none_property_data(self, mock_dependencies):
         """Test when scraper returns None"""
-        mock_scraper_class = mock_dependencies['PropertyScraper']
+        mock_scraper_class = mock_dependencies["PropertyScraper"]
 
         mock_scraper = MagicMock()
         mock_scraper.scrape.return_value = None
@@ -565,17 +593,17 @@ class TestEdgeCases:
 
     def test_empty_record_in_list(self, mock_dependencies):
         """Test handling empty record in list"""
-        mock_scraper_class = mock_dependencies['PropertyScraper']
-        mock_validator = mock_dependencies['validator']
-        mock_processor = mock_dependencies['processor']
+        mock_scraper_class = mock_dependencies["PropertyScraper"]
+        mock_validator = mock_dependencies["validator"]
+        mock_processor = mock_dependencies["processor"]
 
         mock_scraper = MagicMock()
         mock_scraper.scrape.return_value = [{}]
         mock_scraper_class.return_value = mock_scraper
 
         mock_validator.validate_record.return_value = {
-            'valid': False,
-            'errors': ['Empty record']
+            "valid": False,
+            "errors": ["Empty record"],
         }
         mock_processor.enrich_data.return_value = {}
 
@@ -588,8 +616,10 @@ class TestEdgeCases:
             if property_data:
                 for record in property_data:
                     validation_result = mock_validator.validate_record(record)
-                    if not validation_result['valid']:
-                        mock_logger.warning(f"Validation errors: {validation_result['errors']}")
+                    if not validation_result["valid"]:
+                        mock_logger.warning(
+                            f"Validation errors: {validation_result['errors']}"
+                        )
 
                 for record in property_data:
                     mock_processor.enrich_data(record)
@@ -601,7 +631,7 @@ class TestEdgeCases:
 
     def test_scraper_initialization_with_correct_url(self, mock_dependencies):
         """Test that scraper is initialized with correct URL"""
-        mock_scraper_class = mock_dependencies['PropertyScraper']
+        mock_scraper_class = mock_dependencies["PropertyScraper"]
         mock_scraper = MagicMock()
         mock_scraper.scrape.return_value = []
         mock_scraper_class.return_value = mock_scraper
@@ -609,7 +639,9 @@ class TestEdgeCases:
         # Run
         scraper = mock_scraper_class(base_url="https://example-property-data.com")
 
-        mock_scraper_class.assert_called_once_with(base_url="https://example-property-data.com")
+        mock_scraper_class.assert_called_once_with(
+            base_url="https://example-property-data.com"
+        )
 
 
 class TestLoggingBehavior:
@@ -617,10 +649,10 @@ class TestLoggingBehavior:
 
     def test_logging_during_data_collection(self, mock_dependencies):
         """Test logging messages during data collection"""
-        mock_scraper_class = mock_dependencies['PropertyScraper']
+        mock_scraper_class = mock_dependencies["PropertyScraper"]
 
         mock_scraper = MagicMock()
-        mock_scraper.scrape.return_value = [{'address': 'Test'}]
+        mock_scraper.scrape.return_value = [{"address": "Test"}]
         mock_scraper_class.return_value = mock_scraper
 
         mock_logger = MagicMock()
@@ -662,7 +694,7 @@ class TestSessionManagement:
 
     def test_session_closes_on_success(self, mock_dependencies):
         """Test that session is closed after successful operation"""
-        mock_get_db_session = mock_dependencies['get_db_session']
+        mock_get_db_session = mock_dependencies["get_db_session"]
 
         mock_session = MagicMock()
         mock_query = MagicMock()
@@ -686,7 +718,7 @@ class TestSessionManagement:
 
     def test_session_closes_on_exception(self, mock_dependencies):
         """Test that session is closed even when exception occurs"""
-        mock_get_db_session = mock_dependencies['get_db_session']
+        mock_get_db_session = mock_dependencies["get_db_session"]
 
         mock_session = MagicMock()
         mock_session.query.side_effect = Exception("DB error")
@@ -709,5 +741,5 @@ class TestSessionManagement:
         mock_session.close.assert_called_once()
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

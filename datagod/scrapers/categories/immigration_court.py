@@ -23,14 +23,16 @@ statistics and precedent decisions are available.
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 
 class CaseType(Enum):
     """Immigration case types"""
+
     REMOVAL = "removal"
     DEPORTATION = "deportation"
     EXCLUSION = "exclusion"
@@ -46,6 +48,7 @@ class CaseType(Enum):
 
 class CaseOutcome(Enum):
     """Immigration case outcomes"""
+
     GRANTED = "granted"
     DENIED = "denied"
     TERMINATED = "terminated"
@@ -59,6 +62,7 @@ class CaseOutcome(Enum):
 
 class ReliefType(Enum):
     """Types of immigration relief"""
+
     ASYLUM = "asylum"
     WITHHOLDING = "withholding_of_removal"
     CAT_PROTECTION = "cat_protection"
@@ -71,6 +75,7 @@ class ReliefType(Enum):
 
 class CourtStatus(Enum):
     """Immigration court operational status"""
+
     ACTIVE = "active"
     TEMPORARILY_CLOSED = "temporarily_closed"
     PERMANENTLY_CLOSED = "permanently_closed"
@@ -80,6 +85,7 @@ class CourtStatus(Enum):
 @dataclass
 class ImmigrationCourt:
     """Immigration court location information"""
+
     court_code: str
     court_name: str
     city: str
@@ -111,6 +117,7 @@ class ImmigrationCourt:
 @dataclass
 class ImmigrationJudge:
     """Immigration judge information (public)"""
+
     judge_id: str
     name: str
     court_code: str
@@ -125,7 +132,9 @@ class ImmigrationJudge:
             "name": self.name,
             "court_code": self.court_code,
             "court_name": self.court_name,
-            "appointment_date": self.appointment_date.isoformat() if self.appointment_date else None,
+            "appointment_date": (
+                self.appointment_date.isoformat() if self.appointment_date else None
+            ),
             "prior_experience": self.prior_experience,
             "status": self.status,
         }
@@ -134,6 +143,7 @@ class ImmigrationJudge:
 @dataclass
 class JudgeStatistics:
     """Aggregate statistics for an immigration judge (TRAC data)"""
+
     judge_name: str
     court_name: str
     fiscal_year: int
@@ -169,6 +179,7 @@ class JudgeStatistics:
 @dataclass
 class CourtStatistics:
     """Aggregate statistics for an immigration court"""
+
     court_code: str
     court_name: str
     fiscal_year: int
@@ -208,6 +219,7 @@ class CourtStatistics:
 @dataclass
 class PrecedentDecision:
     """BIA or Attorney General precedent decision"""
+
     citation: str
     case_name: str
     decision_date: date
@@ -237,6 +249,7 @@ class PrecedentDecision:
 @dataclass
 class NationalStatistics:
     """National immigration court statistics"""
+
     fiscal_year: int
     total_pending: int
     total_completed: int
@@ -312,7 +325,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="401 West A Street, Suite 800, San Diego, CA 92101",
         detention_court=False,
     ),
-
     # Texas Courts
     "HOUS": ImmigrationCourt(
         court_code="HOUS",
@@ -346,7 +358,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="566 Veterans Drive, Pearsall, TX 78061",
         detention_court=True,
     ),
-
     # New York Courts
     "NYNY": ImmigrationCourt(
         court_code="NYNY",
@@ -372,7 +383,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="4250 Federal Drive, Batavia, NY 14020",
         detention_court=True,
     ),
-
     # Florida Courts
     "MIAM": ImmigrationCourt(
         court_code="MIAM",
@@ -390,7 +400,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="3535 Lawton Road, Suite 150, Orlando, FL 32803",
         detention_court=False,
     ),
-
     # Arizona Courts
     "PHNX": ImmigrationCourt(
         court_code="PHNX",
@@ -416,7 +425,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="1705 E. Hanna Road, Eloy, AZ 85131",
         detention_court=True,
     ),
-
     # Illinois Courts
     "CHIC": ImmigrationCourt(
         court_code="CHIC",
@@ -426,7 +434,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="525 West Van Buren Street, Suite 500, Chicago, IL 60607",
         detention_court=False,
     ),
-
     # Georgia Courts
     "ATLA": ImmigrationCourt(
         court_code="ATLA",
@@ -444,7 +451,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="146 CCA Road, Lumpkin, GA 31815",
         detention_court=True,
     ),
-
     # Virginia Courts
     "ARLN": ImmigrationCourt(
         court_code="ARLN",
@@ -454,7 +460,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="1901 S. Bell Street, Suite 200, Arlington, VA 22202",
         detention_court=False,
     ),
-
     # New Jersey Courts
     "NWRK": ImmigrationCourt(
         court_code="NWRK",
@@ -464,7 +469,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="970 Broad Street, Room 1100, Newark, NJ 07102",
         detention_court=False,
     ),
-
     # Colorado Courts
     "DNVR": ImmigrationCourt(
         court_code="DNVR",
@@ -482,7 +486,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="3130 N. Oakland Street, Aurora, CO 80010",
         detention_court=True,
     ),
-
     # Washington Courts
     "SEAT": ImmigrationCourt(
         court_code="SEAT",
@@ -500,7 +503,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="1623 E. J Street, Tacoma, WA 98421",
         detention_court=True,
     ),
-
     # Massachusetts Courts
     "BOST": ImmigrationCourt(
         court_code="BOST",
@@ -510,7 +512,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="15 New Sudbury Street, Room 320, Boston, MA 02203",
         detention_court=False,
     ),
-
     # Pennsylvania Courts
     "PHIL": ImmigrationCourt(
         court_code="PHIL",
@@ -528,7 +529,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="3400 Concord Road, York, PA 17402",
         detention_court=True,
     ),
-
     # Louisiana Courts
     "NWOR": ImmigrationCourt(
         court_code="NWOR",
@@ -546,7 +546,6 @@ IMMIGRATION_COURTS: Dict[str, ImmigrationCourt] = {
         address="1900 East Whatley Road, Oakdale, LA 71463",
         detention_court=True,
     ),
-
     # Board of Immigration Appeals
     "BIA": ImmigrationCourt(
         court_code="BIA",
@@ -599,7 +598,9 @@ class BaseImmigrationCourtAPI:
         """Get all detention immigration courts"""
         return [c for c in IMMIGRATION_COURTS.values() if c.detention_court]
 
-    async def get_national_statistics(self, fiscal_year: int) -> Optional[NationalStatistics]:
+    async def get_national_statistics(
+        self, fiscal_year: int
+    ) -> Optional[NationalStatistics]:
         """
         Get national immigration court statistics for a fiscal year.
 
@@ -631,13 +632,11 @@ class BaseImmigrationCourtAPI:
             detained_cases=40_000,
             non_detained_cases=360_000,
             judges_count=600,
-            data_source="EOIR Statistics Yearbook"
+            data_source="EOIR Statistics Yearbook",
         )
 
     async def get_court_statistics(
-        self,
-        court_code: str,
-        fiscal_year: int
+        self, court_code: str, fiscal_year: int
     ) -> Optional[CourtStatistics]:
         """
         Get statistics for a specific immigration court.
@@ -668,9 +667,15 @@ class BaseImmigrationCourtAPI:
             voluntary_departures=500,
             relief_granted=2000,
             administrative_closures=1000,
-            top_nationalities=["Mexico", "Guatemala", "Honduras", "El Salvador", "China"],
+            top_nationalities=[
+                "Mexico",
+                "Guatemala",
+                "Honduras",
+                "El Salvador",
+                "China",
+            ],
             representation_rate=0.55,
-            data_source="TRAC Immigration"
+            data_source="TRAC Immigration",
         )
 
     async def search_precedent_decisions(
@@ -705,7 +710,11 @@ class BaseImmigrationCourtAPI:
                 decision_date=date(2018, 6, 11),
                 decision_type="AG",
                 holding_summary="Addressed standards for asylum claims based on domestic violence and gang violence.",
-                legal_issues=["particular social group", "domestic violence", "gang violence"],
+                legal_issues=[
+                    "particular social group",
+                    "domestic violence",
+                    "gang violence",
+                ],
                 relief_types=[ReliefType.ASYLUM],
                 overruled=True,
                 overruled_by="Matter of A-B-, 28 I&N Dec. 307 (A.G. 2021)",
@@ -738,9 +747,11 @@ class BaseImmigrationCourtAPI:
             # Filter by keywords
             if keywords:
                 keyword_match = any(
-                    kw.lower() in decision.holding_summary.lower() or
-                    kw.lower() in decision.case_name.lower() or
-                    any(kw.lower() in issue.lower() for issue in decision.legal_issues)
+                    kw.lower() in decision.holding_summary.lower()
+                    or kw.lower() in decision.case_name.lower()
+                    or any(
+                        kw.lower() in issue.lower() for issue in decision.legal_issues
+                    )
                     for kw in keywords
                 )
                 if not keyword_match:
@@ -845,18 +856,17 @@ class BaseImmigrationCourtAPI:
             "NYNY": 180000,  # New York
             "LASC": 150000,  # Los Angeles
             "MIAM": 100000,  # Miami
-            "HOUS": 90000,   # Houston
-            "SFRC": 70000,   # San Francisco
-            "CHIC": 60000,   # Chicago
-            "ARLN": 50000,   # Arlington
-            "DLLS": 45000,   # Dallas
-            "NWRK": 40000,   # Newark
-            "ATLA": 35000,   # Atlanta
+            "HOUS": 90000,  # Houston
+            "SFRC": 70000,  # San Francisco
+            "CHIC": 60000,  # Chicago
+            "ARLN": 50000,  # Arlington
+            "DLLS": 45000,  # Dallas
+            "NWRK": 40000,  # Newark
+            "ATLA": 35000,  # Atlanta
         }
 
     async def get_asylum_grant_rates_by_nationality(
-        self,
-        fiscal_year: int
+        self, fiscal_year: int
     ) -> Dict[str, float]:
         """
         Get asylum grant rates by nationality.
@@ -898,6 +908,7 @@ def get_eoir_api() -> BaseImmigrationCourtAPI:
 
 # Convenience functions
 
+
 def get_all_immigration_courts() -> List[Dict[str, Any]]:
     """Get all immigration court locations"""
     api = get_eoir_api()
@@ -921,19 +932,25 @@ def get_detention_courts() -> List[Dict[str, Any]]:
 
 def get_national_statistics(fiscal_year: int = 2023) -> Optional[Dict[str, Any]]:
     """Get national immigration court statistics"""
+
     async def _fetch():
         async with BaseImmigrationCourtAPI() as api:
             stats = await api.get_national_statistics(fiscal_year)
             return stats.to_dict() if stats else None
+
     return asyncio.run(_fetch())
 
 
-def get_court_statistics(court_code: str, fiscal_year: int = 2023) -> Optional[Dict[str, Any]]:
+def get_court_statistics(
+    court_code: str, fiscal_year: int = 2023
+) -> Optional[Dict[str, Any]]:
     """Get statistics for a specific court"""
+
     async def _fetch():
         async with BaseImmigrationCourtAPI() as api:
             stats = await api.get_court_statistics(court_code, fiscal_year)
             return stats.to_dict() if stats else None
+
     return asyncio.run(_fetch())
 
 
@@ -943,6 +960,7 @@ def search_precedent_decisions(
     decision_type: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Search BIA/AG precedent decisions"""
+
     async def _search():
         async with BaseImmigrationCourtAPI() as api:
             relief = ReliefType(relief_type) if relief_type else None
@@ -952,6 +970,7 @@ def search_precedent_decisions(
                 decision_type=decision_type,
             )
             return [r.to_dict() for r in results]
+
     return asyncio.run(_search())
 
 
@@ -961,6 +980,7 @@ def get_judge_statistics(
     fiscal_year: int = 2023,
 ) -> List[Dict[str, Any]]:
     """Get judge-level aggregate statistics"""
+
     async def _fetch():
         async with BaseImmigrationCourtAPI() as api:
             results = await api.get_judge_statistics(
@@ -969,22 +989,27 @@ def get_judge_statistics(
                 fiscal_year=fiscal_year,
             )
             return [r.to_dict() for r in results]
+
     return asyncio.run(_fetch())
 
 
 def get_backlog_by_court() -> Dict[str, int]:
     """Get case backlog by court"""
+
     async def _fetch():
         async with BaseImmigrationCourtAPI() as api:
             return await api.get_backlog_by_court()
+
     return asyncio.run(_fetch())
 
 
 def get_asylum_grant_rates(fiscal_year: int = 2023) -> Dict[str, float]:
     """Get asylum grant rates by nationality"""
+
     async def _fetch():
         async with BaseImmigrationCourtAPI() as api:
             return await api.get_asylum_grant_rates_by_nationality(fiscal_year)
+
     return asyncio.run(_fetch())
 
 

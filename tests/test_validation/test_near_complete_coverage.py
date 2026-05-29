@@ -4,9 +4,10 @@ Tests to complete coverage for near-complete modules.
 These tests target specific uncovered lines in modules that are 97-99% covered.
 """
 
+from datetime import date, datetime
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from datetime import datetime, date
-from unittest.mock import Mock, patch, MagicMock
 
 
 class TestBusinessRulesParseDate:
@@ -51,7 +52,7 @@ class TestBusinessRulesParseDate:
 
         validator = BusinessRuleValidator()
 
-        result = validator._parse_date('2024-05-15')
+        result = validator._parse_date("2024-05-15")
         assert result == date(2024, 5, 15)
 
     def test_parse_date_with_none(self):
@@ -83,21 +84,21 @@ class TestCrossSourceValidatorEdgeCases:
         # Create sample records from different sources
         records = [
             {
-                'source': 'source_a',
-                'owner_name': 'John Smith',
-                'property_address': '123 Main St',
-                'assessed_value': 250000
+                "source": "source_a",
+                "owner_name": "John Smith",
+                "property_address": "123 Main St",
+                "assessed_value": 250000,
             },
             {
-                'source': 'source_b',
-                'owner_name': 'John Smith',
-                'property_address': '123 Main Street',
-                'assessed_value': 252000
-            }
+                "source": "source_b",
+                "owner_name": "John Smith",
+                "property_address": "123 Main Street",
+                "assessed_value": 252000,
+            },
         ]
 
         # Validate if method exists
-        if hasattr(validator, 'validate_records'):
+        if hasattr(validator, "validate_records"):
             result = validator.validate_records(records)
             assert result is not None
 
@@ -112,7 +113,7 @@ class TestEmailServiceEdgeCases:
         service = EmailService()
         assert service is not None
 
-    @patch('smtplib.SMTP')
+    @patch("smtplib.SMTP")
     def test_send_email_failure_handling(self, mock_smtp):
         """Test email service handles send failure"""
         mock_smtp_instance = MagicMock()
@@ -124,12 +125,10 @@ class TestEmailServiceEdgeCases:
         service = EmailService()
 
         # Should handle exception gracefully
-        if hasattr(service, 'send_email'):
+        if hasattr(service, "send_email"):
             try:
                 result = service.send_email(
-                    to='test@example.com',
-                    subject='Test',
-                    body='Test body'
+                    to="test@example.com", subject="Test", body="Test body"
                 )
                 # Result should indicate failure
                 assert result is False or result is None
@@ -154,8 +153,8 @@ class TestJurisdictionResearchEdgeCases:
 
         research = JurisdictionResearcher()
 
-        if hasattr(research, 'research_state'):
-            result = research.research_state('TX')
+        if hasattr(research, "research_state"):
+            result = research.research_state("TX")
             assert result is not None or result == []
 
 
@@ -168,7 +167,7 @@ class TestDataValidationEdgeCases:
 
         validator = DataValidator()
 
-        if hasattr(validator, 'validate'):
+        if hasattr(validator, "validate"):
             result = validator.validate({})
             # Should handle empty data
             assert result is not None or result == {}
@@ -179,7 +178,7 @@ class TestDataValidationEdgeCases:
 
         validator = DataValidator()
 
-        if hasattr(validator, 'validate'):
+        if hasattr(validator, "validate"):
             # Test with None
             result = validator.validate(None)
             assert result is not None or result is None
@@ -188,7 +187,7 @@ class TestDataValidationEdgeCases:
 class TestGenericStateAPIEdgeCases:
     """Tests for generic_state_api.py lines 123, 266, 423-424, 464, 505"""
 
-    @patch('requests.Session')
+    @patch("requests.Session")
     def test_generic_api_pagination(self, mock_session_class):
         """Test generic state API pagination"""
         mock_session = MagicMock()
@@ -196,30 +195,26 @@ class TestGenericStateAPIEdgeCases:
 
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            'results': [],
-            'next_page': None,
-            'total': 0
-        }
+        mock_response.json.return_value = {"results": [], "next_page": None, "total": 0}
         mock_session.get.return_value = mock_response
 
         from datagod.scrapers.generic_state_api import GenericStateAPI
 
         config = {
-            'jurisdiction_name': 'Test State',
-            'api_key': 'test_key',
-            'base_url': 'https://test.api.com',
-            'state_code': 'TX',
-            'state_name': 'Texas'
+            "jurisdiction_name": "Test State",
+            "api_key": "test_key",
+            "base_url": "https://test.api.com",
+            "state_code": "TX",
+            "state_name": "Texas",
         }
 
         api = GenericStateAPI(jurisdiction_id=1, config=config)
 
         # Test with pagination params
-        results = api.search_records({'page': 2, 'limit': 50})
+        results = api.search_records({"page": 2, "limit": 50})
         assert isinstance(results, list)
 
-    @patch('requests.Session')
+    @patch("requests.Session")
     def test_generic_api_rate_limiting(self, mock_session_class):
         """Test generic state API rate limiting"""
         mock_session = MagicMock()
@@ -227,16 +222,16 @@ class TestGenericStateAPIEdgeCases:
 
         mock_response = MagicMock()
         mock_response.status_code = 429  # Rate limited
-        mock_response.headers = {'Retry-After': '60'}
+        mock_response.headers = {"Retry-After": "60"}
         mock_session.get.return_value = mock_response
 
         from datagod.scrapers.generic_state_api import GenericStateAPI
 
         config = {
-            'jurisdiction_name': 'Test State',
-            'api_key': 'test_key',
-            'state_code': 'TX',
-            'state_name': 'Texas'
+            "jurisdiction_name": "Test State",
+            "api_key": "test_key",
+            "state_code": "TX",
+            "state_name": "Texas",
         }
 
         api = GenericStateAPI(jurisdiction_id=1, config=config)
@@ -263,14 +258,14 @@ class TestSchemaValidatorEdgeCases:
         validator = SchemaValidator()
 
         record = {
-            'record_type': 'mortgage',
-            'amount': 250000,
-            'grantor': 'John Doe',
-            'grantee': 'Bank of America',
-            'address': '123 Main St'
+            "record_type": "mortgage",
+            "amount": 250000,
+            "grantor": "John Doe",
+            "grantee": "Bank of America",
+            "address": "123 Main St",
         }
 
-        if hasattr(validator, 'validate_record'):
+        if hasattr(validator, "validate_record"):
             result = validator.validate_record(record)
             assert result is not None
 
@@ -282,11 +277,11 @@ class TestSchemaValidatorEdgeCases:
 
         # Incomplete record
         record = {
-            'record_type': 'mortgage'
+            "record_type": "mortgage"
             # Missing other fields
         }
 
-        if hasattr(validator, 'validate_record'):
+        if hasattr(validator, "validate_record"):
             result = validator.validate_record(record)
             # Should return validation errors or False
             assert result is not None or result is False
@@ -309,13 +304,13 @@ class TestBaseScraperLine29:
 
         class ConcreteScraper(BaseScraper):
             def scrape(self, **kwargs):
-                return [{'test': 'data'}]
+                return [{"test": "data"}]
 
         scraper = ConcreteScraper(base_url="https://test.com")
         result = scraper.scrape()
 
         assert isinstance(result, list)
-        assert result[0]['test'] == 'data'
+        assert result[0]["test"] == "data"
 
 
 class TestAPIManagerMissingLines:
@@ -330,6 +325,7 @@ class TestAPIManagerMissingLines:
 
         # Check if globals are set
         from datagod.scrapers import api_manager
+
         # The loading should have attempted to import Florida classes
 
     def test_load_api_classes_california(self):
@@ -351,7 +347,7 @@ class TestAPIManagerMissingLines:
         manager._create_integration = Mock(return_value=mock_integration)
 
         # Call get_integration for uncached type
-        result = manager.get_integration(999, 'test_api', 'Test Jurisdiction')
+        result = manager.get_integration(999, "test_api", "Test Jurisdiction")
 
         # Should attempt to create
         manager._create_integration.assert_called_once()

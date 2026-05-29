@@ -33,12 +33,12 @@ from bs4 import BeautifulSoup
 
 from .base import (
     CountyRecorderBase,
-    DocumentType,
+    DocumentParty,
     DocumentStatus,
+    DocumentType,
+    LegalDescription,
     PartyRole,
     RecordedDocument,
-    DocumentParty,
-    LegalDescription,
     SearchCriteria,
     SearchResult,
 )
@@ -95,7 +95,6 @@ class MaricopaCountyRecorder(CountyRecorderBase):
         "DEED": DocumentType.WARRANTY_DEED,
         "CORRECTION DEED": DocumentType.CORRECTION_DEED,
         "AFFIDAVIT OF VALUE": DocumentType.AFFIDAVIT,
-
         # Deeds of Trust (Arizona uses DOT)
         "DOT": DocumentType.DEED_OF_TRUST,
         "DEED OF TRUST": DocumentType.DEED_OF_TRUST,
@@ -116,7 +115,6 @@ class MaricopaCountyRecorder(CountyRecorderBase):
         "MOD": DocumentType.MORTGAGE_MODIFICATION,
         "MODIFICATION": DocumentType.MORTGAGE_MODIFICATION,
         "LOAN MODIFICATION": DocumentType.MORTGAGE_MODIFICATION,
-
         # Liens
         "ML": DocumentType.MECHANICS_LIEN,
         "MECHANIC'S LIEN": DocumentType.MECHANICS_LIEN,
@@ -138,7 +136,6 @@ class MaricopaCountyRecorder(CountyRecorderBase):
         "HOA LIEN": DocumentType.HOA_LIEN,
         "ASSESSMENT LIEN": DocumentType.HOA_LIEN,
         "LIEN": DocumentType.OTHER,
-
         # Foreclosure (Arizona non-judicial)
         "NTS": DocumentType.NOTICE_OF_SALE,
         "NOTICE OF TRUSTEE'S SALE": DocumentType.NOTICE_OF_SALE,
@@ -151,14 +148,12 @@ class MaricopaCountyRecorder(CountyRecorderBase):
         "LP": DocumentType.LIS_PENDENS,
         "LIS PENDENS": DocumentType.LIS_PENDENS,
         "NOTICE OF PENDENCY": DocumentType.LIS_PENDENS,
-
         # UCC (fixture filings at county level)
         "UCC": DocumentType.UCC_FINANCING,
         "UCC1": DocumentType.UCC_FINANCING,
         "UCC-1": DocumentType.UCC_FINANCING,
         "FINANCING STATEMENT": DocumentType.UCC_FINANCING,
         "UCC TERMINATION": DocumentType.UCC_TERMINATION,
-
         # Easements and Restrictions
         "EASE": DocumentType.EASEMENT,
         "EASEMENT": DocumentType.EASEMENT,
@@ -169,7 +164,6 @@ class MaricopaCountyRecorder(CountyRecorderBase):
         "CC&R": DocumentType.CC_AND_RS,
         "DECLARATION OF COVENANTS": DocumentType.CC_AND_RS,
         "RESTRICTIONS": DocumentType.RESTRICTIVE_COVENANT,
-
         # Other common documents
         "AFF": DocumentType.AFFIDAVIT,
         "AFFIDAVIT": DocumentType.AFFIDAVIT,
@@ -185,7 +179,6 @@ class MaricopaCountyRecorder(CountyRecorderBase):
         "AGREEMENT": DocumentType.AGREEMENT,
         "NOTICE": DocumentType.NOTICE,
         "DECLARATION": DocumentType.DECLARATION,
-
         # Maps and Plats
         "PLAT": DocumentType.PLAT_MAP,
         "FINAL PLAT": DocumentType.PLAT_MAP,
@@ -193,7 +186,6 @@ class MaricopaCountyRecorder(CountyRecorderBase):
         "PARCEL MAP": DocumentType.PARCEL_MAP,
         "CONDOMINIUM PLAT": DocumentType.SUBDIVISION_MAP,
         "CONDO PLAT": DocumentType.SUBDIVISION_MAP,
-
         # Marriage/Vital
         "MARRIAGE": DocumentType.MARRIAGE_LICENSE,
         "MARRIAGE LICENSE": DocumentType.MARRIAGE_LICENSE,
@@ -260,13 +252,17 @@ class MaricopaCountyRecorder(CountyRecorderBase):
         soup = self._parse_html(html)
 
         # Find results table
-        results_table = soup.find("table", {"id": "results"}) or \
-                        soup.find("table", {"class": "results"}) or \
-                        soup.find("table", {"class": "searchResults"})
+        results_table = (
+            soup.find("table", {"id": "results"})
+            or soup.find("table", {"class": "results"})
+            or soup.find("table", {"class": "searchResults"})
+        )
 
         if not results_table:
             # Check for no results message
-            no_results = soup.find(text=re.compile(r"no\s+(results?|records?)\s+found", re.I))
+            no_results = soup.find(
+                text=re.compile(r"no\s+(results?|records?)\s+found", re.I)
+            )
             if no_results:
                 logger.debug("No results found")
             return documents
@@ -329,20 +325,24 @@ class MaricopaCountyRecorder(CountyRecorderBase):
             for name in self._split_party_names(grantor_text):
                 if name:
                     grantors.append(self._normalize_name(name))
-                    parties.append(DocumentParty(
-                        name=self._normalize_name(name),
-                        role=PartyRole.GRANTOR,
-                        raw_name=name
-                    ))
+                    parties.append(
+                        DocumentParty(
+                            name=self._normalize_name(name),
+                            role=PartyRole.GRANTOR,
+                            raw_name=name,
+                        )
+                    )
 
             for name in self._split_party_names(grantee_text):
                 if name:
                     grantees.append(self._normalize_name(name))
-                    parties.append(DocumentParty(
-                        name=self._normalize_name(name),
-                        role=PartyRole.GRANTEE,
-                        raw_name=name
-                    ))
+                    parties.append(
+                        DocumentParty(
+                            name=self._normalize_name(name),
+                            role=PartyRole.GRANTEE,
+                            raw_name=name,
+                        )
+                    )
 
             # Parse APN
             legal_descriptions = []
@@ -353,11 +353,13 @@ class MaricopaCountyRecorder(CountyRecorderBase):
                     apn = self._parse_apn(apn_part.strip())
                     if apn:
                         parcels.append(apn)
-                        legal_descriptions.append(LegalDescription(
-                            full_description=f"APN: {apn}",
-                            parcel_number=apn,
-                            apn=apn
-                        ))
+                        legal_descriptions.append(
+                            LegalDescription(
+                                full_description=f"APN: {apn}",
+                                parcel_number=apn,
+                                apn=apn,
+                            )
+                        )
 
             return RecordedDocument(
                 document_number=doc_number,
@@ -381,7 +383,7 @@ class MaricopaCountyRecorder(CountyRecorderBase):
                     "grantor_raw": grantor_text,
                     "grantee_raw": grantee_text,
                     "apn_raw": apn_text,
-                }
+                },
             )
 
         except Exception as e:
@@ -411,7 +413,7 @@ class MaricopaCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search Maricopa County records by party name.
@@ -429,6 +431,7 @@ class MaricopaCountyRecorder(CountyRecorderBase):
             SearchResult with matching documents
         """
         import time
+
         start_time = time.time()
 
         await self._initialize_session()
@@ -464,11 +467,7 @@ class MaricopaCountyRecorder(CountyRecorderBase):
             params["page"] = page
 
             try:
-                status, html = await self._fetch(
-                    search_url,
-                    method="POST",
-                    data=params
-                )
+                status, html = await self._fetch(search_url, method="POST", data=params)
 
                 if status != 200:
                     logger.warning(f"Name search returned HTTP {status}")
@@ -480,7 +479,9 @@ class MaricopaCountyRecorder(CountyRecorderBase):
                     has_more = False
                 else:
                     if document_types:
-                        documents = [d for d in documents if d.document_type in document_types]
+                        documents = [
+                            d for d in documents if d.document_type in document_types
+                        ]
 
                     all_documents.extend(documents)
                     page += 1
@@ -507,15 +508,14 @@ class MaricopaCountyRecorder(CountyRecorderBase):
                 party_type=party_type,
                 start_date=start_date,
                 end_date=end_date,
-                document_types=document_types or []
+                document_types=document_types or [],
             ),
             search_time_ms=elapsed_ms,
-            source_system=self.SYSTEM_NAME
+            source_system=self.SYSTEM_NAME,
         )
 
     async def search_by_document_number(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """
         Search for a specific document by its recording number.
@@ -538,11 +538,7 @@ class MaricopaCountyRecorder(CountyRecorderBase):
         search_url = f"{self.SEARCH_URL}docsearch.aspx"
 
         try:
-            status, html = await self._fetch(
-                search_url,
-                method="POST",
-                data=params
-            )
+            status, html = await self._fetch(search_url, method="POST", data=params)
 
             if status != 200:
                 logger.warning(f"Document search returned HTTP {status}")
@@ -565,7 +561,7 @@ class MaricopaCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search Maricopa County records by APN.
@@ -581,6 +577,7 @@ class MaricopaCountyRecorder(CountyRecorderBase):
             SearchResult with matching documents
         """
         import time
+
         start_time = time.time()
 
         await self._initialize_session()
@@ -597,7 +594,7 @@ class MaricopaCountyRecorder(CountyRecorderBase):
                 search_criteria=SearchCriteria(parcel_number=parcel_number),
                 search_time_ms=0,
                 source_system=self.SYSTEM_NAME,
-                warnings=["Invalid APN format. Use XXX-XX-XXX format."]
+                warnings=["Invalid APN format. Use XXX-XX-XXX format."],
             )
 
         params = {
@@ -619,11 +616,7 @@ class MaricopaCountyRecorder(CountyRecorderBase):
             params["page"] = page
 
             try:
-                status, html = await self._fetch(
-                    search_url,
-                    method="POST",
-                    data=params
-                )
+                status, html = await self._fetch(search_url, method="POST", data=params)
 
                 if status != 200:
                     logger.warning(f"APN search returned HTTP {status}")
@@ -635,7 +628,9 @@ class MaricopaCountyRecorder(CountyRecorderBase):
                     has_more = False
                 else:
                     if document_types:
-                        documents = [d for d in documents if d.document_type in document_types]
+                        documents = [
+                            d for d in documents if d.document_type in document_types
+                        ]
 
                     all_documents.extend(documents)
                     page += 1
@@ -659,10 +654,10 @@ class MaricopaCountyRecorder(CountyRecorderBase):
                 parcel_number=apn,
                 start_date=start_date,
                 end_date=end_date,
-                document_types=document_types or []
+                document_types=document_types or [],
             ),
             search_time_ms=elapsed_ms,
-            source_system=self.SYSTEM_NAME
+            source_system=self.SYSTEM_NAME,
         )
 
     async def search_by_address(
@@ -672,7 +667,7 @@ class MaricopaCountyRecorder(CountyRecorderBase):
         zip_code: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search Maricopa County records by property address.
@@ -706,14 +701,12 @@ class MaricopaCountyRecorder(CountyRecorderBase):
             warnings=[
                 "Maricopa County Recorder doesn't support direct address search.",
                 "Look up APN at mcassessor.maricopa.gov then search by APN.",
-                "Alternatively, search by owner name."
-            ]
+                "Alternatively, search by owner name.",
+            ],
         )
 
     async def search_by_docket_page(
-        self,
-        docket: str,
-        page: str
+        self, docket: str, page: str
     ) -> Optional[RecordedDocument]:
         """
         Search for a document by docket and page number.
@@ -735,11 +728,7 @@ class MaricopaCountyRecorder(CountyRecorderBase):
         search_url = f"{self.SEARCH_URL}docketsearch.aspx"
 
         try:
-            status, html = await self._fetch(
-                search_url,
-                method="POST",
-                data=params
-            )
+            status, html = await self._fetch(search_url, method="POST", data=params)
 
             if status != 200:
                 return None
@@ -755,8 +744,7 @@ class MaricopaCountyRecorder(CountyRecorderBase):
             return None
 
     async def get_document_detail(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """
         Get detailed information for a specific document.
@@ -783,7 +771,7 @@ class MaricopaCountyRecorder(CountyRecorderBase):
                 county=self.COUNTY_NAME,
                 state=self.STATE_ABBREV,
                 fips_code=self.FIPS_CODE,
-                source_url=detail_url
+                source_url=detail_url,
             )
 
             # Parse document details
@@ -795,10 +783,14 @@ class MaricopaCountyRecorder(CountyRecorderBase):
             logger.error(f"Error getting document detail: {e}")
             return None
 
-    def _parse_detail_page(self, soup: BeautifulSoup, doc: RecordedDocument) -> RecordedDocument:
+    def _parse_detail_page(
+        self, soup: BeautifulSoup, doc: RecordedDocument
+    ) -> RecordedDocument:
         """Parse the document detail page."""
         # Find detail table/container
-        detail_div = soup.find("div", {"class": "docDetail"}) or soup.find("div", {"id": "detail"})
+        detail_div = soup.find("div", {"class": "docDetail"}) or soup.find(
+            "div", {"id": "detail"}
+        )
         if not detail_div:
             detail_div = soup
 
@@ -819,24 +811,28 @@ class MaricopaCountyRecorder(CountyRecorderBase):
                 doc = self._apply_detail_field(doc, label, value)
 
         # Parse parties
-        parties_table = soup.find("table", {"id": "parties"}) or soup.find("div", {"class": "parties"})
+        parties_table = soup.find("table", {"id": "parties"}) or soup.find(
+            "div", {"class": "parties"}
+        )
         if parties_table:
             doc.parties = self._parse_parties(parties_table)
             doc.grantors = doc.get_grantors()
             doc.grantees = doc.get_grantees()
 
         # Parse APNs
-        apn_section = soup.find("div", {"class": "apn"}) or soup.find("td", text=re.compile(r"apn|parcel", re.I))
+        apn_section = soup.find("div", {"class": "apn"}) or soup.find(
+            "td", text=re.compile(r"apn|parcel", re.I)
+        )
         if apn_section:
             text = apn_section.get_text()
             apn_matches = re.findall(r"\d{3}-\d{2}-\d{3}[A-Z]?", text)
             for apn in apn_matches:
                 doc.parcels.append(apn)
-                doc.legal_descriptions.append(LegalDescription(
-                    full_description=f"APN: {apn}",
-                    parcel_number=apn,
-                    apn=apn
-                ))
+                doc.legal_descriptions.append(
+                    LegalDescription(
+                        full_description=f"APN: {apn}", parcel_number=apn, apn=apn
+                    )
+                )
 
         # Check for image
         image_link = soup.find("a", text=re.compile(r"view\s*image|document", re.I))
@@ -853,7 +849,9 @@ class MaricopaCountyRecorder(CountyRecorderBase):
 
         return doc
 
-    def _apply_detail_field(self, doc: RecordedDocument, label: str, value: str) -> RecordedDocument:
+    def _apply_detail_field(
+        self, doc: RecordedDocument, label: str, value: str
+    ) -> RecordedDocument:
         """Apply a parsed detail field to the document."""
         label = label.lower()
 
@@ -887,11 +885,13 @@ class MaricopaCountyRecorder(CountyRecorderBase):
                 text = parent.get_text()
                 text = re.sub(r"grantor[s]?:?\s*", "", text, flags=re.I)
                 for name in self._split_party_names(text):
-                    parties.append(DocumentParty(
-                        name=self._normalize_name(name),
-                        role=PartyRole.GRANTOR,
-                        raw_name=name
-                    ))
+                    parties.append(
+                        DocumentParty(
+                            name=self._normalize_name(name),
+                            role=PartyRole.GRANTOR,
+                            raw_name=name,
+                        )
+                    )
 
         # Look for grantee entries
         for elem in section.find_all(text=re.compile(r"grantee", re.I)):
@@ -900,45 +900,47 @@ class MaricopaCountyRecorder(CountyRecorderBase):
                 text = parent.get_text()
                 text = re.sub(r"grantee[s]?:?\s*", "", text, flags=re.I)
                 for name in self._split_party_names(text):
-                    parties.append(DocumentParty(
-                        name=self._normalize_name(name),
-                        role=PartyRole.GRANTEE,
-                        raw_name=name
-                    ))
+                    parties.append(
+                        DocumentParty(
+                            name=self._normalize_name(name),
+                            role=PartyRole.GRANTEE,
+                            raw_name=name,
+                        )
+                    )
 
         return parties
 
 
 # Convenience functions for synchronous usage
 
+
 def search_maricopa_county_by_name(
-    last_name: str,
-    first_name: Optional[str] = None,
-    **kwargs
+    last_name: str, first_name: Optional[str] = None, **kwargs
 ) -> SearchResult:
     """Search Maricopa County records by name (synchronous)."""
+
     async def _search():
         async with MaricopaCountyRecorder() as recorder:
             return await recorder.search_by_name(last_name, first_name, **kwargs)
+
     return asyncio.run(_search())
 
 
-def search_maricopa_county_by_apn(
-    apn: str,
-    **kwargs
-) -> SearchResult:
+def search_maricopa_county_by_apn(apn: str, **kwargs) -> SearchResult:
     """Search Maricopa County records by APN (synchronous)."""
+
     async def _search():
         async with MaricopaCountyRecorder() as recorder:
             return await recorder.search_by_parcel(apn, **kwargs)
+
     return asyncio.run(_search())
 
 
-def get_maricopa_county_document(
-    document_number: str
-) -> Optional[RecordedDocument]:
+def get_maricopa_county_document(document_number: str) -> Optional[RecordedDocument]:
     """Get a Maricopa County document by number (synchronous)."""
+
     async def _get():
         async with MaricopaCountyRecorder() as recorder:
             return await recorder.get_document_detail(document_number)
+
     return asyncio.run(_get())

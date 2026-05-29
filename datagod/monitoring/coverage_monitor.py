@@ -9,40 +9,43 @@ Provides:
 - Coverage trend reports
 """
 
-import logging
-from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime, timedelta
-from dataclasses import dataclass, field
-from enum import Enum
 import json
+import logging
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 
 class CoverageStatus(Enum):
     """Status of coverage for a jurisdiction/category combination."""
-    COMPLETE = "complete"           # 100% coverage, data fresh
-    PARTIAL = "partial"             # Some data available
-    STALE = "stale"                 # Data exists but outdated
-    NO_DATA = "no_data"             # No data collected yet
+
+    COMPLETE = "complete"  # 100% coverage, data fresh
+    PARTIAL = "partial"  # Some data available
+    STALE = "stale"  # Data exists but outdated
+    NO_DATA = "no_data"  # No data collected yet
     NO_PUBLIC_ACCESS = "no_access"  # Data not publicly available
-    PAYWALL = "paywall"             # Available but requires payment
-    AUTH_REQUIRED = "auth_required" # Requires registration/login
+    PAYWALL = "paywall"  # Available but requires payment
+    AUTH_REQUIRED = "auth_required"  # Requires registration/login
 
 
 class DataFreshness(Enum):
     """Data freshness categories."""
-    REALTIME = "realtime"     # Updated within last hour
-    DAILY = "daily"           # Updated within last day
-    WEEKLY = "weekly"         # Updated within last week
-    MONTHLY = "monthly"       # Updated within last month
-    STALE = "stale"           # Over a month old
-    NEVER = "never"           # Never collected
+
+    REALTIME = "realtime"  # Updated within last hour
+    DAILY = "daily"  # Updated within last day
+    WEEKLY = "weekly"  # Updated within last week
+    MONTHLY = "monthly"  # Updated within last month
+    STALE = "stale"  # Over a month old
+    NEVER = "never"  # Never collected
 
 
 @dataclass
 class JurisdictionCoverage:
     """Coverage information for a single jurisdiction."""
+
     fips_code: str
     name: str
     state: str
@@ -58,31 +61,36 @@ class JurisdictionCoverage:
         """Calculate overall coverage percentage."""
         if not self.categories:
             return 0.0
-        covered = sum(1 for s in self.categories.values()
-                     if s in (CoverageStatus.COMPLETE, CoverageStatus.PARTIAL))
+        covered = sum(
+            1
+            for s in self.categories.values()
+            if s in (CoverageStatus.COMPLETE, CoverageStatus.PARTIAL)
+        )
         return (covered / len(self.categories)) * 100
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'fips_code': self.fips_code,
-            'name': self.name,
-            'state': self.state,
-            'level': self.level,
-            'population': self.population,
-            'coverage_percentage': self.coverage_percentage(),
-            'categories': {k: v.value for k, v in self.categories.items()},
-            'record_counts': self.record_counts,
-            'last_updated': {k: v.isoformat() if v else None
-                            for k, v in self.last_updated.items()},
-            'source_urls': self.source_urls,
-            'notes': self.notes,
+            "fips_code": self.fips_code,
+            "name": self.name,
+            "state": self.state,
+            "level": self.level,
+            "population": self.population,
+            "coverage_percentage": self.coverage_percentage(),
+            "categories": {k: v.value for k, v in self.categories.items()},
+            "record_counts": self.record_counts,
+            "last_updated": {
+                k: v.isoformat() if v else None for k, v in self.last_updated.items()
+            },
+            "source_urls": self.source_urls,
+            "notes": self.notes,
         }
 
 
 @dataclass
 class CategoryCoverage:
     """Coverage information for a data category across all jurisdictions."""
+
     category: str
     display_name: str
     description: str
@@ -99,24 +107,26 @@ class CategoryCoverage:
         """Calculate category coverage percentage."""
         if self.total_jurisdictions == 0:
             return 0.0
-        return ((self.covered_jurisdictions + self.partial_jurisdictions * 0.5)
-                / self.total_jurisdictions) * 100
+        return (
+            (self.covered_jurisdictions + self.partial_jurisdictions * 0.5)
+            / self.total_jurisdictions
+        ) * 100
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'category': self.category,
-            'display_name': self.display_name,
-            'description': self.description,
-            'total_jurisdictions': self.total_jurisdictions,
-            'covered_jurisdictions': self.covered_jurisdictions,
-            'partial_jurisdictions': self.partial_jurisdictions,
-            'no_access_jurisdictions': self.no_access_jurisdictions,
-            'coverage_percentage': self.coverage_percentage(),
-            'total_records': self.total_records,
-            'freshness': self.freshness.value,
-            'federal_sources': self.federal_sources,
-            'state_source_count': len(self.state_sources),
+            "category": self.category,
+            "display_name": self.display_name,
+            "description": self.description,
+            "total_jurisdictions": self.total_jurisdictions,
+            "covered_jurisdictions": self.covered_jurisdictions,
+            "partial_jurisdictions": self.partial_jurisdictions,
+            "no_access_jurisdictions": self.no_access_jurisdictions,
+            "coverage_percentage": self.coverage_percentage(),
+            "total_records": self.total_records,
+            "freshness": self.freshness.value,
+            "federal_sources": self.federal_sources,
+            "state_source_count": len(self.state_sources),
         }
 
 
@@ -133,40 +143,40 @@ class CoverageMonitor:
 
     # All data categories tracked
     DATA_CATEGORIES = {
-        'court_records': 'Court Records',
-        'business_filings': 'Business Filings',
-        'professional_licenses': 'Professional Licenses',
-        'federal_sources': 'Federal Sources',
-        'news': 'News & Media',
-        'vital_records': 'Vital Records',
-        'criminal_records': 'Criminal Records',
-        'voter_records': 'Voter Records',
-        'regulatory_records': 'Regulatory Records',
-        'financial_records': 'Financial Records',
-        'asset_records': 'Asset Records',
-        'education_records': 'Education Records',
-        'employment_records': 'Employment Records',
-        'health_safety': 'Health & Safety Records',
-        'transportation': 'Transportation Records',
+        "court_records": "Court Records",
+        "business_filings": "Business Filings",
+        "professional_licenses": "Professional Licenses",
+        "federal_sources": "Federal Sources",
+        "news": "News & Media",
+        "vital_records": "Vital Records",
+        "criminal_records": "Criminal Records",
+        "voter_records": "Voter Records",
+        "regulatory_records": "Regulatory Records",
+        "financial_records": "Financial Records",
+        "asset_records": "Asset Records",
+        "education_records": "Education Records",
+        "employment_records": "Employment Records",
+        "health_safety": "Health & Safety Records",
+        "transportation": "Transportation Records",
     }
 
     # Target freshness by category
     FRESHNESS_TARGETS = {
-        'court_records': timedelta(days=1),
-        'criminal_records': timedelta(days=1),
-        'business_filings': timedelta(days=7),
-        'vital_records': timedelta(days=30),
-        'voter_records': timedelta(days=7),
-        'regulatory_records': timedelta(days=7),
-        'financial_records': timedelta(days=7),
-        'professional_licenses': timedelta(days=30),
-        'asset_records': timedelta(days=30),
-        'education_records': timedelta(days=30),
-        'employment_records': timedelta(days=30),
-        'health_safety': timedelta(days=30),
-        'transportation': timedelta(days=7),
-        'federal_sources': timedelta(days=1),
-        'news': timedelta(hours=1),
+        "court_records": timedelta(days=1),
+        "criminal_records": timedelta(days=1),
+        "business_filings": timedelta(days=7),
+        "vital_records": timedelta(days=30),
+        "voter_records": timedelta(days=7),
+        "regulatory_records": timedelta(days=7),
+        "financial_records": timedelta(days=7),
+        "professional_licenses": timedelta(days=30),
+        "asset_records": timedelta(days=30),
+        "education_records": timedelta(days=30),
+        "employment_records": timedelta(days=30),
+        "health_safety": timedelta(days=30),
+        "transportation": timedelta(days=7),
+        "federal_sources": timedelta(days=1),
+        "news": timedelta(hours=1),
     }
 
     # Total US jurisdictions
@@ -187,8 +197,10 @@ class CoverageMonitor:
                 category=cat_id,
                 display_name=display_name,
                 description=self._get_category_description(cat_id),
-                total_jurisdictions=self.TOTAL_COUNTIES + self.TOTAL_STATES +
-                                  self.TOTAL_TERRITORIES + self.TOTAL_DC,
+                total_jurisdictions=self.TOTAL_COUNTIES
+                + self.TOTAL_STATES
+                + self.TOTAL_TERRITORIES
+                + self.TOTAL_DC,
             )
 
         logger.info("CoverageMonitor initialized")
@@ -196,23 +208,23 @@ class CoverageMonitor:
     def _get_category_description(self, category: str) -> str:
         """Get description for a data category."""
         descriptions = {
-            'court_records': 'Civil, criminal, family, and probate court cases',
-            'business_filings': 'Corporate registrations, LLCs, partnerships, UCC filings',
-            'professional_licenses': 'Real estate, medical, legal, and other professional licenses',
-            'federal_sources': 'USPTO, SEC, FDIC, Census, BLS, FHFA data',
-            'news': 'Local and national news articles',
-            'vital_records': 'Death records, marriages, divorces, burial records',
-            'criminal_records': 'Sex offenders, inmates, warrants, most wanted',
-            'voter_records': 'Voter registration, campaign contributions, elections',
-            'regulatory_records': 'OSHA, SEC, EPA, CPSC violations and inspections',
-            'financial_records': 'Bankruptcy, nonprofits, tax liens, unclaimed property',
-            'asset_records': 'Aircraft, vessels, boats, vehicle registrations',
-            'education_records': 'Schools, colleges, teacher licenses',
-            'employment_records': 'Government salaries, federal awards, pensions',
-            'health_safety': 'Healthcare providers, hospitals, nursing homes',
-            'transportation': 'Vehicle recalls, CDL holders, safety ratings',
+            "court_records": "Civil, criminal, family, and probate court cases",
+            "business_filings": "Corporate registrations, LLCs, partnerships, UCC filings",
+            "professional_licenses": "Real estate, medical, legal, and other professional licenses",
+            "federal_sources": "USPTO, SEC, FDIC, Census, BLS, FHFA data",
+            "news": "Local and national news articles",
+            "vital_records": "Death records, marriages, divorces, burial records",
+            "criminal_records": "Sex offenders, inmates, warrants, most wanted",
+            "voter_records": "Voter registration, campaign contributions, elections",
+            "regulatory_records": "OSHA, SEC, EPA, CPSC violations and inspections",
+            "financial_records": "Bankruptcy, nonprofits, tax liens, unclaimed property",
+            "asset_records": "Aircraft, vessels, boats, vehicle registrations",
+            "education_records": "Schools, colleges, teacher licenses",
+            "employment_records": "Government salaries, federal awards, pensions",
+            "health_safety": "Healthcare providers, hospitals, nursing homes",
+            "transportation": "Vehicle recalls, CDL holders, safety ratings",
         }
-        return descriptions.get(category, '')
+        return descriptions.get(category, "")
 
     def update_jurisdiction_coverage(
         self,
@@ -220,8 +232,8 @@ class CoverageMonitor:
         category: str,
         status: CoverageStatus,
         record_count: int = 0,
-        source_url: str = '',
-        notes: str = ''
+        source_url: str = "",
+        notes: str = "",
     ) -> None:
         """Update coverage status for a jurisdiction/category combination."""
         if fips_code not in self.jurisdiction_coverage:
@@ -318,43 +330,54 @@ class CoverageMonitor:
                 elif status == CoverageStatus.PARTIAL:
                     total_partial += 0.5
 
-        overall_coverage = ((total_covered + total_partial) / total_possible * 100
-                           if total_possible > 0 else 0)
+        overall_coverage = (
+            (total_covered + total_partial) / total_possible * 100
+            if total_possible > 0
+            else 0
+        )
 
         # Category summaries
         category_summaries = []
-        for cat_id, cc in sorted(self.category_coverage.items(),
-                                 key=lambda x: x[1].coverage_percentage(),
-                                 reverse=True):
-            category_summaries.append({
-                'category': cat_id,
-                'display_name': cc.display_name,
-                'coverage_percentage': cc.coverage_percentage(),
-                'record_count': cc.total_records,
-                'freshness': cc.freshness.value,
-            })
+        for cat_id, cc in sorted(
+            self.category_coverage.items(),
+            key=lambda x: x[1].coverage_percentage(),
+            reverse=True,
+        ):
+            category_summaries.append(
+                {
+                    "category": cat_id,
+                    "display_name": cc.display_name,
+                    "coverage_percentage": cc.coverage_percentage(),
+                    "record_count": cc.total_records,
+                    "freshness": cc.freshness.value,
+                }
+            )
 
         # State summaries
         state_coverage = self._get_state_coverage_summary()
 
         return {
-            'timestamp': datetime.now().isoformat(),
-            'overall': {
-                'total_jurisdictions': total_jurisdictions,
-                'total_categories': total_categories,
-                'coverage_percentage': overall_coverage,
-                'total_records': sum(cc.total_records for cc in self.category_coverage.values()),
+            "timestamp": datetime.now().isoformat(),
+            "overall": {
+                "total_jurisdictions": total_jurisdictions,
+                "total_categories": total_categories,
+                "coverage_percentage": overall_coverage,
+                "total_records": sum(
+                    cc.total_records for cc in self.category_coverage.values()
+                ),
             },
-            'targets': {
-                'counties': self.TOTAL_COUNTIES,
-                'states': self.TOTAL_STATES,
-                'territories': self.TOTAL_TERRITORIES,
-                'dc': self.TOTAL_DC,
-                'total': self.TOTAL_COUNTIES + self.TOTAL_STATES +
-                        self.TOTAL_TERRITORIES + self.TOTAL_DC,
+            "targets": {
+                "counties": self.TOTAL_COUNTIES,
+                "states": self.TOTAL_STATES,
+                "territories": self.TOTAL_TERRITORIES,
+                "dc": self.TOTAL_DC,
+                "total": self.TOTAL_COUNTIES
+                + self.TOTAL_STATES
+                + self.TOTAL_TERRITORIES
+                + self.TOTAL_DC,
             },
-            'categories': category_summaries,
-            'states': state_coverage,
+            "categories": category_summaries,
+            "states": state_coverage,
         }
 
     def _get_state_coverage_summary(self) -> List[Dict[str, Any]]:
@@ -365,39 +388,43 @@ class CoverageMonitor:
             state = jc.state
             if state not in state_stats:
                 state_stats[state] = {
-                    'state': state,
-                    'total_jurisdictions': 0,
-                    'covered_count': 0,
-                    'partial_count': 0,
-                    'total_records': 0,
-                    'population': 0,
+                    "state": state,
+                    "total_jurisdictions": 0,
+                    "covered_count": 0,
+                    "partial_count": 0,
+                    "total_records": 0,
+                    "population": 0,
                 }
 
             stats = state_stats[state]
-            stats['total_jurisdictions'] += 1
-            stats['population'] += jc.population
+            stats["total_jurisdictions"] += 1
+            stats["population"] += jc.population
 
             # Check if any category is covered
-            has_complete = any(s == CoverageStatus.COMPLETE for s in jc.categories.values())
-            has_partial = any(s == CoverageStatus.PARTIAL for s in jc.categories.values())
+            has_complete = any(
+                s == CoverageStatus.COMPLETE for s in jc.categories.values()
+            )
+            has_partial = any(
+                s == CoverageStatus.PARTIAL for s in jc.categories.values()
+            )
 
             if has_complete:
-                stats['covered_count'] += 1
+                stats["covered_count"] += 1
             elif has_partial:
-                stats['partial_count'] += 1
+                stats["partial_count"] += 1
 
-            stats['total_records'] += sum(jc.record_counts.values())
+            stats["total_records"] += sum(jc.record_counts.values())
 
         # Calculate percentages
         results = []
         for state, stats in state_stats.items():
-            total = stats['total_jurisdictions']
-            covered = stats['covered_count'] + stats['partial_count'] * 0.5
-            stats['coverage_percentage'] = (covered / total * 100) if total > 0 else 0
+            total = stats["total_jurisdictions"]
+            covered = stats["covered_count"] + stats["partial_count"] * 0.5
+            stats["coverage_percentage"] = (covered / total * 100) if total > 0 else 0
             results.append(stats)
 
         # Sort by coverage percentage descending
-        results.sort(key=lambda x: x['coverage_percentage'], reverse=True)
+        results.sort(key=lambda x: x["coverage_percentage"], reverse=True)
         return results
 
     def get_gaps(self, min_population: int = 0) -> Dict[str, Any]:
@@ -424,41 +451,45 @@ class CoverageMonitor:
                     # Add to gaps by category
                     if cat_id not in gaps_by_category:
                         gaps_by_category[cat_id] = []
-                    gaps_by_category[cat_id].append({
-                        'fips_code': jc.fips_code,
-                        'name': jc.name,
-                        'state': jc.state,
-                        'population': jc.population,
-                        'status': status.value,
-                    })
+                    gaps_by_category[cat_id].append(
+                        {
+                            "fips_code": jc.fips_code,
+                            "name": jc.name,
+                            "state": jc.state,
+                            "population": jc.population,
+                            "status": status.value,
+                        }
+                    )
 
             if missing_categories:
                 # Add to gaps by state
                 if jc.state not in gaps_by_state:
                     gaps_by_state[jc.state] = []
-                gaps_by_state[jc.state].append({
-                    'fips_code': jc.fips_code,
-                    'name': jc.name,
-                    'population': jc.population,
-                    'missing_categories': missing_categories,
-                    'missing_count': len(missing_categories),
-                })
+                gaps_by_state[jc.state].append(
+                    {
+                        "fips_code": jc.fips_code,
+                        "name": jc.name,
+                        "population": jc.population,
+                        "missing_categories": missing_categories,
+                        "missing_count": len(missing_categories),
+                    }
+                )
 
         # Sort gaps by population (prioritize high-population areas)
         for cat_id in gaps_by_category:
-            gaps_by_category[cat_id].sort(key=lambda x: x['population'], reverse=True)
+            gaps_by_category[cat_id].sort(key=lambda x: x["population"], reverse=True)
 
         for state in gaps_by_state:
-            gaps_by_state[state].sort(key=lambda x: x['population'], reverse=True)
+            gaps_by_state[state].sort(key=lambda x: x["population"], reverse=True)
 
         return {
-            'by_category': gaps_by_category,
-            'by_state': gaps_by_state,
-            'summary': {
-                'total_gaps': sum(len(g) for g in gaps_by_category.values()),
-                'categories_with_gaps': len(gaps_by_category),
-                'states_with_gaps': len(gaps_by_state),
-            }
+            "by_category": gaps_by_category,
+            "by_state": gaps_by_state,
+            "summary": {
+                "total_gaps": sum(len(g) for g in gaps_by_category.values()),
+                "categories_with_gaps": len(gaps_by_category),
+                "states_with_gaps": len(gaps_by_state),
+            },
         }
 
     def get_freshness_report(self) -> Dict[str, Any]:
@@ -470,57 +501,59 @@ class CoverageMonitor:
 
         for cat_id in self.DATA_CATEGORIES:
             freshness_by_category[cat_id] = {
-                'realtime': 0,
-                'daily': 0,
-                'weekly': 0,
-                'monthly': 0,
-                'stale': 0,
-                'never': 0,
+                "realtime": 0,
+                "daily": 0,
+                "weekly": 0,
+                "monthly": 0,
+                "stale": 0,
+                "never": 0,
             }
 
         for jc in self.jurisdiction_coverage.values():
             for cat_id, last_update in jc.last_updated.items():
                 if last_update is None:
-                    freshness_by_category[cat_id]['never'] += 1
+                    freshness_by_category[cat_id]["never"] += 1
                     continue
 
                 age = now - last_update
                 target = self.FRESHNESS_TARGETS.get(cat_id, timedelta(days=30))
 
                 if age < timedelta(hours=1):
-                    freshness_by_category[cat_id]['realtime'] += 1
+                    freshness_by_category[cat_id]["realtime"] += 1
                 elif age < timedelta(days=1):
-                    freshness_by_category[cat_id]['daily'] += 1
+                    freshness_by_category[cat_id]["daily"] += 1
                 elif age < timedelta(weeks=1):
-                    freshness_by_category[cat_id]['weekly'] += 1
+                    freshness_by_category[cat_id]["weekly"] += 1
                 elif age < timedelta(days=30):
-                    freshness_by_category[cat_id]['monthly'] += 1
+                    freshness_by_category[cat_id]["monthly"] += 1
                 else:
-                    freshness_by_category[cat_id]['stale'] += 1
+                    freshness_by_category[cat_id]["stale"] += 1
 
                     # Add to stale data list if past target
                     if age > target:
-                        stale_data.append({
-                            'fips_code': jc.fips_code,
-                            'name': jc.name,
-                            'state': jc.state,
-                            'category': cat_id,
-                            'last_updated': last_update.isoformat(),
-                            'age_days': age.days,
-                            'target_days': target.days,
-                        })
+                        stale_data.append(
+                            {
+                                "fips_code": jc.fips_code,
+                                "name": jc.name,
+                                "state": jc.state,
+                                "category": cat_id,
+                                "last_updated": last_update.isoformat(),
+                                "age_days": age.days,
+                                "target_days": target.days,
+                            }
+                        )
 
         # Sort stale data by age
-        stale_data.sort(key=lambda x: x['age_days'], reverse=True)
+        stale_data.sort(key=lambda x: x["age_days"], reverse=True)
 
         return {
-            'timestamp': now.isoformat(),
-            'by_category': freshness_by_category,
-            'stale_data': stale_data[:100],  # Top 100 most stale
-            'total_stale': len(stale_data),
+            "timestamp": now.isoformat(),
+            "by_category": freshness_by_category,
+            "stale_data": stale_data[:100],  # Top 100 most stale
+            "total_stale": len(stale_data),
         }
 
-    def generate_report(self, format: str = 'json') -> str:
+    def generate_report(self, format: str = "json") -> str:
         """
         Generate a comprehensive coverage report.
 
@@ -532,15 +565,15 @@ class CoverageMonitor:
         freshness = self.get_freshness_report()
 
         report = {
-            'generated_at': datetime.now().isoformat(),
-            'summary': summary,
-            'gaps': gaps,
-            'freshness': freshness,
+            "generated_at": datetime.now().isoformat(),
+            "summary": summary,
+            "gaps": gaps,
+            "freshness": freshness,
         }
 
-        if format == 'json':
+        if format == "json":
             return json.dumps(report, indent=2, default=str)
-        elif format == 'markdown':
+        elif format == "markdown":
             return self._format_markdown_report(report)
         else:
             return json.dumps(report, indent=2, default=str)
@@ -569,38 +602,40 @@ class CoverageMonitor:
             "|----------|----------|---------|-----------|",
         ]
 
-        for cat in report['summary']['categories']:
+        for cat in report["summary"]["categories"]:
             lines.append(
                 f"| {cat['display_name']} | {cat['coverage_percentage']:.1f}% | "
                 f"{cat['record_count']:,} | {cat['freshness']} |"
             )
 
-        lines.extend([
-            "",
-            "## Coverage Gaps",
-            "",
-            f"- **Total Gaps:** {report['gaps']['summary']['total_gaps']:,}",
-            f"- **Categories with Gaps:** {report['gaps']['summary']['categories_with_gaps']}",
-            f"- **States with Gaps:** {report['gaps']['summary']['states_with_gaps']}",
-            "",
-            "## Data Freshness",
-            "",
-            f"- **Stale Records:** {report['freshness']['total_stale']:,}",
-            "",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Coverage Gaps",
+                "",
+                f"- **Total Gaps:** {report['gaps']['summary']['total_gaps']:,}",
+                f"- **Categories with Gaps:** {report['gaps']['summary']['categories_with_gaps']}",
+                f"- **States with Gaps:** {report['gaps']['summary']['states_with_gaps']}",
+                "",
+                "## Data Freshness",
+                "",
+                f"- **Stale Records:** {report['freshness']['total_stale']:,}",
+                "",
+            ]
+        )
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
 
 # Convenience functions
 def get_coverage_monitor() -> CoverageMonitor:
     """Get or create coverage monitor singleton."""
-    if not hasattr(get_coverage_monitor, '_instance'):
+    if not hasattr(get_coverage_monitor, "_instance"):
         get_coverage_monitor._instance = CoverageMonitor()
     return get_coverage_monitor._instance
 
 
-def generate_coverage_report(format: str = 'json') -> str:
+def generate_coverage_report(format: str = "json") -> str:
     """Generate coverage report."""
     monitor = get_coverage_monitor()
     return monitor.generate_report(format)

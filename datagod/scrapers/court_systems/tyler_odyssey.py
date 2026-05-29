@@ -24,22 +24,23 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
+
 import aiohttp
 from bs4 import BeautifulSoup
 
 from .base import (
+    CaseCharge,
+    CaseDocument,
+    CaseEvent,
+    CaseParty,
+    CaseStatus,
+    CaseType,
+    CourtCase,
+    CourtLevel,
     CourtSystemBase,
     CourtType,
-    CourtLevel,
-    CaseType,
-    CaseStatus,
-    PartyType,
     PartyRole,
-    CourtCase,
-    CaseParty,
-    CaseEvent,
-    CaseDocument,
-    CaseCharge,
+    PartyType,
     SearchCriteria,
     SearchResult,
 )
@@ -49,6 +50,7 @@ logger = logging.getLogger(__name__)
 
 class OdysseyPortalType(Enum):
     """Types of Odyssey public access portals."""
+
     PORTAL = "portal"  # Odyssey Portal (newer)
     PAWS = "paws"  # Public Access Web Services
     ECLERK = "eclerk"  # eClerk
@@ -60,6 +62,7 @@ class OdysseyPortalType(Enum):
 @dataclass
 class OdysseyLocation:
     """Configuration for a specific Odyssey installation."""
+
     state: str
     county: str
     court_name: str
@@ -85,7 +88,11 @@ ODYSSEY_INSTALLATIONS: Dict[str, OdysseyLocation] = {
         base_url="https://www.txcourts.gov/",
         portal_type=OdysseyPortalType.PORTAL,
         fips_code="48",
-        court_types=[CourtType.STATE_TRIAL, CourtType.COUNTY_CIVIL, CourtType.COUNTY_CRIMINAL],
+        court_types=[
+            CourtType.STATE_TRIAL,
+            CourtType.COUNTY_CIVIL,
+            CourtType.COUNTY_CRIMINAL,
+        ],
         requires_registration=False,
     ),
     # Harris County, TX
@@ -96,7 +103,11 @@ ODYSSEY_INSTALLATIONS: Dict[str, OdysseyLocation] = {
         base_url="https://www.hcdistrictclerk.com/",
         portal_type=OdysseyPortalType.PORTAL,
         fips_code="48201",
-        court_types=[CourtType.COUNTY_CIVIL, CourtType.COUNTY_CRIMINAL, CourtType.COUNTY_FAMILY],
+        court_types=[
+            CourtType.COUNTY_CIVIL,
+            CourtType.COUNTY_CRIMINAL,
+            CourtType.COUNTY_FAMILY,
+        ],
         requires_registration=True,
     ),
     # Dallas County, TX
@@ -107,7 +118,11 @@ ODYSSEY_INSTALLATIONS: Dict[str, OdysseyLocation] = {
         base_url="https://www.dallascounty.org/departments/districtclerk/",
         portal_type=OdysseyPortalType.PORTAL,
         fips_code="48113",
-        court_types=[CourtType.COUNTY_CIVIL, CourtType.COUNTY_CRIMINAL, CourtType.COUNTY_FAMILY],
+        court_types=[
+            CourtType.COUNTY_CIVIL,
+            CourtType.COUNTY_CRIMINAL,
+            CourtType.COUNTY_FAMILY,
+        ],
         requires_registration=True,
     ),
     # Tarrant County, TX
@@ -129,7 +144,11 @@ ODYSSEY_INSTALLATIONS: Dict[str, OdysseyLocation] = {
         base_url="https://public.courts.in.gov/mycase/",
         portal_type=OdysseyPortalType.PORTAL,
         fips_code="18",
-        court_types=[CourtType.STATE_TRIAL, CourtType.COUNTY_CIVIL, CourtType.COUNTY_CRIMINAL],
+        court_types=[
+            CourtType.STATE_TRIAL,
+            CourtType.COUNTY_CIVIL,
+            CourtType.COUNTY_CRIMINAL,
+        ],
         requires_registration=False,
     ),
     # Minnesota - Statewide
@@ -140,7 +159,11 @@ ODYSSEY_INSTALLATIONS: Dict[str, OdysseyLocation] = {
         base_url="https://publicaccess.courts.state.mn.us/",
         portal_type=OdysseyPortalType.PAWS,
         fips_code="27",
-        court_types=[CourtType.STATE_TRIAL, CourtType.COUNTY_CIVIL, CourtType.COUNTY_CRIMINAL],
+        court_types=[
+            CourtType.STATE_TRIAL,
+            CourtType.COUNTY_CIVIL,
+            CourtType.COUNTY_CRIMINAL,
+        ],
         requires_registration=False,
     ),
     # Washington - Statewide
@@ -151,7 +174,11 @@ ODYSSEY_INSTALLATIONS: Dict[str, OdysseyLocation] = {
         base_url="https://dw.courts.wa.gov/",
         portal_type=OdysseyPortalType.PORTAL,
         fips_code="53",
-        court_types=[CourtType.STATE_TRIAL, CourtType.COUNTY_CIVIL, CourtType.COUNTY_CRIMINAL],
+        court_types=[
+            CourtType.STATE_TRIAL,
+            CourtType.COUNTY_CIVIL,
+            CourtType.COUNTY_CRIMINAL,
+        ],
         requires_registration=False,
     ),
     # Georgia - Statewide
@@ -162,7 +189,11 @@ ODYSSEY_INSTALLATIONS: Dict[str, OdysseyLocation] = {
         base_url="https://publicaccess.courts.state.ga.us/",
         portal_type=OdysseyPortalType.PORTAL,
         fips_code="13",
-        court_types=[CourtType.STATE_TRIAL, CourtType.COUNTY_CIVIL, CourtType.COUNTY_CRIMINAL],
+        court_types=[
+            CourtType.STATE_TRIAL,
+            CourtType.COUNTY_CIVIL,
+            CourtType.COUNTY_CRIMINAL,
+        ],
         requires_registration=False,
     ),
     # Oregon - Statewide
@@ -173,7 +204,11 @@ ODYSSEY_INSTALLATIONS: Dict[str, OdysseyLocation] = {
         base_url="https://webportal.courts.oregon.gov/",
         portal_type=OdysseyPortalType.PORTAL,
         fips_code="41",
-        court_types=[CourtType.STATE_TRIAL, CourtType.COUNTY_CIVIL, CourtType.COUNTY_CRIMINAL],
+        court_types=[
+            CourtType.STATE_TRIAL,
+            CourtType.COUNTY_CIVIL,
+            CourtType.COUNTY_CRIMINAL,
+        ],
         requires_registration=False,
     ),
     # Arizona - Maricopa County
@@ -184,7 +219,12 @@ ODYSSEY_INSTALLATIONS: Dict[str, OdysseyLocation] = {
         base_url="https://www.superiorcourt.maricopa.gov/",
         portal_type=OdysseyPortalType.ICMS,
         fips_code="04013",
-        court_types=[CourtType.COUNTY_CIVIL, CourtType.COUNTY_CRIMINAL, CourtType.COUNTY_FAMILY, CourtType.COUNTY_PROBATE],
+        court_types=[
+            CourtType.COUNTY_CIVIL,
+            CourtType.COUNTY_CRIMINAL,
+            CourtType.COUNTY_FAMILY,
+            CourtType.COUNTY_PROBATE,
+        ],
         requires_registration=False,
     ),
     # California - Los Angeles
@@ -195,7 +235,12 @@ ODYSSEY_INSTALLATIONS: Dict[str, OdysseyLocation] = {
         base_url="https://www.lacourt.org/",
         portal_type=OdysseyPortalType.CUSTOM,
         fips_code="06037",
-        court_types=[CourtType.COUNTY_CIVIL, CourtType.COUNTY_CRIMINAL, CourtType.COUNTY_FAMILY, CourtType.COUNTY_PROBATE],
+        court_types=[
+            CourtType.COUNTY_CIVIL,
+            CourtType.COUNTY_CRIMINAL,
+            CourtType.COUNTY_FAMILY,
+            CourtType.COUNTY_PROBATE,
+        ],
         requires_registration=True,
     ),
     # Nevada - Clark County
@@ -206,7 +251,11 @@ ODYSSEY_INSTALLATIONS: Dict[str, OdysseyLocation] = {
         base_url="https://www.clarkcountycourts.us/",
         portal_type=OdysseyPortalType.PORTAL,
         fips_code="32003",
-        court_types=[CourtType.COUNTY_CIVIL, CourtType.COUNTY_CRIMINAL, CourtType.COUNTY_FAMILY],
+        court_types=[
+            CourtType.COUNTY_CIVIL,
+            CourtType.COUNTY_CRIMINAL,
+            CourtType.COUNTY_FAMILY,
+        ],
         requires_registration=False,
     ),
     # Colorado - Denver
@@ -228,7 +277,11 @@ ODYSSEY_INSTALLATIONS: Dict[str, OdysseyLocation] = {
         base_url="https://caselink.tncourts.gov/",
         portal_type=OdysseyPortalType.PORTAL,
         fips_code="47",
-        court_types=[CourtType.STATE_TRIAL, CourtType.COUNTY_CIVIL, CourtType.COUNTY_CRIMINAL],
+        court_types=[
+            CourtType.STATE_TRIAL,
+            CourtType.COUNTY_CIVIL,
+            CourtType.COUNTY_CRIMINAL,
+        ],
         requires_registration=False,
     ),
     # Kentucky - Statewide
@@ -239,7 +292,11 @@ ODYSSEY_INSTALLATIONS: Dict[str, OdysseyLocation] = {
         base_url="https://kcoj.kycourts.net/",
         portal_type=OdysseyPortalType.PORTAL,
         fips_code="21",
-        court_types=[CourtType.STATE_TRIAL, CourtType.COUNTY_CIVIL, CourtType.COUNTY_CRIMINAL],
+        court_types=[
+            CourtType.STATE_TRIAL,
+            CourtType.COUNTY_CIVIL,
+            CourtType.COUNTY_CRIMINAL,
+        ],
         requires_registration=False,
     ),
 }
@@ -263,9 +320,7 @@ class TylerOdysseyBase(CourtSystemBase):
     SYSTEM_NAME = "Odyssey"
 
     def __init__(
-        self,
-        location: OdysseyLocation,
-        session: Optional[aiohttp.ClientSession] = None
+        self, location: OdysseyLocation, session: Optional[aiohttp.ClientSession] = None
     ):
         """Initialize the Odyssey scraper."""
         super().__init__(session)
@@ -285,10 +340,12 @@ class TylerOdysseyBase(CourtSystemBase):
     def _get_headers(self) -> Dict[str, str]:
         """Get headers for Odyssey requests."""
         headers = super()._get_headers()
-        headers.update({
-            "Referer": self.BASE_URL,
-            "Origin": self.BASE_URL.rstrip("/"),
-        })
+        headers.update(
+            {
+                "Referer": self.BASE_URL,
+                "Origin": self.BASE_URL.rstrip("/"),
+            }
+        )
         return headers
 
     async def _extract_viewstate(self, html: str) -> Dict[str, str]:
@@ -344,7 +401,6 @@ class TylerOdysseyBase(CourtSystemBase):
             "SM": CaseType.SMALL_CLAIMS,
             "PJ": CaseType.PERSONAL_INJURY,
             "DC": CaseType.DEBT_COLLECTION,
-
             # Criminal
             "CR": CaseType.CRIMINAL_FELONY,
             "CRIM": CaseType.CRIMINAL_FELONY,
@@ -358,7 +414,6 @@ class TylerOdysseyBase(CourtSystemBase):
             "TR": CaseType.TRAFFIC,
             "TRF": CaseType.TRAFFIC,
             "TRA": CaseType.TRAFFIC,
-
             # Family
             "DR": CaseType.DIVORCE,
             "DIV": CaseType.DIVORCE,
@@ -371,7 +426,6 @@ class TylerOdysseyBase(CourtSystemBase):
             "AD": CaseType.ADOPTION,
             "GU": CaseType.GUARDIANSHIP,
             "PA": CaseType.PATERNITY,
-
             # Probate
             "PB": CaseType.PROBATE_ESTATE,
             "PR": CaseType.PROBATE_ESTATE,
@@ -380,12 +434,10 @@ class TylerOdysseyBase(CourtSystemBase):
             "TU": CaseType.PROBATE_TRUST,
             "TR": CaseType.PROBATE_TRUST,
             "CO": CaseType.CONSERVATORSHIP,
-
             # Juvenile
             "JV": CaseType.OTHER,  # Juvenile (often restricted)
             "JC": CaseType.OTHER,  # Juvenile criminal
             "JD": CaseType.OTHER,  # Juvenile dependency
-
             # Other
             "MH": CaseType.OTHER,  # Mental health
             "AP": CaseType.APPEAL,
@@ -418,26 +470,22 @@ class TylerOdysseyBase(CourtSystemBase):
             "COMPLAINANT": PartyRole.PLAINTIFF,
             "APPLICANT": PartyRole.APPLICANT,
             "MOVANT": PartyRole.PLAINTIFF,
-
             # Defendant-side
             "DEFENDANT": PartyRole.DEFENDANT,
             "DEF": PartyRole.DEFENDANT,
             "DFND": PartyRole.DEFENDANT,
             "RESPONDENT": PartyRole.RESPONDENT,
             "RESP": PartyRole.RESPONDENT,
-
             # Criminal
             "STATE": PartyRole.PROSECUTION,
             "PEOPLE": PartyRole.PROSECUTION,
             "COMMONWEALTH": PartyRole.PROSECUTION,
             "PROSECUTION": PartyRole.PROSECUTION,
             "DA": PartyRole.PROSECUTION,
-
             # Bankruptcy
             "DEBTOR": PartyRole.DEBTOR,
             "CREDITOR": PartyRole.CREDITOR,
             "TRUSTEE": PartyRole.TRUSTEE,
-
             # Family
             "MOTHER": PartyRole.PETITIONER,
             "FATHER": PartyRole.RESPONDENT,
@@ -445,19 +493,16 @@ class TylerOdysseyBase(CourtSystemBase):
             "MINOR": PartyRole.MINOR,
             "GUARDIAN": PartyRole.GUARDIAN,
             "GAL": PartyRole.GUARDIAN_AD_LITEM,
-
             # Attorneys
             "ATTORNEY": PartyRole.ATTORNEY,
             "ATTY": PartyRole.ATTORNEY,
             "COUNSEL": PartyRole.ATTORNEY,
-
             # Third parties
             "INTERVENOR": PartyRole.INTERVENOR,
             "THIRD PARTY": PartyRole.THIRD_PARTY_DEFENDANT,
             "3RD PARTY": PartyRole.THIRD_PARTY_DEFENDANT,
             "CROSS-DEFENDANT": PartyRole.CROSS_DEFENDANT,
             "CROSS-PLAINTIFF": PartyRole.CROSS_PLAINTIFF,
-
             # Appeals
             "APPELLANT": PartyRole.APPELLANT,
             "APPELLEE": PartyRole.APPELLEE,
@@ -514,9 +559,7 @@ class TylerOdysseyBase(CourtSystemBase):
         return parts
 
     def _parse_search_results_table(
-        self,
-        soup: BeautifulSoup,
-        table_id: str = None
+        self, soup: BeautifulSoup, table_id: str = None
     ) -> List[Dict[str, str]]:
         """Parse a results table from Odyssey search results."""
         results = []
@@ -527,11 +570,11 @@ class TylerOdysseyBase(CourtSystemBase):
         else:
             # Try common table IDs/classes
             table = (
-                soup.find("table", {"id": "SearchResults"}) or
-                soup.find("table", {"class": "results"}) or
-                soup.find("table", {"class": "grid"}) or
-                soup.find("table", {"id": "grdResults"}) or
-                soup.find("table", {"id": "tblResults"})
+                soup.find("table", {"id": "SearchResults"})
+                or soup.find("table", {"class": "results"})
+                or soup.find("table", {"class": "grid"})
+                or soup.find("table", {"id": "grdResults"})
+                or soup.find("table", {"id": "tblResults"})
             )
 
         if not table:
@@ -585,40 +628,36 @@ class TylerOdysseyBase(CourtSystemBase):
         """Build a CourtCase from a search result row."""
         # Map common column names
         case_number = (
-            row_data.get("case_number") or
-            row_data.get("case_no") or
-            row_data.get("case#") or
-            row_data.get("case_id") or
-            ""
+            row_data.get("case_number")
+            or row_data.get("case_no")
+            or row_data.get("case#")
+            or row_data.get("case_id")
+            or ""
         )
 
         case_title = (
-            row_data.get("case_title") or
-            row_data.get("case_name") or
-            row_data.get("style") or
-            row_data.get("caption") or
-            ""
+            row_data.get("case_title")
+            or row_data.get("case_name")
+            or row_data.get("style")
+            or row_data.get("caption")
+            or ""
         )
 
         case_type_raw = (
-            row_data.get("case_type") or
-            row_data.get("type") or
-            row_data.get("category") or
-            ""
+            row_data.get("case_type")
+            or row_data.get("type")
+            or row_data.get("category")
+            or ""
         )
 
-        status_raw = (
-            row_data.get("status") or
-            row_data.get("case_status") or
-            ""
-        )
+        status_raw = row_data.get("status") or row_data.get("case_status") or ""
 
         filing_date_raw = (
-            row_data.get("filing_date") or
-            row_data.get("filed_date") or
-            row_data.get("filed") or
-            row_data.get("file_date") or
-            ""
+            row_data.get("filing_date")
+            or row_data.get("filed_date")
+            or row_data.get("filed")
+            or row_data.get("file_date")
+            or ""
         )
 
         return CourtCase(
@@ -645,9 +684,7 @@ class TylerOdysseyBase(CourtSystemBase):
 
     @abstractmethod
     async def _execute_search(
-        self,
-        search_type: str,
-        search_params: Dict[str, Any]
+        self, search_type: str, search_params: Dict[str, Any]
     ) -> str:
         """Execute a search and return results HTML."""
         pass
@@ -665,10 +702,11 @@ class TylerOdysseyBase(CourtSystemBase):
         filed_end_date: Optional[date] = None,
         case_types: Optional[List[CaseType]] = None,
         include_closed: bool = True,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for cases by party name."""
         import time
+
         start_time = time.time()
 
         # Initialize session by loading search page
@@ -678,7 +716,9 @@ class TylerOdysseyBase(CourtSystemBase):
         search_params = {
             "party_name": party_name,
             "party_type": party_type,
-            "start_date": filed_start_date.strftime("%m/%d/%Y") if filed_start_date else "",
+            "start_date": (
+                filed_start_date.strftime("%m/%d/%Y") if filed_start_date else ""
+            ),
             "end_date": filed_end_date.strftime("%m/%d/%Y") if filed_end_date else "",
             "include_closed": include_closed,
         }
@@ -709,10 +749,7 @@ class TylerOdysseyBase(CourtSystemBase):
             source_system="Tyler Odyssey",
         )
 
-    async def search_by_case_number(
-        self,
-        case_number: str
-    ) -> Optional[CourtCase]:
+    async def search_by_case_number(self, case_number: str) -> Optional[CourtCase]:
         """Search for a case by case number."""
         # Initialize session
         await self._get_search_page()
@@ -732,10 +769,7 @@ class TylerOdysseyBase(CourtSystemBase):
 
         return None
 
-    async def get_case_detail(
-        self,
-        case_number: str
-    ) -> Optional[CourtCase]:
+    async def get_case_detail(self, case_number: str) -> Optional[CourtCase]:
         """Get detailed case information including docket."""
         html = await self._fetch_case_page(case_number)
         if not html:
@@ -756,8 +790,12 @@ class TylerOdysseyBase(CourtSystemBase):
         case.documents = self._parse_documents(soup)
 
         # Parse charges (for criminal cases)
-        if case.case_type in {CaseType.CRIMINAL_FELONY, CaseType.CRIMINAL_MISDEMEANOR,
-                              CaseType.DUI_DWI, CaseType.TRAFFIC_CRIMINAL}:
+        if case.case_type in {
+            CaseType.CRIMINAL_FELONY,
+            CaseType.CRIMINAL_MISDEMEANOR,
+            CaseType.DUI_DWI,
+            CaseType.TRAFFIC_CRIMINAL,
+        }:
             case.charges = self._parse_charges(soup)
 
         return case
@@ -800,7 +838,9 @@ class TylerOdysseyBase(CourtSystemBase):
                     case.case_title = value
 
         # Pattern 2: Table layout
-        header_table = soup.find("table", {"id": "caseHeader"}) or soup.find("table", {"class": "header"})
+        header_table = soup.find("table", {"id": "caseHeader"}) or soup.find(
+            "table", {"class": "header"}
+        )
         if header_table:
             for row in header_table.find_all("tr"):
                 cells = row.find_all("td")
@@ -828,9 +868,9 @@ class TylerOdysseyBase(CourtSystemBase):
 
         # Try common party section patterns
         party_section = (
-            soup.find("div", {"id": "parties"}) or
-            soup.find("section", {"id": "parties"}) or
-            soup.find("table", {"id": "tblParties"})
+            soup.find("div", {"id": "parties"})
+            or soup.find("section", {"id": "parties"})
+            or soup.find("table", {"id": "tblParties"})
         )
 
         if not party_section:
@@ -866,11 +906,13 @@ class TylerOdysseyBase(CourtSystemBase):
                 name = dd.get_text(strip=True)
 
                 if name:
-                    parties.append(CaseParty(
-                        name=self._normalize_name(name),
-                        role=self._parse_odyssey_party_role(role_raw),
-                        raw_name=name,
-                    ))
+                    parties.append(
+                        CaseParty(
+                            name=self._normalize_name(name),
+                            role=self._parse_odyssey_party_role(role_raw),
+                            raw_name=name,
+                        )
+                    )
 
         return parties
 
@@ -880,10 +922,10 @@ class TylerOdysseyBase(CourtSystemBase):
 
         # Try common docket section patterns
         docket_section = (
-            soup.find("div", {"id": "docket"}) or
-            soup.find("section", {"id": "events"}) or
-            soup.find("table", {"id": "tblDocket"}) or
-            soup.find("table", {"id": "grdDocket"})
+            soup.find("div", {"id": "docket"})
+            or soup.find("section", {"id": "events"})
+            or soup.find("table", {"id": "tblDocket"})
+            or soup.find("table", {"id": "grdDocket"})
         )
 
         if not docket_section:
@@ -922,9 +964,8 @@ class TylerOdysseyBase(CourtSystemBase):
         """Parse the documents section."""
         documents = []
 
-        doc_section = (
-            soup.find("div", {"id": "documents"}) or
-            soup.find("table", {"id": "tblDocuments"})
+        doc_section = soup.find("div", {"id": "documents"}) or soup.find(
+            "table", {"id": "tblDocuments"}
         )
 
         if not doc_section:
@@ -961,9 +1002,8 @@ class TylerOdysseyBase(CourtSystemBase):
         """Parse the charges section for criminal cases."""
         charges = []
 
-        charge_section = (
-            soup.find("div", {"id": "charges"}) or
-            soup.find("table", {"id": "tblCharges"})
+        charge_section = soup.find("div", {"id": "charges"}) or soup.find(
+            "table", {"id": "tblCharges"}
         )
 
         if not charge_section:
@@ -987,7 +1027,9 @@ class TylerOdysseyBase(CourtSystemBase):
                     if len(cells) > 3:
                         charge.disposition = cells[3].get_text(strip=True)
                     if len(cells) > 4:
-                        charge.disposition_date = self._parse_date(cells[4].get_text(strip=True))
+                        charge.disposition_date = self._parse_date(
+                            cells[4].get_text(strip=True)
+                        )
 
                     charges.append(charge)
 
@@ -1022,9 +1064,7 @@ class IndianaMyCase(TylerOdysseyBase):
         return html
 
     async def _execute_search(
-        self,
-        search_type: str,
-        search_params: Dict[str, Any]
+        self, search_type: str, search_params: Dict[str, Any]
     ) -> str:
         """Execute a MyCase search."""
         url = f"{self.BASE_URL}Search.aspx"
@@ -1035,18 +1075,22 @@ class IndianaMyCase(TylerOdysseyBase):
         }
 
         if search_type == "party":
-            data.update({
-                "txtPartyName": search_params.get("party_name", ""),
-                "ddlPartyType": search_params.get("party_type", "Both"),
-                "txtStartDate": search_params.get("start_date", ""),
-                "txtEndDate": search_params.get("end_date", ""),
-                "btnPartySearch": "Search",
-            })
+            data.update(
+                {
+                    "txtPartyName": search_params.get("party_name", ""),
+                    "ddlPartyType": search_params.get("party_type", "Both"),
+                    "txtStartDate": search_params.get("start_date", ""),
+                    "txtEndDate": search_params.get("end_date", ""),
+                    "btnPartySearch": "Search",
+                }
+            )
         elif search_type == "case_number":
-            data.update({
-                "txtCaseNumber": search_params.get("case_number", ""),
-                "btnCaseSearch": "Search",
-            })
+            data.update(
+                {
+                    "txtCaseNumber": search_params.get("case_number", ""),
+                    "btnCaseSearch": "Search",
+                }
+            )
 
         status, html = await self._fetch(url, method="POST", data=data)
         return html
@@ -1085,9 +1129,7 @@ class MinnesotaPA(TylerOdysseyBase):
         return html
 
     async def _execute_search(
-        self,
-        search_type: str,
-        search_params: Dict[str, Any]
+        self, search_type: str, search_params: Dict[str, Any]
     ) -> str:
         """Execute a search."""
         url = f"{self.BASE_URL}CaseSearch"
@@ -1098,15 +1140,19 @@ class MinnesotaPA(TylerOdysseyBase):
         }
 
         if search_type == "party":
-            data.update({
-                "LastName": search_params.get("party_name", ""),
-                "SearchAction": "PartySearch",
-            })
+            data.update(
+                {
+                    "LastName": search_params.get("party_name", ""),
+                    "SearchAction": "PartySearch",
+                }
+            )
         elif search_type == "case_number":
-            data.update({
-                "CaseNumber": search_params.get("case_number", ""),
-                "SearchAction": "CaseSearch",
-            })
+            data.update(
+                {
+                    "CaseNumber": search_params.get("case_number", ""),
+                    "SearchAction": "CaseSearch",
+                }
+            )
 
         status, html = await self._fetch(url, method="POST", data=data)
         return html
@@ -1143,9 +1189,7 @@ class WashingtonCourts(TylerOdysseyBase):
         return html
 
     async def _execute_search(
-        self,
-        search_type: str,
-        search_params: Dict[str, Any]
+        self, search_type: str, search_params: Dict[str, Any]
     ) -> str:
         """Execute a search."""
         if search_type == "party":
@@ -1196,7 +1240,9 @@ def get_odyssey_scraper(installation_key: str) -> Optional[TylerOdysseyBase]:
         return WashingtonCourts()
 
     # Return generic - won't work without implementing abstract methods
-    logger.warning(f"No specific implementation for {installation_key}, using generic base")
+    logger.warning(
+        f"No specific implementation for {installation_key}, using generic base"
+    )
     return None
 
 
@@ -1209,24 +1255,25 @@ def list_available_odyssey_installations() -> List[Dict[str, Any]]:
     """
     installations = []
     for key, location in ODYSSEY_INSTALLATIONS.items():
-        installations.append({
-            "key": key,
-            "state": location.state,
-            "county": location.county,
-            "court_name": location.court_name,
-            "portal_type": location.portal_type.value,
-            "requires_registration": location.requires_registration,
-            "court_types": [ct.value for ct in location.court_types],
-        })
+        installations.append(
+            {
+                "key": key,
+                "state": location.state,
+                "county": location.county,
+                "court_name": location.court_name,
+                "portal_type": location.portal_type.value,
+                "requires_registration": location.requires_registration,
+                "court_types": [ct.value for ct in location.court_types],
+            }
+        )
     return installations
 
 
 # Synchronous wrapper functions
 
+
 def search_odyssey_party(
-    installation_key: str,
-    party_name: str,
-    **kwargs
+    installation_key: str, party_name: str, **kwargs
 ) -> SearchResult:
     """Synchronous wrapper for Odyssey party search."""
     scraper = get_odyssey_scraper(installation_key)
@@ -1236,13 +1283,11 @@ def search_odyssey_party(
     async def _search():
         async with scraper:
             return await scraper.search_by_party(party_name, **kwargs)
+
     return asyncio.run(_search())
 
 
-def get_odyssey_case(
-    installation_key: str,
-    case_number: str
-) -> Optional[CourtCase]:
+def get_odyssey_case(installation_key: str, case_number: str) -> Optional[CourtCase]:
     """Synchronous wrapper for Odyssey case detail."""
     scraper = get_odyssey_scraper(installation_key)
     if not scraper:
@@ -1251,4 +1296,5 @@ def get_odyssey_case(
     async def _get():
         async with scraper:
             return await scraper.get_case_detail(case_number)
+
     return asyncio.run(_get())

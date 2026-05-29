@@ -12,19 +12,20 @@ Key Features:
 """
 
 import logging
-from typing import Dict, Any, List, Optional, Tuple
-from datetime import datetime
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
-from .scenario_builder import ScenarioUniverseBuilder, ScenarioResult
-from .blocker_engine import BlockerUnlockerEngine, Blocker, Unlocker
+from .blocker_engine import Blocker, BlockerUnlockerEngine, Unlocker
+from .scenario_builder import ScenarioResult, ScenarioUniverseBuilder
 
 logger = logging.getLogger(__name__)
 
 
 class ParameterCategory(str, Enum):
     """Categories of tunable parameters."""
+
     PROPERTY = "property"
     FINANCIAL = "financial"
     LEGAL = "legal"
@@ -35,6 +36,7 @@ class ParameterCategory(str, Enum):
 @dataclass
 class ParameterDefinition:
     """A tunable parameter for what-if simulation."""
+
     id: str
     name: str
     category: ParameterCategory
@@ -67,6 +69,7 @@ class ParameterDefinition:
 @dataclass
 class SimulationDelta:
     """Difference between baseline and simulated outcomes."""
+
     parameter_changed: str
     original_value: Any
     simulated_value: Any
@@ -94,6 +97,7 @@ class SimulationDelta:
 @dataclass
 class SimulationResult:
     """Complete result of a what-if simulation."""
+
     simulation_id: str
     baseline_scenario_count: int
     simulated_scenario_count: int
@@ -129,29 +133,82 @@ class WhatIfEngine:
     """
 
     TUNABLE_PARAMETERS = [
-        ParameterDefinition("property_value", "Property Value", ParameterCategory.PROPERTY,
-                            "Assessed or market value of the property", "numeric", min_value=0),
-        ParameterDefinition("lien_amount", "Total Lien Amount", ParameterCategory.FINANCIAL,
-                            "Total outstanding lien amount", "numeric", min_value=0),
-        ParameterDefinition("has_tax_lien", "Tax Lien Present", ParameterCategory.LEGAL,
-                            "Whether a tax lien exists on the property", "boolean"),
-        ParameterDefinition("has_mechanics_lien", "Mechanics Lien Present", ParameterCategory.LEGAL,
-                            "Whether a mechanics lien exists", "boolean"),
-        ParameterDefinition("has_judgment_lien", "Judgment Lien Present", ParameterCategory.LEGAL,
-                            "Whether a judgment lien exists", "boolean"),
-        ParameterDefinition("entity_type", "Entity Type", ParameterCategory.ENTITY,
-                            "Type of owning entity", "string",
-                            allowed_values=["individual", "corporation", "llc", "trust", "partnership"]),
-        ParameterDefinition("years_owned", "Years Owned", ParameterCategory.TIMING,
-                            "Number of years the current owner has held title", "numeric", min_value=0),
-        ParameterDefinition("occupancy_status", "Occupancy Status", ParameterCategory.PROPERTY,
-                            "Current occupancy state", "string",
-                            allowed_values=["owner_occupied", "tenant_occupied", "vacant", "unknown"]),
-        ParameterDefinition("title_clear", "Clear Title", ParameterCategory.LEGAL,
-                            "Whether the title is clear of defects", "boolean"),
-        ParameterDefinition("property_condition", "Property Condition", ParameterCategory.PROPERTY,
-                            "Physical condition of the property", "string",
-                            allowed_values=["excellent", "good", "fair", "poor", "distressed"]),
+        ParameterDefinition(
+            "property_value",
+            "Property Value",
+            ParameterCategory.PROPERTY,
+            "Assessed or market value of the property",
+            "numeric",
+            min_value=0,
+        ),
+        ParameterDefinition(
+            "lien_amount",
+            "Total Lien Amount",
+            ParameterCategory.FINANCIAL,
+            "Total outstanding lien amount",
+            "numeric",
+            min_value=0,
+        ),
+        ParameterDefinition(
+            "has_tax_lien",
+            "Tax Lien Present",
+            ParameterCategory.LEGAL,
+            "Whether a tax lien exists on the property",
+            "boolean",
+        ),
+        ParameterDefinition(
+            "has_mechanics_lien",
+            "Mechanics Lien Present",
+            ParameterCategory.LEGAL,
+            "Whether a mechanics lien exists",
+            "boolean",
+        ),
+        ParameterDefinition(
+            "has_judgment_lien",
+            "Judgment Lien Present",
+            ParameterCategory.LEGAL,
+            "Whether a judgment lien exists",
+            "boolean",
+        ),
+        ParameterDefinition(
+            "entity_type",
+            "Entity Type",
+            ParameterCategory.ENTITY,
+            "Type of owning entity",
+            "string",
+            allowed_values=["individual", "corporation", "llc", "trust", "partnership"],
+        ),
+        ParameterDefinition(
+            "years_owned",
+            "Years Owned",
+            ParameterCategory.TIMING,
+            "Number of years the current owner has held title",
+            "numeric",
+            min_value=0,
+        ),
+        ParameterDefinition(
+            "occupancy_status",
+            "Occupancy Status",
+            ParameterCategory.PROPERTY,
+            "Current occupancy state",
+            "string",
+            allowed_values=["owner_occupied", "tenant_occupied", "vacant", "unknown"],
+        ),
+        ParameterDefinition(
+            "title_clear",
+            "Clear Title",
+            ParameterCategory.LEGAL,
+            "Whether the title is clear of defects",
+            "boolean",
+        ),
+        ParameterDefinition(
+            "property_condition",
+            "Property Condition",
+            ParameterCategory.PROPERTY,
+            "Physical condition of the property",
+            "string",
+            allowed_values=["excellent", "good", "fair", "poor", "distressed"],
+        ),
     ]
 
     def __init__(self):
@@ -179,6 +236,7 @@ class WhatIfEngine:
             SimulationResult with deltas and sensitivity analysis
         """
         import uuid
+
         self._sim_counter += 1
         sim_id = f"sim-{uuid.uuid4().hex[:8]}"
 
@@ -213,9 +271,12 @@ class WhatIfEngine:
 
         # Compute deltas
         deltas = self._compute_deltas(
-            modifications, baseline_data,
-            baseline_scenarios, sim_scenarios,
-            baseline_blockers, sim_blockers
+            modifications,
+            baseline_data,
+            baseline_scenarios,
+            sim_scenarios,
+            baseline_blockers,
+            sim_blockers,
         )
 
         # Rank by sensitivity
@@ -223,9 +284,14 @@ class WhatIfEngine:
         top_params = [d.parameter_changed for d in sorted_deltas[:3]]
 
         # Generate narrative
-        narrative = self._generate_narrative(modifications, deltas,
-                                              baseline_scenarios, sim_scenarios,
-                                              baseline_blockers, sim_blockers)
+        narrative = self._generate_narrative(
+            modifications,
+            deltas,
+            baseline_scenarios,
+            sim_scenarios,
+            baseline_blockers,
+            sim_blockers,
+        )
 
         return SimulationResult(
             simulation_id=sim_id,
@@ -243,6 +309,7 @@ class WhatIfEngine:
     ) -> Dict[str, Any]:
         """Apply parameter modifications to create simulated dataset."""
         import copy
+
         sim = copy.deepcopy(baseline)
 
         param_mapping = {
@@ -298,33 +365,42 @@ class WhatIfEngine:
             conf_changes = []
             for sid in baseline_scenario_ids & sim_scenario_ids:
                 if abs(baseline_conf.get(sid, 0) - sim_conf.get(sid, 0)) > 0.01:
-                    conf_changes.append({
-                        "scenario_id": sid,
-                        "baseline_confidence": baseline_conf[sid],
-                        "simulated_confidence": sim_conf[sid],
-                        "delta": round(sim_conf[sid] - baseline_conf[sid], 4),
-                    })
+                    conf_changes.append(
+                        {
+                            "scenario_id": sid,
+                            "baseline_confidence": baseline_conf[sid],
+                            "simulated_confidence": sim_conf[sid],
+                            "delta": round(sim_conf[sid] - baseline_conf[sid], 4),
+                        }
+                    )
 
             added_blockers = list(sim_blocker_ids - baseline_blocker_ids)
             removed_blockers = list(baseline_blocker_ids - sim_blocker_ids)
 
             # Sensitivity = normalized count of changes
-            total_changes = (len(added_scenarios) + len(removed_scenarios) +
-                             len(conf_changes) + len(added_blockers) + len(removed_blockers))
+            total_changes = (
+                len(added_scenarios)
+                + len(removed_scenarios)
+                + len(conf_changes)
+                + len(added_blockers)
+                + len(removed_blockers)
+            )
             total_items = max(len(baseline_scenario_ids) + len(baseline_blocker_ids), 1)
             sensitivity = min(total_changes / total_items, 1.0)
 
-            deltas.append(SimulationDelta(
-                parameter_changed=param_id,
-                original_value=original,
-                simulated_value=new_value,
-                scenarios_added=added_scenarios,
-                scenarios_removed=removed_scenarios,
-                scenarios_confidence_changed=conf_changes,
-                blockers_added=added_blockers,
-                blockers_removed=removed_blockers,
-                sensitivity_score=sensitivity,
-            ))
+            deltas.append(
+                SimulationDelta(
+                    parameter_changed=param_id,
+                    original_value=original,
+                    simulated_value=new_value,
+                    scenarios_added=added_scenarios,
+                    scenarios_removed=removed_scenarios,
+                    scenarios_confidence_changed=conf_changes,
+                    blockers_added=added_blockers,
+                    blockers_removed=removed_blockers,
+                    sensitivity_score=sensitivity,
+                )
+            )
 
         return deltas
 
@@ -382,7 +458,9 @@ class WhatIfEngine:
         # Highlight most sensitive parameter
         if deltas:
             top = max(deltas, key=lambda d: d.sensitivity_score)
-            parts.append(f"\n**Most sensitive parameter:** `{top.parameter_changed}` "
-                         f"(sensitivity: {top.sensitivity_score:.0%})")
+            parts.append(
+                f"\n**Most sensitive parameter:** `{top.parameter_changed}` "
+                f"(sensitivity: {top.sensitivity_score:.0%})"
+            )
 
         return "\n".join(parts)

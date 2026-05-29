@@ -3,10 +3,10 @@ DataGod Structured Logging Configuration
 Provides JSON-formatted structured logging with request-id tracking
 """
 
-import logging
 import json
-import uuid
+import logging
 import sys
+import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -79,11 +79,11 @@ def setup_structured_logging(
 ) -> logging.Logger:
     """
     Configure structured logging for the DataGod application.
-    
+
     Args:
         level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         json_format: Use JSON format (True) or human-readable (False)
-    
+
     Returns:
         Configured logger instance
     """
@@ -100,9 +100,11 @@ def setup_structured_logging(
     if json_format:
         handler.setFormatter(StructuredFormatter())
     else:
-        handler.setFormatter(logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s:%(funcName)s:%(lineno)d - %(message)s"
-        ))
+        handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s [%(levelname)s] %(name)s:%(funcName)s:%(lineno)d - %(message)s"
+            )
+        )
 
     # Add request context filter
     context_filter = RequestContextFilter()

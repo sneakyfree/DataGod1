@@ -5,8 +5,8 @@ Connection management and room-based broadcasting for real-time events
 
 import json
 import logging
-from typing import Dict, List, Set, Optional, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Set
 
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -31,7 +31,9 @@ class ConnectionManager:
         if user_id not in self._connections:
             self._connections[user_id] = []
         self._connections[user_id].append(websocket)
-        logger.info(f"WebSocket connected: user={user_id}, total={self.connection_count}")
+        logger.info(
+            f"WebSocket connected: user={user_id}, total={self.connection_count}"
+        )
 
     def disconnect(self, websocket: WebSocket, user_id: str):
         """Remove a disconnected WebSocket."""

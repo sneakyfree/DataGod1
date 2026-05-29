@@ -5,19 +5,20 @@ Implements provenance tracking for every data point with
 verified/stated/estimated/unknown classification.
 """
 
-from enum import Enum
-from typing import Any, Optional, Dict
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, Optional
 
 
 class SourceConfidence(str, Enum):
     """Provenance confidence levels per DNA Strand Law 1."""
-    VERIFIED = "verified"       # Confirmed from authoritative source
-    STATED = "stated"           # Claimed by party, not independently verified
-    ESTIMATED = "estimated"     # Derived from calculation or model
-    INFERRED = "inferred"       # Inferred from related data
-    UNKNOWN = "unknown"         # Provenance not established
+
+    VERIFIED = "verified"  # Confirmed from authoritative source
+    STATED = "stated"  # Claimed by party, not independently verified
+    ESTIMATED = "estimated"  # Derived from calculation or model
+    INFERRED = "inferred"  # Inferred from related data
+    UNKNOWN = "unknown"  # Provenance not established
 
 
 @dataclass
@@ -28,11 +29,12 @@ class LabeledValue:
     Every value in the system should carry its source label
     for audit-grade traceability.
     """
+
     value: Any
     label: SourceConfidence
-    source: str = ""            # Where the data came from
+    source: str = ""  # Where the data came from
     source_date: Optional[str] = None  # When it was sourced
-    confidence_score: float = 1.0      # 0-1 numeric confidence
+    confidence_score: float = 1.0  # 0-1 numeric confidence
     notes: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
@@ -73,14 +75,25 @@ def label_verified(value: Any, source: str = "") -> LabeledValue:
 
 def label_stated(value: Any, source: str = "") -> LabeledValue:
     """Label a value as stated by a party (unverified)."""
-    return LabeledValue(value=value, label=SourceConfidence.STATED, source=source, confidence_score=0.7)
+    return LabeledValue(
+        value=value, label=SourceConfidence.STATED, source=source, confidence_score=0.7
+    )
 
 
-def label_estimated(value: Any, source: str = "", confidence: float = 0.5) -> LabeledValue:
+def label_estimated(
+    value: Any, source: str = "", confidence: float = 0.5
+) -> LabeledValue:
     """Label a value as estimated or derived."""
-    return LabeledValue(value=value, label=SourceConfidence.ESTIMATED, source=source, confidence_score=confidence)
+    return LabeledValue(
+        value=value,
+        label=SourceConfidence.ESTIMATED,
+        source=source,
+        confidence_score=confidence,
+    )
 
 
 def label_unknown(value: Any) -> LabeledValue:
     """Label a value with unknown provenance."""
-    return LabeledValue(value=value, label=SourceConfidence.UNKNOWN, confidence_score=0.0)
+    return LabeledValue(
+        value=value, label=SourceConfidence.UNKNOWN, confidence_score=0.0
+    )

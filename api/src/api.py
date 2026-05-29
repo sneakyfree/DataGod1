@@ -1,25 +1,26 @@
-from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks
-from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+import json
+import time
 from datetime import datetime, timedelta
+from functools import wraps
+from typing import Any, Dict, List, Optional
+
+import redis
+from config import settings
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, status
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import Request, BackgroundTasks
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.middleware.gzip import GZipMiddleware
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from db import get_db
-from config import settings
-from datagod.models.jurisdiction import Jurisdiction
+
 from datagod.models.data_source import DataSource
-from datagod.models.record import Record
 from datagod.models.entity import Entity
+from datagod.models.jurisdiction import Jurisdiction
+from datagod.models.record import Record
 from datagod.models.relationship import Relationship
-import redis
-import time
-import json
-from functools import wraps
+from db import get_db
 
 # Initialize FastAPI app
 app = FastAPI(title=settings.api_title, version=settings.api_version)
@@ -38,10 +39,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 # Redis connection for caching (if available)
 redis_client = None
 try:
-    redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+    redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
 except:
     # Redis not available, continue without caching
     pass
+
 
 # Rate limiting decorator
 def rate_limit(max_requests: int = 100, window: int = 60):
@@ -49,12 +51,12 @@ def rate_limit(max_requests: int = 100, window: int = 60):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             # Simple in-memory rate limiting (in production, use Redis)
-            if hasattr(wrapper, 'request_count'):
+            if hasattr(wrapper, "request_count"):
                 if time.time() - wrapper.last_reset < window:
                     if wrapper.request_count >= max_requests:
                         raise HTTPException(
                             status_code=429,
-                            detail="Too many requests, rate limit exceeded"
+                            detail="Too many requests, rate limit exceeded",
                         )
                     wrapper.request_count += 1
                 else:
@@ -64,8 +66,11 @@ def rate_limit(max_requests: int = 100, window: int = 60):
                 wrapper.request_count = 1
                 wrapper.last_reset = time.time()
             return await func(*args, **kwargs)
+
         return wrapper
+
     return decorator
+
 
 # User model
 class User(BaseModel):
@@ -74,16 +79,20 @@ class User(BaseModel):
     full_name: Optional[str] = None
     disabled: Optional[bool] = None
 
+
 class UserInDB(User):
     hashed_password: str
+
 
 # Token model
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 class TokenData(BaseModel):
     username: Optional[str] = None
+
 
 # Fake database for demonstration
 fake_users_db = {
@@ -96,17 +105,21 @@ fake_users_db = {
     }
 }
 
+
 # Password hashing
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
+
 def get_password_hash(password):
     return pwd_context.hash(password)
+
 
 def get_user(db, username: str):
     if username in db:
         user_dict = db[username]
         return UserInDB(**user_dict)
+
 
 def authenticate_user(fake_db, username: str, password: str):
     user = get_user(fake_db, username)
@@ -116,6 +129,7 @@ def authenticate_user(fake_db, username: str, password: str):
         return False
     return user
 
+
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if expires_delta:
@@ -123,6 +137,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
         to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
 
 async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
@@ -143,6 +158,7 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
         raise credentials_exception
     return user
 
+
 # API endpoints
 @app.post("/token", response_model=Token)
 async def login_for_access_token(username: str, password: str):
@@ -159,10 +175,12 @@ async def login_for_access_token(username: str, password: str):
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+
 # Protected endpoint example
 @app.get("/users/me")
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
+
 
 # Advanced search endpoint
 @app.get("/search")
@@ -177,49 +195,50 @@ async def advanced_search(
     amount_min: Optional[float] = None,
     amount_max: Optional[float] = None,
     limit: int = 100,
-    offset: int = 0
+    offset: int = 0,
 ):
     """
     Advanced search endpoint for records with multiple filter options
     """
     # Build query
     records_query = db.query(Record)
-    
+
     # Apply filters
     if query:
         # Full text search
         records_query = records_query.filter(
             Record.title.ilike(f"%{query}%") | Record.description.ilike(f"%{query}%")
         )
-    
+
     if jurisdiction_id:
         records_query = records_query.filter(Record.jurisdiction_id == jurisdiction_id)
-    
+
     if record_type:
         records_query = records_query.filter(Record.record_type == record_type)
-    
+
     if date_from:
         records_query = records_query.filter(Record.date >= date_from)
-    
+
     if date_to:
         records_query = records_query.filter(Record.date <= date_to)
-    
+
     if amount_min:
         records_query = records_query.filter(Record.amount >= amount_min)
-    
+
     if amount_max:
         records_query = records_query.filter(Record.amount <= amount_max)
-    
+
     # Apply pagination
     records = records_query.offset(offset).limit(limit).all()
-    
+
     # Return results
     return {
         "records": records,
         "count": records_query.count(),
         "offset": offset,
-        "limit": limit
+        "limit": limit,
     }
+
 
 # Data export endpoint
 @app.get("/export")
@@ -230,34 +249,35 @@ async def export_data(
     jurisdiction_id: Optional[int] = None,
     record_type: Optional[str] = None,
     date_from: Optional[str] = None,
-    date_to: Optional[str] = None
+    date_to: Optional[str] = None,
 ):
     """
     Export data in various formats
     """
     # Build query
     records_query = db.query(Record)
-    
+
     # Apply filters
     if jurisdiction_id:
         records_query = records_query.filter(Record.jurisdiction_id == jurisdiction_id)
-    
+
     if record_type:
         records_query = records_query.filter(Record.record_type == record_type)
-    
+
     if date_from:
         records_query = records_query.filter(Record.date >= date_from)
-    
+
     if date_to:
         records_query = records_query.filter(Record.date <= date_to)
-    
+
     records = records_query.all()
-    
+
     # Format data based on requested format
     if format == "csv":
         # Convert to CSV format
         import csv
         from io import StringIO
+
         output = StringIO()
         if records:
             fieldnames = records[0].__dict__.keys()
@@ -266,10 +286,11 @@ async def export_data(
             for record in records:
                 writer.writerow(record.__dict__)
         return output.getvalue()
-    
+
     elif format == "xml":
         # Convert to XML format
         import xml.etree.ElementTree as ET
+
         root = ET.Element("records")
         for record in records:
             record_elem = ET.SubElement(root, "record")
@@ -278,9 +299,10 @@ async def export_data(
                     elem = ET.SubElement(record_elem, key)
                     elem.text = str(value)
         return ET.tostring(root, encoding="unicode")
-    
+
     else:  # JSON
         return {"records": [record.__dict__ for record in records]}
+
 
 # Caching endpoint
 @app.get("/cache/{key}")
@@ -294,6 +316,7 @@ async def get_cached_data(key: str):
             return {"cached": True, "data": json.loads(cached_data)}
     return {"cached": False, "data": None}
 
+
 @app.post("/cache/{key}")
 async def set_cached_data(key: str, data: Dict[str, Any], expire: int = 3600):
     """
@@ -304,6 +327,7 @@ async def set_cached_data(key: str, data: Dict[str, Any], expire: int = 3600):
         return {"status": "cached"}
     return {"status": "cache not available"}
 
+
 # Health check endpoint
 @app.get("/health")
 async def health_check():
@@ -312,16 +336,15 @@ async def health_check():
     """
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
+
 # Metrics endpoint
 @app.get("/metrics")
 async def get_metrics():
     """
     Get system metrics
     """
-    return {
-        "status": "metrics available",
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    return {"status": "metrics available", "timestamp": datetime.utcnow().isoformat()}
+
 
 # Jurisdiction endpoints
 @app.get("/jurisdictions")
@@ -331,6 +354,7 @@ async def get_jurisdictions(db: Session = Depends(get_db)):
     """
     jurisdictions = db.query(Jurisdiction).all()
     return jurisdictions
+
 
 @app.get("/jurisdictions/{id}")
 async def get_jurisdiction(id: int, db: Session = Depends(get_db)):
@@ -342,6 +366,7 @@ async def get_jurisdiction(id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Jurisdiction not found")
     return jurisdiction
 
+
 # Data source endpoints
 @app.get("/data-sources")
 async def get_data_sources(db: Session = Depends(get_db)):
@@ -351,6 +376,7 @@ async def get_data_sources(db: Session = Depends(get_db)):
     data_sources = db.query(DataSource).all()
     return data_sources
 
+
 # Record endpoints
 @app.get("/records")
 async def get_records(db: Session = Depends(get_db), limit: int = 100, offset: int = 0):
@@ -359,6 +385,7 @@ async def get_records(db: Session = Depends(get_db), limit: int = 100, offset: i
     """
     records = db.query(Record).offset(offset).limit(limit).all()
     return records
+
 
 @app.get("/records/{id}")
 async def get_record(id: int, db: Session = Depends(get_db)):
@@ -370,14 +397,18 @@ async def get_record(id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Record not found")
     return record
 
+
 # Entity endpoints
 @app.get("/entities")
-async def get_entities(db: Session = Depends(get_db), limit: int = 100, offset: int = 0):
+async def get_entities(
+    db: Session = Depends(get_db), limit: int = 100, offset: int = 0
+):
     """
     Get all entities with pagination
     """
     entities = db.query(Entity).offset(offset).limit(limit).all()
     return entities
+
 
 @app.get("/entities/{id}")
 async def get_entity(id: int, db: Session = Depends(get_db)):
@@ -389,14 +420,18 @@ async def get_entity(id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Entity not found")
     return entity
 
+
 # Relationship endpoints
 @app.get("/relationships")
-async def get_relationships(db: Session = Depends(get_db), limit: int = 100, offset: int = 0):
+async def get_relationships(
+    db: Session = Depends(get_db), limit: int = 100, offset: int = 0
+):
     """
     Get all relationships with pagination
     """
     relationships = db.query(Relationship).offset(offset).limit(limit).all()
     return relationships
+
 
 @app.get("/relationships/{id}")
 async def get_relationship(id: int, db: Session = Depends(get_db)):
@@ -408,9 +443,11 @@ async def get_relationship(id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Relationship not found")
     return relationship
 
+
 # Add middleware for gzip compression and trusted hosts
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+
 
 # Add a simple test endpoint
 @app.get("/test")

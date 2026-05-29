@@ -19,15 +19,16 @@ Note: Requires API key from ATTOM Data Solutions.
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class RiskLevel(Enum):
     """Risk level for hazard assessments"""
+
     VERY_LOW = "very_low"
     LOW = "low"
     MODERATE = "moderate"
@@ -38,6 +39,7 @@ class RiskLevel(Enum):
 
 class SchoolType(Enum):
     """Types of schools"""
+
     ELEMENTARY = "elementary"
     MIDDLE = "middle"
     HIGH = "high"
@@ -50,6 +52,7 @@ class SchoolType(Enum):
 @dataclass
 class ATTOMProperty:
     """Property data from ATTOM"""
+
     attom_id: str
     address: str
     city: str
@@ -104,33 +107,36 @@ class ATTOMProperty:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'attom_id': self.attom_id,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'zip_code': self.zip_code,
-            'county': self.county,
-            'fips': self.fips,
-            'property_type': self.property_type,
-            'lot_size_sqft': self.lot_size_sqft,
-            'building_sqft': self.building_sqft,
-            'bedrooms': self.bedrooms,
-            'bathrooms': self.bathrooms,
-            'year_built': self.year_built,
-            'owner_name': self.owner_name,
-            'assessed_value': self.assessed_value,
-            'market_value': self.market_value,
-            'last_sale_price': self.last_sale_price,
-            'last_sale_date': self.last_sale_date.isoformat() if self.last_sale_date else None,
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'fetched_at': self.fetched_at.isoformat()
+            "attom_id": self.attom_id,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "zip_code": self.zip_code,
+            "county": self.county,
+            "fips": self.fips,
+            "property_type": self.property_type,
+            "lot_size_sqft": self.lot_size_sqft,
+            "building_sqft": self.building_sqft,
+            "bedrooms": self.bedrooms,
+            "bathrooms": self.bathrooms,
+            "year_built": self.year_built,
+            "owner_name": self.owner_name,
+            "assessed_value": self.assessed_value,
+            "market_value": self.market_value,
+            "last_sale_price": self.last_sale_price,
+            "last_sale_date": (
+                self.last_sale_date.isoformat() if self.last_sale_date else None
+            ),
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class SalesComparable:
     """Sales comparable for property valuation"""
+
     attom_id: str
     address: str
     city: str
@@ -160,26 +166,27 @@ class SalesComparable:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'attom_id': self.attom_id,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'property_type': self.property_type,
-            'bedrooms': self.bedrooms,
-            'bathrooms': self.bathrooms,
-            'building_sqft': self.building_sqft,
-            'year_built': self.year_built,
-            'sale_date': self.sale_date.isoformat() if self.sale_date else None,
-            'sale_price': self.sale_price,
-            'price_per_sqft': self.price_per_sqft,
-            'distance_miles': self.distance_miles,
-            'adjusted_price': self.adjusted_price
+            "attom_id": self.attom_id,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "property_type": self.property_type,
+            "bedrooms": self.bedrooms,
+            "bathrooms": self.bathrooms,
+            "building_sqft": self.building_sqft,
+            "year_built": self.year_built,
+            "sale_date": self.sale_date.isoformat() if self.sale_date else None,
+            "sale_price": self.sale_price,
+            "price_per_sqft": self.price_per_sqft,
+            "distance_miles": self.distance_miles,
+            "adjusted_price": self.adjusted_price,
         }
 
 
 @dataclass
 class NeighborhoodData:
     """Neighborhood demographics and statistics"""
+
     fips: str
     name: str
     city: str
@@ -221,22 +228,23 @@ class NeighborhoodData:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'fips': self.fips,
-            'name': self.name,
-            'city': self.city,
-            'state': self.state,
-            'population': self.population,
-            'median_household_income': self.median_household_income,
-            'median_home_value': self.median_home_value,
-            'owner_occupied_rate': self.owner_occupied_rate,
-            'crime_index': self.crime_index,
-            'fetched_at': self.fetched_at.isoformat()
+            "fips": self.fips,
+            "name": self.name,
+            "city": self.city,
+            "state": self.state,
+            "population": self.population,
+            "median_household_income": self.median_household_income,
+            "median_home_value": self.median_home_value,
+            "owner_occupied_rate": self.owner_occupied_rate,
+            "crime_index": self.crime_index,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class SchoolInfo:
     """School information from ATTOM"""
+
     school_id: str
     name: str
     school_type: SchoolType = SchoolType.UNKNOWN
@@ -272,25 +280,26 @@ class SchoolInfo:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'school_id': self.school_id,
-            'name': self.name,
-            'school_type': self.school_type.value,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'district_name': self.district_name,
-            'grade_low': self.grade_low,
-            'grade_high': self.grade_high,
-            'enrollment': self.enrollment,
-            'student_teacher_ratio': self.student_teacher_ratio,
-            'great_schools_rating': self.great_schools_rating,
-            'distance_miles': self.distance_miles
+            "school_id": self.school_id,
+            "name": self.name,
+            "school_type": self.school_type.value,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "district_name": self.district_name,
+            "grade_low": self.grade_low,
+            "grade_high": self.grade_high,
+            "enrollment": self.enrollment,
+            "student_teacher_ratio": self.student_teacher_ratio,
+            "great_schools_rating": self.great_schools_rating,
+            "distance_miles": self.distance_miles,
         }
 
 
 @dataclass
 class HazardRisk:
     """Natural hazard risk assessment"""
+
     property_id: str
 
     # Flood risk
@@ -325,23 +334,24 @@ class HazardRisk:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'property_id': self.property_id,
-            'flood_zone': self.flood_zone,
-            'flood_risk': self.flood_risk.value,
-            'flood_factor': self.flood_factor,
-            'fire_risk': self.fire_risk.value,
-            'fire_factor': self.fire_factor,
-            'earthquake_risk': self.earthquake_risk.value,
-            'wind_risk': self.wind_risk.value,
-            'tornado_risk': self.tornado_risk.value,
-            'composite_risk_score': self.composite_risk_score,
-            'fetched_at': self.fetched_at.isoformat()
+            "property_id": self.property_id,
+            "flood_zone": self.flood_zone,
+            "flood_risk": self.flood_risk.value,
+            "flood_factor": self.flood_factor,
+            "fire_risk": self.fire_risk.value,
+            "fire_factor": self.fire_factor,
+            "earthquake_risk": self.earthquake_risk.value,
+            "wind_risk": self.wind_risk.value,
+            "tornado_risk": self.tornado_risk.value,
+            "composite_risk_score": self.composite_risk_score,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class MarketTrend:
     """Real estate market trend data"""
+
     area_name: str
     area_type: str  # city, zip, county, state
     period: str  # YYYY-MM format
@@ -373,23 +383,24 @@ class MarketTrend:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'area_name': self.area_name,
-            'area_type': self.area_type,
-            'period': self.period,
-            'median_sale_price': self.median_sale_price,
-            'median_price_change_yoy': self.median_price_change_yoy,
-            'sales_count': self.sales_count,
-            'median_dom': self.median_dom,
-            'active_listings': self.active_listings,
-            'months_of_supply': self.months_of_supply,
-            'foreclosure_rate': self.foreclosure_rate,
-            'fetched_at': self.fetched_at.isoformat()
+            "area_name": self.area_name,
+            "area_type": self.area_type,
+            "period": self.period,
+            "median_sale_price": self.median_sale_price,
+            "median_price_change_yoy": self.median_price_change_yoy,
+            "sales_count": self.sales_count,
+            "median_dom": self.median_dom,
+            "active_listings": self.active_listings,
+            "months_of_supply": self.months_of_supply,
+            "foreclosure_rate": self.foreclosure_rate,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class ATTOMSearch:
     """Search parameters for ATTOM API"""
+
     # Address search
     address: Optional[str] = None
     city: Optional[str] = None
@@ -459,10 +470,7 @@ class ATTOMAPI(ABC):
 
     def _get_headers(self) -> Dict[str, str]:
         """Get headers for API request."""
-        return {
-            'apikey': self.api_key,
-            'Accept': 'application/json'
-        }
+        return {"apikey": self.api_key, "Accept": "application/json"}
 
     @abstractmethod
     def search_properties(self, search: ATTOMSearch) -> List[ATTOMProperty]:
@@ -491,11 +499,9 @@ class ATTOMAPI(ABC):
         pass
 
     @abstractmethod
-    def get_property_by_address(self,
-                                address: str,
-                                city: str,
-                                state: str,
-                                zip_code: str = None) -> Optional[ATTOMProperty]:
+    def get_property_by_address(
+        self, address: str, city: str, state: str, zip_code: str = None
+    ) -> Optional[ATTOMProperty]:
         """
         Get property by address.
 
@@ -511,11 +517,13 @@ class ATTOMAPI(ABC):
         pass
 
     @abstractmethod
-    def get_sales_comparables(self,
-                             attom_id: str,
-                             radius_miles: float = 1.0,
-                             months_back: int = 12,
-                             limit: int = 10) -> List[SalesComparable]:
+    def get_sales_comparables(
+        self,
+        attom_id: str,
+        radius_miles: float = 1.0,
+        months_back: int = 12,
+        limit: int = 10,
+    ) -> List[SalesComparable]:
         """
         Get sales comparables for a property.
 
@@ -544,10 +552,9 @@ class ATTOMAPI(ABC):
         pass
 
     @abstractmethod
-    def get_nearby_schools(self,
-                          latitude: float,
-                          longitude: float,
-                          radius_miles: float = 5.0) -> List[SchoolInfo]:
+    def get_nearby_schools(
+        self, latitude: float, longitude: float, radius_miles: float = 5.0
+    ) -> List[SchoolInfo]:
         """
         Get schools near a location.
 
@@ -575,10 +582,9 @@ class ATTOMAPI(ABC):
         pass
 
     @abstractmethod
-    def get_market_trends(self,
-                         area_type: str,
-                         area_code: str,
-                         months_back: int = 24) -> List[MarketTrend]:
+    def get_market_trends(
+        self, area_type: str, area_code: str, months_back: int = 24
+    ) -> List[MarketTrend]:
         """
         Get market trend data.
 
@@ -595,11 +601,11 @@ class ATTOMAPI(ABC):
     def parse_risk_level(self, risk_value: str) -> RiskLevel:
         """Parse risk level from string."""
         risk_mapping = {
-            'very low': RiskLevel.VERY_LOW,
-            'low': RiskLevel.LOW,
-            'moderate': RiskLevel.MODERATE,
-            'high': RiskLevel.HIGH,
-            'very high': RiskLevel.VERY_HIGH,
+            "very low": RiskLevel.VERY_LOW,
+            "low": RiskLevel.LOW,
+            "moderate": RiskLevel.MODERATE,
+            "high": RiskLevel.HIGH,
+            "very high": RiskLevel.VERY_HIGH,
         }
         return risk_mapping.get(risk_value.lower(), RiskLevel.UNKNOWN)
 
@@ -614,7 +620,9 @@ class ATTOMAPIClient(ATTOMAPI):
 
     def search_properties(self, search: ATTOMSearch) -> List[ATTOMProperty]:
         """Search for properties."""
-        logger.info(f"Searching ATTOM properties: {search.address or search.owner_name}")
+        logger.info(
+            f"Searching ATTOM properties: {search.address or search.owner_name}"
+        )
         return []
 
     def get_property(self, attom_id: str) -> Optional[ATTOMProperty]:
@@ -622,20 +630,20 @@ class ATTOMAPIClient(ATTOMAPI):
         logger.info(f"Getting ATTOM property: {attom_id}")
         return None
 
-    def get_property_by_address(self,
-                                address: str,
-                                city: str,
-                                state: str,
-                                zip_code: str = None) -> Optional[ATTOMProperty]:
+    def get_property_by_address(
+        self, address: str, city: str, state: str, zip_code: str = None
+    ) -> Optional[ATTOMProperty]:
         """Get property by address."""
         logger.info(f"Getting ATTOM property by address: {address}, {city}, {state}")
         return None
 
-    def get_sales_comparables(self,
-                             attom_id: str,
-                             radius_miles: float = 1.0,
-                             months_back: int = 12,
-                             limit: int = 10) -> List[SalesComparable]:
+    def get_sales_comparables(
+        self,
+        attom_id: str,
+        radius_miles: float = 1.0,
+        months_back: int = 12,
+        limit: int = 10,
+    ) -> List[SalesComparable]:
         """Get sales comparables for a property."""
         logger.info(f"Getting ATTOM sales comps: {attom_id}")
         return []
@@ -645,10 +653,9 @@ class ATTOMAPIClient(ATTOMAPI):
         logger.info(f"Getting ATTOM neighborhood data: {fips}")
         return None
 
-    def get_nearby_schools(self,
-                          latitude: float,
-                          longitude: float,
-                          radius_miles: float = 5.0) -> List[SchoolInfo]:
+    def get_nearby_schools(
+        self, latitude: float, longitude: float, radius_miles: float = 5.0
+    ) -> List[SchoolInfo]:
         """Get schools near a location."""
         logger.info(f"Getting ATTOM nearby schools: {latitude}, {longitude}")
         return []
@@ -658,10 +665,9 @@ class ATTOMAPIClient(ATTOMAPI):
         logger.info(f"Getting ATTOM hazard risk: {attom_id}")
         return None
 
-    def get_market_trends(self,
-                         area_type: str,
-                         area_code: str,
-                         months_back: int = 24) -> List[MarketTrend]:
+    def get_market_trends(
+        self, area_type: str, area_code: str, months_back: int = 24
+    ) -> List[MarketTrend]:
         """Get market trend data."""
         logger.info(f"Getting ATTOM market trends: {area_type} {area_code}")
         return []

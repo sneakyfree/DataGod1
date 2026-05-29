@@ -9,15 +9,17 @@ Free Public Sources:
 """
 
 import asyncio
-import aiohttp
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, List, Dict, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 
 
 class SchoolLevel(Enum):
     """School level types."""
+
     ELEMENTARY = "elementary"
     MIDDLE = "middle"
     HIGH = "high"
@@ -28,6 +30,7 @@ class SchoolLevel(Enum):
 
 class SchoolType(Enum):
     """School type classifications."""
+
     PUBLIC = "public"
     PRIVATE = "private"
     CHARTER = "charter"
@@ -37,6 +40,7 @@ class SchoolType(Enum):
 
 class LicenseStatus(Enum):
     """Teacher license status."""
+
     ACTIVE = "active"
     EXPIRED = "expired"
     SUSPENDED = "suspended"
@@ -47,6 +51,7 @@ class LicenseStatus(Enum):
 @dataclass
 class School:
     """Public/private school record."""
+
     nces_id: str
     name: str
     address: Optional[str] = None
@@ -75,6 +80,7 @@ class School:
 @dataclass
 class SchoolDistrict:
     """School district record."""
+
     nces_id: str
     name: str
     address: Optional[str] = None
@@ -96,6 +102,7 @@ class SchoolDistrict:
 @dataclass
 class TeacherLicense:
     """Teacher license record."""
+
     license_number: str
     first_name: str
     last_name: str
@@ -115,6 +122,7 @@ class TeacherLicense:
 @dataclass
 class College:
     """College/university record from College Scorecard."""
+
     unit_id: str
     name: str
     city: Optional[str] = None
@@ -194,7 +202,7 @@ STATE_TEACHER_LICENSE_URLS = {
     "WA": "https://fortress.wa.gov/ospi/apps/CertView/",
     "WV": "https://wvde.us/certification/",
     "WI": "https://dpi.wi.gov/tepdl/licensing",
-    "WY": "https://edu.wyoming.gov/for-educators/ptsb/"
+    "WY": "https://edu.wyoming.gov/for-educators/ptsb/",
 }
 
 
@@ -216,7 +224,7 @@ class EducationRecordsScraper:
     def __init__(
         self,
         session: Optional[aiohttp.ClientSession] = None,
-        college_scorecard_api_key: Optional[str] = None
+        college_scorecard_api_key: Optional[str] = None,
     ):
         """
         Initialize the education records scraper.
@@ -252,12 +260,14 @@ class EducationRecordsScraper:
         state: Optional[str] = None,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        ownership: Optional[str] = None,  # "public", "private_nonprofit", "private_for_profit"
+        ownership: Optional[
+            str
+        ] = None,  # "public", "private_nonprofit", "private_for_profit"
         min_enrollment: Optional[int] = None,
         max_enrollment: Optional[int] = None,
         fields: Optional[List[str]] = None,
         limit: int = 20,
-        page: int = 0
+        page: int = 0,
     ) -> List[College]:
         """
         Search colleges using College Scorecard API.
@@ -270,18 +280,30 @@ class EducationRecordsScraper:
 
         # Default fields to retrieve
         default_fields = [
-            "id", "school.name", "school.city", "school.state", "school.zip",
-            "school.school_url", "school.ownership", "school.degrees_awarded.highest",
-            "school.degrees_awarded.predominant", "latest.student.size",
-            "latest.admissions.admission_rate.overall", "latest.admissions.sat_scores.average.overall",
+            "id",
+            "school.name",
+            "school.city",
+            "school.state",
+            "school.zip",
+            "school.school_url",
+            "school.ownership",
+            "school.degrees_awarded.highest",
+            "school.degrees_awarded.predominant",
+            "latest.student.size",
+            "latest.admissions.admission_rate.overall",
+            "latest.admissions.sat_scores.average.overall",
             "latest.admissions.act_scores.midpoint.cumulative",
-            "latest.cost.avg_net_price.overall", "latest.cost.tuition.in_state",
-            "latest.cost.tuition.out_of_state", "latest.completion.rate_suppressed.overall",
+            "latest.cost.avg_net_price.overall",
+            "latest.cost.tuition.in_state",
+            "latest.cost.tuition.out_of_state",
+            "latest.completion.rate_suppressed.overall",
             "latest.completion.rate_suppressed.lt_four_year_150percent",
             "latest.earnings.10_yrs_after_entry.median",
             "latest.repayment.3_yr_repayment.overall",
-            "latest.aid.pell_grant_rate", "latest.aid.federal_loan_rate",
-            "location.lat", "location.lon"
+            "latest.aid.pell_grant_rate",
+            "latest.aid.federal_loan_rate",
+            "location.lat",
+            "location.lon",
         ]
 
         try:
@@ -291,7 +313,7 @@ class EducationRecordsScraper:
                 "api_key": self.api_key,
                 "per_page": limit,
                 "page": page,
-                "fields": ",".join(fields or default_fields)
+                "fields": ",".join(fields or default_fields),
             }
 
             # Add filters
@@ -307,14 +329,16 @@ class EducationRecordsScraper:
                 ownership_map = {
                     "public": 1,
                     "private_nonprofit": 2,
-                    "private_for_profit": 3
+                    "private_for_profit": 3,
                 }
                 params["school.ownership"] = ownership_map.get(ownership, ownership)
             if min_enrollment:
                 params["latest.student.size__range"] = f"{min_enrollment}.."
             if max_enrollment:
                 if "latest.student.size__range" in params:
-                    params["latest.student.size__range"] = f"{min_enrollment}..{max_enrollment}"
+                    params["latest.student.size__range"] = (
+                        f"{min_enrollment}..{max_enrollment}"
+                    )
                 else:
                     params["latest.student.size__range"] = f"..{max_enrollment}"
 
@@ -325,7 +349,11 @@ class EducationRecordsScraper:
                     for item in data.get("results", []):
                         try:
                             # Map ownership
-                            ownership_map = {1: "Public", 2: "Private nonprofit", 3: "Private for-profit"}
+                            ownership_map = {
+                                1: "Public",
+                                2: "Private nonprofit",
+                                3: "Private for-profit",
+                            }
 
                             college = College(
                                 unit_id=str(item.get("id", "")),
@@ -334,25 +362,55 @@ class EducationRecordsScraper:
                                 state=item.get("school.state"),
                                 zip_code=item.get("school.zip"),
                                 url=item.get("school.school_url"),
-                                ownership=ownership_map.get(item.get("school.ownership")),
-                                highest_degree=item.get("school.degrees_awarded.highest"),
-                                predominant_degree=item.get("school.degrees_awarded.predominant"),
-                                undergraduate_enrollment=item.get("latest.student.size"),
-                                admission_rate=item.get("latest.admissions.admission_rate.overall"),
-                                sat_avg=item.get("latest.admissions.sat_scores.average.overall"),
-                                act_midpoint=item.get("latest.admissions.act_scores.midpoint.cumulative"),
-                                avg_net_price=item.get("latest.cost.avg_net_price.overall"),
-                                tuition_in_state=item.get("latest.cost.tuition.in_state"),
-                                tuition_out_state=item.get("latest.cost.tuition.out_of_state"),
-                                completion_rate_4yr=item.get("latest.completion.rate_suppressed.overall"),
-                                completion_rate_150pct=item.get("latest.completion.rate_suppressed.lt_four_year_150percent"),
-                                median_earnings_10yr=item.get("latest.earnings.10_yrs_after_entry.median"),
-                                default_rate_3yr=item.get("latest.repayment.3_yr_repayment.overall"),
+                                ownership=ownership_map.get(
+                                    item.get("school.ownership")
+                                ),
+                                highest_degree=item.get(
+                                    "school.degrees_awarded.highest"
+                                ),
+                                predominant_degree=item.get(
+                                    "school.degrees_awarded.predominant"
+                                ),
+                                undergraduate_enrollment=item.get(
+                                    "latest.student.size"
+                                ),
+                                admission_rate=item.get(
+                                    "latest.admissions.admission_rate.overall"
+                                ),
+                                sat_avg=item.get(
+                                    "latest.admissions.sat_scores.average.overall"
+                                ),
+                                act_midpoint=item.get(
+                                    "latest.admissions.act_scores.midpoint.cumulative"
+                                ),
+                                avg_net_price=item.get(
+                                    "latest.cost.avg_net_price.overall"
+                                ),
+                                tuition_in_state=item.get(
+                                    "latest.cost.tuition.in_state"
+                                ),
+                                tuition_out_state=item.get(
+                                    "latest.cost.tuition.out_of_state"
+                                ),
+                                completion_rate_4yr=item.get(
+                                    "latest.completion.rate_suppressed.overall"
+                                ),
+                                completion_rate_150pct=item.get(
+                                    "latest.completion.rate_suppressed.lt_four_year_150percent"
+                                ),
+                                median_earnings_10yr=item.get(
+                                    "latest.earnings.10_yrs_after_entry.median"
+                                ),
+                                default_rate_3yr=item.get(
+                                    "latest.repayment.3_yr_repayment.overall"
+                                ),
                                 pell_grant_rate=item.get("latest.aid.pell_grant_rate"),
-                                federal_loan_rate=item.get("latest.aid.federal_loan_rate"),
+                                federal_loan_rate=item.get(
+                                    "latest.aid.federal_loan_rate"
+                                ),
                                 latitude=item.get("location.lat"),
                                 longitude=item.get("location.lon"),
-                                raw_data=item
+                                raw_data=item,
                             )
                             results.append(college)
                         except (KeyError, ValueError, TypeError):
@@ -370,11 +428,7 @@ class EducationRecordsScraper:
         try:
             url = f"{self.COLLEGE_SCORECARD_BASE}/schools.json"
 
-            params = {
-                "api_key": self.api_key,
-                "id": unit_id,
-                "per_page": 1
-            }
+            params = {"api_key": self.api_key, "id": unit_id, "per_page": 1}
 
             async with self.session.get(url, params=params) as response:
                 if response.status == 200:
@@ -382,7 +436,11 @@ class EducationRecordsScraper:
                     results = data.get("results", [])
                     if results:
                         item = results[0]
-                        ownership_map = {1: "Public", 2: "Private nonprofit", 3: "Private for-profit"}
+                        ownership_map = {
+                            1: "Public",
+                            2: "Private nonprofit",
+                            3: "Private for-profit",
+                        }
 
                         return College(
                             unit_id=str(item.get("id", "")),
@@ -392,7 +450,7 @@ class EducationRecordsScraper:
                             zip_code=item.get("school.zip"),
                             url=item.get("school.school_url"),
                             ownership=ownership_map.get(item.get("school.ownership")),
-                            raw_data=item
+                            raw_data=item,
                         )
 
         except aiohttp.ClientError:
@@ -409,7 +467,7 @@ class EducationRecordsScraper:
         city: Optional[str] = None,
         district_id: Optional[str] = None,
         school_type: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[School]:
         """
         Search K-12 schools using NCES data.
@@ -433,7 +491,7 @@ class EducationRecordsScraper:
                 "outFields": "*",
                 "f": "json",
                 "returnGeometry": "false",
-                "resultRecordCount": limit
+                "resultRecordCount": limit,
             }
 
             # Build where clause
@@ -472,7 +530,7 @@ class EducationRecordsScraper:
                                 enrollment=attrs.get("ENROLLMENT"),
                                 latitude=attrs.get("LAT"),
                                 longitude=attrs.get("LON"),
-                                raw_data=attrs
+                                raw_data=attrs,
                             )
                             results.append(school)
                         except (KeyError, ValueError):
@@ -484,10 +542,7 @@ class EducationRecordsScraper:
         return results
 
     async def search_districts_nces(
-        self,
-        name: Optional[str] = None,
-        state: Optional[str] = None,
-        limit: int = 100
+        self, name: Optional[str] = None, state: Optional[str] = None, limit: int = 100
     ) -> List[SchoolDistrict]:
         """Search school districts using NCES EDGE API."""
         await self._ensure_session()
@@ -502,7 +557,7 @@ class EducationRecordsScraper:
                 "outFields": "*",
                 "f": "json",
                 "returnGeometry": "false",
-                "resultRecordCount": limit
+                "resultRecordCount": limit,
             }
 
             where_parts = []
@@ -531,7 +586,7 @@ class EducationRecordsScraper:
                                 phone=attrs.get("PHONE"),
                                 schools_count=attrs.get("SCHLCOUNT"),
                                 enrollment=attrs.get("ENROLLMENT"),
-                                raw_data=attrs
+                                raw_data=attrs,
                             )
                             results.append(district)
                         except (KeyError, ValueError):
@@ -565,7 +620,7 @@ class EducationRecordsScraper:
             "ccd_districts": "https://nces.ed.gov/ccd/files.asp",
             "private_schools": "https://nces.ed.gov/surveys/pss/pssdata.asp",
             "ipeds_colleges": "https://nces.ed.gov/ipeds/datacenter/DataFiles.aspx",
-            "school_finances": "https://nces.ed.gov/ccd/f33agency.asp"
+            "school_finances": "https://nces.ed.gov/ccd/f33agency.asp",
         }
 
     def get_education_resources(self) -> Dict[str, str]:
@@ -576,7 +631,7 @@ class EducationRecordsScraper:
             "school_digger": "https://www.schooldigger.com/",
             "great_schools": "https://www.greatschools.org/",
             "niche": "https://www.niche.com/",
-            "public_school_review": "https://www.publicschoolreview.com/"
+            "public_school_review": "https://www.publicschoolreview.com/",
         }
 
 
@@ -585,17 +640,16 @@ def search_colleges_sync(
     name: Optional[str] = None,
     state: Optional[str] = None,
     city: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> List[College]:
     """Synchronous wrapper for college search."""
+
     async def _search():
         async with EducationRecordsScraper() as scraper:
             return await scraper.search_colleges(
-                name=name,
-                state=state,
-                city=city,
-                **kwargs
+                name=name, state=state, city=city, **kwargs
             )
+
     return asyncio.run(_search())
 
 
@@ -603,33 +657,28 @@ def search_schools_sync(
     name: Optional[str] = None,
     state: Optional[str] = None,
     city: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> List[School]:
     """Synchronous wrapper for K-12 school search."""
+
     async def _search():
         async with EducationRecordsScraper() as scraper:
             return await scraper.search_schools_nces(
-                name=name,
-                state=state,
-                city=city,
-                **kwargs
+                name=name, state=state, city=city, **kwargs
             )
+
     return asyncio.run(_search())
 
 
 def search_districts_sync(
-    name: Optional[str] = None,
-    state: Optional[str] = None,
-    **kwargs
+    name: Optional[str] = None, state: Optional[str] = None, **kwargs
 ) -> List[SchoolDistrict]:
     """Synchronous wrapper for school district search."""
+
     async def _search():
         async with EducationRecordsScraper() as scraper:
-            return await scraper.search_districts_nces(
-                name=name,
-                state=state,
-                **kwargs
-            )
+            return await scraper.search_districts_nces(name=name, state=state, **kwargs)
+
     return asyncio.run(_search())
 
 

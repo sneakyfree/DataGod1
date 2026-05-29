@@ -37,22 +37,23 @@ import re
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 from .base import (
     CountyTreasurerBase,
-    TaxStatus,
     LienStatus,
-    TaxSaleType,
     PaymentMethod,
-    TaxBillItem,
-    TaxBill,
-    TaxPayment,
-    TaxLien,
-    TaxSaleProperty,
     PropertyTaxRecord,
+    TaxBill,
+    TaxBillItem,
+    TaxLien,
+    TaxPayment,
+    TaxSaleProperty,
+    TaxSaleType,
     TaxSearchCriteria,
     TaxSearchResult,
+    TaxStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -87,9 +88,9 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
     DISCOUNT_SCHEDULE = {
         11: Decimal("0.04"),  # November: 4%
         12: Decimal("0.03"),  # December: 3%
-        1: Decimal("0.02"),   # January: 2%
-        2: Decimal("0.01"),   # February: 1%
-        3: Decimal("0.00"),   # March: 0%
+        1: Decimal("0.02"),  # January: 2%
+        2: Decimal("0.01"),  # February: 1%
+        3: Decimal("0.00"),  # March: 0%
     }
 
     # Tax certificate info
@@ -165,10 +166,7 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
         rate = self.DISCOUNT_SCHEDULE.get(month, Decimal("0.00"))
         return amount * rate
 
-    async def get_tax_record(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyTaxRecord]:
+    async def get_tax_record(self, parcel_id: str) -> Optional[PropertyTaxRecord]:
         """Get property tax record by folio number."""
         formatted_folio = self._format_folio(parcel_id)
         detail_url = f"{self.API_BASE}property/{formatted_folio}"
@@ -189,10 +187,11 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> TaxSearchResult:
         """Search for tax records by property address."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}search/address"
@@ -240,12 +239,11 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
         )
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> TaxSearchResult:
         """Search for tax records by owner name."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}search/owner"
@@ -288,12 +286,11 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
         )
 
     async def get_delinquent_properties(
-        self,
-        min_amount: Optional[Decimal] = None,
-        max_results: int = 500
+        self, min_amount: Optional[Decimal] = None, max_results: int = 500
     ) -> TaxSearchResult:
         """Get list of delinquent properties."""
         import time
+
         start_time = time.time()
 
         delinquent_url = f"{self.API_BASE}delinquent"
@@ -330,7 +327,9 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
             page_number=1,
             page_size=max_results,
             has_more=json_response.get("hasMore", False),
-            search_criteria=TaxSearchCriteria(delinquent_only=True, min_amount_due=min_amount),
+            search_criteria=TaxSearchCriteria(
+                delinquent_only=True, min_amount_due=min_amount
+            ),
             search_time_ms=search_time,
             source_system=self.SYSTEM_NAME,
         )
@@ -339,7 +338,7 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
         self,
         sale_type: Optional[TaxSaleType] = None,
         upcoming_only: bool = True,
-        max_results: int = 500
+        max_results: int = 500,
     ) -> List[TaxSaleProperty]:
         """Get properties with tax certificates for sale or tax deed applications."""
         sale_url = f"{self.API_BASE}taxsale"
@@ -370,7 +369,7 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
         self,
         parcel_id: Optional[str] = None,
         status: Optional[LienStatus] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> List[TaxLien]:
         """Get tax certificates (Florida terminology for liens)."""
         certs_url = f"{self.API_BASE}certificates"
@@ -406,14 +405,20 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
         formatted_folio = self._format_folio(folio)
 
         # Parse current tax info
-        current_tax = self._parse_decimal(str(item.get("totalTax", item.get("taxAmount", ""))))
-        balance_due = self._parse_decimal(str(item.get("balanceDue", item.get("amountDue", ""))))
+        current_tax = self._parse_decimal(
+            str(item.get("totalTax", item.get("taxAmount", "")))
+        )
+        balance_due = self._parse_decimal(
+            str(item.get("balanceDue", item.get("amountDue", "")))
+        )
         amount_paid = self._parse_decimal(str(item.get("amountPaid", "")))
 
         # Determine status
         status_str = item.get("status", item.get("paymentStatus", ""))
         tax_status = self._parse_tax_status(status_str)
-        is_delinquent = "DELINQUENT" in str(status_str).upper() or item.get("isDelinquent", False)
+        is_delinquent = "DELINQUENT" in str(status_str).upper() or item.get(
+            "isDelinquent", False
+        )
         has_cert = item.get("hasCertificate", item.get("certSold", False))
 
         # Parse exemptions (Florida exemptions)
@@ -449,15 +454,20 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
             owner_address=item.get("ownerAddress", item.get("mailingAddress")),
             assessed_value=self._parse_decimal(str(item.get("assessedValue", ""))),
             taxable_value=self._parse_decimal(str(item.get("taxableValue", ""))),
-            market_value=self._parse_decimal(str(item.get("justValue", item.get("marketValue", "")))),
+            market_value=self._parse_decimal(
+                str(item.get("justValue", item.get("marketValue", "")))
+            ),
             current_tax_year=self._parse_int(str(item.get("taxYear", ""))),
             current_tax_amount=current_tax,
             current_amount_paid=amount_paid,
             current_balance_due=balance_due,
             tax_status=tax_status,
             is_delinquent=is_delinquent,
-            years_delinquent=self._parse_int(str(item.get("yearsDelinquent", "0"))) or 0,
-            total_delinquent=self._parse_decimal(str(item.get("totalDelinquent", item.get("priorDue", "")))),
+            years_delinquent=self._parse_int(str(item.get("yearsDelinquent", "0")))
+            or 0,
+            total_delinquent=self._parse_decimal(
+                str(item.get("totalDelinquent", item.get("priorDue", "")))
+            ),
             exemptions=exemptions,
             exemption_amount=self._parse_decimal(str(item.get("exemptionAmount", ""))),
             has_tax_lien=has_cert,
@@ -531,23 +541,36 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
         special_assessments = []
         for assess_data in data.get("nonAdValorem", data.get("specialAssessments", [])):
             item = TaxBillItem(
-                description=assess_data.get("description", assess_data.get("name", "Non-Ad Valorem Assessment")),
-                amount=self._parse_decimal(str(assess_data.get("amount", ""))) or Decimal(0),
-                taxing_authority=assess_data.get("authority", assess_data.get("district")),
+                description=assess_data.get(
+                    "description", assess_data.get("name", "Non-Ad Valorem Assessment")
+                ),
+                amount=self._parse_decimal(str(assess_data.get("amount", "")))
+                or Decimal(0),
+                taxing_authority=assess_data.get(
+                    "authority", assess_data.get("district")
+                ),
                 raw_data=assess_data,
             )
             special_assessments.append(item)
 
         # Calculate totals
-        current_tax = self._parse_decimal(str(data.get("totalTax", data.get("currentYearTax", ""))))
-        balance_due = self._parse_decimal(str(data.get("balanceDue", data.get("totalDue", ""))))
+        current_tax = self._parse_decimal(
+            str(data.get("totalTax", data.get("currentYearTax", "")))
+        )
+        balance_due = self._parse_decimal(
+            str(data.get("balanceDue", data.get("totalDue", "")))
+        )
         amount_paid = self._parse_decimal(str(data.get("amountPaid", "")))
-        total_delinquent = self._parse_decimal(str(data.get("totalDelinquent", data.get("priorYearsDue", ""))))
+        total_delinquent = self._parse_decimal(
+            str(data.get("totalDelinquent", data.get("priorYearsDue", "")))
+        )
 
         # Determine status
         status_str = data.get("status", data.get("paymentStatus", ""))
         tax_status = self._parse_tax_status(status_str)
-        is_delinquent = "DELINQUENT" in str(status_str).upper() or data.get("isDelinquent", False)
+        is_delinquent = "DELINQUENT" in str(status_str).upper() or data.get(
+            "isDelinquent", False
+        )
         has_cert = len(liens) > 0 or data.get("certSold", False)
 
         if not is_delinquent and total_delinquent and total_delinquent > 0:
@@ -567,14 +590,17 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
             owner_address=data.get("ownerAddress", data.get("mailingAddress")),
             assessed_value=self._parse_decimal(str(data.get("assessedValue", ""))),
             taxable_value=self._parse_decimal(str(data.get("taxableValue", ""))),
-            market_value=self._parse_decimal(str(data.get("justValue", data.get("marketValue", "")))),
+            market_value=self._parse_decimal(
+                str(data.get("justValue", data.get("marketValue", "")))
+            ),
             current_tax_year=self._parse_int(str(data.get("taxYear", ""))),
             current_tax_amount=current_tax,
             current_amount_paid=amount_paid,
             current_balance_due=balance_due,
             tax_status=tax_status,
             is_delinquent=is_delinquent,
-            years_delinquent=self._parse_int(str(data.get("yearsDelinquent", "0"))) or 0,
+            years_delinquent=self._parse_int(str(data.get("yearsDelinquent", "0")))
+            or 0,
             total_delinquent=total_delinquent,
             exemptions=exemptions,
             exemption_amount=exemption_amount if exemption_amount > 0 else None,
@@ -601,14 +627,24 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
         # Ad valorem taxes
         for item_data in data.get("adValorem", data.get("taxingAuthorities", [])):
             authority_code = item_data.get("code", item_data.get("authorityCode", ""))
-            authority_name = self.TAXING_AUTHORITIES.get(authority_code, item_data.get("name", item_data.get("authority", "")))
+            authority_name = self.TAXING_AUTHORITIES.get(
+                authority_code, item_data.get("name", item_data.get("authority", ""))
+            )
 
             item = TaxBillItem(
-                description=authority_name or item_data.get("description", "Ad Valorem Tax"),
-                amount=self._parse_decimal(str(item_data.get("amount", item_data.get("tax", "")))) or Decimal(0),
+                description=authority_name
+                or item_data.get("description", "Ad Valorem Tax"),
+                amount=self._parse_decimal(
+                    str(item_data.get("amount", item_data.get("tax", "")))
+                )
+                or Decimal(0),
                 taxing_authority=authority_name,
-                tax_rate=self._parse_decimal(str(item_data.get("rate", item_data.get("millage", "")))),
-                assessed_value=self._parse_decimal(str(item_data.get("taxableValue", ""))),
+                tax_rate=self._parse_decimal(
+                    str(item_data.get("rate", item_data.get("millage", "")))
+                ),
+                assessed_value=self._parse_decimal(
+                    str(item_data.get("taxableValue", ""))
+                ),
                 raw_data=item_data,
             )
             line_items.append(item)
@@ -616,15 +652,20 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
         # Non-ad valorem assessments
         for item_data in data.get("nonAdValorem", []):
             item = TaxBillItem(
-                description=item_data.get("description", item_data.get("name", "Non-Ad Valorem")),
-                amount=self._parse_decimal(str(item_data.get("amount", ""))) or Decimal(0),
+                description=item_data.get(
+                    "description", item_data.get("name", "Non-Ad Valorem")
+                ),
+                amount=self._parse_decimal(str(item_data.get("amount", "")))
+                or Decimal(0),
                 taxing_authority=item_data.get("authority", item_data.get("district")),
                 raw_data=item_data,
             )
             line_items.append(item)
 
         # Calculate discount if applicable
-        gross_tax = self._parse_decimal(str(data.get("grossTax", data.get("totalTax", ""))))
+        gross_tax = self._parse_decimal(
+            str(data.get("grossTax", data.get("totalTax", "")))
+        )
         discount = self._parse_decimal(str(data.get("discount", "")))
 
         return TaxBill(
@@ -635,14 +676,20 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
             owner_name=data.get("owner", data.get("ownerName")),
             assessed_value=self._parse_decimal(str(data.get("assessedValue", ""))),
             taxable_value=self._parse_decimal(str(data.get("taxableValue", ""))),
-            tax_rate=self._parse_decimal(str(data.get("combinedMillage", data.get("taxRate", "")))),
+            tax_rate=self._parse_decimal(
+                str(data.get("combinedMillage", data.get("taxRate", "")))
+            ),
             gross_tax=gross_tax,
             exemptions=self._parse_decimal(str(data.get("exemptions", ""))),
             net_tax=self._parse_decimal(str(data.get("netTax", ""))),
-            penalties=self._parse_decimal(str(data.get("interest", data.get("penalties", "")))),
+            penalties=self._parse_decimal(
+                str(data.get("interest", data.get("penalties", "")))
+            ),
             interest=self._parse_decimal(str(data.get("interest", ""))),
             fees=self._parse_decimal(str(data.get("fees", data.get("costs", "")))),
-            total_due=self._parse_decimal(str(data.get("totalDue", data.get("amountDue", "")))),
+            total_due=self._parse_decimal(
+                str(data.get("totalDue", data.get("amountDue", "")))
+            ),
             amount_paid=self._parse_decimal(str(data.get("amountPaid", ""))),
             balance_due=self._parse_decimal(str(data.get("balanceDue", ""))),
             payment_status=self._parse_tax_status(data.get("status", "")),
@@ -659,7 +706,9 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
     def _parse_payment(self, data: Dict[str, Any], folio: str) -> Optional[TaxPayment]:
         """Parse a payment record."""
         payment_date = self._parse_date(data.get("paymentDate", data.get("date", "")))
-        amount = self._parse_decimal(str(data.get("amount", data.get("paymentAmount", ""))))
+        amount = self._parse_decimal(
+            str(data.get("amount", data.get("paymentAmount", "")))
+        )
 
         if not amount:
             return None
@@ -683,13 +732,17 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
                 method = PaymentMethod.ONLINE
 
         return TaxPayment(
-            payment_id=data.get("paymentId", data.get("transactionId", data.get("receiptNumber"))),
+            payment_id=data.get(
+                "paymentId", data.get("transactionId", data.get("receiptNumber"))
+            ),
             parcel_id=folio,
             tax_year=self._parse_int(str(data.get("taxYear", ""))) or 0,
             payment_date=payment_date,
             payment_amount=amount,
             payment_method=method,
-            principal_paid=self._parse_decimal(str(data.get("principal", data.get("taxPaid", "")))),
+            principal_paid=self._parse_decimal(
+                str(data.get("principal", data.get("taxPaid", "")))
+            ),
             interest_paid=self._parse_decimal(str(data.get("interest", ""))),
             penalty_paid=self._parse_decimal(str(data.get("penalty", ""))),
             fees_paid=self._parse_decimal(str(data.get("fees", data.get("costs", "")))),
@@ -701,7 +754,9 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
 
     def _parse_tax_lien(self, data: Dict[str, Any]) -> Optional[TaxLien]:
         """Parse a tax certificate record (Florida term for liens)."""
-        cert_number = data.get("certificateNumber", data.get("certNumber", data.get("lienNumber", "")))
+        cert_number = data.get(
+            "certificateNumber", data.get("certNumber", data.get("lienNumber", ""))
+        )
         folio = data.get("folio", data.get("folioNumber", data.get("parcel", "")))
 
         if not cert_number and not folio:
@@ -712,7 +767,9 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
         # Parse tax years covered
         tax_years = data.get("taxYears", data.get("years", []))
         if isinstance(tax_years, str):
-            tax_years = [int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()]
+            tax_years = [
+                int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()
+            ]
         elif isinstance(tax_years, int):
             tax_years = [tax_years]
 
@@ -724,40 +781,60 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
             redemption_deadline = date(
                 sale_date.year + self.DEED_APPLICATION_YEARS,
                 sale_date.month,
-                sale_date.day
+                sale_date.day,
             )
 
         return TaxLien(
             lien_number=str(cert_number) if cert_number else f"CERT-{formatted_folio}",
             parcel_id=formatted_folio,
             lien_date=sale_date,
-            lien_amount=self._parse_decimal(str(data.get("faceAmount", data.get("purchaseAmount", "")))),
-            face_value=self._parse_decimal(str(data.get("faceAmount", data.get("taxAmount", "")))),
-            interest_rate=self._parse_decimal(str(data.get("bidRate", data.get("interestRate", "")))) or self.MAX_INTEREST_RATE,
+            lien_amount=self._parse_decimal(
+                str(data.get("faceAmount", data.get("purchaseAmount", "")))
+            ),
+            face_value=self._parse_decimal(
+                str(data.get("faceAmount", data.get("taxAmount", "")))
+            ),
+            interest_rate=self._parse_decimal(
+                str(data.get("bidRate", data.get("interestRate", "")))
+            )
+            or self.MAX_INTEREST_RATE,
             accrued_interest=self._parse_decimal(str(data.get("accruedInterest", ""))),
-            penalties=self._parse_decimal(str(data.get("omittedTaxes", data.get("subsequentTaxes", "")))),
-            total_due=self._parse_decimal(str(data.get("redemptionAmount", data.get("totalDue", "")))),
+            penalties=self._parse_decimal(
+                str(data.get("omittedTaxes", data.get("subsequentTaxes", "")))
+            ),
+            total_due=self._parse_decimal(
+                str(data.get("redemptionAmount", data.get("totalDue", "")))
+            ),
             status=self._parse_lien_status(data.get("status", "")),
             property_address=data.get("address", data.get("situsAddress")),
             owner_name=data.get("owner", data.get("ownerName")),
             legal_description=data.get("legalDescription"),
             tax_years=tax_years,
-            holder_name=data.get("holder", data.get("certificateHolder", data.get("purchaser"))),
+            holder_name=data.get(
+                "holder", data.get("certificateHolder", data.get("purchaser"))
+            ),
             holder_address=data.get("holderAddress"),
             assignment_date=self._parse_date(data.get("assignmentDate", "")),
             redemption_date=self._parse_date(data.get("redemptionDate", "")),
-            redemption_amount=self._parse_decimal(str(data.get("redemptionAmount", ""))),
-            redemption_deadline=redemption_deadline or self._parse_date(data.get("deedApplicationDate", "")),
+            redemption_amount=self._parse_decimal(
+                str(data.get("redemptionAmount", ""))
+            ),
+            redemption_deadline=redemption_deadline
+            or self._parse_date(data.get("deedApplicationDate", "")),
             sale_date=sale_date,
             sale_type=TaxSaleType.TAX_LIEN_SALE,  # Florida uses tax certificates
-            sale_amount=self._parse_decimal(str(data.get("purchaseAmount", data.get("bidAmount", "")))),
+            sale_amount=self._parse_decimal(
+                str(data.get("purchaseAmount", data.get("bidAmount", "")))
+            ),
             county=self.COUNTY_NAME,
             state=self.STATE,
             source_url=f"{self.BASE_URL}certificate/{cert_number}",
             raw_data=data,
         )
 
-    def _parse_tax_sale_property(self, data: Dict[str, Any]) -> Optional[TaxSaleProperty]:
+    def _parse_tax_sale_property(
+        self, data: Dict[str, Any]
+    ) -> Optional[TaxSaleProperty]:
         """Parse a tax sale property listing."""
         folio = data.get("folio", data.get("folioNumber", data.get("parcel", "")))
         if not folio:
@@ -768,22 +845,30 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
         # Parse delinquent years
         tax_years = data.get("taxYears", data.get("years", []))
         if isinstance(tax_years, str):
-            tax_years = [int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()]
+            tax_years = [
+                int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()
+            ]
         elif isinstance(tax_years, int):
             tax_years = [tax_years]
 
         # Determine sale type
         is_deed_sale = data.get("isDeedSale", data.get("taxDeed", False))
-        sale_type = TaxSaleType.TAX_DEED_SALE if is_deed_sale else TaxSaleType.TAX_LIEN_SALE
+        sale_type = (
+            TaxSaleType.TAX_DEED_SALE if is_deed_sale else TaxSaleType.TAX_LIEN_SALE
+        )
 
         return TaxSaleProperty(
-            sale_id=data.get("saleId", data.get("certificateNumber", data.get("itemNumber"))),
+            sale_id=data.get(
+                "saleId", data.get("certificateNumber", data.get("itemNumber"))
+            ),
             parcel_id=formatted_folio,
             property_address=data.get("address", data.get("situsAddress")),
             city=data.get("city", data.get("situsCity")),
             zip_code=data.get("zip", data.get("situsZip")),
             legal_description=data.get("legalDescription"),
-            property_type=self.PROPERTY_USE_CODES.get(str(data.get("useCode", "")), data.get("propertyType")),
+            property_type=self.PROPERTY_USE_CODES.get(
+                str(data.get("useCode", "")), data.get("propertyType")
+            ),
             owner_name=data.get("owner", data.get("ownerName")),
             owner_address=data.get("ownerAddress", data.get("mailingAddress")),
             tax_years_delinquent=tax_years,
@@ -791,19 +876,31 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
             penalties_due=self._parse_decimal(str(data.get("interest", ""))),
             interest_due=self._parse_decimal(str(data.get("interest", ""))),
             fees_due=self._parse_decimal(str(data.get("costs", data.get("fees", "")))),
-            total_amount_due=self._parse_decimal(str(data.get("faceAmount", data.get("openingBid", "")))),
+            total_amount_due=self._parse_decimal(
+                str(data.get("faceAmount", data.get("openingBid", "")))
+            ),
             sale_type=sale_type,
             sale_date=self._parse_date(data.get("saleDate", "")),
-            auction_date=self._parse_date(data.get("auctionDate", data.get("saleDate", ""))),
-            minimum_bid=self._parse_decimal(str(data.get("faceAmount", data.get("openingBid", "")))),
+            auction_date=self._parse_date(
+                data.get("auctionDate", data.get("saleDate", ""))
+            ),
+            minimum_bid=self._parse_decimal(
+                str(data.get("faceAmount", data.get("openingBid", "")))
+            ),
             opening_bid=self._parse_decimal(str(data.get("openingBid", ""))),
             assessed_value=self._parse_decimal(str(data.get("assessedValue", ""))),
-            market_value=self._parse_decimal(str(data.get("justValue", data.get("marketValue", "")))),
+            market_value=self._parse_decimal(
+                str(data.get("justValue", data.get("marketValue", "")))
+            ),
             status=data.get("status", ""),
             sold=data.get("sold", False),
-            winning_bid=self._parse_decimal(str(data.get("winningBid", data.get("purchaseAmount", "")))),
+            winning_bid=self._parse_decimal(
+                str(data.get("winningBid", data.get("purchaseAmount", "")))
+            ),
             winning_bidder=data.get("buyer", data.get("purchaser")),
-            redemption_period_ends=self._parse_date(data.get("redemptionDeadline", data.get("deedApplicationDate", ""))),
+            redemption_period_ends=self._parse_date(
+                data.get("redemptionDeadline", data.get("deedApplicationDate", ""))
+            ),
             redeemable=not is_deed_sale,  # Deed sales are not redeemable
             county=self.COUNTY_NAME,
             state=self.STATE,
@@ -842,6 +939,7 @@ class MiamiDadeCountyTreasurer(CountyTreasurerBase):
 
 # Convenience functions
 
+
 def get_miami_dade_tax_record(parcel_id: str) -> Optional[PropertyTaxRecord]:
     """Get Miami-Dade County tax record by folio number."""
     treasurer = MiamiDadeCountyTreasurer()
@@ -849,6 +947,7 @@ def get_miami_dade_tax_record(parcel_id: str) -> Optional[PropertyTaxRecord]:
     async def _get():
         async with treasurer:
             return await treasurer.get_tax_record(parcel_id)
+
     return asyncio.run(_get())
 
 
@@ -856,14 +955,17 @@ def search_miami_dade_by_address(
     street_address: str,
     city: Optional[str] = None,
     zip_code: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> TaxSearchResult:
     """Search Miami-Dade County tax records by address."""
     treasurer = MiamiDadeCountyTreasurer()
 
     async def _search():
         async with treasurer:
-            return await treasurer.search_by_address(street_address, city, zip_code, **kwargs)
+            return await treasurer.search_by_address(
+                street_address, city, zip_code, **kwargs
+            )
+
     return asyncio.run(_search())
 
 
@@ -874,4 +976,5 @@ def search_miami_dade_by_owner(owner_name: str, **kwargs) -> TaxSearchResult:
     async def _search():
         async with treasurer:
             return await treasurer.search_by_owner(owner_name, **kwargs)
+
     return asyncio.run(_search())

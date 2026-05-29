@@ -12,11 +12,12 @@ This module tests:
 Coverage target: 100% of authentication-related code in api_v2_simple.py
 """
 
-import pytest
 import os
 import sys
 from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 from jose import jwt
 
@@ -25,8 +26,8 @@ os.environ["TESTING"] = "1"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 # Add paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'api', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "api", "src"))
 
 
 class TestPasswordHashing:
@@ -35,6 +36,7 @@ class TestPasswordHashing:
     def test_get_password_hash(self):
         """Test password hashing function."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         password = "securepassword123"
         hashed = pwd_context.hash(password)
@@ -45,6 +47,7 @@ class TestPasswordHashing:
     def test_verify_password_correct(self):
         """Test password verification with correct password."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         password = "securepassword123"
         hashed = pwd_context.hash(password)
@@ -53,6 +56,7 @@ class TestPasswordHashing:
     def test_verify_password_incorrect(self):
         """Test password verification with incorrect password."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         password = "securepassword123"
         wrong_password = "wrongpassword"
@@ -62,6 +66,7 @@ class TestPasswordHashing:
     def test_different_passwords_different_hashes(self):
         """Test that same password generates different hashes (salt)."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         password = "securepassword123"
         hash1 = pwd_context.hash(password)
@@ -75,6 +80,7 @@ class TestTokenCreation:
     def test_create_access_token_basic(self):
         """Test basic token creation."""
         from jose import jwt
+
         SECRET_KEY = "test-secret-key"
         ALGORITHM = "HS256"
 
@@ -92,6 +98,7 @@ class TestTokenCreation:
     def test_create_access_token_with_expiration(self):
         """Test token creation with custom expiration."""
         from jose import jwt
+
         SECRET_KEY = "test-secret-key"
         ALGORITHM = "HS256"
 
@@ -106,7 +113,7 @@ class TestTokenCreation:
 
     def test_token_expiration_validation(self):
         """Test that expired tokens are rejected."""
-        from jose import jwt, JWTError
+        from jose import JWTError, jwt
 
         SECRET_KEY = "test-secret-key"
         ALGORITHM = "HS256"
@@ -114,7 +121,7 @@ class TestTokenCreation:
         # Create already-expired token
         data = {
             "sub": "testuser",
-            "exp": datetime.utcnow() - timedelta(hours=1)  # Expired 1 hour ago
+            "exp": datetime.utcnow() - timedelta(hours=1),  # Expired 1 hour ago
         }
         token = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -131,6 +138,7 @@ class TestAPIv2SimpleClient:
         """Create test client."""
         from api.src.api_v2_simple import app
         from api.src.db import init_db
+
         try:
             init_db()
         except Exception:
@@ -155,8 +163,7 @@ class TestAPIv2SimpleClient:
     def test_login_success(self, client):
         """Test successful login with demo user."""
         response = client.post(
-            "/token",
-            data={"username": "admin", "password": "admin123"}
+            "/token", data={"username": "admin", "password": "admin123"}
         )
         # May be 200 or 401 depending on whether demo users exist
         assert response.status_code in [200, 401]
@@ -169,16 +176,14 @@ class TestAPIv2SimpleClient:
     def test_login_invalid_credentials(self, client):
         """Test login with invalid credentials."""
         response = client.post(
-            "/token",
-            data={"username": "invalid", "password": "wrongpassword"}
+            "/token", data={"username": "invalid", "password": "wrongpassword"}
         )
         assert response.status_code in [401, 423]  # 423 is account locked
 
     def test_auth_login_endpoint(self, client):
         """Test /auth/login endpoint (alias for /token)."""
         response = client.post(
-            "/auth/login",
-            data={"username": "admin", "password": "admin123"}
+            "/auth/login", data={"username": "admin", "password": "admin123"}
         )
         # May be 200 or 401 depending on whether demo users exist
         assert response.status_code in [200, 400, 401, 422, 423]
@@ -191,8 +196,7 @@ class TestAPIv2SimpleClient:
     def test_users_me_invalid_token(self, client):
         """Test /users/me with invalid token."""
         response = client.get(
-            "/users/me",
-            headers={"Authorization": "Bearer invalid-token"}
+            "/users/me", headers={"Authorization": "Bearer invalid-token"}
         )
         assert response.status_code == 401
 
@@ -205,6 +209,7 @@ class TestRegistrationEndpoint:
         """Create test client."""
         from api.src.api_v2_simple import app
         from api.src.db import init_db
+
         try:
             init_db()
         except Exception:
@@ -213,10 +218,7 @@ class TestRegistrationEndpoint:
 
     def test_register_missing_fields(self, client):
         """Test registration with missing fields."""
-        response = client.post(
-            "/auth/register",
-            json={"username": "testuser"}
-        )
+        response = client.post("/auth/register", json={"username": "testuser"})
         assert response.status_code == 422
 
     def test_register_invalid_email(self, client):
@@ -226,8 +228,8 @@ class TestRegistrationEndpoint:
             json={
                 "username": "newuser",
                 "email": "not-an-email",
-                "password": "password123"
-            }
+                "password": "password123",
+            },
         )
         # API may return 400 (bad request) or 422 (validation error)
         assert response.status_code in [400, 422]
@@ -239,8 +241,8 @@ class TestRegistrationEndpoint:
             json={
                 "username": "newuser",
                 "email": "test@example.com",
-                "password": "weak"
-            }
+                "password": "weak",
+            },
         )
         assert response.status_code == 422
 
@@ -253,6 +255,7 @@ class TestPasswordResetEndpoints:
         """Create test client."""
         from api.src.api_v2_simple import app
         from api.src.db import init_db
+
         try:
             init_db()
         except Exception:
@@ -262,8 +265,7 @@ class TestPasswordResetEndpoints:
     def test_forgot_password_response(self, client):
         """Test forgot password always returns success (security)."""
         response = client.post(
-            "/auth/forgot-password",
-            json={"email": "nonexistent@example.com"}
+            "/auth/forgot-password", json={"email": "nonexistent@example.com"}
         )
         # Should always return 200 for security
         assert response.status_code == 200
@@ -274,10 +276,7 @@ class TestPasswordResetEndpoints:
         """Test password reset with invalid token."""
         response = client.post(
             "/auth/reset-password",
-            json={
-                "token": "invalid-token",
-                "new_password": "newpassword123"
-            }
+            json={"token": "invalid-token", "new_password": "newpassword123"},
         )
         assert response.status_code == 400
 
@@ -289,13 +288,13 @@ class TestTokenRefreshEndpoint:
     def client(self):
         """Create test client."""
         from api.src.api_v2_simple import app
+
         return TestClient(app)
 
     def test_refresh_token_invalid(self, client):
         """Test token refresh with invalid token."""
         response = client.post(
-            "/refresh-token",
-            headers={"Authorization": "Bearer invalid-token"}
+            "/refresh-token", headers={"Authorization": "Bearer invalid-token"}
         )
         assert response.status_code == 401
 
@@ -308,6 +307,7 @@ class TestProtectedEndpoints:
         """Create test client."""
         from api.src.api_v2_simple import app
         from api.src.db import init_db
+
         try:
             init_db()
         except Exception:
@@ -316,12 +316,15 @@ class TestProtectedEndpoints:
 
     def test_create_jurisdiction_unauthorized(self, client):
         """Test creating jurisdiction without auth."""
-        response = client.post("/jurisdictions", json={
-            "name": "Test County",
-            "state": "TX",
-            "county": "Test",
-            "jurisdiction_type": "county"
-        })
+        response = client.post(
+            "/jurisdictions",
+            json={
+                "name": "Test County",
+                "state": "TX",
+                "county": "Test",
+                "jurisdiction_type": "county",
+            },
+        )
         assert response.status_code in [200, 201, 401]
 
     def test_users_list_unauthorized(self, client):
@@ -335,8 +338,9 @@ class TestPydanticModels:
 
     def test_user_model_creation(self):
         """Test basic User model creation."""
+        from typing import List, Optional
+
         from pydantic import BaseModel
-        from typing import Optional, List
 
         class User(BaseModel):
             username: str
@@ -346,9 +350,7 @@ class TestPydanticModels:
             roles: List[str] = ["user"]
 
         user = User(
-            username="testuser",
-            email="test@example.com",
-            full_name="Test User"
+            username="testuser", email="test@example.com", full_name="Test User"
         )
         assert user.username == "testuser"
         assert user.email == "test@example.com"
@@ -363,11 +365,7 @@ class TestPydanticModels:
             token_type: str
             expires_in: int
 
-        token = Token(
-            access_token="test-token",
-            token_type="bearer",
-            expires_in=3600
-        )
+        token = Token(access_token="test-token", token_type="bearer", expires_in=3600)
         assert token.access_token == "test-token"
         assert token.token_type == "bearer"
 
@@ -384,6 +382,7 @@ class TestRateLimiting:
             rate_limits[ip] = []
 
         import time
+
         rate_limits[ip].append(time.time())
         rate_limits[ip].append(time.time())
 
@@ -422,8 +421,7 @@ class TestRateLimiting:
 
         # Clean up old entries
         rate_limits[ip] = [
-            t for t in rate_limits[ip]
-            if current_time - t < window_seconds
+            t for t in rate_limits[ip] if current_time - t < window_seconds
         ]
 
         assert len(rate_limits[ip]) == 1
@@ -525,7 +523,7 @@ class TestDemoUsersLogic:
                 "full_name": "DataGod Admin",
                 "password": "admin123",
                 "roles": ["admin", "user"],
-                "disabled": False
+                "disabled": False,
             },
             {
                 "username": "user",
@@ -533,8 +531,8 @@ class TestDemoUsersLogic:
                 "full_name": "DataGod User",
                 "password": "user123",
                 "roles": ["user"],
-                "disabled": False
-            }
+                "disabled": False,
+            },
         ]
 
         assert len(demo_users) == 2
@@ -550,7 +548,7 @@ class TestTokenDataStructure:
         token_data = {
             "sub": "testuser",
             "roles": ["user"],
-            "exp": datetime.utcnow() + timedelta(minutes=30)
+            "exp": datetime.utcnow() + timedelta(minutes=30),
         }
 
         assert "sub" in token_data
@@ -559,10 +557,7 @@ class TestTokenDataStructure:
 
     def test_token_data_extraction(self):
         """Test extracting data from token."""
-        payload = {
-            "sub": "testuser",
-            "roles": ["user", "admin"]
-        }
+        payload = {"sub": "testuser", "roles": ["user", "admin"]}
 
         username = payload.get("sub")
         roles = payload.get("roles", ["user"])
@@ -592,8 +587,7 @@ class TestHTTPExceptions:
         from fastapi import HTTPException, status
 
         exc = HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Operation not permitted"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted"
         )
 
         assert exc.status_code == 403
@@ -604,8 +598,7 @@ class TestHTTPExceptions:
         from fastapi import HTTPException, status
 
         exc = HTTPException(
-            status_code=status.HTTP_423_LOCKED,
-            detail="Account is temporarily locked"
+            status_code=status.HTTP_423_LOCKED, detail="Account is temporarily locked"
         )
 
         assert exc.status_code == 423
@@ -617,12 +610,13 @@ class TestEmailValidation:
     def test_email_regex_valid(self):
         """Test email regex with valid emails."""
         import re
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
         valid_emails = [
             "test@example.com",
             "user.name@domain.org",
-            "user+tag@company.co.uk"
+            "user+tag@company.co.uk",
         ]
 
         for email in valid_emails:
@@ -631,13 +625,14 @@ class TestEmailValidation:
     def test_email_regex_invalid(self):
         """Test email regex with invalid emails."""
         import re
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
         invalid_emails = [
             "notanemail",
             "@nodomain.com",
             "noat.com",
-            "spaces here@domain.com"
+            "spaces here@domain.com",
         ]
 
         for email in invalid_emails:
@@ -686,7 +681,8 @@ class TestUsernameValidation:
     def test_username_pattern_valid(self):
         """Test username pattern with valid usernames."""
         import re
-        pattern = r'^[a-zA-Z0-9_]+$'
+
+        pattern = r"^[a-zA-Z0-9_]+$"
 
         valid_usernames = ["testuser", "test_user", "TestUser123", "user_123"]
 
@@ -696,7 +692,8 @@ class TestUsernameValidation:
     def test_username_pattern_invalid(self):
         """Test username pattern with invalid usernames."""
         import re
-        pattern = r'^[a-zA-Z0-9_]+$'
+
+        pattern = r"^[a-zA-Z0-9_]+$"
 
         invalid_usernames = ["test user", "test-user", "test@user", "test.user"]
 
@@ -781,7 +778,7 @@ class TestJSONEncoderCompatibility:
             "username": "testuser",
             "email": "test@example.com",
             "roles": ["user", "admin"],
-            "disabled": False
+            "disabled": False,
         }
 
         json_str = json.dumps(user_data)

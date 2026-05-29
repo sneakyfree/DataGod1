@@ -25,21 +25,23 @@ This is valuable for:
 """
 
 import asyncio
+import json
+import logging
+import re
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
 import aiohttp
 from bs4 import BeautifulSoup
-from dataclasses import dataclass, field
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List, Dict, Any
-import json
-import re
-import logging
 
 logger = logging.getLogger(__name__)
 
 
 class AgentType(Enum):
     """Types of registered agents"""
+
     INDIVIDUAL = "individual"
     CORPORATION = "corporation"
     LLC = "llc"
@@ -53,6 +55,7 @@ class AgentType(Enum):
 
 class AgentStatus(Enum):
     """Agent status"""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
     RESIGNED = "resigned"
@@ -63,6 +66,7 @@ class AgentStatus(Enum):
 
 class EntityType(Enum):
     """Types of entities represented"""
+
     CORPORATION = "corporation"
     LLC = "llc"
     LP = "limited_partnership"
@@ -80,6 +84,7 @@ class EntityType(Enum):
 @dataclass
 class RepresentedEntity:
     """Entity represented by the registered agent"""
+
     entity_name: str
     entity_type: EntityType = EntityType.OTHER
     entity_id: Optional[str] = None
@@ -92,6 +97,7 @@ class RepresentedEntity:
 @dataclass
 class RegisteredAgent:
     """Registered agent record"""
+
     # Agent identification
     agent_name: str
     agent_type: AgentType = AgentType.INDIVIDUAL
@@ -132,6 +138,7 @@ class RegisteredAgent:
 @dataclass
 class SearchCriteria:
     """Search criteria for registered agents"""
+
     agent_name: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
@@ -144,6 +151,7 @@ class SearchCriteria:
 @dataclass
 class SearchResult:
     """Search result container"""
+
     agents: List[RegisteredAgent] = field(default_factory=list)
     total_count: int = 0
     page: int = 1
@@ -224,9 +232,13 @@ class BaseRegisteredAgentAPI:
         """Classify agent type from name or hint"""
         combined = f"{name} {type_hint}".lower()
 
-        if any(kw in combined for kw in ["registered agent", "ra service", "agent service"]):
+        if any(
+            kw in combined for kw in ["registered agent", "ra service", "agent service"]
+        ):
             return AgentType.REGISTERED_AGENT_SERVICE
-        elif any(kw in combined for kw in ["law firm", "attorney", "esq", "llp", "pllc"]):
+        elif any(
+            kw in combined for kw in ["law firm", "attorney", "esq", "llp", "pllc"]
+        ):
             return AgentType.LAW_FIRM
         elif any(kw in combined for kw in ["cpa", "accounting"]):
             return AgentType.CPA_FIRM
@@ -274,7 +286,7 @@ class BaseRegisteredAgentAPI:
         name: Optional[str] = None,
         city: Optional[str] = None,
         entity_name: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for registered agents - override in subclass"""
         raise NotImplementedError
@@ -284,9 +296,7 @@ class BaseRegisteredAgentAPI:
         raise NotImplementedError
 
     async def get_entities_by_agent(
-        self,
-        agent_name: str,
-        max_results: int = 500
+        self, agent_name: str, max_results: int = 500
     ) -> List[RepresentedEntity]:
         """Get all entities represented by an agent"""
         raise NotImplementedError
@@ -306,10 +316,11 @@ class DelawareRegisteredAgentAPI(BaseRegisteredAgentAPI):
         name: Optional[str] = None,
         city: Optional[str] = None,
         entity_name: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Delaware registered agents"""
         import time
+
         start_time = time.time()
 
         params = {"limit": min(max_results, 100)}
@@ -341,7 +352,9 @@ class DelawareRegisteredAgentAPI(BaseRegisteredAgentAPI):
                 city=item.get("city"),
                 state="DE",
                 zip_code=item.get("zip"),
-                status=AgentStatus.ACTIVE if item.get("active") else AgentStatus.INACTIVE,
+                status=(
+                    AgentStatus.ACTIVE if item.get("active") else AgentStatus.INACTIVE
+                ),
                 entity_count=item.get("entityCount", 0),
                 agent_id=item.get("agentId"),
                 source_state="DE",
@@ -381,10 +394,11 @@ class CaliforniaRegisteredAgentAPI(BaseRegisteredAgentAPI):
         name: Optional[str] = None,
         city: Optional[str] = None,
         entity_name: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search California registered agents"""
         import time
+
         start_time = time.time()
 
         params = {"searchType": "AGENT", "rows": min(max_results, 100)}
@@ -408,12 +422,18 @@ class CaliforniaRegisteredAgentAPI(BaseRegisteredAgentAPI):
         for item in data.get("results", [])[:max_results]:
             agent = RegisteredAgent(
                 agent_name=item.get("agentName", ""),
-                agent_type=self._classify_agent_type(item.get("agentName", ""), item.get("agentType", "")),
+                agent_type=self._classify_agent_type(
+                    item.get("agentName", ""), item.get("agentType", "")
+                ),
                 address_line1=item.get("agentAddress"),
                 city=item.get("agentCity"),
                 state="CA",
                 zip_code=item.get("agentZip"),
-                status=AgentStatus.ACTIVE if item.get("status") == "ACTIVE" else AgentStatus.INACTIVE,
+                status=(
+                    AgentStatus.ACTIVE
+                    if item.get("status") == "ACTIVE"
+                    else AgentStatus.INACTIVE
+                ),
                 entity_count=item.get("entityCount", 0),
                 source_state="CA",
                 source_url=self.BASE_URL,
@@ -451,10 +471,11 @@ class TexasRegisteredAgentAPI(BaseRegisteredAgentAPI):
         name: Optional[str] = None,
         city: Optional[str] = None,
         entity_name: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Texas registered agents"""
         import time
+
         start_time = time.time()
 
         params = {"searchType": "ra", "numResults": min(max_results, 100)}
@@ -521,10 +542,11 @@ class FloridaRegisteredAgentAPI(BaseRegisteredAgentAPI):
         name: Optional[str] = None,
         city: Optional[str] = None,
         entity_name: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Florida registered agents"""
         import time
+
         start_time = time.time()
 
         params = {"searchType": "RA", "searchNameOrder": ""}
@@ -553,7 +575,11 @@ class FloridaRegisteredAgentAPI(BaseRegisteredAgentAPI):
                 city=item.get("agentCity"),
                 state="FL",
                 zip_code=item.get("agentZip"),
-                status=AgentStatus.ACTIVE if item.get("status") == "A" else AgentStatus.INACTIVE,
+                status=(
+                    AgentStatus.ACTIVE
+                    if item.get("status") == "A"
+                    else AgentStatus.INACTIVE
+                ),
                 entity_count=item.get("entityCount", 0),
                 source_state="FL",
                 source_url=self.BASE_URL,
@@ -591,10 +617,11 @@ class NevadaRegisteredAgentAPI(BaseRegisteredAgentAPI):
         name: Optional[str] = None,
         city: Optional[str] = None,
         entity_name: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Nevada registered agents"""
         import time
+
         start_time = time.time()
 
         params = {"searchType": "RA"}
@@ -618,12 +645,18 @@ class NevadaRegisteredAgentAPI(BaseRegisteredAgentAPI):
         for item in data.get("agents", [])[:max_results]:
             agent = RegisteredAgent(
                 agent_name=item.get("name", ""),
-                agent_type=self._classify_agent_type(item.get("name", ""), item.get("type", "")),
+                agent_type=self._classify_agent_type(
+                    item.get("name", ""), item.get("type", "")
+                ),
                 address_line1=item.get("address"),
                 city=item.get("city"),
                 state="NV",
                 zip_code=item.get("zip"),
-                status=AgentStatus.ACTIVE if item.get("status") == "Active" else AgentStatus.INACTIVE,
+                status=(
+                    AgentStatus.ACTIVE
+                    if item.get("status") == "Active"
+                    else AgentStatus.INACTIVE
+                ),
                 entity_count=item.get("entityCount", 0),
                 agent_id=item.get("nvId"),
                 source_state="NV",
@@ -668,13 +701,15 @@ def get_registered_agent_api(state: str) -> Optional[BaseRegisteredAgentAPI]:
 
 # Convenience functions
 
+
 def search_registered_agents(
     state: str,
     name: Optional[str] = None,
     city: Optional[str] = None,
-    max_results: int = 100
+    max_results: int = 100,
 ) -> SearchResult:
     """Search registered agents in a state"""
+
     async def _search():
         api = get_registered_agent_api(state)
         if not api:
@@ -685,19 +720,17 @@ def search_registered_agents(
             )
         async with api:
             return await api.search_agents(
-                name=name,
-                city=city,
-                max_results=max_results
+                name=name, city=city, max_results=max_results
             )
+
     return asyncio.run(_search())
 
 
 def search_agents_by_entity(
-    state: str,
-    entity_name: str,
-    max_results: int = 100
+    state: str, entity_name: str, max_results: int = 100
 ) -> SearchResult:
     """Search registered agents serving a specific entity"""
+
     async def _search():
         api = get_registered_agent_api(state)
         if not api:
@@ -708,35 +741,37 @@ def search_agents_by_entity(
             )
         async with api:
             return await api.search_agents(
-                entity_name=entity_name,
-                max_results=max_results
+                entity_name=entity_name, max_results=max_results
             )
+
     return asyncio.run(_search())
 
 
 def search_all_states_agents(
     name: Optional[str] = None,
     city: Optional[str] = None,
-    max_results_per_state: int = 50
+    max_results_per_state: int = 50,
 ) -> List[SearchResult]:
     """Search registered agents across all available states"""
+
     async def _search_all():
         results = []
         for state_code, api_class in STATE_AGENT_APIS.items():
             try:
                 async with api_class() as api:
                     result = await api.search_agents(
-                        name=name,
-                        city=city,
-                        max_results=max_results_per_state
+                        name=name, city=city, max_results=max_results_per_state
                     )
                     results.append(result)
             except Exception as e:
                 logger.error(f"Error searching {state_code}: {e}")
-                results.append(SearchResult(
-                    agents=[],
-                    total_count=0,
-                    warnings=[f"{state_code}: {str(e)}"],
-                ))
+                results.append(
+                    SearchResult(
+                        agents=[],
+                        total_count=0,
+                        warnings=[f"{state_code}: {str(e)}"],
+                    )
+                )
         return results
+
     return asyncio.run(_search_all())

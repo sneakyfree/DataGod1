@@ -32,12 +32,12 @@ from bs4 import BeautifulSoup
 
 from .base import (
     CountyRecorderBase,
-    DocumentType,
+    DocumentParty,
     DocumentStatus,
+    DocumentType,
+    LegalDescription,
     PartyRole,
     RecordedDocument,
-    DocumentParty,
-    LegalDescription,
     SearchCriteria,
     SearchResult,
 )
@@ -140,10 +140,11 @@ class DallasCountyRecorder(CountyRecorderBase):
         party_type: str = "both",
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for documents by party name."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -168,7 +169,9 @@ class DallasCountyRecorder(CountyRecorderBase):
                 page_number=1,
                 page_size=max_results,
                 has_more=False,
-                search_criteria=SearchCriteria(last_name=last_name, first_name=first_name),
+                search_criteria=SearchCriteria(
+                    last_name=last_name, first_name=first_name
+                ),
                 warnings=[str(e)],
             )
 
@@ -192,14 +195,12 @@ class DallasCountyRecorder(CountyRecorderBase):
         )
 
     async def search_by_document_number(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """Search for a specific document by document number."""
         try:
             json_response = await self._fetch_json(
-                self.DETAIL_URL,
-                params={"docNumber": document_number}
+                self.DETAIL_URL, params={"docNumber": document_number}
             )
             if json_response.get("document"):
                 return self._parse_document_detail(json_response["document"])
@@ -208,15 +209,12 @@ class DallasCountyRecorder(CountyRecorderBase):
         return None
 
     async def search_by_volume_page(
-        self,
-        volume: str,
-        page: str
+        self, volume: str, page: str
     ) -> Optional[RecordedDocument]:
         """Search for a document by volume and page."""
         try:
             json_response = await self._fetch_json(
-                self.DETAIL_URL,
-                params={"volume": volume, "page": page}
+                self.DETAIL_URL, params={"volume": volume, "page": page}
             )
             if json_response.get("document"):
                 return self._parse_document_detail(json_response["document"])
@@ -229,10 +227,11 @@ class DallasCountyRecorder(CountyRecorderBase):
         property_id: str,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for documents by property ID."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -281,8 +280,7 @@ class DallasCountyRecorder(CountyRecorderBase):
         """Get full document details by document number."""
         try:
             json_response = await self._fetch_json(
-                self.DETAIL_URL,
-                params={"docNumber": document_number, "include": "all"}
+                self.DETAIL_URL, params={"docNumber": document_number, "include": "all"}
             )
             if json_response.get("document"):
                 return self._parse_document_detail(json_response["document"])
@@ -290,7 +288,9 @@ class DallasCountyRecorder(CountyRecorderBase):
             logger.error(f"Dallas County document detail failed: {e}")
         return None
 
-    def _parse_document_result(self, data: Dict[str, Any]) -> Optional[RecordedDocument]:
+    def _parse_document_result(
+        self, data: Dict[str, Any]
+    ) -> Optional[RecordedDocument]:
         """Parse a search result into RecordedDocument."""
         doc_number = data.get("documentNumber", data.get("docNumber", ""))
         if not doc_number:
@@ -304,31 +304,37 @@ class DallasCountyRecorder(CountyRecorderBase):
             name = grantor if isinstance(grantor, str) else grantor.get("name", "")
             if name:
                 grantors.append(self._normalize_name(name))
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTOR,
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTOR,
+                    )
+                )
 
         for grantee in data.get("grantees", []):
             name = grantee if isinstance(grantee, str) else grantee.get("name", "")
             if name:
                 grantees.append(self._normalize_name(name))
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTEE,
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTEE,
+                    )
+                )
 
         legal_descriptions = []
         for legal in data.get("legalDescriptions", []):
             if isinstance(legal, str):
                 legal_descriptions.append(LegalDescription(full_description=legal))
             elif isinstance(legal, dict):
-                legal_descriptions.append(LegalDescription(
-                    full_description=legal.get("description", ""),
-                    lot=legal.get("lot"),
-                    block=legal.get("block"),
-                    subdivision=legal.get("subdivision"),
-                ))
+                legal_descriptions.append(
+                    LegalDescription(
+                        full_description=legal.get("description", ""),
+                        lot=legal.get("lot"),
+                        block=legal.get("block"),
+                        subdivision=legal.get("subdivision"),
+                    )
+                )
 
         return RecordedDocument(
             document_number=doc_number,
@@ -397,34 +403,40 @@ class DallasCountyRecorder(CountyRecorderBase):
 
 # Synchronous convenience functions
 
+
 def search_dallas_county_by_name(
-    last_name: str,
-    first_name: Optional[str] = None,
-    max_results: int = 100
+    last_name: str, first_name: Optional[str] = None, max_results: int = 100
 ) -> SearchResult:
     """Search Dallas County recorded documents by name."""
+
     async def _search():
         async with DallasCountyRecorder() as recorder:
             return await recorder.search_by_name(
                 last_name, first_name=first_name, max_results=max_results
             )
+
     return asyncio.run(_search())
 
 
 def search_dallas_county_by_property(
-    property_id: str,
-    max_results: int = 100
+    property_id: str, max_results: int = 100
 ) -> SearchResult:
     """Search Dallas County recorded documents by property ID."""
+
     async def _search():
         async with DallasCountyRecorder() as recorder:
-            return await recorder.search_by_property_id(property_id, max_results=max_results)
+            return await recorder.search_by_property_id(
+                property_id, max_results=max_results
+            )
+
     return asyncio.run(_search())
 
 
 def get_dallas_county_document(document_number: str) -> Optional[RecordedDocument]:
     """Get a specific Dallas County recorded document."""
+
     async def _get():
         async with DallasCountyRecorder() as recorder:
             return await recorder.get_document(document_number)
+
     return asyncio.run(_get())

@@ -29,18 +29,18 @@ from bs4 import BeautifulSoup
 
 from .base import (
     CountyTreasurerBase,
-    TaxStatus,
     LienStatus,
-    TaxSaleType,
     PaymentMethod,
-    TaxBillItem,
-    TaxBill,
-    TaxPayment,
-    TaxLien,
-    TaxSaleProperty,
     PropertyTaxRecord,
+    TaxBill,
+    TaxBillItem,
+    TaxLien,
+    TaxPayment,
+    TaxSaleProperty,
+    TaxSaleType,
     TaxSearchCriteria,
     TaxSearchResult,
+    TaxStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ class ClarkCountyTreasurer(CountyTreasurerBase):
     TAX_YEAR_START = "07-01"  # Fiscal year
     FIRST_INSTALLMENT_DUE = "08-15"  # 3rd Monday August (approximate)
     SECOND_INSTALLMENT_DUE = "10-01"  # 1st Monday October (approximate)
-    THIRD_INSTALLMENT_DUE = "01-01"   # 1st Monday January (approximate)
+    THIRD_INSTALLMENT_DUE = "01-01"  # 1st Monday January (approximate)
     FOURTH_INSTALLMENT_DUE = "03-01"  # 1st Monday March (approximate)
 
     REQUEST_DELAY = 1.5
@@ -74,22 +74,18 @@ class ClarkCountyTreasurer(CountyTreasurerBase):
     def _format_apn(self, apn: str) -> str:
         """Format APN to standard XXX-XX-XXX-XXX format."""
         import re
-        digits = re.sub(r'[^0-9]', '', apn)
+
+        digits = re.sub(r"[^0-9]", "", apn)
         if len(digits) >= 11:
             return f"{digits[:3]}-{digits[3:5]}-{digits[5:8]}-{digits[8:11]}"
         return apn
 
-    async def get_tax_record(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyTaxRecord]:
+    async def get_tax_record(self, parcel_id: str) -> Optional[PropertyTaxRecord]:
         """Get property tax record by APN."""
         formatted_apn = self._format_apn(parcel_id)
 
         try:
-            data = await self._fetch_json(
-                f"{self.DETAIL_URL}/{formatted_apn}"
-            )
+            data = await self._fetch_json(f"{self.DETAIL_URL}/{formatted_apn}")
         except Exception as e:
             logger.error(f"Clark County tax record lookup failed: {e}")
             return None
@@ -124,7 +120,9 @@ class ClarkCountyTreasurer(CountyTreasurerBase):
         # Parse exemptions (Nevada has veteran, blind, senior citizen, etc.)
         for exemption in data.get("exemptions", []):
             record.exemptions.append(exemption.get("type", ""))
-        record.exemption_amount = self._parse_decimal(str(data.get("exemptionAmount", "")))
+        record.exemption_amount = self._parse_decimal(
+            str(data.get("exemptionAmount", ""))
+        )
 
         # Parse tax bills
         for bill_data in data.get("taxBills", []):
@@ -134,7 +132,9 @@ class ClarkCountyTreasurer(CountyTreasurerBase):
                 parcel_id=formatted_apn,
                 property_address=data.get("propertyAddress"),
                 owner_name=data.get("ownerName"),
-                assessed_value=self._parse_decimal(str(bill_data.get("assessedValue", ""))),
+                assessed_value=self._parse_decimal(
+                    str(bill_data.get("assessedValue", ""))
+                ),
                 net_tax=self._parse_decimal(str(bill_data.get("baseTax", ""))),
                 penalties=self._parse_decimal(str(bill_data.get("penalties", ""))),
                 interest=self._parse_decimal(str(bill_data.get("interest", ""))),
@@ -152,7 +152,8 @@ class ClarkCountyTreasurer(CountyTreasurerBase):
             for item in bill_data.get("lineItems", []):
                 line_item = TaxBillItem(
                     description=item.get("entity", ""),
-                    amount=self._parse_decimal(str(item.get("amount", ""))) or Decimal(0),
+                    amount=self._parse_decimal(str(item.get("amount", "")))
+                    or Decimal(0),
                     taxing_authority=item.get("entity"),
                     tax_rate=self._parse_decimal(str(item.get("rate", ""))),
                     raw_data=item,
@@ -168,7 +169,8 @@ class ClarkCountyTreasurer(CountyTreasurerBase):
                 parcel_id=formatted_apn,
                 tax_year=payment_data.get("taxYear", 0),
                 payment_date=self._parse_date(payment_data.get("paymentDate", "")),
-                payment_amount=self._parse_decimal(str(payment_data.get("amount", ""))) or Decimal(0),
+                payment_amount=self._parse_decimal(str(payment_data.get("amount", "")))
+                or Decimal(0),
                 receipt_number=payment_data.get("receiptNumber"),
                 installment_number=payment_data.get("quarter"),
                 raw_data=payment_data,
@@ -182,10 +184,11 @@ class ClarkCountyTreasurer(CountyTreasurerBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> TaxSearchResult:
         """Search for tax records by property address."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -217,7 +220,9 @@ class ClarkCountyTreasurer(CountyTreasurerBase):
                 county=self.COUNTY_NAME,
                 owner_name=item.get("ownerName"),
                 assessed_value=self._parse_decimal(str(item.get("assessedValue", ""))),
-                current_balance_due=self._parse_decimal(str(item.get("balanceDue", ""))),
+                current_balance_due=self._parse_decimal(
+                    str(item.get("balanceDue", ""))
+                ),
                 tax_status=self._parse_tax_status(item.get("status", "")),
                 source_system=self.SYSTEM_NAME,
             )
@@ -235,12 +240,11 @@ class ClarkCountyTreasurer(CountyTreasurerBase):
         )
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> TaxSearchResult:
         """Search for tax records by owner name."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -268,7 +272,9 @@ class ClarkCountyTreasurer(CountyTreasurerBase):
                 county=self.COUNTY_NAME,
                 owner_name=item.get("ownerName"),
                 assessed_value=self._parse_decimal(str(item.get("assessedValue", ""))),
-                current_balance_due=self._parse_decimal(str(item.get("balanceDue", ""))),
+                current_balance_due=self._parse_decimal(
+                    str(item.get("balanceDue", ""))
+                ),
                 tax_status=self._parse_tax_status(item.get("status", "")),
                 source_system=self.SYSTEM_NAME,
             )
@@ -288,32 +294,38 @@ class ClarkCountyTreasurer(CountyTreasurerBase):
 
 # Synchronous convenience functions
 
+
 def get_clark_county_tax_record(parcel_id: str) -> Optional[PropertyTaxRecord]:
     """Get Clark County property tax record by APN."""
+
     async def _get():
         async with ClarkCountyTreasurer() as treasurer:
             return await treasurer.get_tax_record(parcel_id)
+
     return asyncio.run(_get())
 
 
 def search_clark_county_tax_by_address(
-    address: str,
-    city: Optional[str] = None,
-    max_results: int = 100
+    address: str, city: Optional[str] = None, max_results: int = 100
 ) -> TaxSearchResult:
     """Search Clark County tax records by address."""
+
     async def _search():
         async with ClarkCountyTreasurer() as treasurer:
-            return await treasurer.search_by_address(address, city=city, max_results=max_results)
+            return await treasurer.search_by_address(
+                address, city=city, max_results=max_results
+            )
+
     return asyncio.run(_search())
 
 
 def search_clark_county_tax_by_owner(
-    owner_name: str,
-    max_results: int = 100
+    owner_name: str, max_results: int = 100
 ) -> TaxSearchResult:
     """Search Clark County tax records by owner name."""
+
     async def _search():
         async with ClarkCountyTreasurer() as treasurer:
             return await treasurer.search_by_owner(owner_name, max_results=max_results)
+
     return asyncio.run(_search())

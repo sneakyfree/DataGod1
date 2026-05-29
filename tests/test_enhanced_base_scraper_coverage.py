@@ -2,13 +2,15 @@
 Tests for datagod/scrapers/enhanced_base_scraper.py
 Tests that actually import and exercise the module for real coverage.
 """
-import pytest
-import time
+
 import json
-import tempfile
 import os
-from unittest.mock import patch, MagicMock, Mock
+import tempfile
+import time
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 
 class TestScraperTypeEnum:
@@ -17,6 +19,7 @@ class TestScraperTypeEnum:
     def test_scraper_type_import(self):
         """Test ScraperType can be imported"""
         from datagod.scrapers.enhanced_base_scraper import ScraperType
+
         assert ScraperType is not None
 
     def test_scraper_type_values(self):
@@ -34,6 +37,7 @@ class TestProxyTypeEnum:
     def test_proxy_type_import(self):
         """Test ProxyType can be imported"""
         from datagod.scrapers.enhanced_base_scraper import ProxyType
+
         assert ProxyType is not None
 
     def test_proxy_type_values(self):
@@ -52,10 +56,7 @@ class TestProxyConfig:
         """Test ProxyConfig creation"""
         from datagod.scrapers.enhanced_base_scraper import ProxyConfig, ProxyType
 
-        proxy = ProxyConfig(
-            host="proxy.example.com",
-            port=8080
-        )
+        proxy = ProxyConfig(host="proxy.example.com", port=8080)
 
         assert proxy.host == "proxy.example.com"
         assert proxy.port == 8080
@@ -76,10 +77,7 @@ class TestProxyConfig:
         from datagod.scrapers.enhanced_base_scraper import ProxyConfig
 
         proxy = ProxyConfig(
-            host="proxy.com",
-            port=8080,
-            username="user",
-            password="pass"
+            host="proxy.com", port=8080, username="user", password="pass"
         )
         assert proxy.url == "http://user:pass@proxy.com:8080"
 
@@ -87,11 +85,7 @@ class TestProxyConfig:
         """Test proxy URL with HTTPS protocol"""
         from datagod.scrapers.enhanced_base_scraper import ProxyConfig, ProxyType
 
-        proxy = ProxyConfig(
-            host="proxy.com",
-            port=443,
-            protocol=ProxyType.HTTPS
-        )
+        proxy = ProxyConfig(host="proxy.com", port=443, protocol=ProxyType.HTTPS)
         assert proxy.url == "https://proxy.com:443"
 
     def test_proxy_record_success(self):
@@ -171,9 +165,7 @@ class TestScrapingMetrics:
         from datagod.scrapers.enhanced_base_scraper import ScrapingMetrics
 
         metrics = ScrapingMetrics(
-            total_requests=10,
-            successful_requests=8,
-            failed_requests=2
+            total_requests=10, successful_requests=8, failed_requests=2
         )
         assert metrics.success_rate == 80.0
 
@@ -203,17 +195,17 @@ class TestScrapingMetrics:
             successful_requests=8,
             failed_requests=2,
             total_data_points=100,
-            bytes_downloaded=1000
+            bytes_downloaded=1000,
         )
 
         d = metrics.to_dict()
 
-        assert d['total_requests'] == 10
-        assert d['successful_requests'] == 8
-        assert d['failed_requests'] == 2
-        assert 'success_rate' in d
-        assert d['total_data_points'] == 100
-        assert d['bytes_downloaded'] == 1000
+        assert d["total_requests"] == 10
+        assert d["successful_requests"] == 8
+        assert d["failed_requests"] == 2
+        assert "success_rate" in d
+        assert d["total_data_points"] == 100
+        assert d["bytes_downloaded"] == 1000
 
 
 class TestProxyRotator:
@@ -228,11 +220,11 @@ class TestProxyRotator:
 
     def test_rotator_init_with_proxies(self):
         """Test rotator initialization with proxies"""
-        from datagod.scrapers.enhanced_base_scraper import ProxyRotator, ProxyConfig
+        from datagod.scrapers.enhanced_base_scraper import ProxyConfig, ProxyRotator
 
         proxies = [
             ProxyConfig(host="proxy1.com", port=8080),
-            ProxyConfig(host="proxy2.com", port=8080)
+            ProxyConfig(host="proxy2.com", port=8080),
         ]
 
         rotator = ProxyRotator(proxies)
@@ -240,7 +232,7 @@ class TestProxyRotator:
 
     def test_add_proxy(self):
         """Test adding a proxy"""
-        from datagod.scrapers.enhanced_base_scraper import ProxyRotator, ProxyConfig
+        from datagod.scrapers.enhanced_base_scraper import ProxyConfig, ProxyRotator
 
         rotator = ProxyRotator()
         proxy = ProxyConfig(host="proxy.com", port=8080)
@@ -258,7 +250,12 @@ class TestProxyRotator:
         proxy_list = [
             {"host": "proxy1.com", "port": 8080},
             {"host": "proxy2.com", "port": 8081, "protocol": "https"},
-            {"host": "proxy3.com", "port": 1080, "username": "user", "password": "pass"}
+            {
+                "host": "proxy3.com",
+                "port": 1080,
+                "username": "user",
+                "password": "pass",
+            },
         ]
 
         rotator.add_proxies_from_list(proxy_list)
@@ -267,11 +264,11 @@ class TestProxyRotator:
 
     def test_get_next_proxy(self):
         """Test round-robin proxy selection"""
-        from datagod.scrapers.enhanced_base_scraper import ProxyRotator, ProxyConfig
+        from datagod.scrapers.enhanced_base_scraper import ProxyConfig, ProxyRotator
 
         proxies = [
             ProxyConfig(host="proxy1.com", port=8080),
-            ProxyConfig(host="proxy2.com", port=8080)
+            ProxyConfig(host="proxy2.com", port=8080),
         ]
 
         rotator = ProxyRotator(proxies)
@@ -285,7 +282,7 @@ class TestProxyRotator:
 
     def test_get_next_proxy_no_active(self):
         """Test get_next_proxy with no active proxies"""
-        from datagod.scrapers.enhanced_base_scraper import ProxyRotator, ProxyConfig
+        from datagod.scrapers.enhanced_base_scraper import ProxyConfig, ProxyRotator
 
         proxy = ProxyConfig(host="proxy.com", port=8080, is_active=False)
         rotator = ProxyRotator([proxy])
@@ -295,11 +292,11 @@ class TestProxyRotator:
 
     def test_get_random_proxy(self):
         """Test random proxy selection"""
-        from datagod.scrapers.enhanced_base_scraper import ProxyRotator, ProxyConfig
+        from datagod.scrapers.enhanced_base_scraper import ProxyConfig, ProxyRotator
 
         proxies = [
             ProxyConfig(host="proxy1.com", port=8080),
-            ProxyConfig(host="proxy2.com", port=8080)
+            ProxyConfig(host="proxy2.com", port=8080),
         ]
 
         rotator = ProxyRotator(proxies)
@@ -317,7 +314,7 @@ class TestProxyRotator:
 
     def test_get_best_proxy(self):
         """Test best proxy selection"""
-        from datagod.scrapers.enhanced_base_scraper import ProxyRotator, ProxyConfig
+        from datagod.scrapers.enhanced_base_scraper import ProxyConfig, ProxyRotator
 
         proxy1 = ProxyConfig(host="proxy1.com", port=8080)
         proxy1.success_count = 10
@@ -342,7 +339,7 @@ class TestProxyRotator:
 
     def test_mark_success(self):
         """Test marking proxy success"""
-        from datagod.scrapers.enhanced_base_scraper import ProxyRotator, ProxyConfig
+        from datagod.scrapers.enhanced_base_scraper import ProxyConfig, ProxyRotator
 
         proxy = ProxyConfig(host="proxy.com", port=8080)
         rotator = ProxyRotator([proxy])
@@ -353,7 +350,7 @@ class TestProxyRotator:
 
     def test_mark_failure(self):
         """Test marking proxy failure"""
-        from datagod.scrapers.enhanced_base_scraper import ProxyRotator, ProxyConfig
+        from datagod.scrapers.enhanced_base_scraper import ProxyConfig, ProxyRotator
 
         proxy = ProxyConfig(host="proxy.com", port=8080)
         rotator = ProxyRotator([proxy])
@@ -364,19 +361,19 @@ class TestProxyRotator:
 
     def test_get_stats(self):
         """Test getting proxy pool stats"""
-        from datagod.scrapers.enhanced_base_scraper import ProxyRotator, ProxyConfig
+        from datagod.scrapers.enhanced_base_scraper import ProxyConfig, ProxyRotator
 
         proxies = [
             ProxyConfig(host="proxy1.com", port=8080, is_active=True),
-            ProxyConfig(host="proxy2.com", port=8080, is_active=False)
+            ProxyConfig(host="proxy2.com", port=8080, is_active=False),
         ]
 
         rotator = ProxyRotator(proxies)
         stats = rotator.get_stats()
 
-        assert stats['total_proxies'] == 2
-        assert stats['active_proxies'] == 1
-        assert stats['inactive_proxies'] == 1
+        assert stats["total_proxies"] == 2
+        assert stats["active_proxies"] == 1
+        assert stats["inactive_proxies"] == 1
 
 
 class TestRateLimiter:
@@ -428,7 +425,10 @@ class TestEnhancedBaseScraper:
 
     def get_concrete_scraper(self, **kwargs):
         """Helper to create concrete scraper"""
-        from datagod.scrapers.enhanced_base_scraper import EnhancedBaseScraper, ScraperType
+        from datagod.scrapers.enhanced_base_scraper import (
+            EnhancedBaseScraper,
+            ScraperType,
+        )
 
         class ConcreteScraper(EnhancedBaseScraper):
             def scrape(self, **kwargs):
@@ -463,10 +463,7 @@ class TestEnhancedBaseScraper:
             def parse(self, response):
                 return []
 
-        scraper = ConcreteScraper(
-            base_url="https://example.com/",
-            rate_limit=100.0
-        )
+        scraper = ConcreteScraper(base_url="https://example.com/", rate_limit=100.0)
         assert scraper.base_url == "https://example.com"
 
     def test_get_random_user_agent(self):
@@ -532,8 +529,8 @@ class TestEnhancedBaseScraper:
 
         metrics = scraper.get_metrics()
 
-        assert metrics['total_requests'] == 10
-        assert 'success_rate' in metrics
+        assert metrics["total_requests"] == 10
+        assert "success_rate" in metrics
 
     def test_reset_metrics(self):
         """Test resetting metrics"""
@@ -548,9 +545,7 @@ class TestEnhancedBaseScraper:
         """Test adding proxies"""
         scraper = self.get_concrete_scraper(use_proxies=False)
 
-        proxies = [
-            {"host": "proxy.com", "port": 8080}
-        ]
+        proxies = [{"host": "proxy.com", "port": 8080}]
 
         scraper.add_proxies(proxies)
 
@@ -574,9 +569,7 @@ class TestHttpRequest:
                 return []
 
         return ConcreteScraper(
-            base_url="https://example.com",
-            rate_limit=100.0,
-            **kwargs
+            base_url="https://example.com", rate_limit=100.0, **kwargs
         )
 
     def test_http_request_success_json(self):
@@ -591,11 +584,11 @@ class TestHttpRequest:
         mock_response.url = "https://example.com"
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(scraper.session, 'request', return_value=mock_response):
+        with patch.object(scraper.session, "request", return_value=mock_response):
             result = scraper._http_request("https://example.com", "GET")
 
-        assert result['success'] is True
-        assert result['data'] == {"data": "value"}
+        assert result["success"] is True
+        assert result["data"] == {"data": "value"}
 
     def test_http_request_success_text(self):
         """Test successful HTTP request with text response"""
@@ -605,27 +598,32 @@ class TestHttpRequest:
         mock_response.status_code = 200
         mock_response.json.side_effect = ValueError("Not JSON")
         mock_response.text = "<html>content</html>"
-        mock_response.content = b'<html>content</html>'
+        mock_response.content = b"<html>content</html>"
         mock_response.headers = {}
         mock_response.url = "https://example.com"
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(scraper.session, 'request', return_value=mock_response):
+        with patch.object(scraper.session, "request", return_value=mock_response):
             result = scraper._http_request("https://example.com", "GET")
 
-        assert result['success'] is True
-        assert result['data'] == "<html>content</html>"
+        assert result["success"] is True
+        assert result["data"] == "<html>content</html>"
 
     def test_http_request_failure(self):
         """Test HTTP request failure"""
         import requests
+
         scraper = self.get_concrete_scraper()
 
-        with patch.object(scraper.session, 'request', side_effect=requests.exceptions.Timeout("Timeout")):
+        with patch.object(
+            scraper.session,
+            "request",
+            side_effect=requests.exceptions.Timeout("Timeout"),
+        ):
             result = scraper._http_request("https://example.com", "GET")
 
-        assert result['success'] is False
-        assert 'error' in result
+        assert result["success"] is False
+        assert "error" in result
 
 
 class TestMakeRequest:
@@ -643,9 +641,7 @@ class TestMakeRequest:
                 return []
 
         return ConcreteScraper(
-            base_url="https://example.com",
-            rate_limit=100.0,
-            **kwargs
+            base_url="https://example.com", rate_limit=100.0, **kwargs
         )
 
     def test_make_request_cache_hit(self):
@@ -667,12 +663,12 @@ class TestMakeRequest:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {}
-        mock_response.content = b'{}'
+        mock_response.content = b"{}"
         mock_response.headers = {}
         mock_response.url = "https://example.com"
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(scraper.session, 'request', return_value=mock_response):
+        with patch.object(scraper.session, "request", return_value=mock_response):
             scraper._make_request("https://example.com/test")
 
         assert scraper.metrics.total_requests >= 1
@@ -693,9 +689,7 @@ class TestScrapeConcurrent:
                 return []
 
         return ConcreteScraper(
-            base_url="https://example.com",
-            rate_limit=100.0,
-            concurrent_requests=2
+            base_url="https://example.com", rate_limit=100.0, concurrent_requests=2
         )
 
     def test_scrape_concurrent(self):
@@ -704,11 +698,13 @@ class TestScrapeConcurrent:
 
         urls = ["https://example.com/1", "https://example.com/2"]
 
-        with patch.object(scraper, '_make_request', return_value={'success': True, 'data': 'test'}):
+        with patch.object(
+            scraper, "_make_request", return_value={"success": True, "data": "test"}
+        ):
             results = scraper.scrape_concurrent(urls)
 
         assert len(results) == 2
-        assert all('source_url' in r for r in results)
+        assert all("source_url" in r for r in results)
 
 
 class TestExportResults:
@@ -734,11 +730,11 @@ class TestExportResults:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             filepath = os.path.join(tmpdir, "test.json")
-            scraper.export_results(data, filepath, format='json')
+            scraper.export_results(data, filepath, format="json")
 
             assert os.path.exists(filepath)
 
-            with open(filepath, 'r') as f:
+            with open(filepath, "r") as f:
                 loaded = json.load(f)
 
             assert loaded == data
@@ -750,11 +746,11 @@ class TestExportResults:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             filepath = os.path.join(tmpdir, "test.jsonl")
-            scraper.export_results(data, filepath, format='jsonl')
+            scraper.export_results(data, filepath, format="jsonl")
 
             assert os.path.exists(filepath)
 
-            with open(filepath, 'r') as f:
+            with open(filepath, "r") as f:
                 lines = f.readlines()
 
             assert len(lines) == 2
@@ -767,7 +763,7 @@ class TestExportResults:
             filepath = os.path.join(tmpdir, "test.txt")
 
             with pytest.raises(ValueError, match="Unsupported format"):
-                scraper.export_results([], filepath, format='invalid')
+                scraper.export_results([], filepath, format="invalid")
 
 
 class TestJurisdictionScraper:
@@ -788,7 +784,7 @@ class TestJurisdictionScraper:
             jurisdiction_id=1,
             jurisdiction_name="Test County",
             base_url="https://county.gov",
-            rate_limit=100.0
+            rate_limit=100.0,
         )
 
     def test_jurisdiction_scraper_init(self):
@@ -808,16 +804,16 @@ class TestJurisdictionScraper:
             "title": "Test Record",
             "type": "deed",
             "amount": 1000,
-            "date": "2024-01-01"
+            "date": "2024-01-01",
         }
 
         normalized = scraper._normalize_record(raw)
 
-        assert normalized['jurisdiction_id'] == 1
-        assert normalized['jurisdiction_name'] == "Test County"
-        assert normalized['record_type'] == "deed"
-        assert normalized['record_id'] == "123"
-        assert 'scraped_at' in normalized
+        assert normalized["jurisdiction_id"] == 1
+        assert normalized["jurisdiction_name"] == "Test County"
+        assert normalized["record_type"] == "deed"
+        assert normalized["record_id"] == "123"
+        assert "scraped_at" in normalized
 
     def test_scrape_all(self):
         """Test scrape_all method"""
@@ -834,7 +830,10 @@ class TestBrowserRequest:
 
     def get_concrete_scraper(self):
         """Helper to create concrete scraper"""
-        from datagod.scrapers.enhanced_base_scraper import EnhancedBaseScraper, ScraperType
+        from datagod.scrapers.enhanced_base_scraper import (
+            EnhancedBaseScraper,
+            ScraperType,
+        )
 
         class ConcreteScraper(EnhancedBaseScraper):
             def scrape(self, **kwargs):
@@ -846,19 +845,19 @@ class TestBrowserRequest:
         return ConcreteScraper(
             base_url="https://example.com",
             scraper_type=ScraperType.BROWSER,
-            rate_limit=100.0
+            rate_limit=100.0,
         )
 
     def test_browser_request_playwright_not_installed(self):
         """Test browser request when playwright not installed"""
         scraper = self.get_concrete_scraper()
 
-        with patch.dict('sys.modules', {'playwright.sync_api': None}):
-            with patch('builtins.__import__', side_effect=ImportError("No module")):
+        with patch.dict("sys.modules", {"playwright.sync_api": None}):
+            with patch("builtins.__import__", side_effect=ImportError("No module")):
                 result = scraper._browser_request("https://example.com")
 
         # Should handle error gracefully
-        assert result['success'] is False or 'error' in result
+        assert result["success"] is False or "error" in result
 
 
 class TestLogger:
@@ -867,4 +866,5 @@ class TestLogger:
     def test_logger_exists(self):
         """Test logger is configured"""
         from datagod.scrapers import enhanced_base_scraper
-        assert hasattr(enhanced_base_scraper, 'logger')
+
+        assert hasattr(enhanced_base_scraper, "logger")

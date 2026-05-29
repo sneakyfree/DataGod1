@@ -10,8 +10,10 @@ Tests cover:
 - Statistics and dashboard
 """
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
+
 from db_manager import DatabaseManager
 
 
@@ -73,7 +75,7 @@ class TestJurisdictionOperations:
             county="Harris",
             jurisdiction_type="county",
             api_available=True,
-            population=4700000
+            population=4700000,
         )
 
         assert jid is not None
@@ -89,9 +91,7 @@ class TestJurisdictionOperations:
     def test_get_jurisdiction(self, db):
         """Test getting a jurisdiction by ID."""
         jid = db.create_jurisdiction(
-            name="Dallas County",
-            state="TX",
-            population=2600000
+            name="Dallas County", state="TX", population=2600000
         )
 
         jurisdiction = db.get_jurisdiction(jid)
@@ -176,7 +176,9 @@ class TestJurisdictionOperations:
 
     def test_update_jurisdiction(self, db):
         """Test updating a jurisdiction."""
-        jid = db.create_jurisdiction(name="Harris County", state="TX", population=1000000)
+        jid = db.create_jurisdiction(
+            name="Harris County", state="TX", population=1000000
+        )
 
         result = db.update_jurisdiction(jid, population=4700000, api_available=True)
 
@@ -230,7 +232,7 @@ class TestDataSourceOperations:
             source_name="Harris CAD API",
             source_type="api",
             api_endpoint="https://api.hcad.org/v1",
-            status="active"
+            status="active",
         )
 
         assert source_id is not None
@@ -238,9 +240,7 @@ class TestDataSourceOperations:
     def test_create_data_source_invalid_jurisdiction(self, db):
         """Test creating data source with invalid jurisdiction."""
         source_id = db.create_data_source(
-            jurisdiction_id=99999,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=99999, source_name="Test API", source_type="api"
         )
 
         assert source_id is None
@@ -249,9 +249,7 @@ class TestDataSourceOperations:
         """Test getting a data source."""
         jid = db.create_jurisdiction(name="Harris County", state="TX")
         source_id = db.create_data_source(
-            jurisdiction_id=jid,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jid, source_name="Test API", source_type="api"
         )
 
         source = db.get_data_source(source_id)
@@ -262,8 +260,12 @@ class TestDataSourceOperations:
     def test_list_data_sources(self, db):
         """Test listing data sources for a jurisdiction."""
         jid = db.create_jurisdiction(name="Harris County", state="TX")
-        db.create_data_source(jurisdiction_id=jid, source_name="API 1", source_type="api")
-        db.create_data_source(jurisdiction_id=jid, source_name="API 2", source_type="api")
+        db.create_data_source(
+            jurisdiction_id=jid, source_name="API 1", source_type="api"
+        )
+        db.create_data_source(
+            jurisdiction_id=jid, source_name="API 2", source_type="api"
+        )
 
         sources = db.list_data_sources(jurisdiction_id=jid)
 
@@ -276,7 +278,7 @@ class TestDataSourceOperations:
             jurisdiction_id=jid,
             source_name="Test API",
             source_type="api",
-            status="active"
+            status="active",
         )
 
         result = db.update_data_source_status(source_id, "inactive")
@@ -289,9 +291,7 @@ class TestDataSourceOperations:
         """Test recording a scrape operation."""
         jid = db.create_jurisdiction(name="Harris County", state="TX")
         source_id = db.create_data_source(
-            jurisdiction_id=jid,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jid, source_name="Test API", source_type="api"
         )
 
         # record_scrape only takes data_source_id and success (no records_count)
@@ -309,9 +309,7 @@ class TestRecordOperations:
         """Test creating a record."""
         jid = db.create_jurisdiction(name="Harris County", state="TX")
         source_id = db.create_data_source(
-            jurisdiction_id=jid,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jid, source_name="Test API", source_type="api"
         )
 
         record_id = db.create_record(
@@ -324,7 +322,7 @@ class TestRecordOperations:
             amount=250000.00,
             address="123 Main St",
             city="Houston",
-            state="TX"
+            state="TX",
         )
 
         assert record_id is not None
@@ -333,9 +331,7 @@ class TestRecordOperations:
         """Test bulk creating records."""
         jid = db.create_jurisdiction(name="Harris County", state="TX")
         source_id = db.create_data_source(
-            jurisdiction_id=jid,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jid, source_name="Test API", source_type="api"
         )
 
         records = [
@@ -345,7 +341,7 @@ class TestRecordOperations:
                 "record_type": "property",
                 "title": f"Property {i}",
                 "grantor": "Seller",
-                "grantee": "Buyer"
+                "grantee": "Buyer",
             }
             for i in range(10)
         ]
@@ -358,16 +354,14 @@ class TestRecordOperations:
         """Test getting a record by ID."""
         jid = db.create_jurisdiction(name="Harris County", state="TX")
         source_id = db.create_data_source(
-            jurisdiction_id=jid,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jid, source_name="Test API", source_type="api"
         )
         record_id = db.create_record(
             jurisdiction_id=jid,
             data_source_id=source_id,
             record_type="mortgage",
             title="Test Mortgage",
-            amount=500000
+            amount=500000,
         )
 
         record = db.get_record(record_id)
@@ -380,17 +374,27 @@ class TestRecordOperations:
         """Test searching records by type."""
         jid = db.create_jurisdiction(name="Harris County", state="TX")
         source_id = db.create_data_source(
-            jurisdiction_id=jid,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jid, source_name="Test API", source_type="api"
         )
 
-        db.create_record(jurisdiction_id=jid, data_source_id=source_id,
-                        record_type="property", title="Property 1")
-        db.create_record(jurisdiction_id=jid, data_source_id=source_id,
-                        record_type="mortgage", title="Mortgage 1")
-        db.create_record(jurisdiction_id=jid, data_source_id=source_id,
-                        record_type="property", title="Property 2")
+        db.create_record(
+            jurisdiction_id=jid,
+            data_source_id=source_id,
+            record_type="property",
+            title="Property 1",
+        )
+        db.create_record(
+            jurisdiction_id=jid,
+            data_source_id=source_id,
+            record_type="mortgage",
+            title="Mortgage 1",
+        )
+        db.create_record(
+            jurisdiction_id=jid,
+            data_source_id=source_id,
+            record_type="property",
+            title="Property 2",
+        )
 
         results = db.search_records(record_type="property")
 
@@ -400,17 +404,30 @@ class TestRecordOperations:
         """Test searching records by grantor name."""
         jid = db.create_jurisdiction(name="Harris County", state="TX")
         source_id = db.create_data_source(
-            jurisdiction_id=jid,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jid, source_name="Test API", source_type="api"
         )
 
-        db.create_record(jurisdiction_id=jid, data_source_id=source_id,
-                        record_type="property", title="Prop 1", grantor="John Doe")
-        db.create_record(jurisdiction_id=jid, data_source_id=source_id,
-                        record_type="property", title="Prop 2", grantor="Jane Smith")
-        db.create_record(jurisdiction_id=jid, data_source_id=source_id,
-                        record_type="property", title="Prop 3", grantor="John Johnson")
+        db.create_record(
+            jurisdiction_id=jid,
+            data_source_id=source_id,
+            record_type="property",
+            title="Prop 1",
+            grantor="John Doe",
+        )
+        db.create_record(
+            jurisdiction_id=jid,
+            data_source_id=source_id,
+            record_type="property",
+            title="Prop 2",
+            grantor="Jane Smith",
+        )
+        db.create_record(
+            jurisdiction_id=jid,
+            data_source_id=source_id,
+            record_type="property",
+            title="Prop 3",
+            grantor="John Johnson",
+        )
 
         results = db.search_records(grantor="John")
 
@@ -420,17 +437,30 @@ class TestRecordOperations:
         """Test searching records by amount range."""
         jid = db.create_jurisdiction(name="Harris County", state="TX")
         source_id = db.create_data_source(
-            jurisdiction_id=jid,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jid, source_name="Test API", source_type="api"
         )
 
-        db.create_record(jurisdiction_id=jid, data_source_id=source_id,
-                        record_type="mortgage", title="M1", amount=100000)
-        db.create_record(jurisdiction_id=jid, data_source_id=source_id,
-                        record_type="mortgage", title="M2", amount=250000)
-        db.create_record(jurisdiction_id=jid, data_source_id=source_id,
-                        record_type="mortgage", title="M3", amount=500000)
+        db.create_record(
+            jurisdiction_id=jid,
+            data_source_id=source_id,
+            record_type="mortgage",
+            title="M1",
+            amount=100000,
+        )
+        db.create_record(
+            jurisdiction_id=jid,
+            data_source_id=source_id,
+            record_type="mortgage",
+            title="M2",
+            amount=250000,
+        )
+        db.create_record(
+            jurisdiction_id=jid,
+            data_source_id=source_id,
+            record_type="mortgage",
+            title="M3",
+            amount=500000,
+        )
 
         # API uses amount_min/amount_max, not min_amount/max_amount
         results = db.search_records(amount_min=200000, amount_max=300000)
@@ -442,14 +472,16 @@ class TestRecordOperations:
         """Test counting records."""
         jid = db.create_jurisdiction(name="Harris County", state="TX")
         source_id = db.create_data_source(
-            jurisdiction_id=jid,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jid, source_name="Test API", source_type="api"
         )
 
         for i in range(5):
-            db.create_record(jurisdiction_id=jid, data_source_id=source_id,
-                            record_type="property", title=f"Prop {i}")
+            db.create_record(
+                jurisdiction_id=jid,
+                data_source_id=source_id,
+                record_type="property",
+                title=f"Prop {i}",
+            )
 
         count = db.count_records()
         type_count = db.count_records(record_type="property")
@@ -461,15 +493,23 @@ class TestRecordOperations:
         """Test getting record statistics."""
         jid = db.create_jurisdiction(name="Harris County", state="TX")
         source_id = db.create_data_source(
-            jurisdiction_id=jid,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jid, source_name="Test API", source_type="api"
         )
 
-        db.create_record(jurisdiction_id=jid, data_source_id=source_id,
-                        record_type="property", title="P1", amount=100000)
-        db.create_record(jurisdiction_id=jid, data_source_id=source_id,
-                        record_type="mortgage", title="M1", amount=500000)
+        db.create_record(
+            jurisdiction_id=jid,
+            data_source_id=source_id,
+            record_type="property",
+            title="P1",
+            amount=100000,
+        )
+        db.create_record(
+            jurisdiction_id=jid,
+            data_source_id=source_id,
+            record_type="mortgage",
+            title="M1",
+            amount=500000,
+        )
 
         stats = db.get_record_stats()
 
@@ -488,7 +528,7 @@ class TestEntityOperations:
             entity_type="company",
             address="123 Business Ave",
             city="Houston",
-            state="TX"
+            state="TX",
         )
 
         assert entity_id is not None
@@ -496,9 +536,7 @@ class TestEntityOperations:
     def test_get_entity(self, db):
         """Test getting an entity by ID."""
         entity_id = db.create_entity(
-            entity_name="Test LLC",
-            entity_type="company",
-            city="Houston"
+            entity_name="Test LLC", entity_type="company", city="Houston"
         )
 
         entity = db.get_entity(entity_id)
@@ -527,26 +565,30 @@ class TestUserOperations:
             username="testuser",
             email="test@example.com",
             hashed_password="hashed_password_here",
-            full_name="Test User"
+            full_name="Test User",
         )
 
         assert user_id is not None
 
     def test_create_user_duplicate_username(self, db):
         """Test creating user with duplicate username fails."""
-        db.create_user(username="testuser", email="test1@example.com",
-                      hashed_password="hash1")
-        user_id = db.create_user(username="testuser", email="test2@example.com",
-                                hashed_password="hash2")
+        db.create_user(
+            username="testuser", email="test1@example.com", hashed_password="hash1"
+        )
+        user_id = db.create_user(
+            username="testuser", email="test2@example.com", hashed_password="hash2"
+        )
 
         assert user_id is None
 
     def test_create_user_duplicate_email(self, db):
         """Test creating user with duplicate email fails."""
-        db.create_user(username="user1", email="test@example.com",
-                      hashed_password="hash1")
-        user_id = db.create_user(username="user2", email="test@example.com",
-                                hashed_password="hash2")
+        db.create_user(
+            username="user1", email="test@example.com", hashed_password="hash1"
+        )
+        user_id = db.create_user(
+            username="user2", email="test@example.com", hashed_password="hash2"
+        )
 
         assert user_id is None
 
@@ -556,7 +598,7 @@ class TestUserOperations:
             username="testuser",
             email="test@example.com",
             hashed_password="hash",
-            full_name="Test User"
+            full_name="Test User",
         )
 
         user = db.get_user(user_id)
@@ -568,8 +610,9 @@ class TestUserOperations:
 
     def test_get_user_by_username(self, db):
         """Test getting a user by username."""
-        db.create_user(username="testuser", email="test@example.com",
-                      hashed_password="hash")
+        db.create_user(
+            username="testuser", email="test@example.com", hashed_password="hash"
+        )
 
         user = db.get_user_by_username("testuser")
 
@@ -578,8 +621,9 @@ class TestUserOperations:
 
     def test_get_user_by_email(self, db):
         """Test getting a user by email."""
-        db.create_user(username="testuser", email="test@example.com",
-                      hashed_password="hash")
+        db.create_user(
+            username="testuser", email="test@example.com", hashed_password="hash"
+        )
 
         user = db.get_user_by_email("test@example.com")
 
@@ -588,8 +632,11 @@ class TestUserOperations:
 
     def test_get_user_for_auth(self, db):
         """Test getting user for authentication (includes password)."""
-        db.create_user(username="testuser", email="test@example.com",
-                      hashed_password="hashed_password_123")
+        db.create_user(
+            username="testuser",
+            email="test@example.com",
+            hashed_password="hashed_password_123",
+        )
 
         user = db.get_user_for_auth("testuser")
 
@@ -603,7 +650,7 @@ class TestUserOperations:
             username="testuser",
             email="test@example.com",
             hashed_password="hash",
-            full_name="Test User"
+            full_name="Test User",
         )
 
         result = db.update_user(user_id, full_name="Updated Name")
@@ -615,9 +662,7 @@ class TestUserOperations:
     def test_delete_user(self, db):
         """Test deleting a user."""
         user_id = db.create_user(
-            username="testuser",
-            email="test@example.com",
-            hashed_password="hash"
+            username="testuser", email="test@example.com", hashed_password="hash"
         )
 
         result = db.delete_user(user_id)
@@ -627,8 +672,9 @@ class TestUserOperations:
 
     def test_record_login_success(self, db):
         """Test recording successful login."""
-        db.create_user(username="testuser", email="test@example.com",
-                      hashed_password="hash")
+        db.create_user(
+            username="testuser", email="test@example.com", hashed_password="hash"
+        )
 
         result = db.record_login("testuser", success=True)
 
@@ -639,8 +685,9 @@ class TestUserOperations:
 
     def test_record_login_failure(self, db):
         """Test recording failed login attempts (account lockout)."""
-        db.create_user(username="testuser", email="test@example.com",
-                      hashed_password="hash")
+        db.create_user(
+            username="testuser", email="test@example.com", hashed_password="hash"
+        )
 
         # Record 3 failed logins
         for _ in range(3):
@@ -658,8 +705,9 @@ class TestUserOperations:
 
     def test_check_user_locked(self, db):
         """Test checking if user is locked."""
-        db.create_user(username="testuser", email="test@example.com",
-                      hashed_password="hash")
+        db.create_user(
+            username="testuser", email="test@example.com", hashed_password="hash"
+        )
 
         # User should not be locked initially
         assert db.check_user_locked("testuser") is False
@@ -673,8 +721,9 @@ class TestUserOperations:
 
     def test_set_password_reset_token(self, db):
         """Test setting password reset token."""
-        db.create_user(username="testuser", email="test@example.com",
-                      hashed_password="hash")
+        db.create_user(
+            username="testuser", email="test@example.com", hashed_password="hash"
+        )
 
         result = db.set_password_reset_token("test@example.com", "reset-token-123")
 
@@ -682,8 +731,9 @@ class TestUserOperations:
 
     def test_get_user_by_reset_token(self, db):
         """Test getting user by reset token."""
-        db.create_user(username="testuser", email="test@example.com",
-                      hashed_password="hash")
+        db.create_user(
+            username="testuser", email="test@example.com", hashed_password="hash"
+        )
         db.set_password_reset_token("test@example.com", "reset-token-123")
 
         user = db.get_user_by_reset_token("reset-token-123")
@@ -693,8 +743,9 @@ class TestUserOperations:
 
     def test_clear_password_reset_token(self, db):
         """Test clearing password reset token."""
-        user_id = db.create_user(username="testuser", email="test@example.com",
-                                hashed_password="hash")
+        user_id = db.create_user(
+            username="testuser", email="test@example.com", hashed_password="hash"
+        )
         db.set_password_reset_token("test@example.com", "reset-token-123")
 
         result = db.clear_password_reset_token(user_id)
@@ -705,12 +756,24 @@ class TestUserOperations:
 
     def test_count_users(self, db):
         """Test counting users."""
-        db.create_user(username="user1", email="user1@example.com",
-                      hashed_password="hash", subscription_tier="free")
-        db.create_user(username="user2", email="user2@example.com",
-                      hashed_password="hash", subscription_tier="pro")
-        db.create_user(username="user3", email="user3@example.com",
-                      hashed_password="hash", subscription_tier="free")
+        db.create_user(
+            username="user1",
+            email="user1@example.com",
+            hashed_password="hash",
+            subscription_tier="free",
+        )
+        db.create_user(
+            username="user2",
+            email="user2@example.com",
+            hashed_password="hash",
+            subscription_tier="pro",
+        )
+        db.create_user(
+            username="user3",
+            email="user3@example.com",
+            hashed_password="hash",
+            subscription_tier="free",
+        )
 
         total = db.count_users()
         free_count = db.count_users(subscription_tier="free")
@@ -727,15 +790,18 @@ class TestDashboardStats:
         # Create some test data
         jid = db.create_jurisdiction(name="Harris County", state="TX")
         source_id = db.create_data_source(
-            jurisdiction_id=jid,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jid, source_name="Test API", source_type="api"
         )
-        db.create_record(jurisdiction_id=jid, data_source_id=source_id,
-                        record_type="property", title="Test")
+        db.create_record(
+            jurisdiction_id=jid,
+            data_source_id=source_id,
+            record_type="property",
+            title="Test",
+        )
         db.create_entity(entity_name="Test Corp", entity_type="company")
-        db.create_user(username="testuser", email="test@example.com",
-                      hashed_password="hash")
+        db.create_user(
+            username="testuser", email="test@example.com", hashed_password="hash"
+        )
 
         stats = db.get_dashboard_stats()
 
@@ -759,6 +825,7 @@ class TestSessionManagement:
             assert session is not None
             # Session should be active
             from datagod.models import Jurisdiction
+
             count = session.query(Jurisdiction).count()
             assert count >= 0
 
@@ -769,6 +836,7 @@ class TestSessionManagement:
         try:
             with db.get_session() as session:
                 from datagod.models import Jurisdiction
+
                 j = session.query(Jurisdiction).filter_by(id=jid).first()
                 j.name = "Modified"
                 # Force an error

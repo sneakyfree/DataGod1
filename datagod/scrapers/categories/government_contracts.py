@@ -11,16 +11,17 @@ Collects public government contract records including:
 """
 
 import logging
-from typing import Dict, List, Any, Optional
-from datetime import datetime
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class ContractType(Enum):
     """Types of government contracts."""
+
     DEFINITIVE = "definitive"
     IDV = "idv"  # Indefinite Delivery Vehicle
     BPA = "bpa"  # Blanket Purchase Agreement
@@ -35,6 +36,7 @@ class ContractType(Enum):
 
 class AwardStatus(Enum):
     """Award/contract status."""
+
     ACTIVE = "active"
     CLOSED = "closed"
     TERMINATED = "terminated"
@@ -44,6 +46,7 @@ class AwardStatus(Enum):
 
 class CompetitionType(Enum):
     """Competition type for awards."""
+
     FULL_OPEN = "full_open"
     FULL_OPEN_SMALL_BUSINESS = "full_open_small_business"
     COMPETITIVE_8A = "competitive_8a"
@@ -56,6 +59,7 @@ class CompetitionType(Enum):
 @dataclass
 class ContractRecord:
     """Government contract record data structure."""
+
     contract_id: str
     contract_type: ContractType
     awarding_agency: str
@@ -95,142 +99,142 @@ class ContractRecord:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'contract_id': self.contract_id,
-            'contract_type': self.contract_type.value,
-            'awarding_agency': self.awarding_agency,
-            'awarding_sub_agency': self.awarding_sub_agency,
-            'recipient_name': self.recipient_name,
-            'recipient_duns': self.recipient_duns,
-            'recipient_uei': self.recipient_uei,
-            'recipient_address': self.recipient_address,
-            'recipient_city': self.recipient_city,
-            'recipient_state': self.recipient_state,
-            'recipient_zip': self.recipient_zip,
-            'award_amount': self.award_amount,
-            'obligated_amount': self.obligated_amount,
-            'potential_amount': self.potential_amount,
-            'award_date': self.award_date.isoformat() if self.award_date else None,
-            'start_date': self.start_date.isoformat() if self.start_date else None,
-            'end_date': self.end_date.isoformat() if self.end_date else None,
-            'description': self.description,
-            'naics_code': self.naics_code,
-            'naics_description': self.naics_description,
-            'psc_code': self.psc_code,
-            'competition_type': self.competition_type.value,
-            'status': self.status.value,
-            'place_of_performance_city': self.place_of_performance_city,
-            'place_of_performance_state': self.place_of_performance_state,
-            'place_of_performance_zip': self.place_of_performance_zip,
-            'small_business': self.small_business,
-            'women_owned': self.women_owned,
-            'veteran_owned': self.veteran_owned,
-            'minority_owned': self.minority_owned,
-            'disadvantaged': self.disadvantaged,
-            'modifications_count': len(self.modifications),
-            'subcontracts_count': len(self.subcontracts),
-            'source_url': self.source_url,
+            "contract_id": self.contract_id,
+            "contract_type": self.contract_type.value,
+            "awarding_agency": self.awarding_agency,
+            "awarding_sub_agency": self.awarding_sub_agency,
+            "recipient_name": self.recipient_name,
+            "recipient_duns": self.recipient_duns,
+            "recipient_uei": self.recipient_uei,
+            "recipient_address": self.recipient_address,
+            "recipient_city": self.recipient_city,
+            "recipient_state": self.recipient_state,
+            "recipient_zip": self.recipient_zip,
+            "award_amount": self.award_amount,
+            "obligated_amount": self.obligated_amount,
+            "potential_amount": self.potential_amount,
+            "award_date": self.award_date.isoformat() if self.award_date else None,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "end_date": self.end_date.isoformat() if self.end_date else None,
+            "description": self.description,
+            "naics_code": self.naics_code,
+            "naics_description": self.naics_description,
+            "psc_code": self.psc_code,
+            "competition_type": self.competition_type.value,
+            "status": self.status.value,
+            "place_of_performance_city": self.place_of_performance_city,
+            "place_of_performance_state": self.place_of_performance_state,
+            "place_of_performance_zip": self.place_of_performance_zip,
+            "small_business": self.small_business,
+            "women_owned": self.women_owned,
+            "veteran_owned": self.veteran_owned,
+            "minority_owned": self.minority_owned,
+            "disadvantaged": self.disadvantaged,
+            "modifications_count": len(self.modifications),
+            "subcontracts_count": len(self.subcontracts),
+            "source_url": self.source_url,
         }
 
 
 # Federal contract data sources
 FEDERAL_CONTRACT_SOURCES = {
-    'usaspending': {
-        'name': 'USASpending.gov',
-        'base_url': 'https://www.usaspending.gov/',
-        'api_url': 'https://api.usaspending.gov/api/v2/',
-        'description': 'Primary source for federal spending data',
+    "usaspending": {
+        "name": "USASpending.gov",
+        "base_url": "https://www.usaspending.gov/",
+        "api_url": "https://api.usaspending.gov/api/v2/",
+        "description": "Primary source for federal spending data",
     },
-    'fpds': {
-        'name': 'FPDS',
-        'base_url': 'https://www.fpds.gov/',
-        'api_url': 'https://www.fpds.gov/ezsearch/search.do',
-        'description': 'Federal Procurement Data System',
+    "fpds": {
+        "name": "FPDS",
+        "base_url": "https://www.fpds.gov/",
+        "api_url": "https://www.fpds.gov/ezsearch/search.do",
+        "description": "Federal Procurement Data System",
     },
-    'sam': {
-        'name': 'SAM.gov',
-        'base_url': 'https://sam.gov/',
-        'api_url': 'https://api.sam.gov/',
-        'description': 'System for Award Management - entity data',
+    "sam": {
+        "name": "SAM.gov",
+        "base_url": "https://sam.gov/",
+        "api_url": "https://api.sam.gov/",
+        "description": "System for Award Management - entity data",
     },
-    'grants': {
-        'name': 'Grants.gov',
-        'base_url': 'https://www.grants.gov/',
-        'api_url': 'https://www.grants.gov/grantsws/',
-        'description': 'Federal grants data',
+    "grants": {
+        "name": "Grants.gov",
+        "base_url": "https://www.grants.gov/",
+        "api_url": "https://www.grants.gov/grantsws/",
+        "description": "Federal grants data",
     },
-    'sbir': {
-        'name': 'SBIR/STTR',
-        'base_url': 'https://www.sbir.gov/',
-        'description': 'Small Business Innovation Research awards',
+    "sbir": {
+        "name": "SBIR/STTR",
+        "base_url": "https://www.sbir.gov/",
+        "description": "Small Business Innovation Research awards",
     },
-    'usaid': {
-        'name': 'USAID',
-        'base_url': 'https://explorer.usaid.gov/',
-        'description': 'Foreign assistance data',
+    "usaid": {
+        "name": "USAID",
+        "base_url": "https://explorer.usaid.gov/",
+        "description": "Foreign assistance data",
     },
 }
 
 # State procurement portals
 STATE_PROCUREMENT_SOURCES: Dict[str, Dict[str, str]] = {
-    'CA': {
-        'portal': 'https://caleprocure.ca.gov/',
-        'name': 'Cal eProcure',
+    "CA": {
+        "portal": "https://caleprocure.ca.gov/",
+        "name": "Cal eProcure",
     },
-    'TX': {
-        'portal': 'https://www.txsmartbuy.com/',
-        'name': 'Texas SmartBuy',
+    "TX": {
+        "portal": "https://www.txsmartbuy.com/",
+        "name": "Texas SmartBuy",
     },
-    'NY': {
-        'portal': 'https://ogs.ny.gov/procurement',
-        'name': 'NY OGS Procurement',
+    "NY": {
+        "portal": "https://ogs.ny.gov/procurement",
+        "name": "NY OGS Procurement",
     },
-    'FL': {
-        'portal': 'https://www.dms.myflorida.com/business_operations/state_purchasing',
-        'name': 'Florida MyFloridaMarketPlace',
+    "FL": {
+        "portal": "https://www.dms.myflorida.com/business_operations/state_purchasing",
+        "name": "Florida MyFloridaMarketPlace",
     },
-    'PA': {
-        'portal': 'https://www.dgs.pa.gov/',
-        'name': 'PA Department of General Services',
+    "PA": {
+        "portal": "https://www.dgs.pa.gov/",
+        "name": "PA Department of General Services",
     },
-    'IL': {
-        'portal': 'https://www.illinois.gov/cms/procurement/',
-        'name': 'Illinois BidBuy',
+    "IL": {
+        "portal": "https://www.illinois.gov/cms/procurement/",
+        "name": "Illinois BidBuy",
     },
-    'OH': {
-        'portal': 'https://procure.ohio.gov/',
-        'name': 'Ohio Procurement',
+    "OH": {
+        "portal": "https://procure.ohio.gov/",
+        "name": "Ohio Procurement",
     },
-    'GA': {
-        'portal': 'https://doas.ga.gov/state-purchasing',
-        'name': 'Georgia Procurement',
+    "GA": {
+        "portal": "https://doas.ga.gov/state-purchasing",
+        "name": "Georgia Procurement",
     },
-    'NC': {
-        'portal': 'https://ncadmin.nc.gov/government-agencies/procurement',
-        'name': 'NC E-Procurement',
+    "NC": {
+        "portal": "https://ncadmin.nc.gov/government-agencies/procurement",
+        "name": "NC E-Procurement",
     },
-    'MI': {
-        'portal': 'https://www.michigan.gov/dtmb/procurement',
-        'name': 'Michigan SIGMA',
+    "MI": {
+        "portal": "https://www.michigan.gov/dtmb/procurement",
+        "name": "Michigan SIGMA",
     },
-    'NJ': {
-        'portal': 'https://www.state.nj.us/treasury/purchase/',
-        'name': 'NJ Division of Purchase',
+    "NJ": {
+        "portal": "https://www.state.nj.us/treasury/purchase/",
+        "name": "NJ Division of Purchase",
     },
-    'VA': {
-        'portal': 'https://eva.virginia.gov/',
-        'name': 'Virginia eVA',
+    "VA": {
+        "portal": "https://eva.virginia.gov/",
+        "name": "Virginia eVA",
     },
-    'WA': {
-        'portal': 'https://des.wa.gov/services/contracting-purchasing',
-        'name': 'Washington WEBS',
+    "WA": {
+        "portal": "https://des.wa.gov/services/contracting-purchasing",
+        "name": "Washington WEBS",
     },
-    'AZ': {
-        'portal': 'https://spo.az.gov/',
-        'name': 'Arizona SPO',
+    "AZ": {
+        "portal": "https://spo.az.gov/",
+        "name": "Arizona SPO",
     },
-    'MA': {
-        'portal': 'https://www.mass.gov/topics/procurement',
-        'name': 'COMMBUYS',
+    "MA": {
+        "portal": "https://www.mass.gov/topics/procurement",
+        "name": "COMMBUYS",
     },
 }
 
@@ -266,7 +270,7 @@ class GovernmentContractsScraper:
         min_amount: float = None,
         max_amount: float = None,
         start_date: datetime = None,
-        end_date: datetime = None
+        end_date: datetime = None,
     ) -> List[ContractRecord]:
         """
         Search federal contracts via USASpending API.
@@ -290,10 +294,7 @@ class GovernmentContractsScraper:
         # Would implement actual USASpending API call
         return contracts
 
-    def get_contract_by_id(
-        self,
-        contract_id: str
-    ) -> Optional[ContractRecord]:
+    def get_contract_by_id(self, contract_id: str) -> Optional[ContractRecord]:
         """
         Get contract details by ID.
 
@@ -314,7 +315,7 @@ class GovernmentContractsScraper:
         cfda_number: str = "",
         state: str = "",
         min_amount: float = None,
-        max_amount: float = None
+        max_amount: float = None,
     ) -> List[ContractRecord]:
         """
         Search federal grants.
@@ -337,10 +338,7 @@ class GovernmentContractsScraper:
         return grants
 
     def get_contractor_profile(
-        self,
-        uei: str = "",
-        duns: str = "",
-        name: str = ""
+        self, uei: str = "", duns: str = "", name: str = ""
     ) -> Dict[str, Any]:
         """
         Get contractor profile from SAM.gov.
@@ -358,10 +356,7 @@ class GovernmentContractsScraper:
         return {}
 
     def search_subcontracts(
-        self,
-        prime_contract_id: str = "",
-        subcontractor_name: str = "",
-        state: str = ""
+        self, prime_contract_id: str = "", subcontractor_name: str = "", state: str = ""
     ) -> List[Dict[str, Any]]:
         """
         Search subcontract data.
@@ -381,9 +376,7 @@ class GovernmentContractsScraper:
         return subcontracts
 
     def get_agency_spending(
-        self,
-        agency: str,
-        fiscal_year: int = None
+        self, agency: str, fiscal_year: int = None
     ) -> Dict[str, Any]:
         """
         Get spending summary for an agency.
@@ -405,7 +398,7 @@ class GovernmentContractsScraper:
         state: str,
         vendor_name: str = "",
         contract_type: str = "",
-        agency: str = ""
+        agency: str = "",
     ) -> List[ContractRecord]:
         """
         Search state procurement contracts.
@@ -430,10 +423,7 @@ class GovernmentContractsScraper:
         return contracts
 
     def get_small_business_awards(
-        self,
-        state: str = "",
-        business_type: str = "",
-        fiscal_year: int = None
+        self, state: str = "", business_type: str = "", fiscal_year: int = None
     ) -> List[ContractRecord]:
         """
         Get small business contract awards.
@@ -455,14 +445,14 @@ class GovernmentContractsScraper:
     def get_coverage_stats(self) -> Dict[str, Any]:
         """Get coverage statistics."""
         return {
-            'category': self.CATEGORY,
-            'display_name': self.DISPLAY_NAME,
-            'federal_sources': len(self.federal_sources),
-            'federal_source_names': list(self.federal_sources.keys()),
-            'states_with_procurement': len(self.state_sources),
-            'states': list(self.state_sources.keys()),
-            'contract_types': [t.value for t in ContractType],
-            'competition_types': [t.value for t in CompetitionType],
+            "category": self.CATEGORY,
+            "display_name": self.DISPLAY_NAME,
+            "federal_sources": len(self.federal_sources),
+            "federal_source_names": list(self.federal_sources.keys()),
+            "states_with_procurement": len(self.state_sources),
+            "states": list(self.state_sources.keys()),
+            "contract_types": [t.value for t in ContractType],
+            "competition_types": [t.value for t in CompetitionType],
         }
 
 
@@ -473,16 +463,12 @@ def get_contracts_scraper() -> GovernmentContractsScraper:
 
 
 def search_contracts(
-    recipient_name: str = "",
-    state: str = "",
-    **kwargs
+    recipient_name: str = "", state: str = "", **kwargs
 ) -> List[Dict[str, Any]]:
     """Search federal contracts."""
     scraper = get_contracts_scraper()
     records = scraper.search_federal_contracts(
-        recipient_name=recipient_name,
-        state=state,
-        **kwargs
+        recipient_name=recipient_name, state=state, **kwargs
     )
     return [r.to_dict() for r in records]
 
@@ -490,6 +476,6 @@ def search_contracts(
 def get_available_sources() -> Dict[str, Any]:
     """Get all available contract sources."""
     return {
-        'federal_sources': FEDERAL_CONTRACT_SOURCES,
-        'state_sources': STATE_PROCUREMENT_SOURCES,
+        "federal_sources": FEDERAL_CONTRACT_SOURCES,
+        "state_sources": STATE_PROCUREMENT_SOURCES,
     }

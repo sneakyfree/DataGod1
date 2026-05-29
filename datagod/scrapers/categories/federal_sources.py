@@ -16,9 +16,9 @@ import logging
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +27,10 @@ logger = logging.getLogger(__name__)
 # USPTO (Trademarks & Patents)
 # =============================================================================
 
+
 class TrademarkStatus(Enum):
     """Trademark registration status"""
+
     REGISTERED = "registered"
     PENDING = "pending"
     ABANDONED = "abandoned"
@@ -40,6 +42,7 @@ class TrademarkStatus(Enum):
 
 class PatentType(Enum):
     """Types of patents"""
+
     UTILITY = "utility"
     DESIGN = "design"
     PLANT = "plant"
@@ -50,6 +53,7 @@ class PatentType(Enum):
 
 class PatentStatus(Enum):
     """Patent status values"""
+
     ACTIVE = "active"
     EXPIRED = "expired"
     PENDING = "pending"
@@ -60,6 +64,7 @@ class PatentStatus(Enum):
 @dataclass
 class Trademark:
     """Represents a USPTO trademark record"""
+
     serial_number: str
     registration_number: Optional[str] = None
     mark_text: Optional[str] = None
@@ -77,25 +82,28 @@ class Trademark:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'serial_number': self.serial_number,
-            'registration_number': self.registration_number,
-            'mark_text': self.mark_text,
-            'status': self.status.value,
-            'filing_date': self.filing_date.isoformat() if self.filing_date else None,
-            'registration_date': self.registration_date.isoformat() if self.registration_date else None,
-            'owner_name': self.owner_name,
-            'owner_address': self.owner_address,
-            'attorney_name': self.attorney_name,
-            'goods_services': self.goods_services,
-            'classes': self.classes,
-            'design_search_codes': self.design_search_codes,
-            'fetched_at': self.fetched_at.isoformat()
+            "serial_number": self.serial_number,
+            "registration_number": self.registration_number,
+            "mark_text": self.mark_text,
+            "status": self.status.value,
+            "filing_date": self.filing_date.isoformat() if self.filing_date else None,
+            "registration_date": (
+                self.registration_date.isoformat() if self.registration_date else None
+            ),
+            "owner_name": self.owner_name,
+            "owner_address": self.owner_address,
+            "attorney_name": self.attorney_name,
+            "goods_services": self.goods_services,
+            "classes": self.classes,
+            "design_search_codes": self.design_search_codes,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class Patent:
     """Represents a USPTO patent record"""
+
     patent_number: str
     application_number: Optional[str] = None
     title: Optional[str] = None
@@ -116,28 +124,31 @@ class Patent:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'patent_number': self.patent_number,
-            'application_number': self.application_number,
-            'title': self.title,
-            'patent_type': self.patent_type.value,
-            'status': self.status.value,
-            'filing_date': self.filing_date.isoformat() if self.filing_date else None,
-            'issue_date': self.issue_date.isoformat() if self.issue_date else None,
-            'expiration_date': self.expiration_date.isoformat() if self.expiration_date else None,
-            'inventors': self.inventors,
-            'assignee_name': self.assignee_name,
-            'assignee_address': self.assignee_address,
-            'abstract': self.abstract,
-            'claims_count': self.claims_count,
-            'citations': self.citations,
-            'classification_codes': self.classification_codes,
-            'fetched_at': self.fetched_at.isoformat()
+            "patent_number": self.patent_number,
+            "application_number": self.application_number,
+            "title": self.title,
+            "patent_type": self.patent_type.value,
+            "status": self.status.value,
+            "filing_date": self.filing_date.isoformat() if self.filing_date else None,
+            "issue_date": self.issue_date.isoformat() if self.issue_date else None,
+            "expiration_date": (
+                self.expiration_date.isoformat() if self.expiration_date else None
+            ),
+            "inventors": self.inventors,
+            "assignee_name": self.assignee_name,
+            "assignee_address": self.assignee_address,
+            "abstract": self.abstract,
+            "claims_count": self.claims_count,
+            "citations": self.citations,
+            "classification_codes": self.classification_codes,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class TrademarkSearch:
     """Search parameters for trademark searches"""
+
     mark_text: Optional[str] = None
     owner_name: Optional[str] = None
     serial_number: Optional[str] = None
@@ -151,6 +162,7 @@ class TrademarkSearch:
 @dataclass
 class PatentSearch:
     """Search parameters for patent searches"""
+
     title_keywords: Optional[str] = None
     inventor_name: Optional[str] = None
     assignee_name: Optional[str] = None
@@ -201,17 +213,17 @@ class USPTOScraper(ABC):
         """Parse trademark status from text."""
         status_lower = status_text.lower().strip()
 
-        if 'registered' in status_lower:
+        if "registered" in status_lower:
             return TrademarkStatus.REGISTERED
-        elif 'pending' in status_lower:
+        elif "pending" in status_lower:
             return TrademarkStatus.PENDING
-        elif 'abandoned' in status_lower:
+        elif "abandoned" in status_lower:
             return TrademarkStatus.ABANDONED
-        elif 'cancelled' in status_lower:
+        elif "cancelled" in status_lower:
             return TrademarkStatus.CANCELLED
-        elif 'expired' in status_lower:
+        elif "expired" in status_lower:
             return TrademarkStatus.EXPIRED
-        elif 'opposed' in status_lower:
+        elif "opposed" in status_lower:
             return TrademarkStatus.OPPOSED
 
         return TrademarkStatus.UNKNOWN
@@ -221,24 +233,27 @@ class USPTOScraper(ABC):
 # SEC EDGAR (Corporate Filings)
 # =============================================================================
 
+
 class SECFilingType(Enum):
     """Types of SEC filings"""
-    FORM_10K = "10-K"           # Annual report
-    FORM_10Q = "10-Q"           # Quarterly report
-    FORM_8K = "8-K"             # Current report
-    FORM_4 = "4"                # Insider trading
-    FORM_S1 = "S-1"             # Registration statement
-    FORM_DEF14A = "DEF 14A"     # Proxy statement
-    FORM_13F = "13F"            # Institutional holdings
-    FORM_13D = "13D"            # Beneficial ownership
-    FORM_13G = "13G"            # Beneficial ownership (passive)
-    FORM_144 = "144"            # Sale of securities
+
+    FORM_10K = "10-K"  # Annual report
+    FORM_10Q = "10-Q"  # Quarterly report
+    FORM_8K = "8-K"  # Current report
+    FORM_4 = "4"  # Insider trading
+    FORM_S1 = "S-1"  # Registration statement
+    FORM_DEF14A = "DEF 14A"  # Proxy statement
+    FORM_13F = "13F"  # Institutional holdings
+    FORM_13D = "13D"  # Beneficial ownership
+    FORM_13G = "13G"  # Beneficial ownership (passive)
+    FORM_144 = "144"  # Sale of securities
     OTHER = "other"
 
 
 @dataclass
 class SECFiling:
     """Represents an SEC EDGAR filing"""
+
     accession_number: str
     form_type: SECFilingType
     filing_date: date
@@ -255,24 +270,29 @@ class SECFiling:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'accession_number': self.accession_number,
-            'form_type': self.form_type.value,
-            'filing_date': self.filing_date.isoformat(),
-            'company_name': self.company_name,
-            'cik': self.cik,
-            'ticker': self.ticker,
-            'document_url': self.document_url,
-            'description': self.description,
-            'file_size': self.file_size,
-            'period_of_report': self.period_of_report.isoformat() if self.period_of_report else None,
-            'accepted_datetime': self.accepted_datetime.isoformat() if self.accepted_datetime else None,
-            'fetched_at': self.fetched_at.isoformat()
+            "accession_number": self.accession_number,
+            "form_type": self.form_type.value,
+            "filing_date": self.filing_date.isoformat(),
+            "company_name": self.company_name,
+            "cik": self.cik,
+            "ticker": self.ticker,
+            "document_url": self.document_url,
+            "description": self.description,
+            "file_size": self.file_size,
+            "period_of_report": (
+                self.period_of_report.isoformat() if self.period_of_report else None
+            ),
+            "accepted_datetime": (
+                self.accepted_datetime.isoformat() if self.accepted_datetime else None
+            ),
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class SECCompany:
     """Represents a company registered with SEC"""
+
     cik: str
     company_name: str
     ticker: Optional[str] = None
@@ -288,23 +308,24 @@ class SECCompany:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'cik': self.cik,
-            'company_name': self.company_name,
-            'ticker': self.ticker,
-            'sic_code': self.sic_code,
-            'sic_description': self.sic_description,
-            'state': self.state,
-            'fiscal_year_end': self.fiscal_year_end,
-            'business_address': self.business_address,
-            'mailing_address': self.mailing_address,
-            'recent_filings': [f.to_dict() for f in self.recent_filings],
-            'fetched_at': self.fetched_at.isoformat()
+            "cik": self.cik,
+            "company_name": self.company_name,
+            "ticker": self.ticker,
+            "sic_code": self.sic_code,
+            "sic_description": self.sic_description,
+            "state": self.state,
+            "fiscal_year_end": self.fiscal_year_end,
+            "business_address": self.business_address,
+            "mailing_address": self.mailing_address,
+            "recent_filings": [f.to_dict() for f in self.recent_filings],
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class SECSearch:
     """Search parameters for SEC filings"""
+
     company_name: Optional[str] = None
     cik: Optional[str] = None
     ticker: Optional[str] = None
@@ -335,7 +356,9 @@ class SECEdgarScraper(ABC):
         pass
 
     @abstractmethod
-    def get_company_filings(self, cik: str, form_types: List[SECFilingType] = None) -> List[SECFiling]:
+    def get_company_filings(
+        self, cik: str, form_types: List[SECFilingType] = None
+    ) -> List[SECFiling]:
         """Get all filings for a company."""
         pass
 
@@ -351,7 +374,7 @@ class SECEdgarScraper(ABC):
 
     def normalize_cik(self, cik: str) -> str:
         """Normalize CIK to 10-digit padded format."""
-        cik_clean = re.sub(r'[^0-9]', '', cik)
+        cik_clean = re.sub(r"[^0-9]", "", cik)
         return cik_clean.zfill(10)
 
     def parse_form_type(self, form_text: str) -> SECFilingType:
@@ -359,19 +382,19 @@ class SECEdgarScraper(ABC):
         form_upper = form_text.upper().strip()
 
         form_mapping = {
-            '10-K': SECFilingType.FORM_10K,
-            '10K': SECFilingType.FORM_10K,
-            '10-Q': SECFilingType.FORM_10Q,
-            '10Q': SECFilingType.FORM_10Q,
-            '8-K': SECFilingType.FORM_8K,
-            '8K': SECFilingType.FORM_8K,
-            '4': SECFilingType.FORM_4,
-            'S-1': SECFilingType.FORM_S1,
-            'DEF 14A': SECFilingType.FORM_DEF14A,
-            '13F': SECFilingType.FORM_13F,
-            '13D': SECFilingType.FORM_13D,
-            '13G': SECFilingType.FORM_13G,
-            '144': SECFilingType.FORM_144,
+            "10-K": SECFilingType.FORM_10K,
+            "10K": SECFilingType.FORM_10K,
+            "10-Q": SECFilingType.FORM_10Q,
+            "10Q": SECFilingType.FORM_10Q,
+            "8-K": SECFilingType.FORM_8K,
+            "8K": SECFilingType.FORM_8K,
+            "4": SECFilingType.FORM_4,
+            "S-1": SECFilingType.FORM_S1,
+            "DEF 14A": SECFilingType.FORM_DEF14A,
+            "13F": SECFilingType.FORM_13F,
+            "13D": SECFilingType.FORM_13D,
+            "13G": SECFilingType.FORM_13G,
+            "144": SECFilingType.FORM_144,
         }
 
         return form_mapping.get(form_upper, SECFilingType.OTHER)
@@ -381,8 +404,10 @@ class SECEdgarScraper(ABC):
 # FDIC (Bank Data)
 # =============================================================================
 
+
 class BankStatus(Enum):
     """Bank operational status"""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
     FAILED = "failed"
@@ -393,6 +418,7 @@ class BankStatus(Enum):
 @dataclass
 class Bank:
     """Represents an FDIC-insured bank"""
+
     fdic_cert: str
     bank_name: str
     status: BankStatus = BankStatus.UNKNOWN
@@ -411,26 +437,31 @@ class Bank:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'fdic_cert': self.fdic_cert,
-            'bank_name': self.bank_name,
-            'status': self.status.value,
-            'charter_type': self.charter_type,
-            'headquarters_city': self.headquarters_city,
-            'headquarters_state': self.headquarters_state,
-            'established_date': self.established_date.isoformat() if self.established_date else None,
-            'total_assets': self.total_assets,
-            'total_deposits': self.total_deposits,
-            'branches_count': self.branches_count,
-            'holding_company': self.holding_company,
-            'primary_regulator': self.primary_regulator,
-            'insured_date': self.insured_date.isoformat() if self.insured_date else None,
-            'fetched_at': self.fetched_at.isoformat()
+            "fdic_cert": self.fdic_cert,
+            "bank_name": self.bank_name,
+            "status": self.status.value,
+            "charter_type": self.charter_type,
+            "headquarters_city": self.headquarters_city,
+            "headquarters_state": self.headquarters_state,
+            "established_date": (
+                self.established_date.isoformat() if self.established_date else None
+            ),
+            "total_assets": self.total_assets,
+            "total_deposits": self.total_deposits,
+            "branches_count": self.branches_count,
+            "holding_company": self.holding_company,
+            "primary_regulator": self.primary_regulator,
+            "insured_date": (
+                self.insured_date.isoformat() if self.insured_date else None
+            ),
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class BankBranch:
     """Represents a bank branch location"""
+
     branch_number: str
     branch_name: str
     bank_fdic_cert: str
@@ -445,22 +476,25 @@ class BankBranch:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'branch_number': self.branch_number,
-            'branch_name': self.branch_name,
-            'bank_fdic_cert': self.bank_fdic_cert,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'zip_code': self.zip_code,
-            'county': self.county,
-            'established_date': self.established_date.isoformat() if self.established_date else None,
-            'service_type': self.service_type
+            "branch_number": self.branch_number,
+            "branch_name": self.branch_name,
+            "bank_fdic_cert": self.bank_fdic_cert,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "zip_code": self.zip_code,
+            "county": self.county,
+            "established_date": (
+                self.established_date.isoformat() if self.established_date else None
+            ),
+            "service_type": self.service_type,
         }
 
 
 @dataclass
 class BankSearch:
     """Search parameters for bank searches"""
+
     bank_name: Optional[str] = None
     fdic_cert: Optional[str] = None
     state: Optional[str] = None
@@ -500,7 +534,9 @@ class FDICScraper(ABC):
         pass
 
     @abstractmethod
-    def get_failed_banks(self, date_from: date = None, date_to: date = None) -> List[Bank]:
+    def get_failed_banks(
+        self, date_from: date = None, date_to: date = None
+    ) -> List[Bank]:
         """Get list of failed banks."""
         pass
 
@@ -509,9 +545,11 @@ class FDICScraper(ABC):
 # Census Bureau (Demographics)
 # =============================================================================
 
+
 @dataclass
 class CensusData:
     """Represents Census Bureau data for a geographic area"""
+
     geo_id: str
     geo_name: str
     geo_type: str  # state, county, tract, block group, etc.
@@ -531,27 +569,28 @@ class CensusData:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'geo_id': self.geo_id,
-            'geo_name': self.geo_name,
-            'geo_type': self.geo_type,
-            'state_fips': self.state_fips,
-            'county_fips': self.county_fips,
-            'total_population': self.total_population,
-            'median_household_income': self.median_household_income,
-            'median_home_value': self.median_home_value,
-            'poverty_rate': self.poverty_rate,
-            'unemployment_rate': self.unemployment_rate,
-            'owner_occupied_rate': self.owner_occupied_rate,
-            'median_age': self.median_age,
-            'housing_units': self.housing_units,
-            'year': self.year,
-            'fetched_at': self.fetched_at.isoformat()
+            "geo_id": self.geo_id,
+            "geo_name": self.geo_name,
+            "geo_type": self.geo_type,
+            "state_fips": self.state_fips,
+            "county_fips": self.county_fips,
+            "total_population": self.total_population,
+            "median_household_income": self.median_household_income,
+            "median_home_value": self.median_home_value,
+            "poverty_rate": self.poverty_rate,
+            "unemployment_rate": self.unemployment_rate,
+            "owner_occupied_rate": self.owner_occupied_rate,
+            "median_age": self.median_age,
+            "housing_units": self.housing_units,
+            "year": self.year,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class CensusSearch:
     """Search parameters for Census data"""
+
     state_fips: Optional[str] = None
     county_fips: Optional[str] = None
     geo_type: Optional[str] = None  # state, county, tract, block group
@@ -571,11 +610,11 @@ class CensusScraper(ABC):
 
     # Common Census variables
     VARIABLE_MAPPING = {
-        'total_population': 'B01003_001E',
-        'median_household_income': 'B19013_001E',
-        'median_home_value': 'B25077_001E',
-        'housing_units': 'B25001_001E',
-        'median_age': 'B01002_001E',
+        "total_population": "B01003_001E",
+        "median_household_income": "B19013_001E",
+        "median_home_value": "B25077_001E",
+        "housing_units": "B25001_001E",
+        "median_age": "B01002_001E",
     }
 
     def __init__(self, api_key: str = None, config: Dict[str, Any] = None):
@@ -584,17 +623,23 @@ class CensusScraper(ABC):
         logger.info("Initialized CensusScraper")
 
     @abstractmethod
-    def get_state_data(self, state_fips: str, variables: List[str] = None) -> Optional[CensusData]:
+    def get_state_data(
+        self, state_fips: str, variables: List[str] = None
+    ) -> Optional[CensusData]:
         """Get Census data for a state."""
         pass
 
     @abstractmethod
-    def get_county_data(self, state_fips: str, county_fips: str, variables: List[str] = None) -> Optional[CensusData]:
+    def get_county_data(
+        self, state_fips: str, county_fips: str, variables: List[str] = None
+    ) -> Optional[CensusData]:
         """Get Census data for a county."""
         pass
 
     @abstractmethod
-    def get_tract_data(self, state_fips: str, county_fips: str, tract: str) -> Optional[CensusData]:
+    def get_tract_data(
+        self, state_fips: str, county_fips: str, tract: str
+    ) -> Optional[CensusData]:
         """Get Census data for a census tract."""
         pass
 
@@ -608,9 +653,11 @@ class CensusScraper(ABC):
 # FHFA (Housing Data)
 # =============================================================================
 
+
 @dataclass
 class HousePriceIndex:
     """Represents FHFA House Price Index data"""
+
     geo_name: str
     geo_type: str  # state, msa, division
     period: str  # YYYY-Q# format
@@ -622,13 +669,13 @@ class HousePriceIndex:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'geo_name': self.geo_name,
-            'geo_type': self.geo_type,
-            'period': self.period,
-            'index_value': self.index_value,
-            'year_over_year_change': self.year_over_year_change,
-            'quarter_over_quarter_change': self.quarter_over_quarter_change,
-            'fetched_at': self.fetched_at.isoformat()
+            "geo_name": self.geo_name,
+            "geo_type": self.geo_type,
+            "period": self.period,
+            "index_value": self.index_value,
+            "year_over_year_change": self.year_over_year_change,
+            "quarter_over_quarter_change": self.quarter_over_quarter_change,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
@@ -647,17 +694,23 @@ class FHFAScraper(ABC):
         logger.info("Initialized FHFAScraper")
 
     @abstractmethod
-    def get_state_hpi(self, state: str, start_period: str = None, end_period: str = None) -> List[HousePriceIndex]:
+    def get_state_hpi(
+        self, state: str, start_period: str = None, end_period: str = None
+    ) -> List[HousePriceIndex]:
         """Get House Price Index for a state."""
         pass
 
     @abstractmethod
-    def get_msa_hpi(self, msa_code: str, start_period: str = None, end_period: str = None) -> List[HousePriceIndex]:
+    def get_msa_hpi(
+        self, msa_code: str, start_period: str = None, end_period: str = None
+    ) -> List[HousePriceIndex]:
         """Get House Price Index for a Metropolitan Statistical Area."""
         pass
 
     @abstractmethod
-    def get_national_hpi(self, start_period: str = None, end_period: str = None) -> List[HousePriceIndex]:
+    def get_national_hpi(
+        self, start_period: str = None, end_period: str = None
+    ) -> List[HousePriceIndex]:
         """Get national House Price Index."""
         pass
 
@@ -666,9 +719,11 @@ class FHFAScraper(ABC):
 # BLS (Bureau of Labor Statistics)
 # =============================================================================
 
+
 @dataclass
 class LaborStatistic:
     """Represents BLS labor statistics data"""
+
     series_id: str
     series_title: str
     period: str  # YYYY-MM format
@@ -680,19 +735,20 @@ class LaborStatistic:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'series_id': self.series_id,
-            'series_title': self.series_title,
-            'period': self.period,
-            'value': self.value,
-            'footnotes': self.footnotes,
-            'preliminary': self.preliminary,
-            'fetched_at': self.fetched_at.isoformat()
+            "series_id": self.series_id,
+            "series_title": self.series_title,
+            "period": self.period,
+            "value": self.value,
+            "footnotes": self.footnotes,
+            "preliminary": self.preliminary,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class UnemploymentData:
     """Represents unemployment rate data"""
+
     geo_name: str
     geo_type: str  # national, state, county, msa
     period: str
@@ -705,14 +761,14 @@ class UnemploymentData:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'geo_name': self.geo_name,
-            'geo_type': self.geo_type,
-            'period': self.period,
-            'unemployment_rate': self.unemployment_rate,
-            'labor_force': self.labor_force,
-            'employed': self.employed,
-            'unemployed': self.unemployed,
-            'fetched_at': self.fetched_at.isoformat()
+            "geo_name": self.geo_name,
+            "geo_type": self.geo_type,
+            "period": self.period,
+            "unemployment_rate": self.unemployment_rate,
+            "labor_force": self.labor_force,
+            "employed": self.employed,
+            "unemployed": self.unemployed,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
@@ -732,17 +788,23 @@ class BLSScraper(ABC):
         logger.info("Initialized BLSScraper")
 
     @abstractmethod
-    def get_unemployment_rate(self, state: str = None, start_year: int = None, end_year: int = None) -> List[UnemploymentData]:
+    def get_unemployment_rate(
+        self, state: str = None, start_year: int = None, end_year: int = None
+    ) -> List[UnemploymentData]:
         """Get unemployment rate data."""
         pass
 
     @abstractmethod
-    def get_series_data(self, series_id: str, start_year: int = None, end_year: int = None) -> List[LaborStatistic]:
+    def get_series_data(
+        self, series_id: str, start_year: int = None, end_year: int = None
+    ) -> List[LaborStatistic]:
         """Get data for a specific BLS series."""
         pass
 
     @abstractmethod
-    def get_area_employment(self, state: str, area_code: str = None) -> List[LaborStatistic]:
+    def get_area_employment(
+        self, state: str, area_code: str = None
+    ) -> List[LaborStatistic]:
         """Get employment data for a geographic area."""
         pass
 
@@ -751,10 +813,9 @@ class BLSScraper(ABC):
 # Convenience Functions
 # =============================================================================
 
+
 def search_trademarks(
-    mark_text: str = None,
-    owner_name: str = None,
-    status: TrademarkStatus = None
+    mark_text: str = None, owner_name: str = None, status: TrademarkStatus = None
 ) -> List[Trademark]:
     """
     Convenience function to search USPTO trademarks.
@@ -767,11 +828,7 @@ def search_trademarks(
     Returns:
         List of matching Trademark objects
     """
-    search = TrademarkSearch(
-        mark_text=mark_text,
-        owner_name=owner_name,
-        status=status
-    )
+    search = TrademarkSearch(mark_text=mark_text, owner_name=owner_name, status=status)
 
     logger.info(f"Searching trademarks: {mark_text or owner_name}")
 
@@ -784,7 +841,7 @@ def search_sec_filings(
     ticker: str = None,
     form_type: SECFilingType = None,
     date_from: date = None,
-    date_to: date = None
+    date_to: date = None,
 ) -> List[SECFiling]:
     """
     Convenience function to search SEC EDGAR filings.
@@ -804,7 +861,7 @@ def search_sec_filings(
         ticker=ticker,
         form_type=form_type,
         filing_date_from=date_from,
-        filing_date_to=date_to
+        filing_date_to=date_to,
     )
 
     logger.info(f"Searching SEC filings: {company_name or ticker}")
@@ -814,9 +871,7 @@ def search_sec_filings(
 
 
 def search_banks(
-    bank_name: str = None,
-    state: str = None,
-    city: str = None
+    bank_name: str = None, state: str = None, city: str = None
 ) -> List[Bank]:
     """
     Convenience function to search FDIC banks.
@@ -829,11 +884,7 @@ def search_banks(
     Returns:
         List of matching Bank objects
     """
-    search = BankSearch(
-        bank_name=bank_name,
-        state=state,
-        city=city
-    )
+    search = BankSearch(bank_name=bank_name, state=state, city=city)
 
     logger.info(f"Searching banks: {bank_name}")
 

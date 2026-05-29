@@ -10,22 +10,30 @@ Features:
 - Background job processing
 """
 
-import logging
 import asyncio
-from typing import (
-    Dict, List, Any, Optional, Callable, TypeVar, Coroutine,
-    AsyncIterator, Awaitable
-)
+import logging
+import time
+from asyncio import Queue, Semaphore
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from contextlib import asynccontextmanager
+from typing import (
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Coroutine,
+    Dict,
+    List,
+    Optional,
+    TypeVar,
+)
+
 import aiohttp
-from asyncio import Semaphore, Queue
-import time
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass
@@ -38,6 +46,7 @@ class RateLimiter:
     - Burst capacity
     - Async-safe
     """
+
     requests_per_second: float
     burst_size: int = 10
     _tokens: float = field(default=0, init=False)
@@ -56,8 +65,7 @@ class RateLimiter:
 
             # Add tokens based on elapsed time
             self._tokens = min(
-                self.burst_size,
-                self._tokens + elapsed * self.requests_per_second
+                self.burst_size, self._tokens + elapsed * self.requests_per_second
             )
 
             if self._tokens < 1:
@@ -96,14 +104,14 @@ class AsyncHTTPClient:
         self.retry_delay = retry_delay
         self.rate_limiter = RateLimiter(
             requests_per_second=requests_per_second,
-            burst_size=int(requests_per_second * 2)
+            burst_size=int(requests_per_second * 2),
         )
         self._session: Optional[aiohttp.ClientSession] = None
         self._stats = {
-            'requests': 0,
-            'successes': 0,
-            'failures': 0,
-            'retries': 0,
+            "requests": 0,
+            "successes": 0,
+            "failures": 0,
+            "retries": 0,
         }
 
     async def _get_session(self) -> aiohttp.ClientSession:
@@ -124,12 +132,7 @@ class AsyncHTTPClient:
         if self._session and not self._session.closed:
             await self._session.close()
 
-    async def _request(
-        self,
-        method: str,
-        url: str,
-        **kwargs
-    ) -> Dict[str, Any]:
+    async def _request(self, method: str, url: str, **kwargs) -> Dict[str, Any]:
         """Make an HTTP request with retries"""
         full_url = f"{self.base_url}{url}" if not url.startswith("http") else url
 
@@ -137,26 +140,26 @@ class AsyncHTTPClient:
             try:
                 await self.rate_limiter.acquire()
                 session = await self._get_session()
-                self._stats['requests'] += 1
+                self._stats["requests"] += 1
 
                 async with session.request(method, full_url, **kwargs) as response:
                     response.raise_for_status()
                     data = await response.json()
-                    self._stats['successes'] += 1
+                    self._stats["successes"] += 1
                     return {
-                        'status': response.status,
-                        'data': data,
-                        'headers': dict(response.headers),
+                        "status": response.status,
+                        "data": data,
+                        "headers": dict(response.headers),
                     }
 
             except aiohttp.ClientError as e:
-                self._stats['retries'] += 1
+                self._stats["retries"] += 1
                 logger.warning(f"Request failed (attempt {attempt + 1}): {e}")
 
                 if attempt < self.retry_count:
                     await asyncio.sleep(self.retry_delay * (attempt + 1))
                 else:
-                    self._stats['failures'] += 1
+                    self._stats["failures"] += 1
                     raise
 
     async def get(self, url: str, **kwargs) -> Dict[str, Any]:
@@ -187,9 +190,7 @@ class AsyncHTTPClient:
 
 
 async def gather_with_limit(
-    tasks: List[Coroutine],
-    limit: int = 10,
-    return_exceptions: bool = False
+    tasks: List[Coroutine], limit: int = 10, return_exceptions: bool = False
 ) -> List[Any]:
     """
     Execute coroutines with concurrency limit.
@@ -213,9 +214,7 @@ async def gather_with_limit(
 
 
 async def map_async(
-    func: Callable[[T], Awaitable[Any]],
-    items: List[T],
-    limit: int = 10
+    func: Callable[[T], Awaitable[Any]], items: List[T], limit: int = 10
 ) -> List[Any]:
     """
     Apply async function to items with concurrency limit.
@@ -249,8 +248,8 @@ class AsyncWorkerPool:
         self._workers: List[asyncio.Task] = []
         self._running = False
         self._stats = {
-            'tasks_processed': 0,
-            'tasks_failed': 0,
+            "tasks_processed": 0,
+            "tasks_failed": 0,
         }
 
     async def start(self):
@@ -260,8 +259,7 @@ class AsyncWorkerPool:
 
         self._running = True
         self._workers = [
-            asyncio.create_task(self._worker(i))
-            for i in range(self.num_workers)
+            asyncio.create_task(self._worker(i)) for i in range(self.num_workers)
         ]
         logger.info(f"Started {self.num_workers} async workers")
 
@@ -290,19 +288,16 @@ class AsyncWorkerPool:
         """Worker coroutine"""
         while self._running:
             try:
-                task_data = await asyncio.wait_for(
-                    self._queue.get(),
-                    timeout=1.0
-                )
+                task_data = await asyncio.wait_for(self._queue.get(), timeout=1.0)
 
                 try:
                     func, args, kwargs, future = task_data
                     result = await func(*args, **kwargs)
                     future.set_result(result)
-                    self._stats['tasks_processed'] += 1
+                    self._stats["tasks_processed"] += 1
                 except Exception as e:
                     future.set_exception(e)
-                    self._stats['tasks_failed'] += 1
+                    self._stats["tasks_failed"] += 1
                     logger.error(f"Worker {worker_id} task failed: {e}")
                 finally:
                     self._queue.task_done()
@@ -313,10 +308,7 @@ class AsyncWorkerPool:
                 break
 
     async def submit(
-        self,
-        func: Callable[..., Awaitable[T]],
-        *args,
-        **kwargs
+        self, func: Callable[..., Awaitable[T]], *args, **kwargs
     ) -> asyncio.Future:
         """
         Submit a task to the worker pool.
@@ -337,9 +329,9 @@ class AsyncWorkerPool:
         """Get pool statistics"""
         return {
             **self._stats,
-            'queue_size': self._queue.qsize(),
-            'workers': self.num_workers,
-            'running': self._running,
+            "queue_size": self._queue.qsize(),
+            "workers": self.num_workers,
+            "running": self._running,
         }
 
 
@@ -354,7 +346,7 @@ class AsyncBatcher:
         self,
         batch_size: int = 100,
         flush_interval: float = 1.0,
-        processor: Callable[[List[Any]], Awaitable[List[Any]]] = None
+        processor: Callable[[List[Any]], Awaitable[List[Any]]] = None,
     ):
         self.batch_size = batch_size
         self.flush_interval = flush_interval
@@ -444,7 +436,7 @@ async def retry_async(
     delay: float = 1.0,
     backoff: float = 2.0,
     exceptions: tuple = (Exception,),
-    **kwargs
+    **kwargs,
 ) -> T:
     """
     Retry an async function with exponential backoff.
@@ -472,7 +464,7 @@ async def retry_async(
         except exceptions as e:
             last_exception = e
             if attempt < max_retries:
-                wait_time = delay * (backoff ** attempt)
+                wait_time = delay * (backoff**attempt)
                 logger.warning(
                     f"Retry {attempt + 1}/{max_retries} after {wait_time}s: {e}"
                 )
@@ -488,10 +480,7 @@ async def run_in_executor(func: Callable[..., T], *args, **kwargs) -> T:
     Useful for I/O-bound operations that don't have async versions.
     """
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(
-        None,
-        lambda: func(*args, **kwargs)
-    )
+    return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
 
 
 class AsyncCircuitBreaker:
@@ -505,7 +494,7 @@ class AsyncCircuitBreaker:
         self,
         failure_threshold: int = 5,
         recovery_timeout: float = 30.0,
-        half_open_requests: int = 3
+        half_open_requests: int = 3,
     ):
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
@@ -520,12 +509,7 @@ class AsyncCircuitBreaker:
     def is_open(self) -> bool:
         return self._state == "open"
 
-    async def call(
-        self,
-        func: Callable[..., Awaitable[T]],
-        *args,
-        **kwargs
-    ) -> T:
+    async def call(self, func: Callable[..., Awaitable[T]], *args, **kwargs) -> T:
         """
         Execute function with circuit breaker protection.
         """
@@ -575,12 +559,15 @@ class AsyncCircuitBreaker:
 
     def get_state(self) -> Dict[str, Any]:
         return {
-            'state': self._state,
-            'failures': self._failures,
-            'last_failure': self._last_failure_time.isoformat() if self._last_failure_time else None,
+            "state": self._state,
+            "failures": self._failures,
+            "last_failure": (
+                self._last_failure_time.isoformat() if self._last_failure_time else None
+            ),
         }
 
 
 class CircuitBreakerOpenError(Exception):
     """Raised when circuit breaker is open"""
+
     pass

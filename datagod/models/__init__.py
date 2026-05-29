@@ -3,16 +3,32 @@ DataGod Database Models
 SQLAlchemy models for all database entities
 """
 
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, Boolean, JSON, ForeignKey, Index
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship, scoped_session
-from sqlalchemy.pool import QueuePool
-from datetime import datetime
 import logging
+from datetime import datetime
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    create_engine,
+)
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, scoped_session, sessionmaker
+from sqlalchemy.pool import QueuePool
 
 from datagod.config.settings import (
-    DATABASE_URL, DB_POOL_SIZE, DB_MAX_OVERFLOW,
-    DB_POOL_TIMEOUT, DB_POOL_RECYCLE
+    DATABASE_URL,
+    DB_MAX_OVERFLOW,
+    DB_POOL_RECYCLE,
+    DB_POOL_SIZE,
+    DB_POOL_TIMEOUT,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,7 +41,7 @@ engine = create_engine(
     max_overflow=DB_MAX_OVERFLOW,
     pool_timeout=DB_POOL_TIMEOUT,
     pool_recycle=DB_POOL_RECYCLE,
-    echo=False  # Set to True for SQL query logging in development
+    echo=False,  # Set to True for SQL query logging in development
 )
 
 # Create the declarative base
@@ -37,16 +53,21 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Create scoped session for thread safety
 db_session = scoped_session(SessionLocal)
 
+
 # Timestamp mixin for created_at/updated_at
 class TimestampMixin:
     """Mixin for created_at and updated_at timestamps"""
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
 
 class Jurisdiction(Base, TimestampMixin):
     """Represents a jurisdiction (county, city, state)"""
-    __tablename__ = 'jurisdictions'
+
+    __tablename__ = "jurisdictions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), unique=True, nullable=False, index=True)
@@ -60,26 +81,36 @@ class Jurisdiction(Base, TimestampMixin):
     description = Column(Text, nullable=True)
     contact_info = Column(JSON, nullable=True)  # Contact details
     record_count = Column(Integer, nullable=False, default=0)
-    jurisdiction_metadata = Column(JSON, nullable=True)     # Additional jurisdiction data
+    jurisdiction_metadata = Column(JSON, nullable=True)  # Additional jurisdiction data
 
     # FIPS code support for standardized county identification
-    fips_code = Column(String(5), nullable=True, index=True)  # Full 5-digit FIPS (state + county)
+    fips_code = Column(
+        String(5), nullable=True, index=True
+    )  # Full 5-digit FIPS (state + county)
     state_fips = Column(String(2), nullable=True, index=True)  # 2-digit state FIPS
     county_fips = Column(String(3), nullable=True, index=True)  # 3-digit county FIPS
     county_seat = Column(String(100), nullable=True)  # County seat city name
 
     # Relationships
-    data_sources = relationship("DataSource", back_populates="jurisdiction", cascade="all, delete-orphan")
-    records = relationship("Record", back_populates="jurisdiction", cascade="all, delete-orphan")
-    coverage = relationship("JurisdictionCoverage", back_populates="jurisdiction", cascade="all, delete-orphan")
+    data_sources = relationship(
+        "DataSource", back_populates="jurisdiction", cascade="all, delete-orphan"
+    )
+    records = relationship(
+        "Record", back_populates="jurisdiction", cascade="all, delete-orphan"
+    )
+    coverage = relationship(
+        "JurisdictionCoverage",
+        back_populates="jurisdiction",
+        cascade="all, delete-orphan",
+    )
 
     # Indexes
     __table_args__ = (
-        Index('idx_jurisdiction_state_county', 'state', 'county'),
-        Index('idx_jurisdiction_type', 'type'),
-        Index('idx_jurisdiction_api_available', 'api_available'),
-        Index('idx_jurisdiction_fips', 'fips_code'),
-        Index('idx_jurisdiction_state_fips', 'state_fips'),
+        Index("idx_jurisdiction_state_county", "state", "county"),
+        Index("idx_jurisdiction_type", "type"),
+        Index("idx_jurisdiction_api_available", "api_available"),
+        Index("idx_jurisdiction_fips", "fips_code"),
+        Index("idx_jurisdiction_state_fips", "state_fips"),
     )
 
     def __repr__(self):
@@ -88,16 +119,17 @@ class Jurisdiction(Base, TimestampMixin):
 
 class DataSource(Base, TimestampMixin):
     """Represents a data source for a jurisdiction"""
-    __tablename__ = 'data_sources'
+
+    __tablename__ = "data_sources"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    jurisdiction_id = Column(Integer, ForeignKey('jurisdictions.id'), nullable=False)
+    jurisdiction_id = Column(Integer, ForeignKey("jurisdictions.id"), nullable=False)
     source_name = Column(String(255), nullable=False)
     source_type = Column(String(50), nullable=False)  # 'api', 'scraper', 'manual'
     url = Column(String(1000), nullable=True)
     api_endpoint = Column(String(1000), nullable=True)
     api_key = Column(String(500), nullable=True)  # Encrypted in production
-    status = Column(String(50), default='active')  # 'active', 'inactive', 'error'
+    status = Column(String(50), default="active")  # 'active', 'inactive', 'error'
     last_scraped = Column(DateTime, nullable=True)
     next_scheduled_scrape = Column(DateTime, nullable=True)
     scrape_interval_hours = Column(Integer, default=24)
@@ -109,14 +141,16 @@ class DataSource(Base, TimestampMixin):
 
     # Relationships
     jurisdiction = relationship("Jurisdiction", back_populates="data_sources")
-    records = relationship("Record", back_populates="data_source", cascade="all, delete-orphan")
+    records = relationship(
+        "Record", back_populates="data_source", cascade="all, delete-orphan"
+    )
 
     # Indexes
     __table_args__ = (
-        Index('idx_data_source_jurisdiction', 'jurisdiction_id'),
-        Index('idx_data_source_type', 'source_type'),
-        Index('idx_data_source_status', 'status'),
-        Index('idx_data_source_last_scraped', 'last_scraped'),
+        Index("idx_data_source_jurisdiction", "jurisdiction_id"),
+        Index("idx_data_source_type", "source_type"),
+        Index("idx_data_source_status", "status"),
+        Index("idx_data_source_last_scraped", "last_scraped"),
     )
 
     def __repr__(self):
@@ -125,15 +159,18 @@ class DataSource(Base, TimestampMixin):
 
 class Record(Base, TimestampMixin):
     """Represents a public record"""
-    __tablename__ = 'records'
+
+    __tablename__ = "records"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    jurisdiction_id = Column(Integer, ForeignKey('jurisdictions.id'), nullable=False)
-    data_source_id = Column(Integer, ForeignKey('data_sources.id'), nullable=False)
+    jurisdiction_id = Column(Integer, ForeignKey("jurisdictions.id"), nullable=False)
+    data_source_id = Column(Integer, ForeignKey("data_sources.id"), nullable=False)
 
     # Record identification
     record_id = Column(String(255), nullable=True, index=True)  # External record ID
-    record_type = Column(String(100), nullable=False, index=True)  # 'property_deed', 'mortgage', 'ucc', etc.
+    record_type = Column(
+        String(100), nullable=False, index=True
+    )  # 'property_deed', 'mortgage', 'ucc', etc.
     title = Column(String(500), nullable=False)
     description = Column(Text, nullable=True)
 
@@ -167,7 +204,9 @@ class Record(Base, TimestampMixin):
     instrument_number = Column(String(100), nullable=True)
 
     # Status and quality
-    status = Column(String(50), default='active')  # 'active', 'superseded', 'duplicate', 'error'
+    status = Column(
+        String(50), default="active"
+    )  # 'active', 'superseded', 'duplicate', 'error'
     quality_score = Column(Float, default=1.0)  # 0.0 to 1.0
     confidence_level = Column(Float, default=1.0)  # 0.0 to 1.0
 
@@ -176,21 +215,31 @@ class Record(Base, TimestampMixin):
     document_url = Column(String(1000), nullable=True)
 
     # Raw and processed data
-    raw_data = Column(JSON, nullable=True)      # Original scraped data
+    raw_data = Column(JSON, nullable=True)  # Original scraped data
     processed_data = Column(JSON, nullable=True)  # Cleaned/processed data
-    entities = Column(JSON, nullable=True)      # Extracted entities
-    relationships = Column(JSON, nullable=True) # Entity relationships
+    entities = Column(JSON, nullable=True)  # Extracted entities
+    relationships = Column(JSON, nullable=True)  # Entity relationships
 
     # Metadata
-    tags = Column(JSON, nullable=True)          # Categorization tags
-    record_metadata = Column(JSON, nullable=True)      # Additional record data
+    tags = Column(JSON, nullable=True)  # Categorization tags
+    record_metadata = Column(JSON, nullable=True)  # Additional record data
 
     # Phase 1.2: Provenance columns for audit-grade tracking
-    source_system = Column(String(100), nullable=True, index=True)  # Canonical source system ID
-    collected_at = Column(DateTime, nullable=True, index=True)  # When data was collected from source
-    query_hash = Column(String(64), nullable=True, index=True)  # SHA-256 of query that produced this
-    source_snapshot_id = Column(String(100), nullable=True)  # Reference to point-in-time snapshot
-    data_version = Column(Integer, default=1, nullable=False)  # Version counter for changes
+    source_system = Column(
+        String(100), nullable=True, index=True
+    )  # Canonical source system ID
+    collected_at = Column(
+        DateTime, nullable=True, index=True
+    )  # When data was collected from source
+    query_hash = Column(
+        String(64), nullable=True, index=True
+    )  # SHA-256 of query that produced this
+    source_snapshot_id = Column(
+        String(100), nullable=True
+    )  # Reference to point-in-time snapshot
+    data_version = Column(
+        Integer, default=1, nullable=False
+    )  # Version counter for changes
 
     # Relationships
     jurisdiction = relationship("Jurisdiction", back_populates="records")
@@ -198,16 +247,16 @@ class Record(Base, TimestampMixin):
 
     # Indexes
     __table_args__ = (
-        Index('idx_record_jurisdiction', 'jurisdiction_id'),
-        Index('idx_record_data_source', 'data_source_id'),
-        Index('idx_record_type', 'record_type'),
-        Index('idx_record_date', 'date'),
-        Index('idx_record_status', 'status'),
-        Index('idx_record_amount', 'amount'),
-        Index('idx_record_grantor', 'grantor'),
-        Index('idx_record_grantee', 'grantee'),
-        Index('idx_record_address', 'address'),
-        Index('idx_record_city_state', 'city', 'state'),
+        Index("idx_record_jurisdiction", "jurisdiction_id"),
+        Index("idx_record_data_source", "data_source_id"),
+        Index("idx_record_type", "record_type"),
+        Index("idx_record_date", "date"),
+        Index("idx_record_status", "status"),
+        Index("idx_record_amount", "amount"),
+        Index("idx_record_grantor", "grantor"),
+        Index("idx_record_grantee", "grantee"),
+        Index("idx_record_address", "address"),
+        Index("idx_record_city_state", "city", "state"),
     )
 
     def __repr__(self):
@@ -216,12 +265,17 @@ class Record(Base, TimestampMixin):
 
 class Entity(Base, TimestampMixin):
     """Represents entities mentioned in records (people, companies, properties)"""
-    __tablename__ = 'entities'
+
+    __tablename__ = "entities"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     entity_name = Column(String(500), nullable=False, index=True)
-    entity_type = Column(String(100), nullable=False, index=True)  # 'person', 'company', 'property', 'government'
-    entity_id = Column(String(255), nullable=True, index=True)  # External ID if available
+    entity_type = Column(
+        String(100), nullable=False, index=True
+    )  # 'person', 'company', 'property', 'government'
+    entity_id = Column(
+        String(255), nullable=True, index=True
+    )  # External ID if available
 
     # Contact information
     address = Column(String(500), nullable=True)
@@ -246,21 +300,23 @@ class Entity(Base, TimestampMixin):
     parcel_id = Column(String(100), nullable=True)
 
     # Status and verification
-    status = Column(String(50), default='active')  # 'active', 'inactive', 'verified', 'unverified'
+    status = Column(
+        String(50), default="active"
+    )  # 'active', 'inactive', 'verified', 'unverified'
     verification_date = Column(DateTime, nullable=True)
     verification_source = Column(String(255), nullable=True)
 
     # Additional data
     description = Column(Text, nullable=True)
-    data = Column(JSON, nullable=True)         # Additional structured data
-    entity_metadata = Column(JSON, nullable=True)     # Additional metadata
+    data = Column(JSON, nullable=True)  # Additional structured data
+    entity_metadata = Column(JSON, nullable=True)  # Additional metadata
 
     # Indexes
     __table_args__ = (
-        Index('idx_entity_name_type', 'entity_name', 'entity_type'),
-        Index('idx_entity_id', 'entity_id'),
-        Index('idx_entity_type', 'entity_type'),
-        Index('idx_entity_city_state', 'city', 'state'),
+        Index("idx_entity_name_type", "entity_name", "entity_type"),
+        Index("idx_entity_id", "entity_id"),
+        Index("idx_entity_type", "entity_type"),
+        Index("idx_entity_city_state", "city", "state"),
     )
 
     def __repr__(self):
@@ -269,23 +325,26 @@ class Entity(Base, TimestampMixin):
 
 class Relationship(Base, TimestampMixin):
     """Represents relationships between entities"""
-    __tablename__ = 'relationships'
+
+    __tablename__ = "relationships"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # Relationship participants
-    entity1_id = Column(Integer, ForeignKey('entities.id'), nullable=False)
-    entity2_id = Column(Integer, ForeignKey('entities.id'), nullable=False)
-    record_id = Column(Integer, ForeignKey('records.id'), nullable=False)
+    entity1_id = Column(Integer, ForeignKey("entities.id"), nullable=False)
+    entity2_id = Column(Integer, ForeignKey("entities.id"), nullable=False)
+    record_id = Column(Integer, ForeignKey("records.id"), nullable=False)
 
     # Relationship details
-    relationship_type = Column(String(100), nullable=False)  # 'owner', 'lender', 'borrower', 'agent', etc.
+    relationship_type = Column(
+        String(100), nullable=False
+    )  # 'owner', 'lender', 'borrower', 'agent', etc.
     role1 = Column(String(100), nullable=True)  # Entity1's role in the relationship
     role2 = Column(String(100), nullable=True)  # Entity2's role in the relationship
 
     # Context and evidence
-    context = Column(Text, nullable=True)      # Description of the relationship context
-    evidence = Column(JSON, nullable=True)     # Supporting evidence from records
+    context = Column(Text, nullable=True)  # Description of the relationship context
+    evidence = Column(JSON, nullable=True)  # Supporting evidence from records
     confidence_score = Column(Float, default=1.0)  # Confidence in the relationship
 
     # Temporal information
@@ -293,17 +352,17 @@ class Relationship(Base, TimestampMixin):
     end_date = Column(DateTime, nullable=True)
 
     # Status
-    status = Column(String(50), default='active')  # 'active', 'inactive', 'disputed'
+    status = Column(String(50), default="active")  # 'active', 'inactive', 'disputed'
 
     # Additional data
     relationship_metadata = Column(JSON, nullable=True)
 
     # Indexes
     __table_args__ = (
-        Index('idx_relationship_entities', 'entity1_id', 'entity2_id'),
-        Index('idx_relationship_record', 'record_id'),
-        Index('idx_relationship_type', 'relationship_type'),
-        Index('idx_relationship_status', 'status'),
+        Index("idx_relationship_entities", "entity1_id", "entity2_id"),
+        Index("idx_relationship_record", "record_id"),
+        Index("idx_relationship_type", "relationship_type"),
+        Index("idx_relationship_status", "status"),
     )
 
     def __repr__(self):
@@ -312,10 +371,11 @@ class Relationship(Base, TimestampMixin):
 
 class SavedSearch(Base, TimestampMixin):
     """Represents a saved search for a user"""
-    __tablename__ = 'saved_searches'
+
+    __tablename__ = "saved_searches"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     # Search details
     name = Column(String(255), nullable=False)
@@ -330,48 +390,53 @@ class SavedSearch(Base, TimestampMixin):
 
     # Notification settings
     notify_on_new_results = Column(Boolean, default=False, nullable=False)
-    notification_frequency = Column(String(50), default='daily')  # 'daily', 'weekly', 'immediate'
+    notification_frequency = Column(
+        String(50), default="daily"
+    )  # 'daily', 'weekly', 'immediate'
     last_notification = Column(DateTime, nullable=True)
     last_result_count = Column(Integer, default=0, nullable=False)
 
     # Indexes
     __table_args__ = (
-        Index('idx_saved_search_user', 'user_id'),
-        Index('idx_saved_search_name', 'name'),
-        Index('idx_saved_search_notify', 'notify_on_new_results'),
+        Index("idx_saved_search_user", "user_id"),
+        Index("idx_saved_search_name", "name"),
+        Index("idx_saved_search_notify", "notify_on_new_results"),
     )
 
     def __repr__(self):
-        return f"<SavedSearch(id={self.id}, name='{self.name}', user_id={self.user_id})>"
+        return (
+            f"<SavedSearch(id={self.id}, name='{self.name}', user_id={self.user_id})>"
+        )
 
     def to_dict(self) -> dict:
         """Convert to dictionary representation"""
         return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'name': self.name,
-            'description': self.description,
-            'search_params': self.search_params,
-            'last_run': self.last_run.isoformat() if self.last_run else None,
-            'run_count': self.run_count,
-            'notify_on_new_results': self.notify_on_new_results,
-            'notification_frequency': self.notification_frequency,
-            'last_result_count': self.last_result_count,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            "id": self.id,
+            "user_id": self.user_id,
+            "name": self.name,
+            "description": self.description,
+            "search_params": self.search_params,
+            "last_run": self.last_run.isoformat() if self.last_run else None,
+            "run_count": self.run_count,
+            "notify_on_new_results": self.notify_on_new_results,
+            "notification_frequency": self.notification_frequency,
+            "last_result_count": self.last_result_count,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
 
 class UserFavorite(Base, TimestampMixin):
     """Represents a user's favorited record or entity"""
-    __tablename__ = 'user_favorites'
+
+    __tablename__ = "user_favorites"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     # Can favorite either a record or an entity
-    record_id = Column(Integer, ForeignKey('records.id'), nullable=True)
-    entity_id = Column(Integer, ForeignKey('entities.id'), nullable=True)
+    record_id = Column(Integer, ForeignKey("records.id"), nullable=True)
+    entity_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
 
     # Type for quick filtering
     favorite_type = Column(String(50), nullable=False)  # 'record', 'entity'
@@ -382,10 +447,10 @@ class UserFavorite(Base, TimestampMixin):
 
     # Indexes
     __table_args__ = (
-        Index('idx_favorite_user', 'user_id'),
-        Index('idx_favorite_record', 'record_id'),
-        Index('idx_favorite_entity', 'entity_id'),
-        Index('idx_favorite_type', 'favorite_type'),
+        Index("idx_favorite_user", "user_id"),
+        Index("idx_favorite_record", "record_id"),
+        Index("idx_favorite_entity", "entity_id"),
+        Index("idx_favorite_type", "favorite_type"),
     )
 
     def __repr__(self):
@@ -394,34 +459,39 @@ class UserFavorite(Base, TimestampMixin):
     def to_dict(self) -> dict:
         """Convert to dictionary representation"""
         return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'record_id': self.record_id,
-            'entity_id': self.entity_id,
-            'favorite_type': self.favorite_type,
-            'notes': self.notes,
-            'tags': self.tags,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            "id": self.id,
+            "user_id": self.user_id,
+            "record_id": self.record_id,
+            "entity_id": self.entity_id,
+            "favorite_type": self.favorite_type,
+            "notes": self.notes,
+            "tags": self.tags,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
 
 class UserActivity(Base, TimestampMixin):
     """Tracks user activity for recent history and analytics"""
-    __tablename__ = 'user_activities'
+
+    __tablename__ = "user_activities"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     # Activity details
-    activity_type = Column(String(50), nullable=False)  # 'view_record', 'search', 'export', 'view_entity', etc.
+    activity_type = Column(
+        String(50), nullable=False
+    )  # 'view_record', 'search', 'export', 'view_entity', etc.
 
     # Reference to what was accessed
-    record_id = Column(Integer, ForeignKey('records.id'), nullable=True)
-    entity_id = Column(Integer, ForeignKey('entities.id'), nullable=True)
-    search_id = Column(Integer, ForeignKey('saved_searches.id'), nullable=True)
+    record_id = Column(Integer, ForeignKey("records.id"), nullable=True)
+    entity_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
+    search_id = Column(Integer, ForeignKey("saved_searches.id"), nullable=True)
 
     # Activity context
-    activity_data = Column(JSON, nullable=True)  # Additional context (search query, export format, etc.)
+    activity_data = Column(
+        JSON, nullable=True
+    )  # Additional context (search query, export format, etc.)
 
     # Session info
     ip_address = Column(String(45), nullable=True)  # IPv6 compatible
@@ -429,11 +499,11 @@ class UserActivity(Base, TimestampMixin):
 
     # Indexes
     __table_args__ = (
-        Index('idx_activity_user', 'user_id'),
-        Index('idx_activity_type', 'activity_type'),
-        Index('idx_activity_created', 'created_at'),
-        Index('idx_activity_record', 'record_id'),
-        Index('idx_activity_entity', 'entity_id'),
+        Index("idx_activity_user", "user_id"),
+        Index("idx_activity_type", "activity_type"),
+        Index("idx_activity_created", "created_at"),
+        Index("idx_activity_record", "record_id"),
+        Index("idx_activity_entity", "entity_id"),
     )
 
     def __repr__(self):
@@ -442,30 +512,31 @@ class UserActivity(Base, TimestampMixin):
     def to_dict(self) -> dict:
         """Convert to dictionary representation"""
         return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'activity_type': self.activity_type,
-            'record_id': self.record_id,
-            'entity_id': self.entity_id,
-            'search_id': self.search_id,
-            'activity_data': self.activity_data,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            "id": self.id,
+            "user_id": self.user_id,
+            "activity_type": self.activity_type,
+            "record_id": self.record_id,
+            "entity_id": self.entity_id,
+            "search_id": self.search_id,
+            "activity_data": self.activity_data,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
 
 class ShareLink(Base, TimestampMixin):
     """Represents a shareable link for records or entities"""
-    __tablename__ = 'share_links'
+
+    __tablename__ = "share_links"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     # Share token (unique identifier for the link)
     token = Column(String(64), unique=True, nullable=False, index=True)
 
     # What is being shared (record or entity)
-    record_id = Column(Integer, ForeignKey('records.id'), nullable=True)
-    entity_id = Column(Integer, ForeignKey('entities.id'), nullable=True)
+    record_id = Column(Integer, ForeignKey("records.id"), nullable=True)
+    entity_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
     share_type = Column(String(20), nullable=False)  # 'record' or 'entity'
 
     # Optional message from sharer
@@ -481,11 +552,11 @@ class ShareLink(Base, TimestampMixin):
 
     # Indexes
     __table_args__ = (
-        Index('idx_share_token', 'token'),
-        Index('idx_share_user', 'user_id'),
-        Index('idx_share_record', 'record_id'),
-        Index('idx_share_entity', 'entity_id'),
-        Index('idx_share_active', 'is_active'),
+        Index("idx_share_token", "token"),
+        Index("idx_share_user", "user_id"),
+        Index("idx_share_record", "record_id"),
+        Index("idx_share_entity", "entity_id"),
+        Index("idx_share_active", "is_active"),
     )
 
     def __repr__(self):
@@ -494,17 +565,17 @@ class ShareLink(Base, TimestampMixin):
     def to_dict(self) -> dict:
         """Convert to dictionary representation"""
         return {
-            'id': self.id,
-            'token': self.token,
-            'share_type': self.share_type,
-            'record_id': self.record_id,
-            'entity_id': self.entity_id,
-            'message': self.message,
-            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
-            'is_active': self.is_active,
-            'view_count': self.view_count,
-            'last_viewed': self.last_viewed.isoformat() if self.last_viewed else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            "id": self.id,
+            "token": self.token,
+            "share_type": self.share_type,
+            "record_id": self.record_id,
+            "entity_id": self.entity_id,
+            "message": self.message,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "is_active": self.is_active,
+            "view_count": self.view_count,
+            "last_viewed": self.last_viewed.isoformat() if self.last_viewed else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
 
@@ -520,7 +591,8 @@ class User(Base, TimestampMixin):
     - Email verification
     - Subscription tracking
     """
-    __tablename__ = 'users'
+
+    __tablename__ = "users"
 
     # Primary key
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -558,7 +630,9 @@ class User(Base, TimestampMixin):
     locked_until = Column(DateTime, nullable=True)
 
     # Subscription (basic tracking - full subscription model separate)
-    subscription_tier = Column(String(50), default='free', nullable=False)  # free, basic, pro, enterprise
+    subscription_tier = Column(
+        String(50), default="free", nullable=False
+    )  # free, basic, pro, enterprise
     subscription_expires = Column(DateTime, nullable=True)
 
     # Stripe integration
@@ -576,11 +650,11 @@ class User(Base, TimestampMixin):
 
     # Indexes for efficient queries
     __table_args__ = (
-        Index('idx_user_email', 'email'),
-        Index('idx_user_username', 'username'),
-        Index('idx_user_reset_token', 'password_reset_token'),
-        Index('idx_user_subscription', 'subscription_tier'),
-        Index('idx_user_disabled', 'disabled'),
+        Index("idx_user_email", "email"),
+        Index("idx_user_username", "username"),
+        Index("idx_user_reset_token", "password_reset_token"),
+        Index("idx_user_subscription", "subscription_tier"),
+        Index("idx_user_disabled", "disabled"),
     )
 
     def __repr__(self):
@@ -612,16 +686,32 @@ class User(Base, TimestampMixin):
         Check if user's subscription tier allows access to a feature.
         """
         tier_features = {
-            'free': ['basic_search', 'view_records'],
-            'basic': ['basic_search', 'view_records', 'export_csv', 'advanced_search'],
-            'pro': ['basic_search', 'view_records', 'export_csv', 'advanced_search',
-                    'export_excel', 'bulk_operations', 'api_access'],
-            'enterprise': ['basic_search', 'view_records', 'export_csv', 'advanced_search',
-                          'export_excel', 'bulk_operations', 'api_access', 'unlimited_exports',
-                          'priority_support', 'custom_integrations']
+            "free": ["basic_search", "view_records"],
+            "basic": ["basic_search", "view_records", "export_csv", "advanced_search"],
+            "pro": [
+                "basic_search",
+                "view_records",
+                "export_csv",
+                "advanced_search",
+                "export_excel",
+                "bulk_operations",
+                "api_access",
+            ],
+            "enterprise": [
+                "basic_search",
+                "view_records",
+                "export_csv",
+                "advanced_search",
+                "export_excel",
+                "bulk_operations",
+                "api_access",
+                "unlimited_exports",
+                "priority_support",
+                "custom_integrations",
+            ],
         }
-        tier = self.subscription_tier or 'free'
-        allowed_features = tier_features.get(tier, tier_features['free'])
+        tier = self.subscription_tier or "free"
+        allowed_features = tier_features.get(tier, tier_features["free"])
         return feature in allowed_features
 
     def to_dict(self, include_sensitive: bool = False) -> dict:
@@ -635,29 +725,35 @@ class User(Base, TimestampMixin):
             Dictionary representation of user
         """
         result = {
-            'id': self.id,
-            'username': self.username,
-            'email': self.email,
-            'full_name': self.full_name,
-            'disabled': self.disabled,
-            'email_verified': self.email_verified,
-            'roles': self.roles,
-            'subscription_tier': self.subscription_tier,
-            'subscription_expires': self.subscription_expires.isoformat() if self.subscription_expires else None,
-            'last_login': self.last_login.isoformat() if self.last_login else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "full_name": self.full_name,
+            "disabled": self.disabled,
+            "email_verified": self.email_verified,
+            "roles": self.roles,
+            "subscription_tier": self.subscription_tier,
+            "subscription_expires": (
+                self.subscription_expires.isoformat()
+                if self.subscription_expires
+                else None
+            ),
+            "last_login": self.last_login.isoformat() if self.last_login else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
         if include_sensitive:
-            result.update({
-                'email_verification_token': self.email_verification_token,
-                'password_reset_token': self.password_reset_token,
-                'login_count': self.login_count,
-                'failed_login_count': self.failed_login_count,
-                'api_calls_today': self.api_calls_today,
-                'exports_this_month': self.exports_this_month,
-            })
+            result.update(
+                {
+                    "email_verification_token": self.email_verification_token,
+                    "password_reset_token": self.password_reset_token,
+                    "login_count": self.login_count,
+                    "failed_login_count": self.failed_login_count,
+                    "api_calls_today": self.api_calls_today,
+                    "exports_this_month": self.exports_this_month,
+                }
+            )
 
         return result
 
@@ -666,6 +762,7 @@ class User(Base, TimestampMixin):
 def get_db():
     """Get database session"""
     return db_session()
+
 
 def create_tables():
     """Create all database tables"""
@@ -676,6 +773,7 @@ def create_tables():
         logger.error(f"Failed to create database tables: {e}")
         raise
 
+
 def drop_tables():
     """Drop all database tables"""
     try:
@@ -685,6 +783,7 @@ def drop_tables():
         logger.error(f"Failed to drop database tables: {e}")
         raise
 
+
 def reset_database():
     """Reset database by dropping and recreating all tables"""
     logger.info("Resetting database...")
@@ -692,21 +791,26 @@ def reset_database():
     create_tables()
     logger.info("Database reset complete")
 
+
 # Initialize database on import
 try:
     create_tables()
 except Exception as e:
     logger.warning(f"Could not create tables on import: {e}")
-    logger.info("Tables may need to be created manually or database may not be available yet")
+    logger.info(
+        "Tables may need to be created manually or database may not be available yet"
+    )
 
 
 class JurisdictionCoverage(Base, TimestampMixin):
     __tablename__ = "jurisdiction_coverage"
 
     id = Column(Integer, primary_key=True, index=True)
-    jurisdiction_id = Column(Integer, ForeignKey("jurisdictions.id", ondelete="CASCADE"), nullable=False)
+    jurisdiction_id = Column(
+        Integer, ForeignKey("jurisdictions.id", ondelete="CASCADE"), nullable=False
+    )
     data_category = Column(String(50), nullable=False, index=True)
-    coverage_status = Column(String(20), nullable=False, default='none', index=True)
+    coverage_status = Column(String(20), nullable=False, default="none", index=True)
     record_count = Column(Integer, default=0)
     last_scraped = Column(DateTime, nullable=True, index=True)
     last_successful_scrape = Column(DateTime, nullable=True)
@@ -718,14 +822,14 @@ class JurisdictionCoverage(Base, TimestampMixin):
     completeness_score = Column(Float, nullable=True)
     notes = Column(Text, nullable=True)
     unavailable_reason = Column(String(100), nullable=True)
-    
+
     # Relationships
     jurisdiction = relationship("Jurisdiction", back_populates="coverage")
 
     __table_args__ = (
-        Index('idx_coverage_jurisdiction', 'jurisdiction_id'),
-        Index('idx_coverage_category', 'data_category'),
-        Index('idx_coverage_status', 'coverage_status'),
+        Index("idx_coverage_jurisdiction", "jurisdiction_id"),
+        Index("idx_coverage_category", "data_category"),
+        Index("idx_coverage_status", "coverage_status"),
     )
 
 
@@ -733,8 +837,12 @@ class ScraperRun(Base):
     __tablename__ = "scraper_runs"
 
     id = Column(Integer, primary_key=True, index=True)
-    data_source_id = Column(Integer, ForeignKey("data_sources.id", ondelete="SET NULL"), nullable=True)
-    jurisdiction_id = Column(Integer, ForeignKey("jurisdictions.id", ondelete="SET NULL"), nullable=True)
+    data_source_id = Column(
+        Integer, ForeignKey("data_sources.id", ondelete="SET NULL"), nullable=True
+    )
+    jurisdiction_id = Column(
+        Integer, ForeignKey("jurisdictions.id", ondelete="SET NULL"), nullable=True
+    )
     data_category = Column(String(50), nullable=True, index=True)
     scraper_module = Column(String(100), nullable=True)
     started_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
@@ -757,49 +865,52 @@ class ScraperRun(Base):
 class AuditLog(Base):
     """
     Immutable audit trail for compliance and reproducibility.
-    
+
     WORM (Write-Once-Read-Many) - entries should never be updated or deleted.
     Uses blockchain-style chaining with checksums for tamper detection.
     """
-    __tablename__ = 'audit_log'
+
+    __tablename__ = "audit_log"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    
+
     # Event identification
     event_id = Column(String(36), unique=True, nullable=False, index=True)
     event_type = Column(String(50), nullable=False, index=True)
-    event_timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
-    
+    event_timestamp = Column(
+        DateTime, default=datetime.utcnow, nullable=False, index=True
+    )
+
     # Actor information
     actor_id = Column(Integer, nullable=True, index=True)
-    actor_type = Column(String(20), default='user', nullable=False)
+    actor_type = Column(String(20), default="user", nullable=False)
     actor_ip = Column(String(45), nullable=True)
     actor_user_agent = Column(String(500), nullable=True)
-    
+
     # Target of the action
     target_type = Column(String(50), nullable=True, index=True)
     target_id = Column(String(100), nullable=True, index=True)
-    
+
     # Action details
     action = Column(String(100), nullable=False, index=True)
     action_data = Column(JSON, nullable=True)
-    
+
     # Provenance
     request_id = Column(String(36), nullable=True, index=True)
     session_id = Column(String(64), nullable=True)
-    
+
     # Response/Result
     response_hash = Column(String(64), nullable=True)
     success = Column(Boolean, default=True, nullable=False)
     error_message = Column(Text, nullable=True)
-    
+
     # Integrity (blockchain-style)
     checksum = Column(String(64), nullable=False)
     previous_checksum = Column(String(64), nullable=True)
 
     __table_args__ = (
-        Index('idx_audit_actor_time', 'actor_id', 'event_timestamp'),
-        Index('idx_audit_target_time', 'target_type', 'target_id', 'event_timestamp'),
+        Index("idx_audit_actor_time", "actor_id", "event_timestamp"),
+        Index("idx_audit_target_time", "target_type", "target_id", "event_timestamp"),
     )
 
     def __repr__(self):
@@ -808,7 +919,8 @@ class AuditLog(Base):
 
 class SchemaVersion(Base):
     """Track schema migrations with checksums for version pinning."""
-    __tablename__ = 'schema_version'
+
+    __tablename__ = "schema_version"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     version_id = Column(String(50), unique=True, nullable=False, index=True)
@@ -828,7 +940,8 @@ class SchemaVersion(Base):
 
 class DataSnapshot(Base):
     """Store point-in-time snapshots for reproducibility."""
-    __tablename__ = 'data_snapshot'
+
+    __tablename__ = "data_snapshot"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     snapshot_id = Column(String(36), unique=True, nullable=False, index=True)
@@ -846,8 +959,8 @@ class DataSnapshot(Base):
     created_by_request_id = Column(String(36), nullable=True)
 
     __table_args__ = (
-        Index('idx_snapshot_type_target', 'snapshot_type', 'target_type', 'target_id'),
-        Index('idx_snapshot_expires', 'expires_at'),
+        Index("idx_snapshot_type_target", "snapshot_type", "target_type", "target_id"),
+        Index("idx_snapshot_expires", "expires_at"),
     )
 
     def __repr__(self):
@@ -864,10 +977,17 @@ try:
 except Exception as _e:
     logger.warning(f"Could not import Comment model: {_e}")
 try:
-    from datagod.models.data_categories import (  # noqa: F401
-        CourtCaseRecord, BusinessEntityRecord, UCCFilingRecord,
-        ProfessionalLicenseRecord, TrademarkRecord, PatentRecord,
-        SECFilingRecord, BankRecord, NewsArticleRecord, PressReleaseRecord,
+    from datagod.models.data_categories import BankRecord  # noqa: F401
+    from datagod.models.data_categories import (
+        BusinessEntityRecord,
+        CourtCaseRecord,
+        NewsArticleRecord,
+        PatentRecord,
+        PressReleaseRecord,
+        ProfessionalLicenseRecord,
+        SECFilingRecord,
+        TrademarkRecord,
+        UCCFilingRecord,
     )
 except Exception as _e:
     logger.warning(f"Could not import data_categories models: {_e}")

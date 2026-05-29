@@ -4,15 +4,16 @@ Comprehensive tests for datagod/neural_network modules
 Tests model.py, data_collection.py, integration.py, and __main__.py
 """
 
-import pytest
-import sys
-from unittest.mock import MagicMock, patch, PropertyMock
 import logging
+import sys
+from unittest.mock import MagicMock, PropertyMock, patch
 
+import pytest
 
 # ============================================================================
 # Tests for model.py logic patterns
 # ============================================================================
+
 
 class TestMortgageDataDataset:
     """Tests for MortgageDataDataset class logic"""
@@ -106,6 +107,7 @@ class TestMortgageNeuralNetwork:
 
     def test_network_init(self):
         """Test neural network initialization"""
+
         class MockNeuralNetwork:
             def __init__(self, input_size, hidden_size=128, num_classes=2):
                 self.input_size = input_size
@@ -126,6 +128,7 @@ class TestMortgageNeuralNetwork:
 
     def test_network_default_params(self):
         """Test neural network with default parameters"""
+
         class MockNeuralNetwork:
             def __init__(self, input_size, hidden_size=128, num_classes=2):
                 self.input_size = input_size
@@ -173,29 +176,31 @@ class TestMortgageDataProcessor:
 
     def test_processor_init(self):
         """Test processor initialization"""
+
         class MockProcessor:
             def __init__(self, input_size=2, hidden_size=128, num_classes=2):
                 self.model = MagicMock()
-                self.device = 'cpu'
+                self.device = "cpu"
                 self.criterion = MagicMock()  # BCELoss
                 self.optimizer = MagicMock()  # Adam
 
         processor = MockProcessor()
 
-        assert processor.device == 'cpu'
+        assert processor.device == "cpu"
         assert processor.model is not None
 
     def test_processor_device_cuda(self):
         """Test processor with CUDA available"""
+
         class MockProcessor:
             def __init__(self, cuda_available=False):
-                self.device = 'cuda' if cuda_available else 'cpu'
+                self.device = "cuda" if cuda_available else "cpu"
 
         processor_cpu = MockProcessor(cuda_available=False)
         processor_cuda = MockProcessor(cuda_available=True)
 
-        assert processor_cpu.device == 'cpu'
-        assert processor_cuda.device == 'cuda'
+        assert processor_cpu.device == "cpu"
+        assert processor_cuda.device == "cuda"
 
     def test_prepare_data(self):
         """Test data preparation logic"""
@@ -300,6 +305,7 @@ class TestMortgageDataProcessor:
 # Tests for data_collection.py logic patterns
 # ============================================================================
 
+
 class TestMortgageDataCollector:
     """Tests for MortgageDataCollector class logic"""
 
@@ -325,11 +331,15 @@ class TestMortgageDataCollector:
         def collect_from_api(data_source):
             records = []
             try:
-                mock_logger.info(f"Collecting data from API: {data_source.api_endpoint}")
+                mock_logger.info(
+                    f"Collecting data from API: {data_source.api_endpoint}"
+                )
                 # Would make actual API call here
                 return records
             except Exception as e:
-                mock_logger.error(f"Error collecting from API {data_source.name}: {str(e)}")
+                mock_logger.error(
+                    f"Error collecting from API {data_source.name}: {str(e)}"
+                )
                 return records
 
         result = collect_from_api(mock_data_source)
@@ -351,7 +361,9 @@ class TestMortgageDataCollector:
                     raise Exception("API connection failed")
                 return records
             except Exception as e:
-                mock_logger.error(f"Error collecting from API {data_source.name}: {str(e)}")
+                mock_logger.error(
+                    f"Error collecting from API {data_source.name}: {str(e)}"
+                )
                 return records
 
         result = collect_from_api(mock_data_source, raise_error=True)
@@ -372,7 +384,9 @@ class TestMortgageDataCollector:
                 mock_logger.info(f"Scraping data from: {data_source.url}")
                 return records
             except Exception as e:
-                mock_logger.error(f"Error scraping data from {data_source.name}: {str(e)}")
+                mock_logger.error(
+                    f"Error scraping data from {data_source.name}: {str(e)}"
+                )
                 return records
 
         result = collect_from_scraper(mock_data_source)
@@ -394,7 +408,9 @@ class TestMortgageDataCollector:
                     raise Exception("Scraping failed")
                 return records
             except Exception as e:
-                mock_logger.error(f"Error scraping data from {data_source.name}: {str(e)}")
+                mock_logger.error(
+                    f"Error scraping data from {data_source.name}: {str(e)}"
+                )
                 return records
 
         result = collect_from_scraper(mock_data_source, raise_error=True)
@@ -414,7 +430,9 @@ class TestMortgageDataCollector:
                 mock_logger.info(f"Collecting manual data from: {data_source.name}")
                 return records
             except Exception as e:
-                mock_logger.error(f"Error collecting manual data from {data_source.name}: {str(e)}")
+                mock_logger.error(
+                    f"Error collecting manual data from {data_source.name}: {str(e)}"
+                )
                 return records
 
         result = collect_from_manual(mock_data_source)
@@ -429,7 +447,7 @@ class TestMortgageDataCollector:
         mock_jurisdiction.id = 1
 
         mock_data_source = MagicMock()
-        mock_data_source.source_type = 'api'
+        mock_data_source.source_type = "api"
 
         mock_query = MagicMock()
         mock_query.filter_by.return_value.all.return_value = [mock_data_source]
@@ -437,16 +455,18 @@ class TestMortgageDataCollector:
 
         def collect_mortgage_data(db_session, jurisdiction):
             records = []
-            data_sources = db_session.query(MagicMock()).filter_by(
-                jurisdiction_id=jurisdiction.id
-            ).all()
+            data_sources = (
+                db_session.query(MagicMock())
+                .filter_by(jurisdiction_id=jurisdiction.id)
+                .all()
+            )
 
             for data_source in data_sources:
-                if data_source.source_type == 'api':
+                if data_source.source_type == "api":
                     records.extend([])  # Would call collect_from_api
-                elif data_source.source_type == 'scraper':
+                elif data_source.source_type == "scraper":
                     records.extend([])  # Would call collect_from_scraper
-                elif data_source.source_type == 'manual':
+                elif data_source.source_type == "manual":
                     records.extend([])  # Would call collect_from_manual
 
             return records
@@ -461,11 +481,11 @@ class TestMortgageDataCollector:
         mock_jurisdiction.id = 1
 
         api_source = MagicMock()
-        api_source.source_type = 'api'
+        api_source.source_type = "api"
         scraper_source = MagicMock()
-        scraper_source.source_type = 'scraper'
+        scraper_source.source_type = "scraper"
         manual_source = MagicMock()
-        manual_source.source_type = 'manual'
+        manual_source.source_type = "manual"
 
         data_sources = [api_source, scraper_source, manual_source]
 
@@ -477,31 +497,34 @@ class TestMortgageDataCollector:
 
         def collect_mortgage_data(db_session, jurisdiction):
             records = []
-            data_sources = db_session.query(MagicMock()).filter_by(
-                jurisdiction_id=jurisdiction.id
-            ).all()
+            data_sources = (
+                db_session.query(MagicMock())
+                .filter_by(jurisdiction_id=jurisdiction.id)
+                .all()
+            )
 
             for data_source in data_sources:
                 source_types_processed.append(data_source.source_type)
-                if data_source.source_type == 'api':
+                if data_source.source_type == "api":
                     records.extend([])
-                elif data_source.source_type == 'scraper':
+                elif data_source.source_type == "scraper":
                     records.extend([])
-                elif data_source.source_type == 'manual':
+                elif data_source.source_type == "manual":
                     records.extend([])
 
             return records
 
         result = collect_mortgage_data(mock_session, mock_jurisdiction)
 
-        assert 'api' in source_types_processed
-        assert 'scraper' in source_types_processed
-        assert 'manual' in source_types_processed
+        assert "api" in source_types_processed
+        assert "scraper" in source_types_processed
+        assert "manual" in source_types_processed
 
 
 # ============================================================================
 # Tests for integration.py logic patterns
 # ============================================================================
+
 
 class TestNeuralNetworkIntegration:
     """Tests for NeuralNetworkIntegration class logic"""
@@ -529,7 +552,9 @@ class TestNeuralNetworkIntegration:
             def __init__(self):
                 self.data_processor = None
 
-            def initialize_processor(self, input_size=2, hidden_size=128, num_classes=2):
+            def initialize_processor(
+                self, input_size=2, hidden_size=128, num_classes=2
+            ):
                 self.data_processor = MagicMock()
                 self.data_processor.input_size = input_size
                 self.data_processor.hidden_size = hidden_size
@@ -560,7 +585,11 @@ class TestNeuralNetworkIntegration:
 
         def gather_mortgage_data(db_session, data_collector, jurisdiction_name):
             try:
-                jurisdiction = db_session.query(MagicMock()).filter_by(name=jurisdiction_name).first()
+                jurisdiction = (
+                    db_session.query(MagicMock())
+                    .filter_by(name=jurisdiction_name)
+                    .first()
+                )
                 if not jurisdiction:
                     mock_logger.error(f"Jurisdiction {jurisdiction_name} not found")
                     return 0
@@ -572,7 +601,9 @@ class TestNeuralNetworkIntegration:
                     db_session.add(record)
 
                 db_session.commit()
-                mock_logger.info(f"Successfully gathered {len(records)} records for {jurisdiction_name}")
+                mock_logger.info(
+                    f"Successfully gathered {len(records)} records for {jurisdiction_name}"
+                )
                 return len(records)
 
             except Exception as e:
@@ -595,7 +626,9 @@ class TestNeuralNetworkIntegration:
         mock_logger = MagicMock()
 
         def gather_mortgage_data(db_session, jurisdiction_name):
-            jurisdiction = db_session.query(MagicMock()).filter_by(name=jurisdiction_name).first()
+            jurisdiction = (
+                db_session.query(MagicMock()).filter_by(name=jurisdiction_name).first()
+            )
             if not jurisdiction:
                 mock_logger.error(f"Jurisdiction {jurisdiction_name} not found")
                 return 0
@@ -614,7 +647,11 @@ class TestNeuralNetworkIntegration:
 
         def gather_mortgage_data(db_session, jurisdiction_name):
             try:
-                jurisdiction = db_session.query(MagicMock()).filter_by(name=jurisdiction_name).first()
+                jurisdiction = (
+                    db_session.query(MagicMock())
+                    .filter_by(name=jurisdiction_name)
+                    .first()
+                )
                 return 1
             except Exception as e:
                 mock_logger.error(f"Error gathering mortgage data: {str(e)}")
@@ -639,7 +676,9 @@ class TestNeuralNetworkIntegration:
 
             def process_mortgage_data(self, jurisdiction_name):
                 if not self.data_processor:
-                    mock_logger.warning("Data processor not initialized. Initializing with default parameters.")
+                    mock_logger.warning(
+                        "Data processor not initialized. Initializing with default parameters."
+                    )
                     self.initialize_processor()
 
         integration = MockIntegration()
@@ -664,7 +703,9 @@ class TestNeuralNetworkIntegration:
 
         def process_mortgage_data(processor, db_session, jurisdiction_name):
             # Get jurisdiction
-            jurisdiction = db_session.query(MagicMock()).filter_by(name=jurisdiction_name).first()
+            jurisdiction = (
+                db_session.query(MagicMock()).filter_by(name=jurisdiction_name).first()
+            )
             if not jurisdiction:
                 mock_logger.error(f"Jurisdiction {jurisdiction_name} not found")
                 return
@@ -677,7 +718,9 @@ class TestNeuralNetworkIntegration:
             mock_logger.info("Starting model training...")
             processor.train(train_loader, val_loader, epochs=5)
 
-            mock_logger.info(f"Successfully processed mortgage data for {jurisdiction_name}")
+            mock_logger.info(
+                f"Successfully processed mortgage data for {jurisdiction_name}"
+            )
 
         mock_query = MagicMock()
         mock_query.filter_by.return_value.first.return_value = mock_jurisdiction
@@ -711,6 +754,7 @@ class TestNeuralNetworkIntegration:
 # ============================================================================
 # Tests for __main__.py logic patterns
 # ============================================================================
+
 
 class TestMainModule:
     """Tests for __main__.py logic"""
@@ -781,6 +825,7 @@ class TestMainModule:
 # ============================================================================
 # Integration Tests
 # ============================================================================
+
 
 class TestNeuralNetworkPipeline:
     """Integration tests for the neural network pipeline"""
@@ -863,11 +908,13 @@ class TestNeuralNetworkPipeline:
 # Edge Cases
 # ============================================================================
 
+
 class TestEdgeCases:
     """Test edge cases for neural network modules"""
 
     def test_empty_dataset(self):
         """Test handling of empty dataset"""
+
         class MockDataset:
             def __init__(self, records):
                 self.records = records
@@ -880,6 +927,7 @@ class TestEdgeCases:
 
     def test_single_record_dataset(self):
         """Test handling of single record dataset"""
+
         class MockDataset:
             def __init__(self, records):
                 self.records = records
@@ -915,9 +963,11 @@ class TestEdgeCases:
         mock_query.filter_by.return_value.all.return_value = []
         mock_session.query.return_value = mock_query
 
-        data_sources = mock_session.query(MagicMock()).filter_by(jurisdiction_id=1).all()
+        data_sources = (
+            mock_session.query(MagicMock()).filter_by(jurisdiction_id=1).all()
+        )
         assert data_sources == []
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

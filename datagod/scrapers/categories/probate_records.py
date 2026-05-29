@@ -20,21 +20,23 @@ Record Types:
 """
 
 import asyncio
+import json
+import logging
+import re
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
 import aiohttp
 from bs4 import BeautifulSoup
-from dataclasses import dataclass, field
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List, Dict, Any
-import json
-import re
-import logging
 
 logger = logging.getLogger(__name__)
 
 
 class ProbateCaseType(Enum):
     """Types of probate cases"""
+
     # Estate matters
     TESTATE = "testate"  # With a will
     INTESTATE = "intestate"  # Without a will
@@ -72,6 +74,7 @@ class ProbateCaseType(Enum):
 
 class CaseStatus(Enum):
     """Status of probate case"""
+
     OPEN = "open"
     PENDING = "pending"
     ACTIVE = "active"
@@ -85,6 +88,7 @@ class CaseStatus(Enum):
 
 class PartyRole(Enum):
     """Role of party in probate case"""
+
     DECEDENT = "decedent"
     PETITIONER = "petitioner"
     EXECUTOR = "executor"
@@ -107,6 +111,7 @@ class PartyRole(Enum):
 
 class DocumentType(Enum):
     """Types of probate documents"""
+
     PETITION = "petition"
     WILL = "will"
     CODICIL = "codicil"
@@ -134,6 +139,7 @@ class DocumentType(Enum):
 @dataclass
 class ProbateParty:
     """Party to a probate case"""
+
     name: str
     role: PartyRole
 
@@ -167,6 +173,7 @@ class ProbateParty:
 @dataclass
 class ProbateDocument:
     """Document filed in probate case"""
+
     document_type: DocumentType
     title: str
     filing_date: date
@@ -183,6 +190,7 @@ class ProbateDocument:
 @dataclass
 class ProbateAsset:
     """Asset in estate inventory"""
+
     description: str
     asset_type: str  # Real property, personal property, financial, etc.
     estimated_value: Optional[float] = None
@@ -196,6 +204,7 @@ class ProbateAsset:
 @dataclass
 class ProbateEvent:
     """Event/hearing in probate case"""
+
     event_type: str
     event_date: date
     description: Optional[str] = None
@@ -211,6 +220,7 @@ class ProbateEvent:
 @dataclass
 class ProbateRecord:
     """Probate case record"""
+
     case_number: str
     case_type: ProbateCaseType
     status: CaseStatus
@@ -267,422 +277,429 @@ class ProbateRecord:
     def get_personal_representative(self) -> Optional[ProbateParty]:
         """Get the executor/administrator"""
         for party in self.parties:
-            if party.role in [PartyRole.EXECUTOR, PartyRole.ADMINISTRATOR,
-                              PartyRole.PERSONAL_REPRESENTATIVE]:
+            if party.role in [
+                PartyRole.EXECUTOR,
+                PartyRole.ADMINISTRATOR,
+                PartyRole.PERSONAL_REPRESENTATIVE,
+            ]:
                 return party
         return None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'case_number': self.case_number,
-            'case_type': self.case_type.value,
-            'status': self.status.value,
-            'case_title': self.case_title,
-            'decedent_name': self.decedent_name,
-            'parties': [
+            "case_number": self.case_number,
+            "case_type": self.case_type.value,
+            "status": self.status.value,
+            "case_title": self.case_title,
+            "decedent_name": self.decedent_name,
+            "parties": [
                 {
-                    'name': p.name,
-                    'role': p.role.value,
-                    'date_of_death': p.date_of_death.isoformat() if p.date_of_death else None,
+                    "name": p.name,
+                    "role": p.role.value,
+                    "date_of_death": (
+                        p.date_of_death.isoformat() if p.date_of_death else None
+                    ),
                 }
                 for p in self.parties
             ],
-            'county': self.county,
-            'state': self.state,
-            'court_name': self.court_name,
-            'filing_date': self.filing_date.isoformat() if self.filing_date else None,
-            'date_of_death': self.date_of_death.isoformat() if self.date_of_death else None,
-            'estate_value': self.estate_value,
-            'will_admitted': self.will_admitted,
-            'will_contested': self.will_contested,
-            'source': self.source,
+            "county": self.county,
+            "state": self.state,
+            "court_name": self.court_name,
+            "filing_date": self.filing_date.isoformat() if self.filing_date else None,
+            "date_of_death": (
+                self.date_of_death.isoformat() if self.date_of_death else None
+            ),
+            "estate_value": self.estate_value,
+            "will_admitted": self.will_admitted,
+            "will_contested": self.will_contested,
+            "source": self.source,
         }
 
 
 # State probate court information
 STATE_PROBATE_COURTS: Dict[str, Dict[str, Any]] = {
-    'AL': {
-        'name': 'Alabama',
-        'court_name': 'Probate Court',
-        'filing_level': 'county',
-        'url': 'https://www.alabamaprobatecourts.org/',
-        'small_estate_limit': 25000,
-        'notes': 'Separate probate court in each county',
+    "AL": {
+        "name": "Alabama",
+        "court_name": "Probate Court",
+        "filing_level": "county",
+        "url": "https://www.alabamaprobatecourts.org/",
+        "small_estate_limit": 25000,
+        "notes": "Separate probate court in each county",
     },
-    'AK': {
-        'name': 'Alaska',
-        'court_name': 'Superior Court',
-        'filing_level': 'district',
-        'url': 'https://courts.alaska.gov/',
-        'small_estate_limit': 100000,
-        'api_available': True,
-        'notes': 'Probate handled by Superior Court',
+    "AK": {
+        "name": "Alaska",
+        "court_name": "Superior Court",
+        "filing_level": "district",
+        "url": "https://courts.alaska.gov/",
+        "small_estate_limit": 100000,
+        "api_available": True,
+        "notes": "Probate handled by Superior Court",
     },
-    'AZ': {
-        'name': 'Arizona',
-        'court_name': 'Superior Court - Probate Division',
-        'filing_level': 'county',
-        'url': 'https://www.azcourts.gov/',
-        'small_estate_limit': 75000,  # Personal property
-        'real_property_limit': 100000,
+    "AZ": {
+        "name": "Arizona",
+        "court_name": "Superior Court - Probate Division",
+        "filing_level": "county",
+        "url": "https://www.azcourts.gov/",
+        "small_estate_limit": 75000,  # Personal property
+        "real_property_limit": 100000,
     },
-    'AR': {
-        'name': 'Arkansas',
-        'court_name': 'Circuit Court - Probate Division',
-        'filing_level': 'county',
-        'url': 'https://courts.arkansas.gov/',
-        'small_estate_limit': 100000,
+    "AR": {
+        "name": "Arkansas",
+        "court_name": "Circuit Court - Probate Division",
+        "filing_level": "county",
+        "url": "https://courts.arkansas.gov/",
+        "small_estate_limit": 100000,
     },
-    'CA': {
-        'name': 'California',
-        'court_name': 'Superior Court - Probate Division',
-        'filing_level': 'county',
-        'url': 'https://www.courts.ca.gov/selfhelp-probate.htm',
-        'small_estate_limit': 184500,  # Adjusted for inflation
-        'notes': 'Small estate affidavit available under limit',
+    "CA": {
+        "name": "California",
+        "court_name": "Superior Court - Probate Division",
+        "filing_level": "county",
+        "url": "https://www.courts.ca.gov/selfhelp-probate.htm",
+        "small_estate_limit": 184500,  # Adjusted for inflation
+        "notes": "Small estate affidavit available under limit",
     },
-    'CO': {
-        'name': 'Colorado',
-        'court_name': 'District Court - Probate Division',
-        'filing_level': 'county',
-        'url': 'https://www.courts.state.co.us/',
-        'small_estate_limit': 74000,  # Personal property
-        'api_available': True,
+    "CO": {
+        "name": "Colorado",
+        "court_name": "District Court - Probate Division",
+        "filing_level": "county",
+        "url": "https://www.courts.state.co.us/",
+        "small_estate_limit": 74000,  # Personal property
+        "api_available": True,
     },
-    'CT': {
-        'name': 'Connecticut',
-        'court_name': 'Probate Court',
-        'filing_level': 'district',  # 54 probate districts
-        'url': 'https://www.ctprobate.gov/',
-        'small_estate_limit': 40000,
-        'api_available': True,
-        'notes': 'Probate court separate from Superior Court',
+    "CT": {
+        "name": "Connecticut",
+        "court_name": "Probate Court",
+        "filing_level": "district",  # 54 probate districts
+        "url": "https://www.ctprobate.gov/",
+        "small_estate_limit": 40000,
+        "api_available": True,
+        "notes": "Probate court separate from Superior Court",
     },
-    'DE': {
-        'name': 'Delaware',
-        'court_name': 'Court of Chancery / Register of Wills',
-        'filing_level': 'county',
-        'url': 'https://courts.delaware.gov/chancery/',
-        'small_estate_limit': 30000,
+    "DE": {
+        "name": "Delaware",
+        "court_name": "Court of Chancery / Register of Wills",
+        "filing_level": "county",
+        "url": "https://courts.delaware.gov/chancery/",
+        "small_estate_limit": 30000,
     },
-    'FL': {
-        'name': 'Florida',
-        'court_name': 'Circuit Court - Probate Division',
-        'filing_level': 'county',
-        'url': 'https://www.flcourts.org/',
-        'small_estate_limit': 75000,  # Summary administration
-        'disposition_limit': 6000,  # Disposition without administration
+    "FL": {
+        "name": "Florida",
+        "court_name": "Circuit Court - Probate Division",
+        "filing_level": "county",
+        "url": "https://www.flcourts.org/",
+        "small_estate_limit": 75000,  # Summary administration
+        "disposition_limit": 6000,  # Disposition without administration
     },
-    'GA': {
-        'name': 'Georgia',
-        'court_name': 'Probate Court',
-        'filing_level': 'county',
-        'url': 'https://georgiacourts.gov/probate-courts/',
-        'small_estate_limit': 10000,  # No administration needed
-        'notes': 'Each county has own probate court',
+    "GA": {
+        "name": "Georgia",
+        "court_name": "Probate Court",
+        "filing_level": "county",
+        "url": "https://georgiacourts.gov/probate-courts/",
+        "small_estate_limit": 10000,  # No administration needed
+        "notes": "Each county has own probate court",
     },
-    'HI': {
-        'name': 'Hawaii',
-        'court_name': 'Circuit Court - Probate Division',
-        'filing_level': 'circuit',
-        'url': 'https://www.courts.state.hi.us/',
-        'small_estate_limit': 100000,
+    "HI": {
+        "name": "Hawaii",
+        "court_name": "Circuit Court - Probate Division",
+        "filing_level": "circuit",
+        "url": "https://www.courts.state.hi.us/",
+        "small_estate_limit": 100000,
     },
-    'ID': {
-        'name': 'Idaho',
-        'court_name': 'Magistrate Court',
-        'filing_level': 'county',
-        'url': 'https://isc.idaho.gov/',
-        'small_estate_limit': 100000,
+    "ID": {
+        "name": "Idaho",
+        "court_name": "Magistrate Court",
+        "filing_level": "county",
+        "url": "https://isc.idaho.gov/",
+        "small_estate_limit": 100000,
     },
-    'IL': {
-        'name': 'Illinois',
-        'court_name': 'Circuit Court - Probate Division',
-        'filing_level': 'county',
-        'url': 'https://www.illinoiscourts.gov/',
-        'small_estate_limit': 100000,
-        'notes': 'Independent administration available',
+    "IL": {
+        "name": "Illinois",
+        "court_name": "Circuit Court - Probate Division",
+        "filing_level": "county",
+        "url": "https://www.illinoiscourts.gov/",
+        "small_estate_limit": 100000,
+        "notes": "Independent administration available",
     },
-    'IN': {
-        'name': 'Indiana',
-        'court_name': 'Superior/Circuit Court - Probate Division',
-        'filing_level': 'county',
-        'url': 'https://www.in.gov/courts/',
-        'small_estate_limit': 50000,
+    "IN": {
+        "name": "Indiana",
+        "court_name": "Superior/Circuit Court - Probate Division",
+        "filing_level": "county",
+        "url": "https://www.in.gov/courts/",
+        "small_estate_limit": 50000,
     },
-    'IA': {
-        'name': 'Iowa',
-        'court_name': 'District Court - Probate',
-        'filing_level': 'county',
-        'url': 'https://www.iowacourts.gov/',
-        'small_estate_limit': 100000,
+    "IA": {
+        "name": "Iowa",
+        "court_name": "District Court - Probate",
+        "filing_level": "county",
+        "url": "https://www.iowacourts.gov/",
+        "small_estate_limit": 100000,
     },
-    'KS': {
-        'name': 'Kansas',
-        'court_name': 'District Court - Probate Division',
-        'filing_level': 'county',
-        'url': 'https://www.kscourts.org/',
-        'small_estate_limit': 40000,
+    "KS": {
+        "name": "Kansas",
+        "court_name": "District Court - Probate Division",
+        "filing_level": "county",
+        "url": "https://www.kscourts.org/",
+        "small_estate_limit": 40000,
     },
-    'KY': {
-        'name': 'Kentucky',
-        'court_name': 'District Court - Probate',
-        'filing_level': 'county',
-        'url': 'https://courts.ky.gov/',
-        'small_estate_limit': 30000,  # Dispensing with administration
+    "KY": {
+        "name": "Kentucky",
+        "court_name": "District Court - Probate",
+        "filing_level": "county",
+        "url": "https://courts.ky.gov/",
+        "small_estate_limit": 30000,  # Dispensing with administration
     },
-    'LA': {
-        'name': 'Louisiana',
-        'court_name': 'District Court - Succession',
-        'filing_level': 'parish',
-        'url': 'https://www.lasc.org/',
-        'small_estate_limit': 125000,  # Simple possession
-        'notes': 'Civil law system - successions not probate',
+    "LA": {
+        "name": "Louisiana",
+        "court_name": "District Court - Succession",
+        "filing_level": "parish",
+        "url": "https://www.lasc.org/",
+        "small_estate_limit": 125000,  # Simple possession
+        "notes": "Civil law system - successions not probate",
     },
-    'ME': {
-        'name': 'Maine',
-        'court_name': 'Probate Court',
-        'filing_level': 'county',
-        'url': 'https://www.courts.maine.gov/courts/probate/',
-        'small_estate_limit': 40000,
+    "ME": {
+        "name": "Maine",
+        "court_name": "Probate Court",
+        "filing_level": "county",
+        "url": "https://www.courts.maine.gov/courts/probate/",
+        "small_estate_limit": 40000,
     },
-    'MD': {
-        'name': 'Maryland',
-        'court_name': 'Orphans Court / Register of Wills',
-        'filing_level': 'county',
-        'url': 'https://registers.maryland.gov/',
-        'small_estate_limit': 50000,  # Personal property
-        'small_estate_limit_surviving_spouse': 100000,
+    "MD": {
+        "name": "Maryland",
+        "court_name": "Orphans Court / Register of Wills",
+        "filing_level": "county",
+        "url": "https://registers.maryland.gov/",
+        "small_estate_limit": 50000,  # Personal property
+        "small_estate_limit_surviving_spouse": 100000,
     },
-    'MA': {
-        'name': 'Massachusetts',
-        'court_name': 'Probate and Family Court',
-        'filing_level': 'county',
-        'url': 'https://www.mass.gov/orgs/probate-and-family-court',
-        'small_estate_limit': 25000,  # Voluntary administration
-        'api_available': True,
+    "MA": {
+        "name": "Massachusetts",
+        "court_name": "Probate and Family Court",
+        "filing_level": "county",
+        "url": "https://www.mass.gov/orgs/probate-and-family-court",
+        "small_estate_limit": 25000,  # Voluntary administration
+        "api_available": True,
     },
-    'MI': {
-        'name': 'Michigan',
-        'court_name': 'Probate Court',
-        'filing_level': 'county',
-        'url': 'https://courts.michigan.gov/',
-        'small_estate_limit': 25000,  # Adjusted for inflation
+    "MI": {
+        "name": "Michigan",
+        "court_name": "Probate Court",
+        "filing_level": "county",
+        "url": "https://courts.michigan.gov/",
+        "small_estate_limit": 25000,  # Adjusted for inflation
     },
-    'MN': {
-        'name': 'Minnesota',
-        'court_name': 'District Court - Probate Division',
-        'filing_level': 'county',
-        'url': 'https://www.mncourts.gov/',
-        'small_estate_limit': 75000,
-        'api_available': True,
+    "MN": {
+        "name": "Minnesota",
+        "court_name": "District Court - Probate Division",
+        "filing_level": "county",
+        "url": "https://www.mncourts.gov/",
+        "small_estate_limit": 75000,
+        "api_available": True,
     },
-    'MS': {
-        'name': 'Mississippi',
-        'court_name': 'Chancery Court',
-        'filing_level': 'county',
-        'url': 'https://courts.ms.gov/',
-        'small_estate_limit': 75000,  # Muniment of title
+    "MS": {
+        "name": "Mississippi",
+        "court_name": "Chancery Court",
+        "filing_level": "county",
+        "url": "https://courts.ms.gov/",
+        "small_estate_limit": 75000,  # Muniment of title
     },
-    'MO': {
-        'name': 'Missouri',
-        'court_name': 'Circuit Court - Probate Division',
-        'filing_level': 'county',
-        'url': 'https://www.courts.mo.gov/',
-        'small_estate_limit': 40000,
+    "MO": {
+        "name": "Missouri",
+        "court_name": "Circuit Court - Probate Division",
+        "filing_level": "county",
+        "url": "https://www.courts.mo.gov/",
+        "small_estate_limit": 40000,
     },
-    'MT': {
-        'name': 'Montana',
-        'court_name': 'District Court',
-        'filing_level': 'county',
-        'url': 'https://courts.mt.gov/',
-        'small_estate_limit': 50000,
+    "MT": {
+        "name": "Montana",
+        "court_name": "District Court",
+        "filing_level": "county",
+        "url": "https://courts.mt.gov/",
+        "small_estate_limit": 50000,
     },
-    'NE': {
-        'name': 'Nebraska',
-        'court_name': 'County Court',
-        'filing_level': 'county',
-        'url': 'https://supremecourt.nebraska.gov/',
-        'small_estate_limit': 50000,
+    "NE": {
+        "name": "Nebraska",
+        "court_name": "County Court",
+        "filing_level": "county",
+        "url": "https://supremecourt.nebraska.gov/",
+        "small_estate_limit": 50000,
     },
-    'NV': {
-        'name': 'Nevada',
-        'court_name': 'District Court - Probate Division',
-        'filing_level': 'county',
-        'url': 'https://nvcourts.gov/',
-        'small_estate_limit': 100000,  # Set aside without administration
+    "NV": {
+        "name": "Nevada",
+        "court_name": "District Court - Probate Division",
+        "filing_level": "county",
+        "url": "https://nvcourts.gov/",
+        "small_estate_limit": 100000,  # Set aside without administration
     },
-    'NH': {
-        'name': 'New Hampshire',
-        'court_name': 'Circuit Court - Probate Division',
-        'filing_level': 'county',
-        'url': 'https://www.courts.nh.gov/',
-        'small_estate_limit': 10000,  # Voluntary administration
+    "NH": {
+        "name": "New Hampshire",
+        "court_name": "Circuit Court - Probate Division",
+        "filing_level": "county",
+        "url": "https://www.courts.nh.gov/",
+        "small_estate_limit": 10000,  # Voluntary administration
     },
-    'NJ': {
-        'name': 'New Jersey',
-        'court_name': 'Surrogate Court',
-        'filing_level': 'county',
-        'url': 'https://www.njcourts.gov/',
-        'small_estate_limit': 50000,  # Summary administration
-        'notes': 'Surrogate handles probate, Superior Court handles contested',
+    "NJ": {
+        "name": "New Jersey",
+        "court_name": "Surrogate Court",
+        "filing_level": "county",
+        "url": "https://www.njcourts.gov/",
+        "small_estate_limit": 50000,  # Summary administration
+        "notes": "Surrogate handles probate, Superior Court handles contested",
     },
-    'NM': {
-        'name': 'New Mexico',
-        'court_name': 'District Court - Probate',
-        'filing_level': 'county',
-        'url': 'https://www.nmcourts.gov/',
-        'small_estate_limit': 50000,
+    "NM": {
+        "name": "New Mexico",
+        "court_name": "District Court - Probate",
+        "filing_level": "county",
+        "url": "https://www.nmcourts.gov/",
+        "small_estate_limit": 50000,
     },
-    'NY': {
-        'name': 'New York',
-        'court_name': 'Surrogate Court',
-        'filing_level': 'county',
-        'url': 'https://www.nycourts.gov/courts/nyc/surrogates/',
-        'small_estate_limit': 50000,  # Voluntary administration
-        'api_available': True,
-        'notes': 'Each county has Surrogate Court',
+    "NY": {
+        "name": "New York",
+        "court_name": "Surrogate Court",
+        "filing_level": "county",
+        "url": "https://www.nycourts.gov/courts/nyc/surrogates/",
+        "small_estate_limit": 50000,  # Voluntary administration
+        "api_available": True,
+        "notes": "Each county has Surrogate Court",
     },
-    'NC': {
-        'name': 'North Carolina',
-        'court_name': 'Clerk of Superior Court',
-        'filing_level': 'county',
-        'url': 'https://www.nccourts.gov/',
-        'small_estate_limit': 20000,  # Affidavit for collection
+    "NC": {
+        "name": "North Carolina",
+        "court_name": "Clerk of Superior Court",
+        "filing_level": "county",
+        "url": "https://www.nccourts.gov/",
+        "small_estate_limit": 20000,  # Affidavit for collection
     },
-    'ND': {
-        'name': 'North Dakota',
-        'court_name': 'District Court',
-        'filing_level': 'county',
-        'url': 'https://www.ndcourts.gov/',
-        'small_estate_limit': 50000,
+    "ND": {
+        "name": "North Dakota",
+        "court_name": "District Court",
+        "filing_level": "county",
+        "url": "https://www.ndcourts.gov/",
+        "small_estate_limit": 50000,
     },
-    'OH': {
-        'name': 'Ohio',
-        'court_name': 'Probate Court',
-        'filing_level': 'county',
-        'url': 'https://www.ohiocourts.gov/',
-        'small_estate_limit': 35000,  # Release from administration
-        'api_available': True,
+    "OH": {
+        "name": "Ohio",
+        "court_name": "Probate Court",
+        "filing_level": "county",
+        "url": "https://www.ohiocourts.gov/",
+        "small_estate_limit": 35000,  # Release from administration
+        "api_available": True,
     },
-    'OK': {
-        'name': 'Oklahoma',
-        'court_name': 'District Court',
-        'filing_level': 'county',
-        'url': 'https://www.oscn.net/',
-        'small_estate_limit': 50000,  # Summary administration
-        'api_available': True,
+    "OK": {
+        "name": "Oklahoma",
+        "court_name": "District Court",
+        "filing_level": "county",
+        "url": "https://www.oscn.net/",
+        "small_estate_limit": 50000,  # Summary administration
+        "api_available": True,
     },
-    'OR': {
-        'name': 'Oregon',
-        'court_name': 'Circuit Court - Probate',
-        'filing_level': 'county',
-        'url': 'https://www.courts.oregon.gov/',
-        'small_estate_limit': 200000,  # Personal property affidavit
-        'real_property_limit': 200000,
+    "OR": {
+        "name": "Oregon",
+        "court_name": "Circuit Court - Probate",
+        "filing_level": "county",
+        "url": "https://www.courts.oregon.gov/",
+        "small_estate_limit": 200000,  # Personal property affidavit
+        "real_property_limit": 200000,
     },
-    'PA': {
-        'name': 'Pennsylvania',
-        'court_name': 'Orphans Court / Register of Wills',
-        'filing_level': 'county',
-        'url': 'https://www.pacourts.us/',
-        'small_estate_limit': 50000,  # Family exemption
+    "PA": {
+        "name": "Pennsylvania",
+        "court_name": "Orphans Court / Register of Wills",
+        "filing_level": "county",
+        "url": "https://www.pacourts.us/",
+        "small_estate_limit": 50000,  # Family exemption
     },
-    'RI': {
-        'name': 'Rhode Island',
-        'court_name': 'Probate Court',
-        'filing_level': 'city_town',  # Municipal probate courts
-        'url': 'https://www.courts.ri.gov/',
-        'small_estate_limit': 15000,
-        'notes': 'Each city/town has probate court',
+    "RI": {
+        "name": "Rhode Island",
+        "court_name": "Probate Court",
+        "filing_level": "city_town",  # Municipal probate courts
+        "url": "https://www.courts.ri.gov/",
+        "small_estate_limit": 15000,
+        "notes": "Each city/town has probate court",
     },
-    'SC': {
-        'name': 'South Carolina',
-        'court_name': 'Probate Court',
-        'filing_level': 'county',
-        'url': 'https://www.sccourts.org/',
-        'small_estate_limit': 25000,
+    "SC": {
+        "name": "South Carolina",
+        "court_name": "Probate Court",
+        "filing_level": "county",
+        "url": "https://www.sccourts.org/",
+        "small_estate_limit": 25000,
     },
-    'SD': {
-        'name': 'South Dakota',
-        'court_name': 'Circuit Court',
-        'filing_level': 'county',
-        'url': 'https://ujs.sd.gov/',
-        'small_estate_limit': 50000,
+    "SD": {
+        "name": "South Dakota",
+        "court_name": "Circuit Court",
+        "filing_level": "county",
+        "url": "https://ujs.sd.gov/",
+        "small_estate_limit": 50000,
     },
-    'TN': {
-        'name': 'Tennessee',
-        'court_name': 'Probate Court / Chancery Court',
-        'filing_level': 'county',
-        'url': 'https://www.tncourts.gov/',
-        'small_estate_limit': 50000,
+    "TN": {
+        "name": "Tennessee",
+        "court_name": "Probate Court / Chancery Court",
+        "filing_level": "county",
+        "url": "https://www.tncourts.gov/",
+        "small_estate_limit": 50000,
     },
-    'TX': {
-        'name': 'Texas',
-        'court_name': 'Probate Court / County Court',
-        'filing_level': 'county',
-        'url': 'https://www.txcourts.gov/',
-        'small_estate_limit': 75000,  # Affidavit of heirship
-        'notes': 'Statutory probate courts in larger counties',
+    "TX": {
+        "name": "Texas",
+        "court_name": "Probate Court / County Court",
+        "filing_level": "county",
+        "url": "https://www.txcourts.gov/",
+        "small_estate_limit": 75000,  # Affidavit of heirship
+        "notes": "Statutory probate courts in larger counties",
     },
-    'UT': {
-        'name': 'Utah',
-        'court_name': 'District Court',
-        'filing_level': 'county',
-        'url': 'https://www.utcourts.gov/',
-        'small_estate_limit': 100000,
+    "UT": {
+        "name": "Utah",
+        "court_name": "District Court",
+        "filing_level": "county",
+        "url": "https://www.utcourts.gov/",
+        "small_estate_limit": 100000,
     },
-    'VT': {
-        'name': 'Vermont',
-        'court_name': 'Probate Division of Superior Court',
-        'filing_level': 'county',
-        'url': 'https://www.vermontjudiciary.org/',
-        'small_estate_limit': 10000,
+    "VT": {
+        "name": "Vermont",
+        "court_name": "Probate Division of Superior Court",
+        "filing_level": "county",
+        "url": "https://www.vermontjudiciary.org/",
+        "small_estate_limit": 10000,
     },
-    'VA': {
-        'name': 'Virginia',
-        'court_name': 'Circuit Court',
-        'filing_level': 'county_city',  # Independent cities have own courts
-        'url': 'https://www.vacourts.gov/',
-        'small_estate_limit': 50000,
+    "VA": {
+        "name": "Virginia",
+        "court_name": "Circuit Court",
+        "filing_level": "county_city",  # Independent cities have own courts
+        "url": "https://www.vacourts.gov/",
+        "small_estate_limit": 50000,
     },
-    'WA': {
-        'name': 'Washington',
-        'court_name': 'Superior Court - Probate',
-        'filing_level': 'county',
-        'url': 'https://www.courts.wa.gov/',
-        'small_estate_limit': 100000,
-        'api_available': True,
+    "WA": {
+        "name": "Washington",
+        "court_name": "Superior Court - Probate",
+        "filing_level": "county",
+        "url": "https://www.courts.wa.gov/",
+        "small_estate_limit": 100000,
+        "api_available": True,
     },
-    'WV': {
-        'name': 'West Virginia',
-        'court_name': 'County Commission',
-        'filing_level': 'county',
-        'url': 'https://www.courtswv.gov/',
-        'small_estate_limit': 100000,
-        'notes': 'Fiduciary Commissioner handles probate',
+    "WV": {
+        "name": "West Virginia",
+        "court_name": "County Commission",
+        "filing_level": "county",
+        "url": "https://www.courtswv.gov/",
+        "small_estate_limit": 100000,
+        "notes": "Fiduciary Commissioner handles probate",
     },
-    'WI': {
-        'name': 'Wisconsin',
-        'court_name': 'Circuit Court - Probate',
-        'filing_level': 'county',
-        'url': 'https://www.wicourts.gov/',
-        'small_estate_limit': 50000,
-        'api_available': True,
+    "WI": {
+        "name": "Wisconsin",
+        "court_name": "Circuit Court - Probate",
+        "filing_level": "county",
+        "url": "https://www.wicourts.gov/",
+        "small_estate_limit": 50000,
+        "api_available": True,
     },
-    'WY': {
-        'name': 'Wyoming',
-        'court_name': 'District Court',
-        'filing_level': 'county',
-        'url': 'https://www.courts.state.wy.us/',
-        'small_estate_limit': 200000,  # Summary procedures
+    "WY": {
+        "name": "Wyoming",
+        "court_name": "District Court",
+        "filing_level": "county",
+        "url": "https://www.courts.state.wy.us/",
+        "small_estate_limit": 200000,  # Summary procedures
     },
-    'DC': {
-        'name': 'District of Columbia',
-        'court_name': 'Superior Court - Probate Division',
-        'filing_level': 'district',
-        'url': 'https://www.dccourts.gov/superior-court/probate-division',
-        'small_estate_limit': 40000,
+    "DC": {
+        "name": "District of Columbia",
+        "court_name": "Superior Court - Probate Division",
+        "filing_level": "district",
+        "url": "https://www.dccourts.gov/superior-court/probate-division",
+        "small_estate_limit": 40000,
     },
 }
 
@@ -690,156 +707,144 @@ STATE_PROBATE_COURTS: Dict[str, Dict[str, Any]] = {
 # Major county probate court configurations
 COUNTY_PROBATE_SOURCES: Dict[str, Dict[str, Any]] = {
     # California
-    'CA_LOS_ANGELES': {
-        'name': 'Los Angeles County Superior Court - Probate',
-        'url': 'https://www.lacourt.org/division/probate/probate.aspx',
-        'search_url': 'https://www.lacourt.org/casesummary/ui/index.aspx',
-        'api_available': False,
+    "CA_LOS_ANGELES": {
+        "name": "Los Angeles County Superior Court - Probate",
+        "url": "https://www.lacourt.org/division/probate/probate.aspx",
+        "search_url": "https://www.lacourt.org/casesummary/ui/index.aspx",
+        "api_available": False,
     },
-    'CA_SAN_DIEGO': {
-        'name': 'San Diego County Superior Court - Probate',
-        'url': 'https://www.sdcourt.ca.gov/sdcourt/civil/probate',
-        'search_url': 'https://www.sdcourt.ca.gov/sdcourt/case-information/case-search',
-        'api_available': False,
+    "CA_SAN_DIEGO": {
+        "name": "San Diego County Superior Court - Probate",
+        "url": "https://www.sdcourt.ca.gov/sdcourt/civil/probate",
+        "search_url": "https://www.sdcourt.ca.gov/sdcourt/case-information/case-search",
+        "api_available": False,
     },
-    'CA_ORANGE': {
-        'name': 'Orange County Superior Court - Probate',
-        'url': 'https://www.occourts.org/online-services/case-access/',
-        'search_url': 'https://www.occourts.org/online-services/case-access/',
-        'api_available': False,
+    "CA_ORANGE": {
+        "name": "Orange County Superior Court - Probate",
+        "url": "https://www.occourts.org/online-services/case-access/",
+        "search_url": "https://www.occourts.org/online-services/case-access/",
+        "api_available": False,
     },
-
     # Florida
-    'FL_MIAMI_DADE': {
-        'name': 'Miami-Dade County Circuit Court - Probate',
-        'url': 'https://www.jud11.flcourts.org/Probate',
-        'search_url': 'https://www2.miami-dadeclerk.com/ocs/',
-        'api_available': False,
+    "FL_MIAMI_DADE": {
+        "name": "Miami-Dade County Circuit Court - Probate",
+        "url": "https://www.jud11.flcourts.org/Probate",
+        "search_url": "https://www2.miami-dadeclerk.com/ocs/",
+        "api_available": False,
     },
-    'FL_BROWARD': {
-        'name': 'Broward County Circuit Court - Probate',
-        'url': 'https://www.17th.flcourts.org/',
-        'search_url': 'https://www.browardclerk.org/Web2/',
-        'api_available': False,
+    "FL_BROWARD": {
+        "name": "Broward County Circuit Court - Probate",
+        "url": "https://www.17th.flcourts.org/",
+        "search_url": "https://www.browardclerk.org/Web2/",
+        "api_available": False,
     },
-    'FL_PALM_BEACH': {
-        'name': 'Palm Beach County Circuit Court - Probate',
-        'url': 'https://www.15thcircuit.com/',
-        'search_url': 'https://courtrecords.palmbeachclerk.com/',
-        'api_available': False,
+    "FL_PALM_BEACH": {
+        "name": "Palm Beach County Circuit Court - Probate",
+        "url": "https://www.15thcircuit.com/",
+        "search_url": "https://courtrecords.palmbeachclerk.com/",
+        "api_available": False,
     },
-
     # Texas
-    'TX_HARRIS': {
-        'name': 'Harris County Probate Courts',
-        'url': 'https://www.justex.net/Courts/Probate/',
-        'search_url': 'https://www.cclerk.hctx.net/Applications/WebSearch/',
-        'api_available': False,
-        'notes': '4 statutory probate courts',
+    "TX_HARRIS": {
+        "name": "Harris County Probate Courts",
+        "url": "https://www.justex.net/Courts/Probate/",
+        "search_url": "https://www.cclerk.hctx.net/Applications/WebSearch/",
+        "api_available": False,
+        "notes": "4 statutory probate courts",
     },
-    'TX_DALLAS': {
-        'name': 'Dallas County Probate Courts',
-        'url': 'https://www.dallascounty.org/government/courts/probate-courts/',
-        'search_url': 'https://apps.dallascounty.org/ccfiling/search',
-        'api_available': False,
+    "TX_DALLAS": {
+        "name": "Dallas County Probate Courts",
+        "url": "https://www.dallascounty.org/government/courts/probate-courts/",
+        "search_url": "https://apps.dallascounty.org/ccfiling/search",
+        "api_available": False,
     },
-    'TX_BEXAR': {
-        'name': 'Bexar County Probate Courts',
-        'url': 'https://www.bexar.org/2848/Probate-Courts',
-        'search_url': 'https://www.bexar.org/2848/Probate-Courts',
-        'api_available': False,
+    "TX_BEXAR": {
+        "name": "Bexar County Probate Courts",
+        "url": "https://www.bexar.org/2848/Probate-Courts",
+        "search_url": "https://www.bexar.org/2848/Probate-Courts",
+        "api_available": False,
     },
-
     # New York
-    'NY_NEW_YORK': {
-        'name': 'New York County Surrogate Court (Manhattan)',
-        'url': 'https://www.nycourts.gov/courts/1jd/surrogates/',
-        'search_url': 'https://iapps.courts.state.ny.us/webcivil/FCASSearch',
-        'api_available': True,
+    "NY_NEW_YORK": {
+        "name": "New York County Surrogate Court (Manhattan)",
+        "url": "https://www.nycourts.gov/courts/1jd/surrogates/",
+        "search_url": "https://iapps.courts.state.ny.us/webcivil/FCASSearch",
+        "api_available": True,
     },
-    'NY_KINGS': {
-        'name': 'Kings County Surrogate Court (Brooklyn)',
-        'url': 'https://www.nycourts.gov/courts/2jd/kings/surrogates/',
-        'search_url': 'https://iapps.courts.state.ny.us/webcivil/FCASSearch',
-        'api_available': True,
+    "NY_KINGS": {
+        "name": "Kings County Surrogate Court (Brooklyn)",
+        "url": "https://www.nycourts.gov/courts/2jd/kings/surrogates/",
+        "search_url": "https://iapps.courts.state.ny.us/webcivil/FCASSearch",
+        "api_available": True,
     },
-
     # Illinois
-    'IL_COOK': {
-        'name': 'Cook County Circuit Court - Probate Division',
-        'url': 'https://www.cookcountycourt.org/ABOUT-THE-COURT/Municipal-Department/Probate-Division',
-        'search_url': 'https://casesearch.cookcountyclerkofcourt.org/ProbateCaseSearch.aspx',
-        'api_available': False,
+    "IL_COOK": {
+        "name": "Cook County Circuit Court - Probate Division",
+        "url": "https://www.cookcountycourt.org/ABOUT-THE-COURT/Municipal-Department/Probate-Division",
+        "search_url": "https://casesearch.cookcountyclerkofcourt.org/ProbateCaseSearch.aspx",
+        "api_available": False,
     },
-
     # Arizona
-    'AZ_MARICOPA': {
-        'name': 'Maricopa County Superior Court - Probate',
-        'url': 'https://superiorcourt.maricopa.gov/probate/',
-        'search_url': 'https://www.superiorcourt.maricopa.gov/docket/ProbateCourtCases/',
-        'api_available': True,
+    "AZ_MARICOPA": {
+        "name": "Maricopa County Superior Court - Probate",
+        "url": "https://superiorcourt.maricopa.gov/probate/",
+        "search_url": "https://www.superiorcourt.maricopa.gov/docket/ProbateCourtCases/",
+        "api_available": True,
     },
-
     # Nevada
-    'NV_CLARK': {
-        'name': 'Clark County District Court - Probate',
-        'url': 'https://www.clarkcountycourts.us/',
-        'search_url': 'https://www.clarkcountycourts.us/Anonymous/default.aspx',
-        'api_available': False,
+    "NV_CLARK": {
+        "name": "Clark County District Court - Probate",
+        "url": "https://www.clarkcountycourts.us/",
+        "search_url": "https://www.clarkcountycourts.us/Anonymous/default.aspx",
+        "api_available": False,
     },
-
     # Georgia
-    'GA_FULTON': {
-        'name': 'Fulton County Probate Court',
-        'url': 'https://www.fultoncountyprobatecourt.org/',
-        'search_url': 'https://www.fultoncountyprobatecourt.org/record-search/',
-        'api_available': False,
+    "GA_FULTON": {
+        "name": "Fulton County Probate Court",
+        "url": "https://www.fultoncountyprobatecourt.org/",
+        "search_url": "https://www.fultoncountyprobatecourt.org/record-search/",
+        "api_available": False,
     },
-
     # Ohio
-    'OH_CUYAHOGA': {
-        'name': 'Cuyahoga County Probate Court',
-        'url': 'https://probate.cuyahogacounty.us/',
-        'search_url': 'https://probate.cuyahogacounty.us/pa/CaseSummary.aspx',
-        'api_available': True,
+    "OH_CUYAHOGA": {
+        "name": "Cuyahoga County Probate Court",
+        "url": "https://probate.cuyahogacounty.us/",
+        "search_url": "https://probate.cuyahogacounty.us/pa/CaseSummary.aspx",
+        "api_available": True,
     },
-    'OH_FRANKLIN': {
-        'name': 'Franklin County Probate Court',
-        'url': 'https://probate.franklincountyohio.gov/',
-        'search_url': 'https://probate.franklincountyohio.gov/eservices',
-        'api_available': True,
+    "OH_FRANKLIN": {
+        "name": "Franklin County Probate Court",
+        "url": "https://probate.franklincountyohio.gov/",
+        "search_url": "https://probate.franklincountyohio.gov/eservices",
+        "api_available": True,
     },
-
     # Washington
-    'WA_KING': {
-        'name': 'King County Superior Court - Probate',
-        'url': 'https://www.kingcounty.gov/courts/superior-court/case-types/probate.aspx',
-        'search_url': 'https://dja-prd-ecexap1.kingcounty.gov/clerks/default.aspx',
-        'api_available': True,
+    "WA_KING": {
+        "name": "King County Superior Court - Probate",
+        "url": "https://www.kingcounty.gov/courts/superior-court/case-types/probate.aspx",
+        "search_url": "https://dja-prd-ecexap1.kingcounty.gov/clerks/default.aspx",
+        "api_available": True,
     },
-
     # Pennsylvania
-    'PA_PHILADELPHIA': {
-        'name': 'Philadelphia Register of Wills',
-        'url': 'https://www.phila.gov/departments/register-of-wills/',
-        'search_url': 'https://www.phila.gov/departments/register-of-wills/',
-        'api_available': False,
+    "PA_PHILADELPHIA": {
+        "name": "Philadelphia Register of Wills",
+        "url": "https://www.phila.gov/departments/register-of-wills/",
+        "search_url": "https://www.phila.gov/departments/register-of-wills/",
+        "api_available": False,
     },
-
     # New Jersey
-    'NJ_ESSEX': {
-        'name': 'Essex County Surrogate Court',
-        'url': 'https://www.essexcountynj.org/surrogates-court/',
-        'search_url': 'https://portal.njcourts.gov/',
-        'api_available': False,
+    "NJ_ESSEX": {
+        "name": "Essex County Surrogate Court",
+        "url": "https://www.essexcountynj.org/surrogates-court/",
+        "search_url": "https://portal.njcourts.gov/",
+        "api_available": False,
     },
-
     # Massachusetts
-    'MA_SUFFOLK': {
-        'name': 'Suffolk County Probate and Family Court',
-        'url': 'https://www.mass.gov/locations/suffolk-probate-and-family-court',
-        'search_url': 'https://www.masscourts.org/eservices/',
-        'api_available': True,
+    "MA_SUFFOLK": {
+        "name": "Suffolk County Probate and Family Court",
+        "url": "https://www.mass.gov/locations/suffolk-probate-and-family-court",
+        "search_url": "https://www.masscourts.org/eservices/",
+        "api_available": True,
     },
 }
 
@@ -850,8 +855,8 @@ class ProbateRecordsAPI:
     def __init__(self):
         self.session: Optional[aiohttp.ClientSession] = None
         self.base_headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9',
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9",
         }
 
     async def __aenter__(self):
@@ -862,7 +867,9 @@ class ProbateRecordsAPI:
         if self.session:
             await self.session.close()
 
-    async def _make_request(self, url: str, params: Optional[Dict] = None) -> Optional[str]:
+    async def _make_request(
+        self, url: str, params: Optional[Dict] = None
+    ) -> Optional[str]:
         """Make HTTP request with error handling"""
         if not self.session:
             self.session = aiohttp.ClientSession(headers=self.base_headers)
@@ -872,7 +879,9 @@ class ProbateRecordsAPI:
                 if response.status == 200:
                     return await response.text()
                 else:
-                    logger.warning(f"Request failed with status {response.status}: {url}")
+                    logger.warning(
+                        f"Request failed with status {response.status}: {url}"
+                    )
                     return None
         except asyncio.TimeoutError:
             logger.error(f"Request timeout: {url}")
@@ -885,29 +894,29 @@ class ProbateRecordsAPI:
         """Parse case type from string"""
         type_str = type_str.lower() if type_str else ""
 
-        if 'testate' in type_str or 'with will' in type_str:
+        if "testate" in type_str or "with will" in type_str:
             return ProbateCaseType.TESTATE
-        elif 'intestate' in type_str or 'without will' in type_str:
+        elif "intestate" in type_str or "without will" in type_str:
             return ProbateCaseType.INTESTATE
-        elif 'small estate' in type_str or 'summary' in type_str:
+        elif "small estate" in type_str or "summary" in type_str:
             return ProbateCaseType.SMALL_ESTATE
-        elif 'guardianship' in type_str:
-            if 'minor' in type_str:
+        elif "guardianship" in type_str:
+            if "minor" in type_str:
                 return ProbateCaseType.GUARDIANSHIP_MINOR
-            elif 'adult' in type_str or 'incapacitated' in type_str:
+            elif "adult" in type_str or "incapacitated" in type_str:
                 return ProbateCaseType.GUARDIANSHIP_ADULT
-            elif 'estate' in type_str:
+            elif "estate" in type_str:
                 return ProbateCaseType.GUARDIANSHIP_ESTATE
             return ProbateCaseType.GUARDIANSHIP_PERSON
-        elif 'conservatorship' in type_str:
+        elif "conservatorship" in type_str:
             return ProbateCaseType.CONSERVATORSHIP
-        elif 'trust' in type_str:
+        elif "trust" in type_str:
             return ProbateCaseType.TRUST_ADMINISTRATION
-        elif 'will contest' in type_str:
+        elif "will contest" in type_str:
             return ProbateCaseType.WILL_CONTEST
-        elif 'determination' in type_str and 'heir' in type_str:
+        elif "determination" in type_str and "heir" in type_str:
             return ProbateCaseType.DETERMINATION_OF_HEIRS
-        elif 'ancillary' in type_str:
+        elif "ancillary" in type_str:
             return ProbateCaseType.ANCILLARY_PROBATE
         else:
             return ProbateCaseType.OTHER
@@ -918,7 +927,7 @@ class ProbateRecordsAPI:
         first_name: Optional[str] = None,
         state: str = "",
         county: Optional[str] = None,
-        year_range: Optional[tuple] = None
+        year_range: Optional[tuple] = None,
     ) -> List[ProbateRecord]:
         """Search for probate cases by decedent name"""
         results = []
@@ -944,10 +953,7 @@ class ProbateRecordsAPI:
         return results
 
     async def search_by_case_number(
-        self,
-        case_number: str,
-        state: str,
-        county: Optional[str] = None
+        self, case_number: str, state: str, county: Optional[str] = None
     ) -> Optional[ProbateRecord]:
         """Search for a specific probate case by number"""
         if state not in STATE_PROBATE_COURTS:
@@ -963,7 +969,7 @@ class ProbateRecordsAPI:
         last_name: str,
         first_name: Optional[str] = None,
         state: str = "",
-        county: Optional[str] = None
+        county: Optional[str] = None,
     ) -> List[ProbateRecord]:
         """Search for probate cases where person is an heir/beneficiary"""
         results = []
@@ -980,7 +986,7 @@ class ProbateRecordsAPI:
         last_name: str,
         first_name: Optional[str] = None,
         state: str = "",
-        county: Optional[str] = None
+        county: Optional[str] = None,
     ) -> List[ProbateRecord]:
         """Search for probate cases by executor/administrator"""
         results = []
@@ -997,7 +1003,7 @@ class ProbateRecordsAPI:
         state: str,
         county: Optional[str] = None,
         days: int = 30,
-        case_type: Optional[ProbateCaseType] = None
+        case_type: Optional[ProbateCaseType] = None,
     ) -> List[ProbateRecord]:
         """Get recently filed probate cases"""
         results = []
@@ -1013,7 +1019,7 @@ class ProbateRecordsAPI:
         self,
         state: str,
         county: Optional[str] = None,
-        case_type: Optional[ProbateCaseType] = None
+        case_type: Optional[ProbateCaseType] = None,
     ) -> List[ProbateRecord]:
         """Get pending/open probate cases"""
         results = []
@@ -1030,7 +1036,7 @@ class ProbateRecordsAPI:
         state: str,
         county: Optional[str] = None,
         ward_name: Optional[str] = None,
-        guardian_name: Optional[str] = None
+        guardian_name: Optional[str] = None,
     ) -> List[ProbateRecord]:
         """Search for guardianship/conservatorship cases"""
         results = []
@@ -1057,9 +1063,9 @@ class ProbateRecordsAPI:
         if state.upper() in STATE_PROBATE_COURTS:
             state_info = STATE_PROBATE_COURTS[state.upper()]
             return {
-                'name': f"{county} County {state_info['court_name']}",
-                'court_type': state_info['court_name'],
-                'small_estate_limit': state_info.get('small_estate_limit'),
+                "name": f"{county} County {state_info['court_name']}",
+                "court_type": state_info["court_name"],
+                "small_estate_limit": state_info.get("small_estate_limit"),
             }
 
         return None
@@ -1072,22 +1078,22 @@ class ProbateRecordsAPI:
         info = STATE_PROBATE_COURTS[state.upper()]
 
         return {
-            'state': state.upper(),
-            'small_estate_limit': info.get('small_estate_limit'),
-            'real_property_limit': info.get('real_property_limit'),
-            'disposition_limit': info.get('disposition_limit'),
-            'notes': info.get('notes'),
+            "state": state.upper(),
+            "small_estate_limit": info.get("small_estate_limit"),
+            "real_property_limit": info.get("real_property_limit"),
+            "disposition_limit": info.get("disposition_limit"),
+            "notes": info.get("notes"),
         }
 
     def get_all_states(self) -> Dict[str, Dict[str, Any]]:
         """Get probate court information for all states"""
         return {
             state: {
-                'name': info['name'],
-                'court_name': info['court_name'],
-                'filing_level': info['filing_level'],
-                'small_estate_limit': info.get('small_estate_limit'),
-                'api_available': info.get('api_available', False),
+                "name": info["name"],
+                "court_name": info["court_name"],
+                "filing_level": info["filing_level"],
+                "small_estate_limit": info.get("small_estate_limit"),
+                "api_available": info.get("api_available", False),
             }
             for state, info in STATE_PROBATE_COURTS.items()
         }
@@ -1098,25 +1104,33 @@ class ProbateRecordsAPI:
         total_counties = len(COUNTY_PROBATE_SOURCES)
 
         # Count by filing level
-        county_level = sum(1 for s in STATE_PROBATE_COURTS.values() if s['filing_level'] == 'county')
-        district_level = sum(1 for s in STATE_PROBATE_COURTS.values() if s['filing_level'] == 'district')
+        county_level = sum(
+            1 for s in STATE_PROBATE_COURTS.values() if s["filing_level"] == "county"
+        )
+        district_level = sum(
+            1 for s in STATE_PROBATE_COURTS.values() if s["filing_level"] == "district"
+        )
         other_level = total_states - county_level - district_level
 
         # API availability
-        with_api = sum(1 for s in STATE_PROBATE_COURTS.values() if s.get('api_available'))
-        county_with_api = sum(1 for c in COUNTY_PROBATE_SOURCES.values() if c.get('api_available'))
+        with_api = sum(
+            1 for s in STATE_PROBATE_COURTS.values() if s.get("api_available")
+        )
+        county_with_api = sum(
+            1 for c in COUNTY_PROBATE_SOURCES.values() if c.get("api_available")
+        )
 
         return {
-            'total_states': total_states,
-            'total_county_courts': total_counties,
-            'filing_levels': {
-                'county': county_level,
-                'district': district_level,
-                'other': other_level,
+            "total_states": total_states,
+            "total_county_courts": total_counties,
+            "filing_levels": {
+                "county": county_level,
+                "district": district_level,
+                "other": other_level,
             },
-            'states_with_api': with_api,
-            'county_courts_with_api': county_with_api,
-            'api_coverage_percent': round(with_api / total_states * 100, 1),
+            "states_with_api": with_api,
+            "county_courts_with_api": county_with_api,
+            "api_coverage_percent": round(with_api / total_states * 100, 1),
         }
 
 
@@ -1125,9 +1139,10 @@ def search_probate_by_decedent(
     last_name: str,
     first_name: Optional[str] = None,
     state: str = "",
-    county: Optional[str] = None
+    county: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Synchronous wrapper for searching probate by decedent name"""
+
     async def _search():
         async with ProbateRecordsAPI() as api:
             results = await api.search_by_decedent_name(
@@ -1139,11 +1154,10 @@ def search_probate_by_decedent(
 
 
 def get_probate_case(
-    case_number: str,
-    state: str,
-    county: Optional[str] = None
+    case_number: str, state: str, county: Optional[str] = None
 ) -> Optional[Dict[str, Any]]:
     """Synchronous wrapper for getting probate case by number"""
+
     async def _get():
         async with ProbateRecordsAPI() as api:
             result = await api.search_by_case_number(case_number, state, county)
@@ -1156,23 +1170,25 @@ def search_probate_by_heir(
     last_name: str,
     first_name: Optional[str] = None,
     state: str = "",
-    county: Optional[str] = None
+    county: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Synchronous wrapper for searching probate by heir name"""
+
     async def _search():
         async with ProbateRecordsAPI() as api:
-            results = await api.search_by_heir_name(last_name, first_name, state, county)
+            results = await api.search_by_heir_name(
+                last_name, first_name, state, county
+            )
             return [r.to_dict() for r in results]
 
     return asyncio.run(_search())
 
 
 def get_recent_probate_filings(
-    state: str,
-    county: Optional[str] = None,
-    days: int = 30
+    state: str, county: Optional[str] = None, days: int = 30
 ) -> List[Dict[str, Any]]:
     """Synchronous wrapper for getting recent probate filings"""
+
     async def _get():
         async with ProbateRecordsAPI() as api:
             results = await api.get_recent_filings(state, county, days)
@@ -1220,20 +1236,22 @@ if __name__ == "__main__":
     print(f"\nCoverage Statistics:")
     print(f"  Total States: {stats['total_states']}")
     print(f"  County Courts Configured: {stats['total_county_courts']}")
-    print(f"  States with API: {stats['states_with_api']} ({stats['api_coverage_percent']}%)")
+    print(
+        f"  States with API: {stats['states_with_api']} ({stats['api_coverage_percent']}%)"
+    )
     print(f"  County Courts with API: {stats['county_courts_with_api']}")
 
     print(f"\nFiling Levels:")
-    for level, count in stats['filing_levels'].items():
+    for level, count in stats["filing_levels"].items():
         print(f"  {level}: {count}")
 
     print("\nSmall Estate Limits by State:")
     states = get_all_state_probate_info()
     sorted_states = sorted(
-        [(k, v) for k, v in states.items() if v.get('small_estate_limit')],
-        key=lambda x: x[1].get('small_estate_limit', 0),
-        reverse=True
+        [(k, v) for k, v in states.items() if v.get("small_estate_limit")],
+        key=lambda x: x[1].get("small_estate_limit", 0),
+        reverse=True,
     )
     for state_code, info in sorted_states[:10]:
-        limit = info.get('small_estate_limit', 0)
+        limit = info.get("small_estate_limit", 0)
         print(f"  {state_code}: ${limit:,}")

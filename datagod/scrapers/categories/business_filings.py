@@ -15,23 +15,25 @@ Supports:
 Uses async/aiohttp for efficient API access.
 """
 
-import logging
 import asyncio
-import aiohttp
+import logging
 import os
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Dict, List, Any, Optional
-from urllib.parse import urlencode, quote
+from typing import Any, Dict, List, Optional
+from urllib.parse import quote, urlencode
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
 
 class EntityType(Enum):
     """Types of business entities"""
+
     CORPORATION = "corporation"
     LLC = "llc"
     LLP = "llp"
@@ -51,6 +53,7 @@ class EntityType(Enum):
 
 class EntityStatus(Enum):
     """Business entity status values"""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
     DISSOLVED = "dissolved"
@@ -69,6 +72,7 @@ class EntityStatus(Enum):
 
 class FilingType(Enum):
     """Types of business filings"""
+
     ARTICLES_OF_INCORPORATION = "articles_of_incorporation"
     ARTICLES_OF_ORGANIZATION = "articles_of_organization"
     CERTIFICATE_OF_FORMATION = "certificate_of_formation"
@@ -96,6 +100,7 @@ class FilingType(Enum):
 @dataclass
 class RegisteredAgent:
     """Registered agent information"""
+
     name: str
     address: Optional[str] = None
     city: Optional[str] = None
@@ -107,20 +112,23 @@ class RegisteredAgent:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'name': self.name,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'zip_code': self.zip_code,
-            'is_commercial': self.is_commercial,
-            'agent_type': self.agent_type,
-            'effective_date': self.effective_date.isoformat() if self.effective_date else None
+            "name": self.name,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "zip_code": self.zip_code,
+            "is_commercial": self.is_commercial,
+            "agent_type": self.agent_type,
+            "effective_date": (
+                self.effective_date.isoformat() if self.effective_date else None
+            ),
         }
 
 
 @dataclass
 class Officer:
     """Business officer or member"""
+
     name: str
     title: Optional[str] = None
     address: Optional[str] = None
@@ -132,20 +140,21 @@ class Officer:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'name': self.name,
-            'title': self.title,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'zip_code': self.zip_code,
-            'start_date': self.start_date.isoformat() if self.start_date else None,
-            'end_date': self.end_date.isoformat() if self.end_date else None
+            "name": self.name,
+            "title": self.title,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "zip_code": self.zip_code,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "end_date": self.end_date.isoformat() if self.end_date else None,
         }
 
 
 @dataclass
 class BusinessFiling:
     """Represents a business filing record"""
+
     filing_number: str
     filing_type: FilingType
     filing_date: date
@@ -157,20 +166,23 @@ class BusinessFiling:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'filing_number': self.filing_number,
-            'filing_type': self.filing_type.value,
-            'filing_date': self.filing_date.isoformat(),
-            'effective_date': self.effective_date.isoformat() if self.effective_date else None,
-            'document_url': self.document_url,
-            'pages': self.pages,
-            'description': self.description,
-            'fee_paid': self.fee_paid
+            "filing_number": self.filing_number,
+            "filing_type": self.filing_type.value,
+            "filing_date": self.filing_date.isoformat(),
+            "effective_date": (
+                self.effective_date.isoformat() if self.effective_date else None
+            ),
+            "document_url": self.document_url,
+            "pages": self.pages,
+            "description": self.description,
+            "fee_paid": self.fee_paid,
         }
 
 
 @dataclass
 class BusinessEntity:
     """Represents a business entity record"""
+
     entity_id: str
     entity_name: str
     entity_type: EntityType
@@ -202,39 +214,50 @@ class BusinessEntity:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'entity_id': self.entity_id,
-            'entity_name': self.entity_name,
-            'entity_type': self.entity_type.value,
-            'state': self.state,
-            'status': self.status.value,
-            'formation_date': self.formation_date.isoformat() if self.formation_date else None,
-            'dissolution_date': self.dissolution_date.isoformat() if self.dissolution_date else None,
-            'expiration_date': self.expiration_date.isoformat() if self.expiration_date else None,
-            'last_annual_report': self.last_annual_report.isoformat() if self.last_annual_report else None,
-            'registered_agent': self.registered_agent.to_dict() if self.registered_agent else None,
-            'principal_address': self.principal_address,
-            'principal_city': self.principal_city,
-            'principal_state': self.principal_state,
-            'principal_zip': self.principal_zip,
-            'mailing_address': self.mailing_address,
-            'officers': [o.to_dict() for o in self.officers],
-            'filings': [f.to_dict() for f in self.filings],
-            'ein': self.ein,
-            'jurisdiction': self.jurisdiction,
-            'jurisdiction_of_formation': self.jurisdiction_of_formation,
-            'previous_names': self.previous_names,
-            'naics_code': self.naics_code,
-            'sic_code': self.sic_code,
-            'purpose': self.purpose,
-            'source_url': self.source_url,
-            'source_system': self.source_system,
-            'fetched_at': self.fetched_at.isoformat()
+            "entity_id": self.entity_id,
+            "entity_name": self.entity_name,
+            "entity_type": self.entity_type.value,
+            "state": self.state,
+            "status": self.status.value,
+            "formation_date": (
+                self.formation_date.isoformat() if self.formation_date else None
+            ),
+            "dissolution_date": (
+                self.dissolution_date.isoformat() if self.dissolution_date else None
+            ),
+            "expiration_date": (
+                self.expiration_date.isoformat() if self.expiration_date else None
+            ),
+            "last_annual_report": (
+                self.last_annual_report.isoformat() if self.last_annual_report else None
+            ),
+            "registered_agent": (
+                self.registered_agent.to_dict() if self.registered_agent else None
+            ),
+            "principal_address": self.principal_address,
+            "principal_city": self.principal_city,
+            "principal_state": self.principal_state,
+            "principal_zip": self.principal_zip,
+            "mailing_address": self.mailing_address,
+            "officers": [o.to_dict() for o in self.officers],
+            "filings": [f.to_dict() for f in self.filings],
+            "ein": self.ein,
+            "jurisdiction": self.jurisdiction,
+            "jurisdiction_of_formation": self.jurisdiction_of_formation,
+            "previous_names": self.previous_names,
+            "naics_code": self.naics_code,
+            "sic_code": self.sic_code,
+            "purpose": self.purpose,
+            "source_url": self.source_url,
+            "source_system": self.source_system,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class UCCFiling:
     """Represents a UCC filing record"""
+
     filing_number: str
     filing_date: date
     filing_type: str
@@ -260,33 +283,34 @@ class UCCFiling:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'filing_number': self.filing_number,
-            'filing_date': self.filing_date.isoformat(),
-            'filing_type': self.filing_type,
-            'status': self.status,
-            'lapse_date': self.lapse_date.isoformat() if self.lapse_date else None,
-            'secured_party': self.secured_party,
-            'secured_party_address': self.secured_party_address,
-            'secured_party_city': self.secured_party_city,
-            'secured_party_state': self.secured_party_state,
-            'debtor_name': self.debtor_name,
-            'debtor_address': self.debtor_address,
-            'debtor_city': self.debtor_city,
-            'debtor_state': self.debtor_state,
-            'debtor_type': self.debtor_type,
-            'collateral_description': self.collateral_description,
-            'state': self.state,
-            'filing_office': self.filing_office,
-            'amendments': self.amendments,
-            'source_url': self.source_url,
-            'source_system': self.source_system,
-            'fetched_at': self.fetched_at.isoformat()
+            "filing_number": self.filing_number,
+            "filing_date": self.filing_date.isoformat(),
+            "filing_type": self.filing_type,
+            "status": self.status,
+            "lapse_date": self.lapse_date.isoformat() if self.lapse_date else None,
+            "secured_party": self.secured_party,
+            "secured_party_address": self.secured_party_address,
+            "secured_party_city": self.secured_party_city,
+            "secured_party_state": self.secured_party_state,
+            "debtor_name": self.debtor_name,
+            "debtor_address": self.debtor_address,
+            "debtor_city": self.debtor_city,
+            "debtor_state": self.debtor_state,
+            "debtor_type": self.debtor_type,
+            "collateral_description": self.collateral_description,
+            "state": self.state,
+            "filing_office": self.filing_office,
+            "amendments": self.amendments,
+            "source_url": self.source_url,
+            "source_system": self.source_system,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class CorporateSearch:
     """Search parameters for corporate entity search."""
+
     entity_name: Optional[str] = None
     entity_id: Optional[str] = None
     state: Optional[str] = None
@@ -303,6 +327,7 @@ class CorporateSearch:
 @dataclass
 class UCCSearch:
     """Search parameters for UCC filings search."""
+
     debtor_name: Optional[str] = None
     secured_party: Optional[str] = None
     filing_number: Optional[str] = None
@@ -315,157 +340,175 @@ class UCCSearch:
 
 class BusinessFilingsScraper(ABC):
     """Abstract base class for business filings scrapers."""
-    
+
     def __init__(self, state_code: str, config: Dict[str, Any] = None):
         self.state_code = state_code.upper()
         self.config = config or {}
-        self.base_url = self.config.get('base_url', '')
-        self.api_key = self.config.get('api_key')
+        self.base_url = self.config.get("base_url", "")
+        self.api_key = self.config.get("api_key")
         self._session: Optional[aiohttp.ClientSession] = None
-    
+
     @abstractmethod
     def search_entities(self, search: CorporateSearch) -> List[BusinessEntity]:
         """Search for business entities."""
         pass
-    
+
     @abstractmethod
     def get_entity_details(self, entity_id: str) -> Optional[BusinessEntity]:
         """Get detailed information about a specific entity."""
         pass
-    
+
     @abstractmethod
     def search_ucc_filings(self, search: UCCSearch) -> List[UCCFiling]:
         """Search for UCC filings."""
         pass
-    
+
     @abstractmethod
     def get_ucc_details(self, filing_number: str) -> Optional[UCCFiling]:
         """Get detailed information about a specific UCC filing."""
         pass
-    
+
     def classify_entity_type(self, name: str) -> EntityType:
         """Classify entity type based on name."""
         name_lower = name.lower()
-        
-        if 'llc' in name_lower or 'l.l.c.' in name_lower or 'limited liability company' in name_lower:
+
+        if (
+            "llc" in name_lower
+            or "l.l.c." in name_lower
+            or "limited liability company" in name_lower
+        ):
             return EntityType.LLC
-        elif 'llp' in name_lower or 'l.l.p.' in name_lower:
+        elif "llp" in name_lower or "l.l.p." in name_lower:
             return EntityType.LLP
-        elif 'lp' in name_lower or 'l.p.' in name_lower or 'limited partnership' in name_lower:
+        elif (
+            "lp" in name_lower
+            or "l.p." in name_lower
+            or "limited partnership" in name_lower
+        ):
             return EntityType.LP
-        elif 'inc' in name_lower or 'corp' in name_lower or 'incorporated' in name_lower:
+        elif (
+            "inc" in name_lower or "corp" in name_lower or "incorporated" in name_lower
+        ):
             return EntityType.CORPORATION
-        elif 'nonprofit' in name_lower or 'non-profit' in name_lower:
+        elif "nonprofit" in name_lower or "non-profit" in name_lower:
             return EntityType.NONPROFIT
-        elif 'trust' in name_lower:
+        elif "trust" in name_lower:
             return EntityType.TRUST
-        elif 'professional' in name_lower:
+        elif "professional" in name_lower:
             return EntityType.PROFESSIONAL_CORP
-        elif 'partnership' in name_lower:
+        elif "partnership" in name_lower:
             return EntityType.PARTNERSHIP
         else:
             return EntityType.UNKNOWN
-    
+
     def parse_entity_status(self, status_str: str) -> EntityStatus:
         """Parse entity status from string."""
         status_lower = status_str.lower()
-        
+
         status_map = {
-            'dissolved': EntityStatus.DISSOLVED,
-            'suspended': EntityStatus.SUSPENDED,
-            'merged': EntityStatus.MERGED,
-            'converted': EntityStatus.CONVERTED,
-            'revoked': EntityStatus.REVOKED,
-            'withdrawn': EntityStatus.WITHDRAWN,
-            'forfeited': EntityStatus.FORFEITED,
-            'pending': EntityStatus.PENDING,
-            'inactive': EntityStatus.INACTIVE,
-            'active': EntityStatus.ACTIVE,
-            'good standing': EntityStatus.ACTIVE,
-            'current': EntityStatus.ACTIVE,
+            "dissolved": EntityStatus.DISSOLVED,
+            "suspended": EntityStatus.SUSPENDED,
+            "merged": EntityStatus.MERGED,
+            "converted": EntityStatus.CONVERTED,
+            "revoked": EntityStatus.REVOKED,
+            "withdrawn": EntityStatus.WITHDRAWN,
+            "forfeited": EntityStatus.FORFEITED,
+            "pending": EntityStatus.PENDING,
+            "inactive": EntityStatus.INACTIVE,
+            "active": EntityStatus.ACTIVE,
+            "good standing": EntityStatus.ACTIVE,
+            "current": EntityStatus.ACTIVE,
         }
-        
+
         for key, value in status_map.items():
             if key in status_lower:
                 return value
-        
+
         return EntityStatus.UNKNOWN
-    
+
     def normalize_entity_name(self, name: str) -> str:
         """Normalize entity name for comparison."""
         import re
-        
+
         # Remove common suffixes
         suffixes = [
-            r'\binc\.?\b', r'\bcorp\.?\b', r'\bcorporation\b',
-            r'\bllc\.?\b', r'\bl\.l\.c\.?\b', r'\bllp\.?\b',
-            r'\bl\.l\.p\.?\b', r'\blp\.?\b', r'\bl\.p\.?\b',
-            r'\bltd\.?\b', r'\blimited\b', r'\bco\.?\b',
+            r"\binc\.?\b",
+            r"\bcorp\.?\b",
+            r"\bcorporation\b",
+            r"\bllc\.?\b",
+            r"\bl\.l\.c\.?\b",
+            r"\bllp\.?\b",
+            r"\bl\.l\.p\.?\b",
+            r"\blp\.?\b",
+            r"\bl\.p\.?\b",
+            r"\bltd\.?\b",
+            r"\blimited\b",
+            r"\bco\.?\b",
         ]
-        
+
         normalized = name.upper().strip()
-        
+
         for suffix in suffixes:
-            normalized = re.sub(suffix, '', normalized, flags=re.IGNORECASE)
-        
+            normalized = re.sub(suffix, "", normalized, flags=re.IGNORECASE)
+
         # Remove special characters
-        normalized = re.sub(r'[^\w\s]', '', normalized)
-        
+        normalized = re.sub(r"[^\w\s]", "", normalized)
+
         # Collapse whitespace
-        normalized = re.sub(r'\s+', ' ', normalized).strip()
-        
+        normalized = re.sub(r"\s+", " ", normalized).strip()
+
         return normalized
-    
+
     def parse_date(self, date_str: Optional[str]) -> Optional[date]:
         """Parse date from various formats."""
         if not date_str:
             return None
-        
+
         formats = [
-            '%Y-%m-%d',
-            '%m/%d/%Y',
-            '%m-%d-%Y',
-            '%d/%m/%Y',
-            '%Y%m%d',
+            "%Y-%m-%d",
+            "%m/%d/%Y",
+            "%m-%d-%Y",
+            "%d/%m/%Y",
+            "%Y%m%d",
         ]
-        
+
         for fmt in formats:
             try:
                 return datetime.strptime(date_str, fmt).date()
             except ValueError:
                 continue
-        
+
         return None
-    
+
     def get_statistics(self) -> Dict[str, Any]:
         """Get scraper statistics."""
         return {
-            'state': self.state_code,
-            'scraper_class': self.__class__.__name__,
-            'base_url': self.base_url,
+            "state": self.state_code,
+            "scraper_class": self.__class__.__name__,
+            "base_url": self.base_url,
         }
 
 
 class StateSOSScraper(BusinessFilingsScraper):
     """Concrete implementation for State Secretary of State scrapers."""
-    
+
     def __init__(self, state_code: str, config: Dict[str, Any] = None):
         """Initialize the State SOS scraper."""
         super().__init__(state_code, config)
-    
+
     def search_entities(self, search: CorporateSearch) -> List[BusinessEntity]:
         """Search for business entities (placeholder implementation)."""
         # In production, this would make actual API/scraping calls
         return []
-    
+
     def get_entity_details(self, entity_id: str) -> Optional[BusinessEntity]:
         """Get entity details (placeholder implementation)."""
         return None
-    
+
     def search_ucc_filings(self, search: UCCSearch) -> List[UCCFiling]:
         """Search for UCC filings (placeholder implementation)."""
         return []
-    
+
     def get_ucc_details(self, filing_number: str) -> Optional[UCCFiling]:
         """Get UCC filing details (placeholder implementation)."""
         return None
@@ -475,17 +518,17 @@ def search_businesses(
     entity_name: str = None,
     states: List[str] = None,
     include_inactive: bool = False,
-    **kwargs
+    **kwargs,
 ) -> List[BusinessEntity]:
     """
     Convenience function to search for businesses across multiple states.
-    
+
     Args:
         entity_name: Name to search for
         states: List of state codes to search
         include_inactive: Include inactive entities
         **kwargs: Additional search parameters
-        
+
     Returns:
         List of matching business entities
     """
@@ -493,15 +536,15 @@ def search_businesses(
     search = CorporateSearch(
         entity_name=entity_name,
         include_inactive=include_inactive,
-        **{k: v for k, v in kwargs.items() if k in CorporateSearch.__annotations__}
+        **{k: v for k, v in kwargs.items() if k in CorporateSearch.__annotations__},
     )
-    
-    target_states = states or ['CA', 'TX', 'NY', 'FL']
-    
+
+    target_states = states or ["CA", "TX", "NY", "FL"]
+
     for state in target_states:
         scraper = StateSOSScraper(state)
         results.extend(scraper.search_entities(search))
-    
+
     return results
 
 
@@ -509,17 +552,17 @@ def search_ucc(
     debtor_name: str = None,
     secured_party: str = None,
     states: List[str] = None,
-    **kwargs
+    **kwargs,
 ) -> List[UCCFiling]:
     """
     Convenience function to search for UCC filings across multiple states.
-    
+
     Args:
         debtor_name: Debtor name to search for
         secured_party: Secured party name to search for
         states: List of state codes to search
         **kwargs: Additional search parameters
-        
+
     Returns:
         List of matching UCC filings
     """
@@ -527,178 +570,207 @@ def search_ucc(
     search = UCCSearch(
         debtor_name=debtor_name,
         secured_party=secured_party,
-        **{k: v for k, v in kwargs.items() if k in UCCSearch.__annotations__}
+        **{k: v for k, v in kwargs.items() if k in UCCSearch.__annotations__},
     )
-    
-    target_states = states or ['CA', 'TX', 'NY', 'FL']
-    
+
+    target_states = states or ["CA", "TX", "NY", "FL"]
+
     for state in target_states:
         scraper = StateSOSScraper(state)
         results.extend(scraper.search_ucc_filings(search))
-    
+
     return results
 
 
 # State Secretary of State configurations
 STATE_SOS_CONFIGS: Dict[str, Dict[str, Any]] = {
-    'CA': {
-        'name': 'California Secretary of State',
-        'url': 'https://bizfileonline.sos.ca.gov/',
-        'search_url': 'https://bizfileonline.sos.ca.gov/search/business',
-        'api_available': True,
-        'has_ucc': True,
+    "CA": {
+        "name": "California Secretary of State",
+        "url": "https://bizfileonline.sos.ca.gov/",
+        "search_url": "https://bizfileonline.sos.ca.gov/search/business",
+        "api_available": True,
+        "has_ucc": True,
     },
-    'TX': {
-        'name': 'Texas Secretary of State',
-        'url': 'https://www.sos.state.tx.us/',
-        'search_url': 'https://mycpa.cpa.state.tx.us/coa/',
-        'api_available': False,
-        'has_ucc': True,
+    "TX": {
+        "name": "Texas Secretary of State",
+        "url": "https://www.sos.state.tx.us/",
+        "search_url": "https://mycpa.cpa.state.tx.us/coa/",
+        "api_available": False,
+        "has_ucc": True,
     },
-    'FL': {
-        'name': 'Florida Division of Corporations',
-        'url': 'https://dos.myflorida.com/sunbiz/',
-        'search_url': 'https://search.sunbiz.org/Inquiry/CorporationSearch/ByName',
-        'api_url': 'https://search.sunbiz.org/Inquiry/CorporationSearch/SearchResultsJSON',
-        'api_available': True,
-        'has_ucc': True,
+    "FL": {
+        "name": "Florida Division of Corporations",
+        "url": "https://dos.myflorida.com/sunbiz/",
+        "search_url": "https://search.sunbiz.org/Inquiry/CorporationSearch/ByName",
+        "api_url": "https://search.sunbiz.org/Inquiry/CorporationSearch/SearchResultsJSON",
+        "api_available": True,
+        "has_ucc": True,
     },
-    'NY': {
-        'name': 'New York Department of State',
-        'url': 'https://www.dos.ny.gov/',
-        'search_url': 'https://apps.dos.ny.gov/publicInquiry/',
-        'api_available': False,
-        'has_ucc': True,
+    "NY": {
+        "name": "New York Department of State",
+        "url": "https://www.dos.ny.gov/",
+        "search_url": "https://apps.dos.ny.gov/publicInquiry/",
+        "api_available": False,
+        "has_ucc": True,
     },
-    'DE': {
-        'name': 'Delaware Division of Corporations',
-        'url': 'https://corp.delaware.gov/',
-        'search_url': 'https://icis.corp.delaware.gov/ecorp/entitysearch/namesearch.aspx',
-        'api_available': False,
-        'has_ucc': True,
-        'notes': 'Delaware is popular for incorporation - high volume',
+    "DE": {
+        "name": "Delaware Division of Corporations",
+        "url": "https://corp.delaware.gov/",
+        "search_url": "https://icis.corp.delaware.gov/ecorp/entitysearch/namesearch.aspx",
+        "api_available": False,
+        "has_ucc": True,
+        "notes": "Delaware is popular for incorporation - high volume",
     },
-    'NV': {
-        'name': 'Nevada Secretary of State',
-        'url': 'https://www.nvsos.gov/',
-        'search_url': 'https://esos.nv.gov/EntitySearch/OnlineEntitySearch',
-        'api_url': 'https://esos.nv.gov/EntitySearch/api/search',
-        'api_available': True,
-        'has_ucc': True,
+    "NV": {
+        "name": "Nevada Secretary of State",
+        "url": "https://www.nvsos.gov/",
+        "search_url": "https://esos.nv.gov/EntitySearch/OnlineEntitySearch",
+        "api_url": "https://esos.nv.gov/EntitySearch/api/search",
+        "api_available": True,
+        "has_ucc": True,
     },
-    'IL': {
-        'name': 'Illinois Secretary of State',
-        'url': 'https://www.ilsos.gov/',
-        'search_url': 'https://www.ilsos.gov/corporatellc/',
-        'api_available': False,
-        'has_ucc': True,
+    "IL": {
+        "name": "Illinois Secretary of State",
+        "url": "https://www.ilsos.gov/",
+        "search_url": "https://www.ilsos.gov/corporatellc/",
+        "api_available": False,
+        "has_ucc": True,
     },
-    'PA': {
-        'name': 'Pennsylvania Department of State',
-        'url': 'https://www.dos.pa.gov/',
-        'search_url': 'https://www.corporations.pa.gov/search/corpsearch',
-        'api_available': False,
-        'has_ucc': True,
+    "PA": {
+        "name": "Pennsylvania Department of State",
+        "url": "https://www.dos.pa.gov/",
+        "search_url": "https://www.corporations.pa.gov/search/corpsearch",
+        "api_available": False,
+        "has_ucc": True,
     },
-    'OH': {
-        'name': 'Ohio Secretary of State',
-        'url': 'https://www.ohiosos.gov/',
-        'search_url': 'https://businesssearch.ohiosos.gov/',
-        'api_available': False,
-        'has_ucc': True,
+    "OH": {
+        "name": "Ohio Secretary of State",
+        "url": "https://www.ohiosos.gov/",
+        "search_url": "https://businesssearch.ohiosos.gov/",
+        "api_available": False,
+        "has_ucc": True,
     },
-    'GA': {
-        'name': 'Georgia Secretary of State',
-        'url': 'https://sos.ga.gov/',
-        'search_url': 'https://ecorp.sos.ga.gov/BusinessSearch',
-        'api_url': 'https://ecorp.sos.ga.gov/BusinessSearch/api/search',
-        'api_available': True,
-        'has_ucc': True,
+    "GA": {
+        "name": "Georgia Secretary of State",
+        "url": "https://sos.ga.gov/",
+        "search_url": "https://ecorp.sos.ga.gov/BusinessSearch",
+        "api_url": "https://ecorp.sos.ga.gov/BusinessSearch/api/search",
+        "api_available": True,
+        "has_ucc": True,
     },
-    'NC': {
-        'name': 'North Carolina Secretary of State',
-        'url': 'https://www.sosnc.gov/',
-        'search_url': 'https://www.sosnc.gov/online_services/search/by_title/_Business_Registration',
-        'api_available': False,
-        'has_ucc': True,
+    "NC": {
+        "name": "North Carolina Secretary of State",
+        "url": "https://www.sosnc.gov/",
+        "search_url": "https://www.sosnc.gov/online_services/search/by_title/_Business_Registration",
+        "api_available": False,
+        "has_ucc": True,
     },
-    'MI': {
-        'name': 'Michigan LARA',
-        'url': 'https://www.michigan.gov/lara/',
-        'search_url': 'https://cofs.lara.state.mi.us/SearchApi/Search/Search',
-        'api_available': True,
-        'has_ucc': True,
+    "MI": {
+        "name": "Michigan LARA",
+        "url": "https://www.michigan.gov/lara/",
+        "search_url": "https://cofs.lara.state.mi.us/SearchApi/Search/Search",
+        "api_available": True,
+        "has_ucc": True,
     },
-    'NJ': {
-        'name': 'New Jersey Division of Revenue',
-        'url': 'https://www.njportal.com/DOR/BusinessFormation/',
-        'search_url': 'https://www.njportal.com/DOR/BusinessNameSearch/',
-        'api_available': False,
-        'has_ucc': True,
+    "NJ": {
+        "name": "New Jersey Division of Revenue",
+        "url": "https://www.njportal.com/DOR/BusinessFormation/",
+        "search_url": "https://www.njportal.com/DOR/BusinessNameSearch/",
+        "api_available": False,
+        "has_ucc": True,
     },
-    'VA': {
-        'name': 'Virginia State Corporation Commission',
-        'url': 'https://www.scc.virginia.gov/',
-        'search_url': 'https://cis.scc.virginia.gov/EntitySearch/Index',
-        'api_available': False,
-        'has_ucc': True,
+    "VA": {
+        "name": "Virginia State Corporation Commission",
+        "url": "https://www.scc.virginia.gov/",
+        "search_url": "https://cis.scc.virginia.gov/EntitySearch/Index",
+        "api_available": False,
+        "has_ucc": True,
     },
-    'WA': {
-        'name': 'Washington Secretary of State',
-        'url': 'https://www.sos.wa.gov/',
-        'search_url': 'https://ccfs.sos.wa.gov/',
-        'api_url': 'https://ccfs.sos.wa.gov/api/BusinessSearch',
-        'api_available': True,
-        'has_ucc': True,
+    "WA": {
+        "name": "Washington Secretary of State",
+        "url": "https://www.sos.wa.gov/",
+        "search_url": "https://ccfs.sos.wa.gov/",
+        "api_url": "https://ccfs.sos.wa.gov/api/BusinessSearch",
+        "api_available": True,
+        "has_ucc": True,
     },
-    'AZ': {
-        'name': 'Arizona Corporation Commission',
-        'url': 'https://azcc.gov/',
-        'search_url': 'https://ecorp.azcc.gov/EntitySearch/Index',
-        'api_available': False,
-        'has_ucc': True,
+    "AZ": {
+        "name": "Arizona Corporation Commission",
+        "url": "https://azcc.gov/",
+        "search_url": "https://ecorp.azcc.gov/EntitySearch/Index",
+        "api_available": False,
+        "has_ucc": True,
     },
-    'MA': {
-        'name': 'Massachusetts Secretary of the Commonwealth',
-        'url': 'https://www.sec.state.ma.us/',
-        'search_url': 'https://corp.sec.state.ma.us/CorpWeb/CorpSearch/CorpSearch.aspx',
-        'api_available': False,
-        'has_ucc': True,
+    "MA": {
+        "name": "Massachusetts Secretary of the Commonwealth",
+        "url": "https://www.sec.state.ma.us/",
+        "search_url": "https://corp.sec.state.ma.us/CorpWeb/CorpSearch/CorpSearch.aspx",
+        "api_available": False,
+        "has_ucc": True,
     },
-    'CO': {
-        'name': 'Colorado Secretary of State',
-        'url': 'https://www.sos.state.co.us/',
-        'search_url': 'https://www.sos.state.co.us/biz/BusinessEntityCriteriaExt.do',
-        'api_url': 'https://data.colorado.gov/resource/4ykn-tg5h.json',
-        'api_available': True,
-        'has_ucc': True,
+    "CO": {
+        "name": "Colorado Secretary of State",
+        "url": "https://www.sos.state.co.us/",
+        "search_url": "https://www.sos.state.co.us/biz/BusinessEntityCriteriaExt.do",
+        "api_url": "https://data.colorado.gov/resource/4ykn-tg5h.json",
+        "api_available": True,
+        "has_ucc": True,
     },
-    'MD': {
-        'name': 'Maryland SDAT',
-        'url': 'https://dat.maryland.gov/',
-        'search_url': 'https://egov.maryland.gov/BusinessExpress/EntitySearch',
-        'api_available': False,
-        'has_ucc': True,
+    "MD": {
+        "name": "Maryland SDAT",
+        "url": "https://dat.maryland.gov/",
+        "search_url": "https://egov.maryland.gov/BusinessExpress/EntitySearch",
+        "api_available": False,
+        "has_ucc": True,
     },
-    'WI': {
-        'name': 'Wisconsin DFI',
-        'url': 'https://www.wdfi.org/',
-        'search_url': 'https://www.wdfi.org/apps/CorpSearch/',
-        'api_available': False,
-        'has_ucc': True,
+    "WI": {
+        "name": "Wisconsin DFI",
+        "url": "https://www.wdfi.org/",
+        "search_url": "https://www.wdfi.org/apps/CorpSearch/",
+        "api_available": False,
+        "has_ucc": True,
     },
 }
 
 # Add remaining states with basic config
-for state in ['AL', 'AK', 'AR', 'CT', 'HI', 'ID', 'IN', 'IA', 'KS', 'KY', 'LA',
-              'ME', 'MN', 'MS', 'MO', 'MT', 'NE', 'NH', 'NM', 'ND', 'OK', 'OR',
-              'RI', 'SC', 'SD', 'TN', 'UT', 'VT', 'WV', 'WY']:
+for state in [
+    "AL",
+    "AK",
+    "AR",
+    "CT",
+    "HI",
+    "ID",
+    "IN",
+    "IA",
+    "KS",
+    "KY",
+    "LA",
+    "ME",
+    "MN",
+    "MS",
+    "MO",
+    "MT",
+    "NE",
+    "NH",
+    "NM",
+    "ND",
+    "OK",
+    "OR",
+    "RI",
+    "SC",
+    "SD",
+    "TN",
+    "UT",
+    "VT",
+    "WV",
+    "WY",
+]:
     if state not in STATE_SOS_CONFIGS:
         STATE_SOS_CONFIGS[state] = {
-            'name': f'{state} Secretary of State',
-            'url': f'https://www.sos.{state.lower()}.gov/',
-            'api_available': False,
-            'has_ucc': True,
+            "name": f"{state} Secretary of State",
+            "url": f"https://www.sos.{state.lower()}.gov/",
+            "api_available": False,
+            "has_ucc": True,
         }
 
 
@@ -721,10 +793,10 @@ class BusinessFilingsAPI:
     OPENCORPORATES_BASE = "https://api.opencorporates.com/v0.4"
 
     # Common entity type keywords
-    CORP_KEYWORDS = ['corp', 'corporation', 'inc', 'incorporated']
-    LLC_KEYWORDS = ['llc', 'l.l.c.', 'limited liability company']
-    LLP_KEYWORDS = ['llp', 'l.l.p.', 'limited liability partnership']
-    LP_KEYWORDS = ['lp', 'l.p.', 'limited partnership']
+    CORP_KEYWORDS = ["corp", "corporation", "inc", "incorporated"]
+    LLC_KEYWORDS = ["llc", "l.l.c.", "limited liability company"]
+    LLP_KEYWORDS = ["llp", "l.l.p.", "limited liability partnership"]
+    LP_KEYWORDS = ["lp", "l.p.", "limited partnership"]
 
     def __init__(self, api_key: str = None, timeout: int = 30):
         """
@@ -734,7 +806,7 @@ class BusinessFilingsAPI:
             api_key: OpenCorporates API key (optional, increases rate limit)
             timeout: Request timeout in seconds
         """
-        self.api_key = api_key or os.environ.get('OPENCORPORATES_API_KEY')
+        self.api_key = api_key or os.environ.get("OPENCORPORATES_API_KEY")
         self.timeout = aiohttp.ClientTimeout(total=timeout)
         self._session: Optional[aiohttp.ClientSession] = None
         self._last_request = 0.0
@@ -747,18 +819,16 @@ class BusinessFilingsAPI:
         """Get or create aiohttp session."""
         if self._session is None or self._session.closed:
             headers = {
-                'User-Agent': 'DataGod/1.0 (Business Records Research)',
-                'Accept': 'application/json',
+                "User-Agent": "DataGod/1.0 (Business Records Research)",
+                "Accept": "application/json",
             }
-            self._session = aiohttp.ClientSession(
-                timeout=self.timeout,
-                headers=headers
-            )
+            self._session = aiohttp.ClientSession(timeout=self.timeout, headers=headers)
         return self._session
 
     async def _rate_limit(self):
         """Enforce rate limiting between requests."""
         import time
+
         now = time.time()
         elapsed = now - self._last_request
         if elapsed < self._rate_limit_delay:
@@ -786,7 +856,7 @@ class BusinessFilingsAPI:
         jurisdiction_code: str = "",
         status: str = "",
         company_type: str = "",
-        limit: int = 30
+        limit: int = 30,
     ) -> List[BusinessEntity]:
         """
         Search companies via OpenCorporates API.
@@ -811,24 +881,24 @@ class BusinessFilingsAPI:
 
         # Build API URL
         params = {
-            'q': query,
-            'per_page': min(limit, 100),
+            "q": query,
+            "per_page": min(limit, 100),
         }
 
         if jurisdiction_code:
             # Convert state code to OpenCorporates format (us_ca, us_tx, etc.)
             if len(jurisdiction_code) == 2:
                 jurisdiction_code = f"us_{jurisdiction_code.lower()}"
-            params['jurisdiction_code'] = jurisdiction_code
+            params["jurisdiction_code"] = jurisdiction_code
 
         if status:
-            params['status'] = status.lower()
+            params["status"] = status.lower()
 
         if company_type:
-            params['company_type'] = company_type
+            params["company_type"] = company_type
 
         if self.api_key:
-            params['api_token'] = self.api_key
+            params["api_token"] = self.api_key
 
         url = f"{self.OPENCORPORATES_BASE}/companies/search"
         entities = []
@@ -837,10 +907,10 @@ class BusinessFilingsAPI:
             async with session.get(url, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
-                    results = data.get('results', {}).get('companies', [])
+                    results = data.get("results", {}).get("companies", [])
 
                     for item in results:
-                        company = item.get('company', {})
+                        company = item.get("company", {})
                         entity = self._parse_opencorporates_company(company)
                         if entity:
                             entities.append(entity)
@@ -860,64 +930,73 @@ class BusinessFilingsAPI:
 
         return entities
 
-    def _parse_opencorporates_company(self, company: Dict[str, Any]) -> Optional[BusinessEntity]:
+    def _parse_opencorporates_company(
+        self, company: Dict[str, Any]
+    ) -> Optional[BusinessEntity]:
         """Parse OpenCorporates company data into BusinessEntity."""
         try:
             # Parse jurisdiction to state code
-            jurisdiction = company.get('jurisdiction_code', '')
-            state = ''
-            if jurisdiction.startswith('us_'):
+            jurisdiction = company.get("jurisdiction_code", "")
+            state = ""
+            if jurisdiction.startswith("us_"):
                 state = jurisdiction[3:].upper()
 
             # Parse company type
-            company_type = company.get('company_type', '').lower()
-            entity_type = self._classify_entity_type_oc(company_type, company.get('name', ''))
+            company_type = company.get("company_type", "").lower()
+            entity_type = self._classify_entity_type_oc(
+                company_type, company.get("name", "")
+            )
 
             # Parse status
-            status = self._parse_status(company.get('current_status', ''))
+            status = self._parse_status(company.get("current_status", ""))
 
             # Parse dates
-            formation_date = self._parse_date(company.get('incorporation_date'))
-            dissolution_date = self._parse_date(company.get('dissolution_date'))
+            formation_date = self._parse_date(company.get("incorporation_date"))
+            dissolution_date = self._parse_date(company.get("dissolution_date"))
 
             # Parse registered agent
-            agent_data = company.get('registered_agent', {}) or {}
+            agent_data = company.get("registered_agent", {}) or {}
             registered_agent = None
-            if agent_data.get('name'):
+            if agent_data.get("name"):
                 registered_agent = RegisteredAgent(
-                    name=agent_data.get('name', ''),
-                    address=agent_data.get('address'),
+                    name=agent_data.get("name", ""),
+                    address=agent_data.get("address"),
                 )
 
             # Parse officers
             officers = []
-            for officer_data in company.get('officers', []) or []:
-                officer_info = officer_data.get('officer', {})
-                if officer_info.get('name'):
-                    officers.append(Officer(
-                        name=officer_info.get('name', ''),
-                        title=officer_info.get('position'),
-                        start_date=self._parse_date(officer_info.get('start_date')),
-                        end_date=self._parse_date(officer_info.get('end_date'))
-                    ))
+            for officer_data in company.get("officers", []) or []:
+                officer_info = officer_data.get("officer", {})
+                if officer_info.get("name"):
+                    officers.append(
+                        Officer(
+                            name=officer_info.get("name", ""),
+                            title=officer_info.get("position"),
+                            start_date=self._parse_date(officer_info.get("start_date")),
+                            end_date=self._parse_date(officer_info.get("end_date")),
+                        )
+                    )
 
             entity = BusinessEntity(
-                entity_id=company.get('company_number', ''),
-                entity_name=company.get('name', ''),
+                entity_id=company.get("company_number", ""),
+                entity_name=company.get("name", ""),
                 entity_type=entity_type,
                 state=state,
                 status=status,
                 formation_date=formation_date,
                 dissolution_date=dissolution_date,
                 registered_agent=registered_agent,
-                principal_address=company.get('registered_address_in_full'),
+                principal_address=company.get("registered_address_in_full"),
                 officers=officers,
                 jurisdiction=jurisdiction,
-                previous_names=[n.get('company_name', '') for n in (company.get('previous_names') or [])],
-                source_url=company.get('opencorporates_url', ''),
-                source_system='OpenCorporates',
+                previous_names=[
+                    n.get("company_name", "")
+                    for n in (company.get("previous_names") or [])
+                ],
+                source_url=company.get("opencorporates_url", ""),
+                source_system="OpenCorporates",
                 raw_data=company,
-                fetched_at=datetime.now()
+                fetched_at=datetime.now(),
             )
 
             return entity
@@ -932,30 +1011,28 @@ class BusinessFilingsAPI:
         name_lower = name.lower()
 
         # Check company_type field first
-        if 'llc' in type_lower or 'limited liability company' in type_lower:
+        if "llc" in type_lower or "limited liability company" in type_lower:
             return EntityType.LLC
-        elif 'llp' in type_lower or 'limited liability partnership' in type_lower:
+        elif "llp" in type_lower or "limited liability partnership" in type_lower:
             return EntityType.LLP
-        elif 'lp' in type_lower or 'limited partnership' in type_lower:
+        elif "lp" in type_lower or "limited partnership" in type_lower:
             return EntityType.LP
-        elif 'nonprofit' in type_lower or 'non-profit' in type_lower:
+        elif "nonprofit" in type_lower or "non-profit" in type_lower:
             return EntityType.NONPROFIT
-        elif 'corporation' in type_lower or 'corp' in type_lower:
-            if 'foreign' in type_lower:
+        elif "corporation" in type_lower or "corp" in type_lower:
+            if "foreign" in type_lower:
                 return EntityType.FOREIGN_CORP
             return EntityType.CORPORATION
-        elif 'trust' in type_lower:
+        elif "trust" in type_lower:
             return EntityType.TRUST
-        elif 'cooperative' in type_lower:
+        elif "cooperative" in type_lower:
             return EntityType.COOPERATIVE
 
         # Fall back to name analysis
         return self._classify_entity_type(name)
 
     async def get_company_details(
-        self,
-        company_number: str,
-        jurisdiction_code: str
+        self, company_number: str, jurisdiction_code: str
     ) -> Optional[BusinessEntity]:
         """
         Get detailed company information from OpenCorporates.
@@ -976,16 +1053,18 @@ class BusinessFilingsAPI:
         if len(jurisdiction_code) == 2:
             jurisdiction_code = f"us_{jurisdiction_code.lower()}"
 
-        url = f"{self.OPENCORPORATES_BASE}/companies/{jurisdiction_code}/{company_number}"
+        url = (
+            f"{self.OPENCORPORATES_BASE}/companies/{jurisdiction_code}/{company_number}"
+        )
         params = {}
         if self.api_key:
-            params['api_token'] = self.api_key
+            params["api_token"] = self.api_key
 
         try:
             async with session.get(url, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
-                    company = data.get('results', {}).get('company', {})
+                    company = data.get("results", {}).get("company", {})
                     return self._parse_opencorporates_company(company)
                 elif response.status == 404:
                     logger.info(f"Company not found: {company_number}")
@@ -1006,7 +1085,7 @@ class BusinessFilingsAPI:
         entity_type: EntityType = None,
         status: EntityStatus = None,
         include_inactive: bool = False,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[BusinessEntity]:
         """
         Search business entities in a specific state.
@@ -1034,15 +1113,17 @@ class BusinessFilingsAPI:
         config = self.state_configs[state]
 
         # Route to appropriate handler based on state capabilities
-        if config.get('api_available'):
-            return await self._search_state_api(state, query, entity_type, status, include_inactive, limit)
+        if config.get("api_available"):
+            return await self._search_state_api(
+                state, query, entity_type, status, include_inactive, limit
+            )
         else:
             # Fall back to OpenCorporates for this state
             return await self.search_opencorporates(
                 query=query,
                 jurisdiction_code=f"us_{state.lower()}",
-                status='active' if not include_inactive else '',
-                limit=limit
+                status="active" if not include_inactive else "",
+                limit=limit,
             )
 
     async def _search_state_api(
@@ -1052,7 +1133,7 @@ class BusinessFilingsAPI:
         entity_type: EntityType = None,
         status: EntityStatus = None,
         include_inactive: bool = False,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[BusinessEntity]:
         """Search states with known API endpoints."""
         config = self.state_configs[state]
@@ -1063,42 +1144,37 @@ class BusinessFilingsAPI:
         entities = []
 
         # State-specific implementations
-        if state == 'FL':
+        if state == "FL":
             entities = await self._search_florida_sunbiz(session, query, limit)
-        elif state == 'NV':
+        elif state == "NV":
             entities = await self._search_nevada(session, query, limit)
-        elif state == 'WA':
+        elif state == "WA":
             entities = await self._search_washington(session, query, limit)
-        elif state == 'GA':
+        elif state == "GA":
             entities = await self._search_georgia(session, query, limit)
-        elif state == 'MI':
+        elif state == "MI":
             entities = await self._search_michigan(session, query, limit)
-        elif state == 'CO':
+        elif state == "CO":
             entities = await self._search_colorado(session, query, limit)
-        elif state == 'CA':
+        elif state == "CA":
             entities = await self._search_california(session, query, limit)
         else:
             # Fallback to OpenCorporates
             entities = await self.search_opencorporates(
-                query=query,
-                jurisdiction_code=f"us_{state.lower()}",
-                limit=limit
+                query=query, jurisdiction_code=f"us_{state.lower()}", limit=limit
             )
 
         return entities
 
     async def _search_florida_sunbiz(
-        self,
-        session: aiohttp.ClientSession,
-        query: str,
-        limit: int
+        self, session: aiohttp.ClientSession, query: str, limit: int
     ) -> List[BusinessEntity]:
         """Search Florida Sunbiz database."""
         url = "https://search.sunbiz.org/Inquiry/CorporationSearch/SearchResultsJSON"
 
         params = {
-            'searchNameOrder': query.upper(),
-            'searchType': 'SearchByName',
+            "searchNameOrder": query.upper(),
+            "searchType": "SearchByName",
         }
 
         entities = []
@@ -1107,19 +1183,21 @@ class BusinessFilingsAPI:
             async with session.get(url, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
-                    for item in data.get('rows', [])[:limit]:
+                    for item in data.get("rows", [])[:limit]:
                         # Parse Sunbiz format
                         entity = BusinessEntity(
-                            entity_id=item.get('documentNumber', ''),
-                            entity_name=item.get('corporationName', ''),
-                            entity_type=self._classify_entity_type(item.get('corporationName', '')),
-                            state='FL',
-                            status=self._parse_status(item.get('status', '')),
-                            formation_date=self._parse_date(item.get('filingDate')),
+                            entity_id=item.get("documentNumber", ""),
+                            entity_name=item.get("corporationName", ""),
+                            entity_type=self._classify_entity_type(
+                                item.get("corporationName", "")
+                            ),
+                            state="FL",
+                            status=self._parse_status(item.get("status", "")),
+                            formation_date=self._parse_date(item.get("filingDate")),
                             source_url=f"https://search.sunbiz.org/Inquiry/CorporationSearch/SearchResultDetail?inquirytype=EntityName&directionType=Initial&searchNameOrder={quote(query)}&aggregateId={item.get('aggregateId', '')}",
-                            source_system='Florida Sunbiz',
+                            source_system="Florida Sunbiz",
                             raw_data=item,
-                            fetched_at=datetime.now()
+                            fetched_at=datetime.now(),
                         )
                         entities.append(entity)
         except Exception as e:
@@ -1128,18 +1206,15 @@ class BusinessFilingsAPI:
         return entities
 
     async def _search_nevada(
-        self,
-        session: aiohttp.ClientSession,
-        query: str,
-        limit: int
+        self, session: aiohttp.ClientSession, query: str, limit: int
     ) -> List[BusinessEntity]:
         """Search Nevada SOS database."""
         url = "https://esos.nv.gov/EntitySearch/OnlineEntitySearch"
 
         # Nevada uses POST with form data
         data = {
-            'EntityName': query,
-            'StatusID': '0',  # All statuses
+            "EntityName": query,
+            "StatusID": "0",  # All statuses
         }
 
         entities = []
@@ -1164,24 +1239,26 @@ class BusinessFilingsAPI:
         rows = re.findall(row_pattern, html, re.DOTALL | re.IGNORECASE)
 
         for row in rows[:limit]:
-            cells = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
+            cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.DOTALL)
             if len(cells) >= 3:
-                clean = [re.sub(r'<[^>]+>', '', c).strip() for c in cells]
+                clean = [re.sub(r"<[^>]+>", "", c).strip() for c in cells]
 
                 # Extract entity ID from link
-                id_match = re.search(r'EntityId=(\w+)', row)
+                id_match = re.search(r"EntityId=(\w+)", row)
                 entity_id = id_match.group(1) if id_match else clean[0]
 
                 try:
                     entity = BusinessEntity(
                         entity_id=entity_id,
-                        entity_name=clean[0] if clean else '',
-                        entity_type=self._classify_entity_type(clean[0] if clean else ''),
-                        state='NV',
-                        status=self._parse_status(clean[2] if len(clean) > 2 else ''),
+                        entity_name=clean[0] if clean else "",
+                        entity_type=self._classify_entity_type(
+                            clean[0] if clean else ""
+                        ),
+                        state="NV",
+                        status=self._parse_status(clean[2] if len(clean) > 2 else ""),
                         source_url=f"https://esos.nv.gov/EntitySearch/BusinessInformation?EntityId={entity_id}",
-                        source_system='Nevada SOS',
-                        fetched_at=datetime.now()
+                        source_system="Nevada SOS",
+                        fetched_at=datetime.now(),
                     )
                     entities.append(entity)
                 except Exception:
@@ -1190,18 +1267,15 @@ class BusinessFilingsAPI:
         return entities
 
     async def _search_washington(
-        self,
-        session: aiohttp.ClientSession,
-        query: str,
-        limit: int
+        self, session: aiohttp.ClientSession, query: str, limit: int
     ) -> List[BusinessEntity]:
         """Search Washington CCFS database."""
         url = "https://ccfs.sos.wa.gov/api/BusinessSearch"
 
         params = {
-            'businessName': query,
-            'page': 1,
-            'pageSize': limit,
+            "businessName": query,
+            "page": 1,
+            "pageSize": limit,
         }
 
         entities = []
@@ -1210,19 +1284,21 @@ class BusinessFilingsAPI:
             async with session.get(url, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
-                    for item in data.get('businesses', []):
+                    for item in data.get("businesses", []):
                         entity = BusinessEntity(
-                            entity_id=item.get('ubi', ''),
-                            entity_name=item.get('businessName', ''),
-                            entity_type=self._classify_entity_type(item.get('businessType', '')),
-                            state='WA',
-                            status=self._parse_status(item.get('status', '')),
-                            formation_date=self._parse_date(item.get('filingDate')),
-                            principal_address=item.get('principalAddress'),
+                            entity_id=item.get("ubi", ""),
+                            entity_name=item.get("businessName", ""),
+                            entity_type=self._classify_entity_type(
+                                item.get("businessType", "")
+                            ),
+                            state="WA",
+                            status=self._parse_status(item.get("status", "")),
+                            formation_date=self._parse_date(item.get("filingDate")),
+                            principal_address=item.get("principalAddress"),
                             source_url=f"https://ccfs.sos.wa.gov/#/BusinessSearch/{item.get('ubi', '')}",
-                            source_system='Washington CCFS',
+                            source_system="Washington CCFS",
                             raw_data=item,
-                            fetched_at=datetime.now()
+                            fetched_at=datetime.now(),
                         )
                         entities.append(entity)
         except Exception as e:
@@ -1231,17 +1307,14 @@ class BusinessFilingsAPI:
         return entities
 
     async def _search_georgia(
-        self,
-        session: aiohttp.ClientSession,
-        query: str,
-        limit: int
+        self, session: aiohttp.ClientSession, query: str, limit: int
     ) -> List[BusinessEntity]:
         """Search Georgia Corporations Division."""
         url = "https://ecorp.sos.ga.gov/BusinessSearch"
 
         params = {
-            'searchType': 'business',
-            'searchQuery': query,
+            "searchType": "business",
+            "searchQuery": query,
         }
 
         entities = []
@@ -1262,28 +1335,32 @@ class BusinessFilingsAPI:
         entities = []
 
         # Pattern for Georgia results
-        row_pattern = r'<tr[^>]*>(.*?)</tr>'
+        row_pattern = r"<tr[^>]*>(.*?)</tr>"
         rows = re.findall(row_pattern, html, re.DOTALL)
 
-        for row in rows[:limit + 1]:  # +1 to skip header
-            if 'Control Number' in row:
+        for row in rows[: limit + 1]:  # +1 to skip header
+            if "Control Number" in row:
                 continue  # Skip header
 
-            cells = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
+            cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.DOTALL)
             if len(cells) >= 4:
-                clean = [re.sub(r'<[^>]+>', '', c).strip() for c in cells]
+                clean = [re.sub(r"<[^>]+>", "", c).strip() for c in cells]
 
                 try:
                     entity = BusinessEntity(
-                        entity_id=clean[0] if clean else '',
-                        entity_name=clean[1] if len(clean) > 1 else '',
-                        entity_type=self._classify_entity_type(clean[1] if len(clean) > 1 else ''),
-                        state='GA',
-                        status=self._parse_status(clean[3] if len(clean) > 3 else ''),
-                        formation_date=self._parse_date(clean[2] if len(clean) > 2 else ''),
+                        entity_id=clean[0] if clean else "",
+                        entity_name=clean[1] if len(clean) > 1 else "",
+                        entity_type=self._classify_entity_type(
+                            clean[1] if len(clean) > 1 else ""
+                        ),
+                        state="GA",
+                        status=self._parse_status(clean[3] if len(clean) > 3 else ""),
+                        formation_date=self._parse_date(
+                            clean[2] if len(clean) > 2 else ""
+                        ),
                         source_url=f"https://ecorp.sos.ga.gov/BusinessSearch/BusinessInformation?controlNumber={clean[0]}",
-                        source_system='Georgia SOS',
-                        fetched_at=datetime.now()
+                        source_system="Georgia SOS",
+                        fetched_at=datetime.now(),
                     )
                     entities.append(entity)
                 except Exception:
@@ -1292,19 +1369,16 @@ class BusinessFilingsAPI:
         return entities
 
     async def _search_michigan(
-        self,
-        session: aiohttp.ClientSession,
-        query: str,
-        limit: int
+        self, session: aiohttp.ClientSession, query: str, limit: int
     ) -> List[BusinessEntity]:
         """Search Michigan LARA COFS database."""
         url = "https://cofs.lara.state.mi.us/SearchApi/Search/Search"
 
         params = {
-            'searchType': 'EntityName',
-            'searchString': query,
-            'page': 1,
-            'pageSize': limit,
+            "searchType": "EntityName",
+            "searchString": query,
+            "page": 1,
+            "pageSize": limit,
         }
 
         entities = []
@@ -1313,18 +1387,20 @@ class BusinessFilingsAPI:
             async with session.get(url, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
-                    for item in data.get('results', []):
+                    for item in data.get("results", []):
                         entity = BusinessEntity(
-                            entity_id=item.get('id', ''),
-                            entity_name=item.get('entityName', ''),
-                            entity_type=self._classify_entity_type(item.get('entityType', '')),
-                            state='MI',
-                            status=self._parse_status(item.get('status', '')),
-                            formation_date=self._parse_date(item.get('formationDate')),
+                            entity_id=item.get("id", ""),
+                            entity_name=item.get("entityName", ""),
+                            entity_type=self._classify_entity_type(
+                                item.get("entityType", "")
+                            ),
+                            state="MI",
+                            status=self._parse_status(item.get("status", "")),
+                            formation_date=self._parse_date(item.get("formationDate")),
                             source_url=f"https://cofs.lara.state.mi.us/CorpWeb/CorpSearch/CorpSummary.aspx?ID={item.get('id', '')}",
-                            source_system='Michigan LARA',
+                            source_system="Michigan LARA",
                             raw_data=item,
-                            fetched_at=datetime.now()
+                            fetched_at=datetime.now(),
                         )
                         entities.append(entity)
         except Exception as e:
@@ -1333,18 +1409,15 @@ class BusinessFilingsAPI:
         return entities
 
     async def _search_colorado(
-        self,
-        session: aiohttp.ClientSession,
-        query: str,
-        limit: int
+        self, session: aiohttp.ClientSession, query: str, limit: int
     ) -> List[BusinessEntity]:
         """Search Colorado via open data portal."""
         url = "https://data.colorado.gov/resource/4ykn-tg5h.json"
 
         params = {
-            '$q': query,
-            '$limit': limit,
-            '$order': 'entityname ASC',
+            "$q": query,
+            "$limit": limit,
+            "$order": "entityname ASC",
         }
 
         entities = []
@@ -1355,20 +1428,22 @@ class BusinessFilingsAPI:
                     data = await response.json()
                     for item in data:
                         entity = BusinessEntity(
-                            entity_id=item.get('entityid', ''),
-                            entity_name=item.get('entityname', ''),
-                            entity_type=self._classify_entity_type(item.get('entitytype', '')),
-                            state='CO',
-                            status=self._parse_status(item.get('entitystatus', '')),
-                            formation_date=self._parse_date(item.get('entityformdate')),
-                            principal_address=item.get('principaladdress1'),
-                            principal_city=item.get('principalcity'),
-                            principal_state=item.get('principalstate'),
-                            principal_zip=item.get('principalzipcode'),
+                            entity_id=item.get("entityid", ""),
+                            entity_name=item.get("entityname", ""),
+                            entity_type=self._classify_entity_type(
+                                item.get("entitytype", "")
+                            ),
+                            state="CO",
+                            status=self._parse_status(item.get("entitystatus", "")),
+                            formation_date=self._parse_date(item.get("entityformdate")),
+                            principal_address=item.get("principaladdress1"),
+                            principal_city=item.get("principalcity"),
+                            principal_state=item.get("principalstate"),
+                            principal_zip=item.get("principalzipcode"),
                             source_url=f"https://www.sos.state.co.us/biz/BusinessEntityDetail.do?masterFileId={item.get('entityid', '')}",
-                            source_system='Colorado Open Data',
+                            source_system="Colorado Open Data",
                             raw_data=item,
-                            fetched_at=datetime.now()
+                            fetched_at=datetime.now(),
                         )
                         entities.append(entity)
         except Exception as e:
@@ -1377,17 +1452,12 @@ class BusinessFilingsAPI:
         return entities
 
     async def _search_california(
-        self,
-        session: aiohttp.ClientSession,
-        query: str,
-        limit: int
+        self, session: aiohttp.ClientSession, query: str, limit: int
     ) -> List[BusinessEntity]:
         """Search California bizfile database."""
         # California doesn't have a public API, use OpenCorporates
         return await self.search_opencorporates(
-            query=query,
-            jurisdiction_code='us_ca',
-            limit=limit
+            query=query, jurisdiction_code="us_ca", limit=limit
         )
 
     # ========== UCC Filings ==========
@@ -1399,7 +1469,7 @@ class BusinessFilingsAPI:
         secured_party: str = "",
         filing_number: str = "",
         include_terminated: bool = False,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[UCCFiling]:
         """
         Search UCC filings in a state.
@@ -1426,7 +1496,7 @@ class BusinessFilingsAPI:
             return []
 
         config = self.state_configs[state]
-        if not config.get('has_ucc'):
+        if not config.get("has_ucc"):
             logger.warning(f"UCC search not available for {state}")
             return []
 
@@ -1454,17 +1524,23 @@ class BusinessFilingsAPI:
             return EntityType.LP
         elif any(kw in name_lower for kw in self.CORP_KEYWORDS):
             return EntityType.CORPORATION
-        elif 'partnership' in name_lower:
+        elif "partnership" in name_lower:
             return EntityType.PARTNERSHIP
-        elif 'nonprofit' in name_lower or 'non-profit' in name_lower or 'foundation' in name_lower:
+        elif (
+            "nonprofit" in name_lower
+            or "non-profit" in name_lower
+            or "foundation" in name_lower
+        ):
             return EntityType.NONPROFIT
-        elif 'trust' in name_lower:
+        elif "trust" in name_lower:
             return EntityType.TRUST
-        elif 'professional' in name_lower or 'p.c.' in name_lower or 'p.a.' in name_lower:
+        elif (
+            "professional" in name_lower or "p.c." in name_lower or "p.a." in name_lower
+        ):
             return EntityType.PROFESSIONAL_CORP
-        elif 'benefit' in name_lower:
+        elif "benefit" in name_lower:
             return EntityType.BENEFIT_CORP
-        elif 'cooperative' in name_lower or 'co-op' in name_lower:
+        elif "cooperative" in name_lower or "co-op" in name_lower:
             return EntityType.COOPERATIVE
 
         return EntityType.UNKNOWN
@@ -1476,31 +1552,36 @@ class BusinessFilingsAPI:
 
         status_lower = status_text.lower().strip()
 
-        if any(s in status_lower for s in ['active', 'good standing', 'current', 'exists']):
+        if any(
+            s in status_lower for s in ["active", "good standing", "current", "exists"]
+        ):
             return EntityStatus.ACTIVE
-        elif any(s in status_lower for s in ['inactive', 'not in good standing', 'delinquent']):
+        elif any(
+            s in status_lower
+            for s in ["inactive", "not in good standing", "delinquent"]
+        ):
             return EntityStatus.INACTIVE
-        elif 'dissolved' in status_lower:
-            if 'admin' in status_lower:
+        elif "dissolved" in status_lower:
+            if "admin" in status_lower:
                 return EntityStatus.ADMIN_DISSOLVED
             return EntityStatus.DISSOLVED
-        elif 'suspended' in status_lower:
+        elif "suspended" in status_lower:
             return EntityStatus.SUSPENDED
-        elif 'merged' in status_lower:
+        elif "merged" in status_lower:
             return EntityStatus.MERGED
-        elif 'converted' in status_lower:
+        elif "converted" in status_lower:
             return EntityStatus.CONVERTED
-        elif 'revoked' in status_lower:
+        elif "revoked" in status_lower:
             return EntityStatus.REVOKED
-        elif 'withdrawn' in status_lower:
+        elif "withdrawn" in status_lower:
             return EntityStatus.WITHDRAWN
-        elif 'forfeited' in status_lower:
+        elif "forfeited" in status_lower:
             return EntityStatus.FORFEITED
-        elif 'pending' in status_lower:
+        elif "pending" in status_lower:
             return EntityStatus.PENDING
-        elif 'canceled' in status_lower or 'cancelled' in status_lower:
+        elif "canceled" in status_lower or "cancelled" in status_lower:
             return EntityStatus.CANCELED
-        elif 'expired' in status_lower:
+        elif "expired" in status_lower:
             return EntityStatus.EXPIRED
 
         return EntityStatus.UNKNOWN
@@ -1511,17 +1592,17 @@ class BusinessFilingsAPI:
             return None
 
         # Handle ISO format with time
-        if 'T' in str(date_str):
-            date_str = str(date_str).split('T')[0]
+        if "T" in str(date_str):
+            date_str = str(date_str).split("T")[0]
 
         formats = [
-            '%Y-%m-%d',
-            '%m/%d/%Y',
-            '%m-%d-%Y',
-            '%Y%m%d',
-            '%d-%b-%Y',
-            '%B %d, %Y',
-            '%b %d, %Y',
+            "%Y-%m-%d",
+            "%m/%d/%Y",
+            "%m-%d-%Y",
+            "%Y%m%d",
+            "%d-%b-%Y",
+            "%B %d, %Y",
+            "%b %d, %Y",
         ]
 
         for fmt in formats:
@@ -1534,30 +1615,33 @@ class BusinessFilingsAPI:
 
     def get_coverage_stats(self) -> Dict[str, Any]:
         """Get coverage statistics."""
-        states_with_api = [s for s, c in self.state_configs.items() if c.get('api_available')]
-        states_with_ucc = [s for s, c in self.state_configs.items() if c.get('has_ucc')]
+        states_with_api = [
+            s for s, c in self.state_configs.items() if c.get("api_available")
+        ]
+        states_with_ucc = [s for s, c in self.state_configs.items() if c.get("has_ucc")]
 
         return {
-            'category': self.CATEGORY,
-            'display_name': self.DISPLAY_NAME,
-            'total_states': len(self.state_configs),
-            'states_with_api': len(states_with_api),
-            'states_api_list': states_with_api,
-            'states_with_ucc': len(states_with_ucc),
-            'opencorporates_enabled': True,
-            'entity_types': [t.value for t in EntityType],
-            'entity_statuses': [s.value for s in EntityStatus],
-            'filing_types': [f.value for f in FilingType],
+            "category": self.CATEGORY,
+            "display_name": self.DISPLAY_NAME,
+            "total_states": len(self.state_configs),
+            "states_with_api": len(states_with_api),
+            "states_api_list": states_with_api,
+            "states_with_ucc": len(states_with_ucc),
+            "opencorporates_enabled": True,
+            "entity_types": [t.value for t in EntityType],
+            "entity_statuses": [s.value for s in EntityStatus],
+            "filing_types": [f.value for f in FilingType],
         }
 
 
 # ========== Synchronous Wrappers ==========
 
+
 def search_businesses(
     entity_name: str,
     states: List[str] = None,
     include_inactive: bool = False,
-    limit: int = 50
+    limit: int = 50,
 ) -> List[Dict[str, Any]]:
     """
     Search business entities across states (synchronous wrapper).
@@ -1571,6 +1655,7 @@ def search_businesses(
     Returns:
         List of BusinessEntity dictionaries
     """
+
     async def _search():
         async with BusinessFilingsAPI() as api:
             if states:
@@ -1580,14 +1665,13 @@ def search_businesses(
                         state=state,
                         query=entity_name,
                         include_inactive=include_inactive,
-                        limit=limit // len(states) if states else limit
+                        limit=limit // len(states) if states else limit,
                     )
                     results.extend(entities)
                 return [e.to_dict() for e in results[:limit]]
             else:
                 entities = await api.search_opencorporates(
-                    query=entity_name,
-                    limit=limit
+                    query=entity_name, limit=limit
                 )
                 return [e.to_dict() for e in entities]
 
@@ -1595,6 +1679,7 @@ def search_businesses(
         loop = asyncio.get_event_loop()
         if loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 future = pool.submit(asyncio.run, _search())
                 return future.result()
@@ -1604,19 +1689,17 @@ def search_businesses(
 
 
 def search_state_businesses(
-    state: str,
-    entity_name: str,
-    include_inactive: bool = False,
-    limit: int = 50
+    state: str, entity_name: str, include_inactive: bool = False, limit: int = 50
 ) -> List[Dict[str, Any]]:
     """Search businesses in a specific state (synchronous)."""
+
     async def _search():
         async with BusinessFilingsAPI() as api:
             entities = await api.search_state(
                 state=state,
                 query=entity_name,
                 include_inactive=include_inactive,
-                limit=limit
+                limit=limit,
             )
             return [e.to_dict() for e in entities]
 
@@ -1624,6 +1707,7 @@ def search_state_businesses(
         loop = asyncio.get_event_loop()
         if loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 future = pool.submit(asyncio.run, _search())
                 return future.result()
@@ -1632,16 +1716,13 @@ def search_state_businesses(
         return asyncio.run(_search())
 
 
-def get_company_details(
-    company_number: str,
-    state: str
-) -> Optional[Dict[str, Any]]:
+def get_company_details(company_number: str, state: str) -> Optional[Dict[str, Any]]:
     """Get detailed company information (synchronous)."""
+
     async def _get():
         async with BusinessFilingsAPI() as api:
             entity = await api.get_company_details(
-                company_number=company_number,
-                jurisdiction_code=state
+                company_number=company_number, jurisdiction_code=state
             )
             return entity.to_dict() if entity else None
 
@@ -1649,6 +1730,7 @@ def get_company_details(
         loop = asyncio.get_event_loop()
         if loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 future = pool.submit(asyncio.run, _get())
                 return future.result()
@@ -1658,9 +1740,7 @@ def get_company_details(
 
 
 def search_ucc(
-    debtor_name: str = None,
-    secured_party: str = None,
-    states: List[str] = None
+    debtor_name: str = None, secured_party: str = None, states: List[str] = None
 ) -> List[Dict[str, Any]]:
     """
     Search UCC filings across states (synchronous wrapper).
@@ -1673,14 +1753,15 @@ def search_ucc(
     Returns:
         List of UCCFiling dictionaries
     """
+
     async def _search():
         async with BusinessFilingsAPI() as api:
             results = []
-            for state in (states or []):
+            for state in states or []:
                 filings = await api.search_ucc_filings(
                     state=state,
-                    debtor_name=debtor_name or '',
-                    secured_party=secured_party or ''
+                    debtor_name=debtor_name or "",
+                    secured_party=secured_party or "",
                 )
                 results.extend(filings)
             return [f.to_dict() for f in results]
@@ -1689,6 +1770,7 @@ def search_ucc(
         loop = asyncio.get_event_loop()
         if loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 future = pool.submit(asyncio.run, _search())
                 return future.result()
@@ -1701,17 +1783,18 @@ def get_available_states() -> Dict[str, Any]:
     """Get all available state configurations."""
     api = BusinessFilingsAPI()
     return {
-        'states': {
+        "states": {
             state: {
-                'name': config['name'],
-                'url': config.get('url'),
-                'api_available': config.get('api_available', False),
-                'has_ucc': config.get('has_ucc', False),
+                "name": config["name"],
+                "url": config.get("url"),
+                "api_available": config.get("api_available", False),
+                "has_ucc": config.get("has_ucc", False),
             }
             for state, config in api.state_configs.items()
         },
-        'coverage': api.get_coverage_stats(),
+        "coverage": api.get_coverage_stats(),
     }
+
 
 # Legacy alias - points to the new class above
 # class BusinessFilingsScraper is defined above with utility methods

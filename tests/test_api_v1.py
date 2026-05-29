@@ -14,22 +14,23 @@ This module tests:
 Coverage target: 100% of api.py (418 lines)
 """
 
-import pytest
+import json
 import os
 import sys
-import json
 import time
 from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
 from functools import wraps
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Set test environment before imports
 os.environ["TESTING"] = "1"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 # Add paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'api', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "api", "src"))
 
 
 class TestRateLimitDecorator:
@@ -161,7 +162,7 @@ class TestJWTTokenCreation:
 
     def test_expired_token(self):
         """Test expired token raises exception."""
-        from jose import jwt, ExpiredSignatureError
+        from jose import ExpiredSignatureError, jwt
 
         secret_key = "testsecretkey"
         algorithm = "HS256"
@@ -180,8 +181,9 @@ class TestUserModel:
 
     def test_user_model(self):
         """Test User model creation."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class User(BaseModel):
             username: str
@@ -190,9 +192,7 @@ class TestUserModel:
             disabled: Optional[bool] = None
 
         user = User(
-            username="testuser",
-            email="test@example.com",
-            full_name="Test User"
+            username="testuser", email="test@example.com", full_name="Test User"
         )
 
         assert user.username == "testuser"
@@ -201,8 +201,9 @@ class TestUserModel:
 
     def test_user_in_db_model(self):
         """Test UserInDB model with hashed password."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class User(BaseModel):
             username: str
@@ -216,7 +217,7 @@ class TestUserModel:
         user = UserInDB(
             username="testuser",
             email="test@example.com",
-            hashed_password="$2b$12$hashstring"
+            hashed_password="$2b$12$hashstring",
         )
 
         assert user.hashed_password.startswith("$2b$")
@@ -234,16 +235,16 @@ class TestTokenModels:
             token_type: str
 
         token = Token(
-            access_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-            token_type="bearer"
+            access_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", token_type="bearer"
         )
 
         assert token.token_type == "bearer"
 
     def test_token_data_model(self):
         """Test TokenData model."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class TokenData(BaseModel):
             username: Optional[str] = None
@@ -311,7 +312,7 @@ class TestAuthenticateUser:
             "testuser": {
                 "username": "testuser",
                 "hashed_password": hashed,
-                "disabled": False
+                "disabled": False,
             }
         }
 
@@ -336,10 +337,7 @@ class TestAuthenticateUser:
         hashed = pwd_context.hash("testpassword")
 
         fake_users_db = {
-            "testuser": {
-                "username": "testuser",
-                "hashed_password": hashed
-            }
+            "testuser": {"username": "testuser", "hashed_password": hashed}
         }
 
         username = "testuser"
@@ -442,10 +440,7 @@ class TestExportFormats:
         import csv
         from io import StringIO
 
-        records = [
-            {"id": 1, "title": "Test 1"},
-            {"id": 2, "title": "Test 2"}
-        ]
+        records = [{"id": 1, "title": "Test 1"}, {"id": 2, "title": "Test 2"}]
 
         output = StringIO()
         if records:
@@ -465,10 +460,7 @@ class TestExportFormats:
         """Test XML export format."""
         import xml.etree.ElementTree as ET
 
-        records = [
-            {"id": "1", "title": "Test 1"},
-            {"id": "2", "title": "Test 2"}
-        ]
+        records = [{"id": "1", "title": "Test 1"}, {"id": "2", "title": "Test 2"}]
 
         root = ET.Element("records")
         for record in records:
@@ -485,10 +477,7 @@ class TestExportFormats:
 
     def test_json_export(self):
         """Test JSON export format."""
-        records = [
-            {"id": 1, "title": "Test 1"},
-            {"id": 2, "title": "Test 2"}
-        ]
+        records = [{"id": 1, "title": "Test 1"}, {"id": 2, "title": "Test 2"}]
 
         result = {"records": records}
 
@@ -540,10 +529,7 @@ class TestHealthCheckResponse:
 
     def test_health_response_structure(self):
         """Test health check response structure."""
-        response = {
-            "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        response = {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
         assert response["status"] == "healthy"
         assert "timestamp" in response
@@ -552,7 +538,7 @@ class TestHealthCheckResponse:
         """Test metrics response structure."""
         response = {
             "status": "metrics available",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
         assert "status" in response

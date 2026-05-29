@@ -2,21 +2,25 @@
 Database connection and session management for the DataGod API.
 """
 
+import logging
 import sys
 from pathlib import Path
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
-import logging
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from datagod.config.settings import (
-    DATABASE_URL, DB_POOL_SIZE, DB_MAX_OVERFLOW,
-    DB_POOL_TIMEOUT, DB_POOL_RECYCLE
+    DATABASE_URL,
+    DB_MAX_OVERFLOW,
+    DB_POOL_RECYCLE,
+    DB_POOL_SIZE,
+    DB_POOL_TIMEOUT,
 )
 
 # Configure logging
@@ -36,7 +40,7 @@ engine = create_engine(
     pool_timeout=DB_POOL_TIMEOUT,
     pool_recycle=DB_POOL_RECYCLE,
     pool_pre_ping=True,
-    connect_args=connect_args
+    connect_args=connect_args,
 )
 
 # Create base class for models
@@ -44,10 +48,7 @@ Base = declarative_base()
 
 # Create session factory with enhanced configuration
 SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine,
-    expire_on_commit=False
+    autocommit=False, autoflush=False, bind=engine, expire_on_commit=False
 )
 
 
@@ -82,6 +83,7 @@ def init_db():
     """Initialize the database by creating all tables."""
     try:
         from datagod.models import Base as DataGodBase
+
         DataGodBase.metadata.create_all(bind=engine)
         logger.info("Database tables created successfully")
         return True
@@ -97,5 +99,5 @@ def get_db_stats() -> dict:
         "pool_size": pool.size(),
         "checked_in": pool.checkedin(),
         "checked_out": pool.checkedout(),
-        "overflow": pool.overflow()
+        "overflow": pool.overflow(),
     }

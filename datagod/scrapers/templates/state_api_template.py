@@ -6,17 +6,15 @@ Generated: ${GENERATED_DATE}
 """
 
 import logging
-from typing import Dict, List, Any, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from datagod.scrapers.base_api_integration import (
-    BaseAPIIntegration,
-    APIKeyAuthentication,
-    OAuth2Authentication,
-    HMACAuthentication,
-    APIDataError,
-    RateLimitExceeded
-)
+from datagod.scrapers.base_api_integration import (APIDataError,
+                                                   APIKeyAuthentication,
+                                                   BaseAPIIntegration,
+                                                   HMACAuthentication,
+                                                   OAuth2Authentication,
+                                                   RateLimitExceeded)
 
 logger = logging.getLogger(__name__)
 

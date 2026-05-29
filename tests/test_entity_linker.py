@@ -3,15 +3,11 @@ Tests for Entity Linker Service
 Tests entity linking, fuzzy matching, and cross-reference validation
 """
 
-import pytest
 from datetime import datetime
 
-from datagod.services.entity_linker import (
-    EntityLinker,
-    Entity,
-    EntityType,
-    EntityMatch
-)
+import pytest
+
+from datagod.services.entity_linker import Entity, EntityLinker, EntityMatch, EntityType
 
 
 class TestEntityLinker:
@@ -31,11 +27,13 @@ class TestEntityLinker:
             primary_name="John Smith",
             aliases=["J. Smith", "Johnny Smith"],
             identifiers={"dob": "1980-01-15", "ssn_last4": "1234"},
-            addresses=[{
-                "raw": "123 Main St, Springfield, IL 62701",
-                "normalized": "123 main st springfield il 62701"
-            }],
-            source_records=["rec_001", "rec_002"]
+            addresses=[
+                {
+                    "raw": "123 Main St, Springfield, IL 62701",
+                    "normalized": "123 main st springfield il 62701",
+                }
+            ],
+            source_records=["rec_001", "rec_002"],
         )
 
     @pytest.fixture
@@ -47,11 +45,13 @@ class TestEntityLinker:
             primary_name="Acme Corporation",
             aliases=["Acme Corp", "ACME Inc"],
             identifiers={"ein": "12-3456789", "state": "DE"},
-            addresses=[{
-                "raw": "456 Business Blvd, Wilmington, DE 19801",
-                "normalized": "456 business blvd wilmington de 19801"
-            }],
-            source_records=["rec_003"]
+            addresses=[
+                {
+                    "raw": "456 Business Blvd, Wilmington, DE 19801",
+                    "normalized": "456 business blvd wilmington de 19801",
+                }
+            ],
+            source_records=["rec_003"],
         )
 
     @pytest.fixture
@@ -63,13 +63,15 @@ class TestEntityLinker:
             primary_name="123 Main Street",
             identifiers={
                 "parcel_id": "12-34-567-890",
-                "legal_description": "Lot 5 Block 3 Springfield Subdivision"
+                "legal_description": "Lot 5 Block 3 Springfield Subdivision",
             },
-            addresses=[{
-                "raw": "123 Main Street, Springfield, IL 62701",
-                "normalized": "123 main st springfield il 62701"
-            }],
-            source_records=["rec_004"]
+            addresses=[
+                {
+                    "raw": "123 Main Street, Springfield, IL 62701",
+                    "normalized": "123 main st springfield il 62701",
+                }
+            ],
+            source_records=["rec_004"],
         )
 
     # Entity Creation Tests
@@ -84,10 +86,10 @@ class TestEntityLinker:
         """Test converting Entity to dictionary"""
         entity_dict = sample_person_entity.to_dict()
 
-        assert entity_dict['entity_id'] == "person_001"
-        assert entity_dict['entity_type'] == "person"
-        assert 'created_at' in entity_dict
-        assert 'updated_at' in entity_dict
+        assert entity_dict["entity_id"] == "person_001"
+        assert entity_dict["entity_type"] == "person"
+        assert "created_at" in entity_dict
+        assert "updated_at" in entity_dict
 
     # Name Normalization Tests
     def test_normalize_name_basic(self, linker):
@@ -201,23 +203,21 @@ class TestEntityLinker:
         """Test address similarity with identical addresses"""
         similarity = linker._calculate_address_similarity(
             "123 Main Street, Springfield, IL 62701",
-            "123 Main Street, Springfield, IL 62701"
+            "123 Main Street, Springfield, IL 62701",
         )
         assert similarity > 0.95
 
     def test_address_similarity_normalized(self, linker):
         """Test address similarity with different formatting"""
         similarity = linker._calculate_address_similarity(
-            "123 Main Street",
-            "123 Main St"
+            "123 Main Street", "123 Main St"
         )
         assert similarity > 0.8
 
     def test_address_similarity_different(self, linker):
         """Test address similarity with different addresses"""
         similarity = linker._calculate_address_similarity(
-            "123 Main Street",
-            "456 Oak Avenue"
+            "123 Main Street", "456 Oak Avenue"
         )
         assert similarity < 0.5
 
@@ -257,7 +257,7 @@ class TestEntityLinker:
         matched, matches = linker.link_person(
             name="John Smith",
             dob="1980-01-15",
-            address="123 Main St, Springfield, IL 62701"
+            address="123 Main St, Springfield, IL 62701",
         )
 
         assert matched is not None
@@ -270,8 +270,7 @@ class TestEntityLinker:
         linker.add_entity(sample_person_entity)
 
         matched, matches = linker.link_person(
-            name="Jon Smith",  # Misspelled
-            dob="1980-01-15"
+            name="Jon Smith", dob="1980-01-15"  # Misspelled
         )
 
         assert len(matches) > 0
@@ -289,10 +288,7 @@ class TestEntityLinker:
         """Test linking person with no match"""
         linker.add_entity(sample_person_entity)
 
-        matched, matches = linker.link_person(
-            name="Mary Johnson",
-            dob="1990-05-20"
-        )
+        matched, matches = linker.link_person(name="Mary Johnson", dob="1990-05-20")
 
         assert matched is None
         assert len(matches) == 0
@@ -303,9 +299,7 @@ class TestEntityLinker:
         linker.add_entity(sample_company_entity)
 
         matched, matches = linker.link_company(
-            name="Acme Corporation",
-            ein="12-3456789",
-            state="DE"
+            name="Acme Corporation", ein="12-3456789", state="DE"
         )
 
         assert matched is not None
@@ -316,8 +310,7 @@ class TestEntityLinker:
         linker.add_entity(sample_company_entity)
 
         matched, matches = linker.link_company(
-            name="ACME Corp",  # Different name format
-            ein="12-3456789"
+            name="ACME Corp", ein="12-3456789"  # Different name format
         )
 
         assert len(matches) > 0
@@ -327,9 +320,7 @@ class TestEntityLinker:
         """Test linking company with normalized name"""
         linker.add_entity(sample_company_entity)
 
-        matched, matches = linker.link_company(
-            name="Acme Inc"  # Different suffix
-        )
+        matched, matches = linker.link_company(name="Acme Inc")  # Different suffix
 
         assert len(matches) > 0
 
@@ -339,8 +330,7 @@ class TestEntityLinker:
         linker.add_entity(sample_property_entity)
 
         matched, matches = linker.link_property(
-            address="Different Address",
-            parcel_id="12-34-567-890"
+            address="Different Address", parcel_id="12-34-567-890"
         )
 
         assert matched is not None
@@ -365,7 +355,7 @@ class TestEntityLinker:
             primary_name="John Smith",
             aliases=["J. Smith"],
             identifiers={"ssn_last4": "1234"},
-            source_records=["rec_001"]
+            source_records=["rec_001"],
         )
         entity2 = Entity(
             entity_id="merge_002",
@@ -373,7 +363,7 @@ class TestEntityLinker:
             primary_name="Johnny Smith",
             aliases=["John S."],
             identifiers={"dob": "1980-01-15"},
-            source_records=["rec_002"]
+            source_records=["rec_002"],
         )
 
         linker.add_entity(entity1)
@@ -402,19 +392,21 @@ class TestEntityLinker:
         """Test statistics with empty cache"""
         stats = linker.get_statistics()
 
-        assert stats['total_entities'] == 0
-        assert stats['entities_by_type'] == {}
+        assert stats["total_entities"] == 0
+        assert stats["entities_by_type"] == {}
 
-    def test_get_statistics_with_entities(self, linker, sample_person_entity, sample_company_entity):
+    def test_get_statistics_with_entities(
+        self, linker, sample_person_entity, sample_company_entity
+    ):
         """Test statistics with entities"""
         linker.add_entity(sample_person_entity)
         linker.add_entity(sample_company_entity)
 
         stats = linker.get_statistics()
 
-        assert stats['total_entities'] == 2
-        assert stats['entities_by_type']['person'] == 1
-        assert stats['entities_by_type']['company'] == 1
+        assert stats["total_entities"] == 2
+        assert stats["entities_by_type"]["person"] == 1
+        assert stats["entities_by_type"]["company"] == 1
 
     # Threshold Configuration Tests
     def test_custom_thresholds(self):

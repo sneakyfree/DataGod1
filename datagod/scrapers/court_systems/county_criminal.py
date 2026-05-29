@@ -26,22 +26,23 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
+
 import aiohttp
 from bs4 import BeautifulSoup
 
 from .base import (
+    CaseCharge,
+    CaseDocument,
+    CaseEvent,
+    CaseParty,
+    CaseStatus,
+    CaseType,
+    CourtCase,
+    CourtLevel,
     CourtSystemBase,
     CourtType,
-    CourtLevel,
-    CaseType,
-    CaseStatus,
-    PartyType,
     PartyRole,
-    CourtCase,
-    CaseParty,
-    CaseEvent,
-    CaseDocument,
-    CaseCharge,
+    PartyType,
     SearchCriteria,
     SearchResult,
 )
@@ -51,6 +52,7 @@ logger = logging.getLogger(__name__)
 
 class ChargeLevel(Enum):
     """Level/severity of criminal charges."""
+
     CAPITAL = "capital"  # Death penalty eligible
     FIRST_DEGREE_FELONY = "first_degree_felony"
     SECOND_DEGREE_FELONY = "second_degree_felony"
@@ -68,6 +70,7 @@ class ChargeLevel(Enum):
 
 class ChargeDisposition(Enum):
     """Disposition outcomes for criminal charges."""
+
     # Convictions
     GUILTY = "guilty"
     GUILTY_PLEA = "guilty_plea"
@@ -99,6 +102,7 @@ class ChargeDisposition(Enum):
 
 class SentenceType(Enum):
     """Types of criminal sentences."""
+
     PRISON = "prison"
     JAIL = "jail"
     PROBATION = "probation"
@@ -119,6 +123,7 @@ class SentenceType(Enum):
 @dataclass
 class CriminalCharge:
     """Extended criminal charge information."""
+
     # Charge identification
     charge_number: int = 1
     count_number: int = 1
@@ -163,6 +168,7 @@ class CriminalCharge:
 @dataclass
 class CriminalDefendant:
     """Criminal defendant information."""
+
     name: str
     case_number: str
 
@@ -196,6 +202,7 @@ class CriminalDefendant:
 @dataclass
 class CriminalCaseRecord:
     """Complete criminal case record."""
+
     # Case identification
     case_number: str
     court_name: str
@@ -311,20 +318,17 @@ class CountyCriminalCourtBase(CourtSystemBase):
         r"assault.*aggravated": CaseType.CRIMINAL_FELONY,
         r"robbery": CaseType.CRIMINAL_FELONY,
         r"burglary": CaseType.CRIMINAL_FELONY,
-
         # Misdemeanors
         r"misdemeanor": CaseType.CRIMINAL_MISDEMEANOR,
         r"misd\b": CaseType.CRIMINAL_MISDEMEANOR,
         r"m\d": CaseType.CRIMINAL_MISDEMEANOR,  # M1, M2, etc.
         r"class\s*[abc]\s*misd": CaseType.CRIMINAL_MISDEMEANOR,
-
         # DUI
         r"dui": CaseType.DUI_DWI,
         r"dwi": CaseType.DUI_DWI,
         r"driving.*under.*influence": CaseType.DUI_DWI,
         r"impaired": CaseType.DUI_DWI,
         r"intox": CaseType.DUI_DWI,
-
         # Drug
         r"drug": CaseType.DRUG_OFFENSE,
         r"controlled.*substance": CaseType.DRUG_OFFENSE,
@@ -333,7 +337,6 @@ class CountyCriminalCourtBase(CourtSystemBase):
         r"marijuana": CaseType.DRUG_OFFENSE,
         r"cocaine": CaseType.DRUG_OFFENSE,
         r"meth": CaseType.DRUG_OFFENSE,
-
         # Traffic Criminal
         r"traffic.*criminal": CaseType.TRAFFIC_CRIMINAL,
         r"reckless.*driv": CaseType.TRAFFIC_CRIMINAL,
@@ -341,13 +344,11 @@ class CountyCriminalCourtBase(CourtSystemBase):
         r"evading": CaseType.TRAFFIC_CRIMINAL,
         r"no.*license": CaseType.TRAFFIC_CRIMINAL,
         r"suspended.*license": CaseType.TRAFFIC_CRIMINAL,
-
         # White Collar
         r"fraud": CaseType.WHITE_COLLAR,
         r"embezzlement": CaseType.WHITE_COLLAR,
         r"forgery": CaseType.WHITE_COLLAR,
         r"theft.*identity": CaseType.WHITE_COLLAR,
-
         # Violent
         r"assault": CaseType.VIOLENT_CRIME,
         r"battery": CaseType.VIOLENT_CRIME,
@@ -451,10 +452,10 @@ class CountyCriminalCourtBase(CourtSystemBase):
 
         # Look for charges section
         charges_section = (
-            soup.find("div", {"id": "charges"}) or
-            soup.find("section", {"id": "charges"}) or
-            soup.find("table", {"id": "tblCharges"}) or
-            soup.find("table", {"class": "charges"})
+            soup.find("div", {"id": "charges"})
+            or soup.find("section", {"id": "charges"})
+            or soup.find("table", {"id": "tblCharges"})
+            or soup.find("table", {"class": "charges"})
         )
 
         if not charges_section:
@@ -491,7 +492,9 @@ class CountyCriminalCourtBase(CourtSystemBase):
                 charge.disposition = self._determine_disposition(disp_str)
 
             if len(cells) > 4:
-                charge.disposition_date = self._parse_date(cells[4].get_text(strip=True))
+                charge.disposition_date = self._parse_date(
+                    cells[4].get_text(strip=True)
+                )
 
             if len(cells) > 5:
                 charge.offense_date = self._parse_date(cells[5].get_text(strip=True))
@@ -505,9 +508,9 @@ class CountyCriminalCourtBase(CourtSystemBase):
         """Parse defendant information from case detail page."""
         # Look for defendant section
         defendant_section = (
-            soup.find("div", {"id": "defendant"}) or
-            soup.find("section", {"id": "party-defendant"}) or
-            soup.find("table", {"id": "tblDefendant"})
+            soup.find("div", {"id": "defendant"})
+            or soup.find("section", {"id": "party-defendant"})
+            or soup.find("table", {"id": "tblDefendant"})
         )
 
         if not defendant_section:
@@ -556,7 +559,7 @@ class CountyCriminalCourtBase(CourtSystemBase):
         filed_end_date: Optional[date] = None,
         case_types: Optional[List[CaseType]] = None,
         include_closed: bool = True,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> List[CriminalCaseRecord]:
         """
         Search for criminal cases by defendant name.
@@ -589,7 +592,7 @@ class CountyCriminalCourtBase(CourtSystemBase):
             filed_end_date=filed_end_date,
             case_types=case_types,
             include_closed=include_closed,
-            max_results=max_results
+            max_results=max_results,
         )
 
         # Convert to CriminalCaseRecord
@@ -648,7 +651,7 @@ class CountyCriminalCourtBase(CourtSystemBase):
         self,
         person_name: str,
         date_of_birth: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> List[CriminalCaseRecord]:
         """
         Get criminal history for a person across all case types.
@@ -662,15 +665,14 @@ class CountyCriminalCourtBase(CourtSystemBase):
             List of CriminalCaseRecord sorted by date
         """
         records = await self.search_by_defendant(
-            defendant_name=person_name,
-            include_closed=True,
-            max_results=max_results
+            defendant_name=person_name, include_closed=True, max_results=max_results
         )
 
         # If DOB provided, filter matches
         if date_of_birth:
             records = [
-                r for r in records
+                r
+                for r in records
                 if r.defendant and r.defendant.date_of_birth == date_of_birth
             ]
 
@@ -704,10 +706,11 @@ class CookCountyCriminal(CountyCriminalCourtBase):
         filed_end_date: Optional[date] = None,
         case_types: Optional[List[CaseType]] = None,
         include_closed: bool = True,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Cook County criminal cases by party name."""
         import time
+
         start_time = time.time()
 
         # Execute search
@@ -715,7 +718,9 @@ class CookCountyCriminal(CountyCriminalCourtBase):
 
         data = {
             "defendantName": party_name,
-            "startDate": filed_start_date.strftime("%m/%d/%Y") if filed_start_date else "",
+            "startDate": (
+                filed_start_date.strftime("%m/%d/%Y") if filed_start_date else ""
+            ),
             "endDate": filed_end_date.strftime("%m/%d/%Y") if filed_end_date else "",
         }
 
@@ -724,7 +729,7 @@ class CookCountyCriminal(CountyCriminalCourtBase):
                 search_url,
                 method="POST",
                 json=data,
-                headers={"Content-Type": "application/json"}
+                headers={"Content-Type": "application/json"},
             )
         except Exception as e:
             logger.error(f"Cook County criminal search failed: {e}")
@@ -797,7 +802,7 @@ class CookCountyCriminal(CountyCriminalCourtBase):
                 search_url,
                 method="POST",
                 json={"caseNumber": case_number},
-                headers={"Content-Type": "application/json"}
+                headers={"Content-Type": "application/json"},
             )
         except Exception as e:
             logger.error(f"Cook County case search failed: {e}")
@@ -853,10 +858,11 @@ class HarrisCountyCriminal(CountyCriminalCourtBase):
         filed_end_date: Optional[date] = None,
         case_types: Optional[List[CaseType]] = None,
         include_closed: bool = True,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Harris County criminal cases."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.BASE_URL}Common/Public/Public_Search.aspx"
@@ -883,7 +889,7 @@ class HarrisCountyCriminal(CountyCriminalCourtBase):
         results_table = soup.find("table", {"id": "gvSearchResults"})
 
         if results_table:
-            for row in results_table.find_all("tr")[1:max_results+1]:
+            for row in results_table.find_all("tr")[1 : max_results + 1]:
                 cells = row.find_all("td")
                 if len(cells) >= 4:
                     case = CourtCase(
@@ -892,9 +898,13 @@ class HarrisCountyCriminal(CountyCriminalCourtBase):
                         court_type=self.COURT_TYPE,
                         court_level=self.COURT_LEVEL,
                         case_title=cells[1].get_text(strip=True),
-                        case_type=self._determine_criminal_case_type(cells[2].get_text(strip=True)),
+                        case_type=self._determine_criminal_case_type(
+                            cells[2].get_text(strip=True)
+                        ),
                         case_type_raw=cells[2].get_text(strip=True),
-                        filing_date=self._parse_date(cells[3].get_text(strip=True) if len(cells) > 3 else ""),
+                        filing_date=self._parse_date(
+                            cells[3].get_text(strip=True) if len(cells) > 3 else ""
+                        ),
                         county=self.COUNTY,
                         state=self.STATE,
                         source_system="Harris County District Clerk",
@@ -993,10 +1003,11 @@ class MaricopaCountyCriminal(CountyCriminalCourtBase):
         filed_end_date: Optional[date] = None,
         case_types: Optional[List[CaseType]] = None,
         include_closed: bool = True,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Maricopa County criminal cases."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.BASE_URL}docket/CriminalCourtCases/Search"
@@ -1084,7 +1095,9 @@ class MaricopaCountyCriminal(CountyCriminalCourtBase):
             court_type=self.COURT_TYPE,
             court_level=self.COURT_LEVEL,
             case_title=json_response.get("defendant", ""),
-            case_type=self._determine_criminal_case_type(json_response.get("caseType", "")),
+            case_type=self._determine_criminal_case_type(
+                json_response.get("caseType", "")
+            ),
             status=self._parse_case_status(json_response.get("status", "")),
             filing_date=self._parse_date(json_response.get("filingDate", "")),
             county=self.COUNTY,
@@ -1100,9 +1113,9 @@ class MaricopaCountyCriminal(CountyCriminalCourtBase):
 
 # Factory function to get appropriate criminal court scraper
 
+
 def get_criminal_court_scraper(
-    state: str,
-    county: str
+    state: str, county: str
 ) -> Optional[CountyCriminalCourtBase]:
     """
     Get a criminal court scraper for a specific county.
@@ -1133,19 +1146,25 @@ def get_criminal_court_scraper(
 def list_supported_criminal_courts() -> List[Dict[str, str]]:
     """List all supported criminal court implementations."""
     return [
-        {"state": "IL", "county": "Cook", "court": "Circuit Court of Cook County - Criminal"},
+        {
+            "state": "IL",
+            "county": "Cook",
+            "court": "Circuit Court of Cook County - Criminal",
+        },
         {"state": "TX", "county": "Harris", "court": "Harris County Criminal Courts"},
-        {"state": "AZ", "county": "Maricopa", "court": "Maricopa County Superior Court - Criminal"},
+        {
+            "state": "AZ",
+            "county": "Maricopa",
+            "court": "Maricopa County Superior Court - Criminal",
+        },
     ]
 
 
 # Synchronous wrapper functions
 
+
 def search_criminal_cases(
-    state: str,
-    county: str,
-    defendant_name: str,
-    **kwargs
+    state: str, county: str, defendant_name: str, **kwargs
 ) -> List[CriminalCaseRecord]:
     """Synchronous wrapper for criminal case search."""
     scraper = get_criminal_court_scraper(state, county)
@@ -1155,14 +1174,12 @@ def search_criminal_cases(
     async def _search():
         async with scraper:
             return await scraper.search_by_defendant(defendant_name, **kwargs)
+
     return asyncio.run(_search())
 
 
 def get_criminal_history(
-    state: str,
-    county: str,
-    person_name: str,
-    **kwargs
+    state: str, county: str, person_name: str, **kwargs
 ) -> List[CriminalCaseRecord]:
     """Synchronous wrapper for criminal history search."""
     scraper = get_criminal_court_scraper(state, county)
@@ -1172,14 +1189,11 @@ def get_criminal_history(
     async def _search():
         async with scraper:
             return await scraper.get_criminal_history(person_name, **kwargs)
+
     return asyncio.run(_search())
 
 
-def get_criminal_case(
-    state: str,
-    county: str,
-    case_number: str
-) -> Optional[CourtCase]:
+def get_criminal_case(state: str, county: str, case_number: str) -> Optional[CourtCase]:
     """Synchronous wrapper for criminal case detail."""
     scraper = get_criminal_court_scraper(state, county)
     if not scraper:
@@ -1188,4 +1202,5 @@ def get_criminal_case(
     async def _get():
         async with scraper:
             return await scraper.get_case_detail(case_number)
+
     return asyncio.run(_get())

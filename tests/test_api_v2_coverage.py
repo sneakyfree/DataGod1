@@ -3,14 +3,15 @@ Comprehensive tests for api/src/api_v2.py
 This module tests the DataGod API v2 using logic pattern testing.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
-from datetime import datetime, timedelta, date
-import json
 import io
+import json
+from datetime import date, datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 
 # ==================== Model Tests ====================
+
 
 class TestUserModels:
     """Tests for User-related Pydantic models"""
@@ -22,7 +23,7 @@ class TestUserModels:
             "email": "test@example.com",
             "full_name": "Test User",
             "disabled": False,
-            "roles": ["user"]
+            "roles": ["user"],
         }
         # Simulate User model validation
         assert user_data["username"] == "testuser"
@@ -31,10 +32,7 @@ class TestUserModels:
 
     def test_user_model_with_defaults(self):
         """Test User model with default values"""
-        user_data = {
-            "username": "testuser",
-            "email": "test@example.com"
-        }
+        user_data = {"username": "testuser", "email": "test@example.com"}
         # Add defaults
         user_data.setdefault("disabled", None)
         user_data.setdefault("roles", ["user"])
@@ -51,7 +49,7 @@ class TestUserModels:
             "full_name": "Test User",
             "disabled": False,
             "roles": ["user"],
-            "hashed_password": "$2b$12$hashedpassword"
+            "hashed_password": "$2b$12$hashedpassword",
         }
         assert "hashed_password" in user_data
         assert user_data["hashed_password"].startswith("$2b$")
@@ -61,17 +59,14 @@ class TestUserModels:
         token_data = {
             "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
             "token_type": "bearer",
-            "expires_in": 1800
+            "expires_in": 1800,
         }
         assert token_data["token_type"] == "bearer"
         assert token_data["expires_in"] > 0
 
     def test_token_data_model(self):
         """Test TokenData model"""
-        token_data = {
-            "username": "testuser",
-            "roles": ["user", "admin"]
-        }
+        token_data = {"username": "testuser", "roles": ["user", "admin"]}
         assert token_data["username"] == "testuser"
         assert "admin" in token_data["roles"]
 
@@ -85,11 +80,12 @@ class TestUserRegisterModel:
             "username": "newuser123",
             "email": "newuser@example.com",
             "password": "SecurePass123",
-            "full_name": "New User"
+            "full_name": "New User",
         }
         # Validate username pattern
         import re
-        pattern = r'^[a-zA-Z0-9_]+$'
+
+        pattern = r"^[a-zA-Z0-9_]+$"
         assert re.match(pattern, reg_data["username"])
         assert len(reg_data["username"]) >= 3
         assert len(reg_data["username"]) <= 50
@@ -97,18 +93,15 @@ class TestUserRegisterModel:
     def test_email_validation(self):
         """Test email validation"""
         import re
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
         valid_emails = [
             "test@example.com",
             "user.name@domain.co.uk",
-            "user+tag@gmail.com"
+            "user+tag@gmail.com",
         ]
-        invalid_emails = [
-            "notanemail",
-            "missing@",
-            "@nodomain.com"
-        ]
+        invalid_emails = ["notanemail", "missing@", "@nodomain.com"]
 
         for email in valid_emails:
             assert re.match(email_regex, email), f"{email} should be valid"
@@ -118,6 +111,7 @@ class TestUserRegisterModel:
 
     def test_password_validation(self):
         """Test password validation logic"""
+
         def validate_password(password):
             if len(password) < 8:
                 return False, "Password must be at least 8 characters"
@@ -157,10 +151,7 @@ class TestPasswordResetModels:
 
     def test_password_reset_confirm(self):
         """Test PasswordResetConfirm model"""
-        confirm_data = {
-            "token": "abc123-reset-token",
-            "new_password": "NewSecure123"
-        }
+        confirm_data = {"token": "abc123-reset-token", "new_password": "NewSecure123"}
         assert len(confirm_data["new_password"]) >= 8
 
 
@@ -175,7 +166,7 @@ class TestCRUDModels:
             "county": "Test",
             "jurisdiction_type": "county",
             "population": 100000,
-            "metadata": {"website": "https://example.com"}
+            "metadata": {"website": "https://example.com"},
         }
         assert jurisdiction_data["state"] == "TX"
         assert jurisdiction_data["population"] == 100000
@@ -196,7 +187,7 @@ class TestCRUDModels:
             "url": "https://api.example.com",
             "api_key": "secret_key",
             "status": "active",
-            "metadata": {}
+            "metadata": {},
         }
         assert ds_data["source_type"] == "api"
         assert ds_data["status"] == "active"
@@ -212,7 +203,7 @@ class TestCRUDModels:
             "amount": 250000.00,
             "date": date(2024, 1, 15),
             "metadata": {"property_type": "residential"},
-            "raw_data": {}
+            "raw_data": {},
         }
         assert record_data["amount"] == 250000.00
         assert record_data["record_type"] == "mortgage"
@@ -224,7 +215,7 @@ class TestCRUDModels:
             "entity_type": "person",
             "address": "123 Main St",
             "jurisdiction_id": 1,
-            "metadata": {}
+            "metadata": {},
         }
         assert entity_data["entity_type"] == "person"
 
@@ -237,7 +228,7 @@ class TestCRUDModels:
             "record_id": 1,
             "evidence": "Property deed",
             "confidence_score": 0.95,
-            "metadata": {}
+            "metadata": {},
         }
         assert rel_data["confidence_score"] == 0.95
         assert rel_data["relationship_type"] == "owns"
@@ -260,7 +251,7 @@ class TestSearchAndExportModels:
             "sort_by": "date",
             "sort_order": "desc",
             "page": 1,
-            "page_size": 50
+            "page_size": 50,
         }
         assert query["sort_by"] == "date"
         assert query["page_size"] == 50
@@ -276,7 +267,7 @@ class TestSearchAndExportModels:
             "amount_min": 100000,
             "amount_max": 500000,
             "page": 2,
-            "page_size": 25
+            "page_size": 25,
         }
         assert len(query["jurisdiction_ids"]) == 3
         assert query["amount_min"] == 100000
@@ -286,7 +277,7 @@ class TestSearchAndExportModels:
         export_request = {
             "format": "csv",
             "query": {"query": "test"},
-            "fields": ["id", "title", "amount"]
+            "fields": ["id", "title", "amount"],
         }
         assert export_request["format"] == "csv"
         assert len(export_request["fields"]) == 3
@@ -326,6 +317,7 @@ class TestEnums:
 
 # ==================== Password Hashing Tests ====================
 
+
 class TestPasswordHashing:
     """Tests for password hashing functionality"""
 
@@ -340,6 +332,7 @@ class TestPasswordHashing:
 
     def test_verify_password_correct(self):
         """Test password verification with correct password"""
+
         def verify_password(plain, hashed):
             # Simulate bcrypt verification
             return True  # Would use pwd_context.verify() in real code
@@ -349,6 +342,7 @@ class TestPasswordHashing:
 
     def test_verify_password_incorrect(self):
         """Test password verification with incorrect password"""
+
         def verify_password(plain, hashed):
             # Simulate failed verification
             return False
@@ -359,11 +353,13 @@ class TestPasswordHashing:
 
 # ==================== Token Creation Tests ====================
 
+
 class TestTokenCreation:
     """Tests for JWT token creation"""
 
     def test_create_access_token_with_expiry(self):
         """Test token creation with expiry time"""
+
         def create_access_token(data, expires_delta=None):
             to_encode = data.copy()
             if expires_delta:
@@ -373,13 +369,13 @@ class TestTokenCreation:
             return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.encoded.signature"
 
         token = create_access_token(
-            {"sub": "testuser", "roles": ["user"]},
-            expires_delta=timedelta(minutes=30)
+            {"sub": "testuser", "roles": ["user"]}, expires_delta=timedelta(minutes=30)
         )
         assert token.startswith("eyJ")
 
     def test_create_access_token_without_expiry(self):
         """Test token creation without explicit expiry"""
+
         def create_access_token(data, expires_delta=None):
             to_encode = data.copy()
             # No expiry set
@@ -393,7 +389,7 @@ class TestTokenCreation:
         payload = {
             "sub": "testuser",
             "roles": ["user", "admin"],
-            "exp": datetime.utcnow() + timedelta(minutes=30)
+            "exp": datetime.utcnow() + timedelta(minutes=30),
         }
         assert "sub" in payload
         assert "roles" in payload
@@ -401,6 +397,7 @@ class TestTokenCreation:
 
 
 # ==================== Rate Limiting Tests ====================
+
 
 class TestRateLimiting:
     """Tests for rate limiting functionality"""
@@ -422,7 +419,8 @@ class TestRateLimiting:
 
                 # Clean old entries
                 self.requests[client_id] = [
-                    t for t in self.requests[client_id]
+                    t
+                    for t in self.requests[client_id]
                     if current_time - t < self.window
                 ]
 
@@ -470,7 +468,8 @@ class TestRegistrationRateLimiting:
             # Clean up old entries
             if ip in registration_attempts:
                 registration_attempts[ip] = [
-                    t for t in registration_attempts[ip]
+                    t
+                    for t in registration_attempts[ip]
                     if current_time - t < window_seconds
                 ]
 
@@ -483,6 +482,7 @@ class TestRegistrationRateLimiting:
 
         def record_registration_attempt(ip):
             import time
+
             if ip not in registration_attempts:
                 registration_attempts[ip] = []
             registration_attempts[ip].append(time.time())
@@ -498,6 +498,7 @@ class TestRegistrationRateLimiting:
 
 # ==================== Authentication Tests ====================
 
+
 class TestUserAuthentication:
     """Tests for user authentication"""
 
@@ -508,7 +509,7 @@ class TestUserAuthentication:
                 "username": "testuser",
                 "email": "test@example.com",
                 "hashed_password": "$2b$12$hash",
-                "roles": ["user"]
+                "roles": ["user"],
             }
         }
 
@@ -531,6 +532,7 @@ class TestUserAuthentication:
 
     def test_authenticate_user_success(self):
         """Test successful user authentication"""
+
         def authenticate_user(username, password):
             if username == "testuser" and password == "correct":
                 return {"username": "testuser", "roles": ["user"]}
@@ -541,6 +543,7 @@ class TestUserAuthentication:
 
     def test_authenticate_user_wrong_password(self):
         """Test authentication with wrong password"""
+
         def authenticate_user(username, password):
             if username == "testuser" and password == "correct":
                 return {"username": "testuser"}
@@ -576,7 +579,7 @@ class TestCurrentUser:
                 "username": "testuser",
                 "email": "test@example.com",
                 "roles": ["user"],
-                "disabled": False
+                "disabled": False,
             }
         }
 
@@ -594,6 +597,7 @@ class TestCurrentUser:
     @pytest.mark.asyncio
     async def test_get_current_active_user(self):
         """Test getting current active user"""
+
         async def get_current_active_user(current_user):
             if current_user.get("disabled"):
                 raise Exception("Inactive user")
@@ -606,6 +610,7 @@ class TestCurrentUser:
     @pytest.mark.asyncio
     async def test_get_current_active_user_disabled(self):
         """Test getting disabled user raises exception"""
+
         async def get_current_active_user(current_user):
             if current_user.get("disabled"):
                 raise Exception("Inactive user")
@@ -621,6 +626,7 @@ class TestRoleBasedAccess:
 
     def test_has_role_authorized(self):
         """Test user with required role is authorized"""
+
         def has_role(user_roles, required_roles):
             return any(role in user_roles for role in required_roles)
 
@@ -631,6 +637,7 @@ class TestRoleBasedAccess:
 
     def test_has_role_unauthorized(self):
         """Test user without required role is unauthorized"""
+
         def has_role(user_roles, required_roles):
             return any(role in user_roles for role in required_roles)
 
@@ -641,6 +648,7 @@ class TestRoleBasedAccess:
 
     def test_has_role_multiple_options(self):
         """Test authorization with multiple role options"""
+
         def has_role(user_roles, required_roles):
             return any(role in user_roles for role in required_roles)
 
@@ -652,12 +660,14 @@ class TestRoleBasedAccess:
 
 # ==================== Health Check Tests ====================
 
+
 class TestHealthCheck:
     """Tests for health check endpoint"""
 
     @pytest.mark.asyncio
     async def test_health_check_all_healthy(self):
         """Test health check with all services healthy"""
+
         async def health_check(db_connected=True, redis_connected=True):
             db_status = "healthy" if db_connected else "unhealthy"
             cache_status = "healthy" if redis_connected else "disabled"
@@ -667,7 +677,7 @@ class TestHealthCheck:
                 "timestamp": datetime.utcnow().isoformat(),
                 "database": db_status,
                 "cache": cache_status,
-                "api_version": "2.0.0"
+                "api_version": "2.0.0",
             }
 
         result = await health_check()
@@ -678,21 +688,19 @@ class TestHealthCheck:
     @pytest.mark.asyncio
     async def test_health_check_no_redis(self):
         """Test health check with Redis disabled"""
+
         async def health_check(db_connected=True, redis_connected=False):
             db_status = "healthy" if db_connected else "unhealthy"
             cache_status = "healthy" if redis_connected else "disabled"
 
-            return {
-                "status": "healthy",
-                "database": db_status,
-                "cache": cache_status
-            }
+            return {"status": "healthy", "database": db_status, "cache": cache_status}
 
         result = await health_check()
         assert result["cache"] == "disabled"
 
 
 # ==================== CRUD Endpoint Tests ====================
+
 
 class TestJurisdictionEndpoints:
     """Tests for jurisdiction CRUD endpoints"""
@@ -708,12 +716,14 @@ class TestJurisdictionEndpoints:
             jurisdictions.append(jurisdiction)
             return jurisdiction
 
-        result = await create_jurisdiction({
-            "name": "Test County",
-            "state": "TX",
-            "county": "Test",
-            "jurisdiction_type": "county"
-        })
+        result = await create_jurisdiction(
+            {
+                "name": "Test County",
+                "state": "TX",
+                "county": "Test",
+                "jurisdiction_type": "county",
+            }
+        )
 
         assert result["id"] == 1
         assert result["state"] == "TX"
@@ -724,14 +734,14 @@ class TestJurisdictionEndpoints:
         jurisdictions = [
             {"id": 1, "name": "County A", "state": "TX"},
             {"id": 2, "name": "County B", "state": "TX"},
-            {"id": 3, "name": "County C", "state": "CA"}
+            {"id": 3, "name": "County C", "state": "CA"},
         ]
 
         async def get_jurisdictions(state=None, limit=100, offset=0):
             result = jurisdictions
             if state:
                 result = [j for j in result if j["state"] == state]
-            return result[offset:offset+limit]
+            return result[offset : offset + limit]
 
         tx_jurisdictions = await get_jurisdictions(state="TX")
         assert len(tx_jurisdictions) == 2
@@ -809,11 +819,9 @@ class TestDataSourceEndpoints:
             data_sources.append(ds)
             return ds
 
-        result = await create_data_source({
-            "jurisdiction_id": 1,
-            "source_name": "Test API",
-            "source_type": "api"
-        })
+        result = await create_data_source(
+            {"jurisdiction_id": 1, "source_name": "Test API", "source_type": "api"}
+        )
         assert result["source_name"] == "Test API"
 
     @pytest.mark.asyncio
@@ -822,7 +830,7 @@ class TestDataSourceEndpoints:
         data_sources = [
             {"id": 1, "source_type": "api", "status": "active"},
             {"id": 2, "source_type": "scraper", "status": "active"},
-            {"id": 3, "source_type": "api", "status": "inactive"}
+            {"id": 3, "source_type": "api", "status": "inactive"},
         ]
 
         async def get_data_sources(source_type=None, status=None):
@@ -851,12 +859,14 @@ class TestRecordEndpoints:
             records.append(record)
             return record
 
-        result = await create_record({
-            "jurisdiction_id": 1,
-            "record_type": "mortgage",
-            "title": "Test Mortgage",
-            "amount": 250000.00
-        })
+        result = await create_record(
+            {
+                "jurisdiction_id": 1,
+                "record_type": "mortgage",
+                "title": "Test Mortgage",
+                "amount": 250000.00,
+            }
+        )
         assert result["title"] == "Test Mortgage"
         assert result["amount"] == 250000.00
 
@@ -864,9 +874,24 @@ class TestRecordEndpoints:
     async def test_get_records_with_filters(self):
         """Test getting records with various filters"""
         records = [
-            {"id": 1, "record_type": "mortgage", "amount": 200000, "date": date(2024, 1, 15)},
-            {"id": 2, "record_type": "property", "amount": 300000, "date": date(2024, 2, 20)},
-            {"id": 3, "record_type": "mortgage", "amount": 150000, "date": date(2024, 3, 10)}
+            {
+                "id": 1,
+                "record_type": "mortgage",
+                "amount": 200000,
+                "date": date(2024, 1, 15),
+            },
+            {
+                "id": 2,
+                "record_type": "property",
+                "amount": 300000,
+                "date": date(2024, 2, 20),
+            },
+            {
+                "id": 3,
+                "record_type": "mortgage",
+                "amount": 150000,
+                "date": date(2024, 3, 10),
+            },
         ]
 
         async def get_records(record_type=None, amount_min=None, amount_max=None):
@@ -900,11 +925,13 @@ class TestEntityEndpoints:
             entities.append(entity)
             return entity
 
-        result = await create_entity({
-            "entity_name": "John Doe",
-            "entity_type": "person",
-            "address": "123 Main St"
-        })
+        result = await create_entity(
+            {
+                "entity_name": "John Doe",
+                "entity_type": "person",
+                "address": "123 Main St",
+            }
+        )
         assert result["entity_type"] == "person"
 
     @pytest.mark.asyncio
@@ -913,7 +940,7 @@ class TestEntityEndpoints:
         entities = [
             {"id": 1, "entity_name": "John", "entity_type": "person"},
             {"id": 2, "entity_name": "ABC Corp", "entity_type": "company"},
-            {"id": 3, "entity_name": "Jane", "entity_type": "person"}
+            {"id": 3, "entity_name": "Jane", "entity_type": "person"},
         ]
 
         async def get_entities(entity_type=None):
@@ -945,12 +972,14 @@ class TestRelationshipEndpoints:
             relationships.append(rel)
             return rel
 
-        result = await create_relationship({
-            "entity1_id": 1,
-            "entity2_id": 2,
-            "relationship_type": "owns",
-            "confidence_score": 0.95
-        })
+        result = await create_relationship(
+            {
+                "entity1_id": 1,
+                "entity2_id": 2,
+                "relationship_type": "owns",
+                "confidence_score": 0.95,
+            }
+        )
         assert result["relationship_type"] == "owns"
 
     @pytest.mark.asyncio
@@ -959,13 +988,16 @@ class TestRelationshipEndpoints:
         relationships = [
             {"id": 1, "entity1_id": 1, "entity2_id": 2, "relationship_type": "owns"},
             {"id": 2, "entity1_id": 2, "entity2_id": 3, "relationship_type": "manages"},
-            {"id": 3, "entity1_id": 1, "entity2_id": 3, "relationship_type": "funds"}
+            {"id": 3, "entity1_id": 1, "entity2_id": 3, "relationship_type": "funds"},
         ]
 
         async def get_relationships(entity_id=None):
             if entity_id:
-                return [r for r in relationships
-                        if r["entity1_id"] == entity_id or r["entity2_id"] == entity_id]
+                return [
+                    r
+                    for r in relationships
+                    if r["entity1_id"] == entity_id or r["entity2_id"] == entity_id
+                ]
             return relationships
 
         entity1_rels = await get_relationships(entity_id=1)
@@ -973,6 +1005,7 @@ class TestRelationshipEndpoints:
 
 
 # ==================== Search Tests ====================
+
 
 class TestAdvancedSearch:
     """Tests for advanced search functionality"""
@@ -983,16 +1016,23 @@ class TestAdvancedSearch:
         records = [
             {"id": 1, "title": "Mortgage Document", "description": "Property purchase"},
             {"id": 2, "title": "Tax Record", "description": "Annual taxes"},
-            {"id": 3, "title": "Deed of Sale", "description": "Property mortgage transfer"}
+            {
+                "id": 3,
+                "title": "Deed of Sale",
+                "description": "Property mortgage transfer",
+            },
         ]
 
         async def search(query):
             if not query:
                 return records
             query_lower = query.lower()
-            return [r for r in records
-                    if query_lower in r["title"].lower()
-                    or query_lower in r["description"].lower()]
+            return [
+                r
+                for r in records
+                if query_lower in r["title"].lower()
+                or query_lower in r["description"].lower()
+            ]
 
         results = await search("mortgage")
         assert len(results) == 2
@@ -1005,11 +1045,11 @@ class TestAdvancedSearch:
         async def search(page=1, page_size=50):
             offset = (page - 1) * page_size
             return {
-                "records": records[offset:offset + page_size],
+                "records": records[offset : offset + page_size],
                 "total_count": len(records),
                 "page": page,
                 "page_size": page_size,
-                "total_pages": (len(records) + page_size - 1) // page_size
+                "total_pages": (len(records) + page_size - 1) // page_size,
             }
 
         result = await search(page=2, page_size=25)
@@ -1023,7 +1063,7 @@ class TestAdvancedSearch:
         records = [
             {"id": 1, "date": date(2024, 1, 15)},
             {"id": 2, "date": date(2024, 3, 20)},
-            {"id": 3, "date": date(2024, 6, 10)}
+            {"id": 3, "date": date(2024, 6, 10)},
         ]
 
         async def search(date_from=None, date_to=None):
@@ -1043,7 +1083,7 @@ class TestAdvancedSearch:
         records = [
             {"id": 1, "amount": 100000},
             {"id": 2, "amount": 250000},
-            {"id": 3, "amount": 500000}
+            {"id": 3, "amount": 500000},
         ]
 
         async def search(amount_min=None, amount_max=None):
@@ -1063,11 +1103,13 @@ class TestAdvancedSearch:
         records = [
             {"id": 1, "date": date(2024, 3, 1)},
             {"id": 2, "date": date(2024, 1, 1)},
-            {"id": 3, "date": date(2024, 2, 1)}
+            {"id": 3, "date": date(2024, 2, 1)},
         ]
 
         async def search(sort_by="date", sort_order="desc"):
-            result = sorted(records, key=lambda x: x[sort_by], reverse=(sort_order == "desc"))
+            result = sorted(
+                records, key=lambda x: x[sort_by], reverse=(sort_order == "desc")
+            )
             return result
 
         results = await search(sort_by="date", sort_order="asc")
@@ -1076,16 +1118,14 @@ class TestAdvancedSearch:
 
 # ==================== Export Tests ====================
 
+
 class TestDataExport:
     """Tests for data export functionality"""
 
     @pytest.mark.asyncio
     async def test_export_json(self):
         """Test JSON export format"""
-        records = [
-            {"id": 1, "title": "Record 1"},
-            {"id": 2, "title": "Record 2"}
-        ]
+        records = [{"id": 1, "title": "Record 1"}, {"id": 2, "title": "Record 2"}]
 
         async def export_data(format="json"):
             if format == "json":
@@ -1093,7 +1133,7 @@ class TestDataExport:
                     "records": records,
                     "count": len(records),
                     "format": "json",
-                    "timestamp": datetime.utcnow().isoformat()
+                    "timestamp": datetime.utcnow().isoformat(),
                 }
 
         result = await export_data(format="json")
@@ -1107,7 +1147,7 @@ class TestDataExport:
 
         records = [
             {"id": 1, "title": "Record 1", "amount": 100},
-            {"id": 2, "title": "Record 2", "amount": 200}
+            {"id": 2, "title": "Record 2", "amount": 200},
         ]
 
         async def export_csv(records):
@@ -1126,6 +1166,7 @@ class TestDataExport:
     @pytest.mark.asyncio
     async def test_export_empty_result(self):
         """Test export with no records"""
+
         async def export_data(records):
             if not records:
                 return {"message": "No records found for export", "count": 0}
@@ -1137,6 +1178,7 @@ class TestDataExport:
 
 
 # ==================== Integration Endpoints Tests ====================
+
 
 class TestNeuralNetworkIntegration:
     """Tests for neural network integration endpoint"""
@@ -1178,7 +1220,7 @@ class TestNeuralNetworkIntegration:
             return {
                 "message": "Neural network processing started",
                 "record_id": record_id,
-                "status": "processing"
+                "status": "processing",
             }
 
         result = await integrate_neural_network(1)
@@ -1191,6 +1233,7 @@ class TestScraperIntegration:
     @pytest.mark.asyncio
     async def test_integrate_scraper_disabled(self):
         """Test scraper integration when feature is disabled"""
+
         async def integrate_scraper(jurisdiction_id, enabled=False):
             if not enabled:
                 raise Exception("Scraper integration is disabled")
@@ -1210,7 +1253,7 @@ class TestScraperIntegration:
             return {
                 "message": "Scraper processing started",
                 "jurisdiction_id": jurisdiction_id,
-                "status": "processing"
+                "status": "processing",
             }
 
         result = await integrate_scraper(1)
@@ -1219,12 +1262,14 @@ class TestScraperIntegration:
 
 # ==================== Cache Tests ====================
 
+
 class TestCacheManagement:
     """Tests for cache management endpoints"""
 
     @pytest.mark.asyncio
     async def test_get_cache_stats_disabled(self):
         """Test getting cache stats when Redis is disabled"""
+
         async def get_cache_stats(redis_available=False):
             if not redis_available:
                 return {"message": "Cache is disabled"}
@@ -1236,6 +1281,7 @@ class TestCacheManagement:
     @pytest.mark.asyncio
     async def test_get_cache_stats_enabled(self):
         """Test getting cache stats when Redis is available"""
+
         async def get_cache_stats(redis_available=True):
             if not redis_available:
                 return {"message": "Cache is disabled"}
@@ -1245,8 +1291,8 @@ class TestCacheManagement:
                     "used_memory": 1024000,
                     "keys": 150,
                     "uptime": 86400,
-                    "connected_clients": 5
-                }
+                    "connected_clients": 5,
+                },
             }
 
         result = await get_cache_stats()
@@ -1256,6 +1302,7 @@ class TestCacheManagement:
     @pytest.mark.asyncio
     async def test_clear_cache(self):
         """Test clearing cache"""
+
         async def clear_cache(redis_available=True):
             if not redis_available:
                 return {"message": "Cache is disabled"}
@@ -1267,13 +1314,14 @@ class TestCacheManagement:
 
 # ==================== Subscription Tests ====================
 
+
 class TestSubscription:
     """Tests for subscription endpoints"""
 
     @pytest.mark.asyncio
     async def test_subscribe_valid_tier(self):
         """Test subscribing to a valid tier"""
-        valid_tiers = ['basic', 'pro', 'enterprise']
+        valid_tiers = ["basic", "pro", "enterprise"]
 
         async def subscribe_to_plan(tier, mock_mode=True):
             tier = tier.lower()
@@ -1285,7 +1333,7 @@ class TestSubscription:
                 return {
                     "tier": tier,
                     "status": "active",
-                    "expires_at": expires_at.isoformat()
+                    "expires_at": expires_at.isoformat(),
                 }
 
         result = await subscribe_to_plan("pro")
@@ -1295,7 +1343,7 @@ class TestSubscription:
     @pytest.mark.asyncio
     async def test_subscribe_invalid_tier(self):
         """Test subscribing to an invalid tier"""
-        valid_tiers = ['basic', 'pro', 'enterprise']
+        valid_tiers = ["basic", "pro", "enterprise"]
 
         async def subscribe_to_plan(tier):
             if tier.lower() not in valid_tiers:
@@ -1308,7 +1356,10 @@ class TestSubscription:
     async def test_get_subscription_status(self):
         """Test getting subscription status"""
         users = {
-            "testuser": {"subscription_tier": "pro", "subscription_expires": "2024-12-31"}
+            "testuser": {
+                "subscription_tier": "pro",
+                "subscription_expires": "2024-12-31",
+            }
         }
 
         async def get_subscription_status(username):
@@ -1317,8 +1368,10 @@ class TestSubscription:
                 raise Exception("User not found")
             return {
                 "tier": user.get("subscription_tier", "free"),
-                "status": "active" if user.get("subscription_tier") != "free" else "free",
-                "expires_at": user.get("subscription_expires")
+                "status": (
+                    "active" if user.get("subscription_tier") != "free" else "free"
+                ),
+                "expires_at": user.get("subscription_expires"),
             }
 
         result = await get_subscription_status("testuser")
@@ -1365,6 +1418,7 @@ class TestStripeWebhook:
     @pytest.mark.asyncio
     async def test_webhook_invalid_signature(self):
         """Test webhook with invalid signature"""
+
         async def stripe_webhook(payload, signature, valid_signature="correct"):
             if signature != valid_signature:
                 raise Exception("Invalid webhook signature")
@@ -1376,12 +1430,10 @@ class TestStripeWebhook:
     @pytest.mark.asyncio
     async def test_webhook_subscription_event(self):
         """Test handling subscription webhook event"""
+
         async def stripe_webhook(event_type, data):
             if event_type.startswith("customer.subscription"):
-                return {
-                    "status": "received",
-                    "event_type": event_type
-                }
+                return {"status": "received", "event_type": event_type}
             return {"status": "ignored"}
 
         result = await stripe_webhook("customer.subscription.created", {})
@@ -1402,14 +1454,15 @@ class TestStripeWebhook:
                 return {"status": "activated", "tier": tier}
             return {"status": "skipped"}
 
-        result = await handle_checkout_completed({
-            "metadata": {"user_id": "1", "tier": "pro"}
-        })
+        result = await handle_checkout_completed(
+            {"metadata": {"user_id": "1", "tier": "pro"}}
+        )
         assert result["tier"] == "pro"
         assert users[1]["subscription_tier"] == "pro"
 
 
 # ==================== Root and Test Endpoints ====================
+
 
 class TestUtilityEndpoints:
     """Tests for utility endpoints"""
@@ -1417,12 +1470,13 @@ class TestUtilityEndpoints:
     @pytest.mark.asyncio
     async def test_root_endpoint(self):
         """Test root endpoint"""
+
         async def root():
             return {
                 "message": "DataGod API v2 is running",
                 "version": "2.0.0",
                 "documentation": "/docs",
-                "status": "healthy"
+                "status": "healthy",
             }
 
         result = await root()
@@ -1432,6 +1486,7 @@ class TestUtilityEndpoints:
     @pytest.mark.asyncio
     async def test_test_endpoint(self):
         """Test test endpoint"""
+
         async def test_endpoint():
             return {"message": "API v2 is working correctly"}
 
@@ -1441,17 +1496,16 @@ class TestUtilityEndpoints:
 
 # ==================== Exception Handler Tests ====================
 
+
 class TestExceptionHandlers:
     """Tests for exception handlers"""
 
     @pytest.mark.asyncio
     async def test_http_exception_handler(self):
         """Test HTTP exception handler"""
+
         async def http_exception_handler(status_code, detail):
-            return {
-                "status_code": status_code,
-                "content": {"message": detail}
-            }
+            return {"status_code": status_code, "content": {"message": detail}}
 
         result = await http_exception_handler(404, "Not found")
         assert result["status_code"] == 404
@@ -1460,12 +1514,10 @@ class TestExceptionHandlers:
     @pytest.mark.asyncio
     async def test_general_exception_handler(self):
         """Test general exception handler"""
+
         async def general_exception_handler(exc):
             # Log error
-            return {
-                "status_code": 500,
-                "content": {"message": "Internal server error"}
-            }
+            return {"status_code": 500, "content": {"message": "Internal server error"}}
 
         result = await general_exception_handler(Exception("Something went wrong"))
         assert result["status_code"] == 500
@@ -1473,6 +1525,7 @@ class TestExceptionHandlers:
 
 
 # ==================== Startup/Shutdown Event Tests ====================
+
 
 class TestLifecycleEvents:
     """Tests for startup and shutdown events"""
@@ -1516,6 +1569,7 @@ class TestLifecycleEvents:
 
 # ==================== Demo Users Tests ====================
 
+
 class TestDemoUsers:
     """Tests for demo user creation"""
 
@@ -1533,7 +1587,7 @@ class TestDemoUsers:
                 "hashed_password": hashed_password,
                 "full_name": full_name,
                 "roles": roles,
-                "disabled": disabled
+                "disabled": disabled,
             }
 
         def ensure_demo_users_exist():
@@ -1544,7 +1598,7 @@ class TestDemoUsers:
                     "full_name": "DataGod Admin",
                     "password": "admin123",
                     "roles": ["admin", "user"],
-                    "disabled": False
+                    "disabled": False,
                 },
                 {
                     "username": "user",
@@ -1552,8 +1606,8 @@ class TestDemoUsers:
                     "full_name": "DataGod User",
                     "password": "user123",
                     "roles": ["user"],
-                    "disabled": False
-                }
+                    "disabled": False,
+                },
             ]
 
             for user_data in demo_users:
@@ -1564,7 +1618,7 @@ class TestDemoUsers:
                         hashed_password=get_password_hash(user_data["password"]),
                         full_name=user_data["full_name"],
                         roles=user_data["roles"],
-                        disabled=user_data["disabled"]
+                        disabled=user_data["disabled"],
                     )
 
         ensure_demo_users_exist()
@@ -1576,6 +1630,7 @@ class TestDemoUsers:
 
 
 # ==================== Cache Decorator Tests ====================
+
 
 class TestCacheDecorator:
     """Tests for cache decorator functionality"""
@@ -1633,6 +1688,7 @@ class TestCacheResponse:
                 result = await func(*args, **kwargs)
                 cache[cache_key] = json.dumps(result)
                 return result
+
             return wrapper
 
         async def get_data():

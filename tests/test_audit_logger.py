@@ -2,18 +2,19 @@
 Tests for Security Audit Logger — coverage for security/audit_logger.py
 """
 
-import pytest
 import os
 import tempfile
 from datetime import datetime
 
+import pytest
+
 from datagod.security.audit_logger import (
-    AuditLogger,
     AuditAction,
-    AuditSeverity,
     AuditEvent,
-    get_audit_logger,
+    AuditLogger,
+    AuditSeverity,
     audited,
+    get_audit_logger,
 )
 
 

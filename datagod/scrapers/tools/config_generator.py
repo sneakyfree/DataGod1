@@ -8,15 +8,16 @@ based on detected URL patterns and known data source templates.
 import json
 import os
 import re
-from typing import Dict, List, Optional, Any
-from pathlib import Path
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class CountyConfig:
     """Configuration for a single county's data sources."""
+
     fips_code: str
     name: str
     state_code: str
@@ -34,6 +35,7 @@ class CountyConfig:
 @dataclass
 class StateConfig:
     """Configuration for a state's scraper."""
+
     state_code: str
     state_name: str
     state_fips: str
@@ -123,54 +125,52 @@ class ConfigGenerator:
         """Load state data from FIPS file."""
         states_file = self.data_dir / "us_states.json"
         if states_file.exists():
-            with open(states_file, 'r') as f:
+            with open(states_file, "r") as f:
                 data = json.load(f)
-                return {s['code']: s for s in data.get('states', [])}
+                return {s["code"]: s for s in data.get("states", [])}
         return {}
 
     def _load_counties(self) -> Dict[str, List[Dict]]:
         """Load county data from FIPS file."""
         counties_file = self.data_dir / "us_counties_complete.json"
         if counties_file.exists():
-            with open(counties_file, 'r') as f:
+            with open(counties_file, "r") as f:
                 data = json.load(f)
-                return data.get('counties', {})
+                return data.get("counties", {})
         return {}
 
     def _load_population_data(self) -> Dict[str, Any]:
         """Load population and tier data."""
         pop_file = self.data_dir / "population_data.json"
         if pop_file.exists():
-            with open(pop_file, 'r') as f:
+            with open(pop_file, "r") as f:
                 return json.load(f)
         return {}
 
     def _slugify(self, name: str) -> str:
         """Convert county name to URL-safe slug."""
         # Remove "County" suffix
-        name = re.sub(r'\s+County$', '', name, flags=re.IGNORECASE)
+        name = re.sub(r"\s+County$", "", name, flags=re.IGNORECASE)
         # Convert to lowercase and replace spaces/special chars with hyphens
-        slug = re.sub(r'[^a-z0-9]+', '-', name.lower())
+        slug = re.sub(r"[^a-z0-9]+", "-", name.lower())
         # Remove leading/trailing hyphens
-        return slug.strip('-')
+        return slug.strip("-")
 
     def _get_tier(self, state_code: str) -> int:
         """Get priority tier for a state."""
-        tiers = self.population_data.get('tier_definitions', {})
+        tiers = self.population_data.get("tier_definitions", {})
         for tier_num, tier_data in [
-            (1, tiers.get('tier_1', {})),
-            (2, tiers.get('tier_2', {})),
-            (3, tiers.get('tier_3', {})),
-            (4, tiers.get('territories', {})),
+            (1, tiers.get("tier_1", {})),
+            (2, tiers.get("tier_2", {})),
+            (3, tiers.get("tier_3", {})),
+            (4, tiers.get("territories", {})),
         ]:
-            if state_code in tier_data.get('states', []):
+            if state_code in tier_data.get("states", []):
                 return tier_num
         return 3
 
     def generate_county_config(
-        self,
-        state_code: str,
-        county_data: Dict[str, Any]
+        self, state_code: str, county_data: Dict[str, Any]
     ) -> CountyConfig:
         """
         Generate configuration for a single county.
@@ -182,7 +182,7 @@ class ConfigGenerator:
         Returns:
             CountyConfig object
         """
-        county_slug = self._slugify(county_data['name'])
+        county_slug = self._slugify(county_data["name"])
         state_lower = state_code.lower()
 
         # Generate base URLs for each data category
@@ -191,10 +191,7 @@ class ConfigGenerator:
 
         for category, patterns in self.URL_PATTERNS.items():
             for pattern in patterns:
-                url = pattern.format(
-                    county_slug=county_slug,
-                    state=state_lower
-                )
+                url = pattern.format(county_slug=county_slug, state=state_lower)
                 base_urls[category] = url
                 endpoints[category] = {
                     "search": f"{url}/search",
@@ -204,11 +201,11 @@ class ConfigGenerator:
                 break  # Use first pattern as default
 
         return CountyConfig(
-            fips_code=county_data['fips'],
-            name=county_data['name'],
+            fips_code=county_data["fips"],
+            name=county_data["name"],
             state_code=state_code,
-            county_seat=county_data.get('seat', ''),
-            population=county_data.get('population', 0),
+            county_seat=county_data.get("seat", ""),
+            population=county_data.get("population", 0),
             base_urls=base_urls,
             endpoints=endpoints,
             auth_type="none",
@@ -241,8 +238,8 @@ class ConfigGenerator:
         state_sources = {}
         for source_name, source_template in self.STATE_SOURCES.items():
             state_sources[source_name] = {
-                "description": source_template['description'],
-                "url": source_template['url_pattern'].format(state=state_lower),
+                "description": source_template["description"],
+                "url": source_template["url_pattern"].format(state=state_lower),
                 "status": "unknown",
             }
 
@@ -250,8 +247,8 @@ class ConfigGenerator:
 
         return StateConfig(
             state_code=state_code,
-            state_name=state_info.get('name', state_code),
-            state_fips=state_info.get('fips', ''),
+            state_name=state_info.get("name", state_code),
+            state_fips=state_info.get("fips", ""),
             counties=county_configs,
             state_level_sources=state_sources,
             auth_config={
@@ -305,16 +302,14 @@ class ConfigGenerator:
         self.configs_dir.mkdir(parents=True, exist_ok=True)
 
         # Save config
-        with open(config_path, 'w') as f:
+        with open(config_path, "w") as f:
             json.dump(config_dict, f, indent=2)
 
         print(f"Saved config: {config_path}")
         return str(config_path)
 
     def generate_all_configs(
-        self,
-        tier: Optional[int] = None,
-        overwrite: bool = False
+        self, tier: Optional[int] = None, overwrite: bool = False
     ) -> List[str]:
         """
         Generate configuration files for all states (or specific tier).
@@ -326,16 +321,16 @@ class ConfigGenerator:
         Returns:
             List of paths to generated config files
         """
-        tiers = self.population_data.get('tier_definitions', {})
+        tiers = self.population_data.get("tier_definitions", {})
 
         if tier == 1:
-            states = tiers.get('tier_1', {}).get('states', [])
+            states = tiers.get("tier_1", {}).get("states", [])
         elif tier == 2:
-            states = tiers.get('tier_2', {}).get('states', [])
+            states = tiers.get("tier_2", {}).get("states", [])
         elif tier == 3:
-            states = tiers.get('tier_3', {}).get('states', [])
+            states = tiers.get("tier_3", {}).get("states", [])
         elif tier == 4:
-            states = tiers.get('territories', {}).get('states', [])
+            states = tiers.get("territories", {}).get("states", [])
         else:
             # All states
             states = list(self.states.keys())
@@ -369,9 +364,9 @@ class ConfigGenerator:
 
         for config_path in existing_configs:
             try:
-                with open(config_path, 'r') as f:
+                with open(config_path, "r") as f:
                     config = json.load(f)
-                    configured_counties += len(config.get('counties', []))
+                    configured_counties += len(config.get("counties", []))
             except Exception:
                 pass
 
@@ -379,10 +374,16 @@ class ConfigGenerator:
             "total_states": len(all_states),
             "configured_states": len(configured_states),
             "missing_states": list(missing_states),
-            "state_coverage_pct": round(len(configured_states) / len(all_states) * 100, 1),
+            "state_coverage_pct": round(
+                len(configured_states) / len(all_states) * 100, 1
+            ),
             "total_counties": total_counties,
             "configured_counties": configured_counties,
-            "county_coverage_pct": round(configured_counties / total_counties * 100, 1) if total_counties > 0 else 0,
+            "county_coverage_pct": (
+                round(configured_counties / total_counties * 100, 1)
+                if total_counties > 0
+                else 0
+            ),
         }
 
 
@@ -392,9 +393,18 @@ def main():
 
     parser = argparse.ArgumentParser(description="Generate scraper configurations")
     parser.add_argument("--state", type=str, help="Generate config for specific state")
-    parser.add_argument("--tier", type=int, choices=[1, 2, 3, 4], help="Generate configs for specific tier")
-    parser.add_argument("--all", action="store_true", help="Generate configs for all states")
-    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing configs")
+    parser.add_argument(
+        "--tier",
+        type=int,
+        choices=[1, 2, 3, 4],
+        help="Generate configs for specific tier",
+    )
+    parser.add_argument(
+        "--all", action="store_true", help="Generate configs for all states"
+    )
+    parser.add_argument(
+        "--overwrite", action="store_true", help="Overwrite existing configs"
+    )
     parser.add_argument("--summary", action="store_true", help="Show coverage summary")
 
     args = parser.parse_args()
@@ -404,16 +414,22 @@ def main():
     if args.summary:
         summary = generator.get_coverage_summary()
         print("\n=== Configuration Coverage Summary ===")
-        print(f"States: {summary['configured_states']}/{summary['total_states']} ({summary['state_coverage_pct']}%)")
-        print(f"Counties: {summary['configured_counties']}/{summary['total_counties']} ({summary['county_coverage_pct']}%)")
-        if summary['missing_states']:
+        print(
+            f"States: {summary['configured_states']}/{summary['total_states']} ({summary['state_coverage_pct']}%)"
+        )
+        print(
+            f"Counties: {summary['configured_counties']}/{summary['total_counties']} ({summary['county_coverage_pct']}%)"
+        )
+        if summary["missing_states"]:
             print(f"Missing states: {', '.join(sorted(summary['missing_states']))}")
         return
 
     if args.state:
         generator.save_state_config(args.state.upper(), overwrite=args.overwrite)
     elif args.tier:
-        generated = generator.generate_all_configs(tier=args.tier, overwrite=args.overwrite)
+        generated = generator.generate_all_configs(
+            tier=args.tier, overwrite=args.overwrite
+        )
         print(f"\nGenerated {len(generated)} config files for Tier {args.tier}")
     elif args.all:
         generated = generator.generate_all_configs(overwrite=args.overwrite)

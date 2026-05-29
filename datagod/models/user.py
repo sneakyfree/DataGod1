@@ -2,10 +2,11 @@
 User model for DataGod authentication and user management
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, JSON, Index
-from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import List, Optional
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, Index, Integer, String, Text
+from sqlalchemy.orm import relationship
 
 
 class User:
@@ -20,7 +21,8 @@ class User:
     - Email verification
     - Subscription tracking
     """
-    __tablename__ = 'users'
+
+    __tablename__ = "users"
 
     # Primary key
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -58,7 +60,9 @@ class User:
     locked_until = Column(DateTime, nullable=True)
 
     # Subscription (basic tracking - full subscription model separate)
-    subscription_tier = Column(String(50), default='free', nullable=False)  # free, basic, pro, enterprise
+    subscription_tier = Column(
+        String(50), default="free", nullable=False
+    )  # free, basic, pro, enterprise
     subscription_expires = Column(DateTime, nullable=True)
 
     # Stripe integration
@@ -73,20 +77,22 @@ class User:
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # Additional profile data
     profile_data = Column(JSON, nullable=True)  # Avatar URL, preferences, etc.
 
     # Indexes for efficient queries
     __table_args__ = (
-        Index('idx_user_email', 'email'),
-        Index('idx_user_username', 'username'),
-        Index('idx_user_reset_token', 'password_reset_token'),
-        Index('idx_user_subscription', 'subscription_tier'),
-        Index('idx_user_disabled', 'disabled'),
-        Index('idx_user_stripe_customer', 'stripe_customer_id'),
-        Index('idx_user_stripe_subscription', 'stripe_subscription_id'),
+        Index("idx_user_email", "email"),
+        Index("idx_user_username", "username"),
+        Index("idx_user_reset_token", "password_reset_token"),
+        Index("idx_user_subscription", "subscription_tier"),
+        Index("idx_user_disabled", "disabled"),
+        Index("idx_user_stripe_customer", "stripe_customer_id"),
+        Index("idx_user_stripe_subscription", "stripe_subscription_id"),
     )
 
     def __repr__(self):
@@ -119,16 +125,32 @@ class User:
         Override this with actual feature gating logic.
         """
         tier_features = {
-            'free': ['basic_search', 'view_records'],
-            'basic': ['basic_search', 'view_records', 'export_csv', 'advanced_search'],
-            'pro': ['basic_search', 'view_records', 'export_csv', 'advanced_search',
-                    'export_excel', 'bulk_operations', 'api_access'],
-            'enterprise': ['basic_search', 'view_records', 'export_csv', 'advanced_search',
-                          'export_excel', 'bulk_operations', 'api_access', 'unlimited_exports',
-                          'priority_support', 'custom_integrations']
+            "free": ["basic_search", "view_records"],
+            "basic": ["basic_search", "view_records", "export_csv", "advanced_search"],
+            "pro": [
+                "basic_search",
+                "view_records",
+                "export_csv",
+                "advanced_search",
+                "export_excel",
+                "bulk_operations",
+                "api_access",
+            ],
+            "enterprise": [
+                "basic_search",
+                "view_records",
+                "export_csv",
+                "advanced_search",
+                "export_excel",
+                "bulk_operations",
+                "api_access",
+                "unlimited_exports",
+                "priority_support",
+                "custom_integrations",
+            ],
         }
-        tier = self.subscription_tier or 'free'
-        allowed_features = tier_features.get(tier, tier_features['free'])
+        tier = self.subscription_tier or "free"
+        allowed_features = tier_features.get(tier, tier_features["free"])
         return feature in allowed_features
 
     def to_dict(self, include_sensitive: bool = False) -> dict:
@@ -142,30 +164,36 @@ class User:
             Dictionary representation of user
         """
         result = {
-            'id': self.id,
-            'username': self.username,
-            'email': self.email,
-            'full_name': self.full_name,
-            'disabled': self.disabled,
-            'email_verified': self.email_verified,
-            'roles': self.roles,
-            'subscription_tier': self.subscription_tier,
-            'subscription_expires': self.subscription_expires.isoformat() if self.subscription_expires else None,
-            'stripe_customer_id': self.stripe_customer_id,
-            'last_login': self.last_login.isoformat() if self.last_login else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "full_name": self.full_name,
+            "disabled": self.disabled,
+            "email_verified": self.email_verified,
+            "roles": self.roles,
+            "subscription_tier": self.subscription_tier,
+            "subscription_expires": (
+                self.subscription_expires.isoformat()
+                if self.subscription_expires
+                else None
+            ),
+            "stripe_customer_id": self.stripe_customer_id,
+            "last_login": self.last_login.isoformat() if self.last_login else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
         if include_sensitive:
-            result.update({
-                'email_verification_token': self.email_verification_token,
-                'password_reset_token': self.password_reset_token,
-                'login_count': self.login_count,
-                'failed_login_count': self.failed_login_count,
-                'api_calls_today': self.api_calls_today,
-                'exports_this_month': self.exports_this_month,
-                'stripe_subscription_id': self.stripe_subscription_id,
-            })
+            result.update(
+                {
+                    "email_verification_token": self.email_verification_token,
+                    "password_reset_token": self.password_reset_token,
+                    "login_count": self.login_count,
+                    "failed_login_count": self.failed_login_count,
+                    "api_calls_today": self.api_calls_today,
+                    "exports_this_month": self.exports_this_month,
+                    "stripe_subscription_id": self.stripe_subscription_id,
+                }
+            )
 
         return result

@@ -25,20 +25,21 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 from .base import (
-    CountyAssessorBase,
-    PropertyType,
-    PropertyClass,
-    ExemptionType,
-    PropertyAssessment,
-    PropertyCharacteristics,
-    TaxAssessment,
-    OwnershipRecord,
-    SaleRecord,
     AssessorSearchCriteria,
     AssessorSearchResult,
+    CountyAssessorBase,
+    ExemptionType,
+    OwnershipRecord,
+    PropertyAssessment,
+    PropertyCharacteristics,
+    PropertyClass,
+    PropertyType,
+    SaleRecord,
+    TaxAssessment,
 )
 
 logger = logging.getLogger(__name__)
@@ -220,10 +221,11 @@ class KingCountyAssessor(CountyAssessorBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> AssessorSearchResult:
         """Search for properties by address."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -267,18 +269,13 @@ class KingCountyAssessor(CountyAssessorBase):
             page_size=max_results,
             has_more=json_response.get("hasMore", False),
             search_criteria=AssessorSearchCriteria(
-                street_address=street_address,
-                city=city,
-                zip_code=zip_code
+                street_address=street_address, city=city, zip_code=zip_code
             ),
             search_time_ms=search_time,
             source_system=self.SYSTEM_NAME,
         )
 
-    async def search_by_parcel_id(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def search_by_parcel_id(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """Search for a property by parcel number."""
         formatted_parcel = self._format_parcel(parcel_id)
 
@@ -288,8 +285,7 @@ class KingCountyAssessor(CountyAssessorBase):
 
         try:
             json_response = await self._fetch_json(
-                self.DETAIL_URL,
-                params={"parcel": formatted_parcel}
+                self.DETAIL_URL, params={"parcel": formatted_parcel}
             )
 
             if json_response.get("property"):
@@ -301,12 +297,11 @@ class KingCountyAssessor(CountyAssessorBase):
         return None
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> AssessorSearchResult:
         """Search for properties by owner name."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -349,23 +344,18 @@ class KingCountyAssessor(CountyAssessorBase):
             source_system=self.SYSTEM_NAME,
         )
 
-    async def get_property_detail(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def get_property_detail(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """Get detailed property information."""
         formatted_parcel = self._format_parcel(parcel_id)
 
         try:
             json_response = await self._fetch_json(
-                self.DETAIL_URL,
-                params={"parcel": formatted_parcel, "include": "all"}
+                self.DETAIL_URL, params={"parcel": formatted_parcel, "include": "all"}
             )
 
             if json_response.get("property"):
                 return self._parse_property_detail(
-                    json_response["property"],
-                    include_history=True
+                    json_response["property"], include_history=True
                 )
 
         except Exception as e:
@@ -373,7 +363,9 @@ class KingCountyAssessor(CountyAssessorBase):
 
         return None
 
-    def _parse_search_result(self, data: Dict[str, Any]) -> Optional[PropertyAssessment]:
+    def _parse_search_result(
+        self, data: Dict[str, Any]
+    ) -> Optional[PropertyAssessment]:
         """Parse a search result into PropertyAssessment."""
         parcel = data.get("parcel", data.get("parcelNumber", ""))
         if not parcel:
@@ -412,9 +404,7 @@ class KingCountyAssessor(CountyAssessorBase):
         )
 
     def _parse_property_detail(
-        self,
-        data: Dict[str, Any],
-        include_history: bool = False
+        self, data: Dict[str, Any], include_history: bool = False
     ) -> PropertyAssessment:
         """Parse detailed property data."""
         parcel = data.get("parcel", data.get("parcelNumber", ""))
@@ -423,22 +413,26 @@ class KingCountyAssessor(CountyAssessorBase):
         # Parse characteristics - King County has detailed building data
         chars_data = data.get("residential", data.get("building", {}))
         characteristics = PropertyCharacteristics(
-            year_built=self._parse_int(chars_data.get("yrBuilt", chars_data.get("yearBuilt"))),
+            year_built=self._parse_int(
+                chars_data.get("yrBuilt", chars_data.get("yearBuilt"))
+            ),
             effective_year=self._parse_int(chars_data.get("yrRenovated")),
-            building_sqft=self._parse_int(chars_data.get("sqFtTotLiving", chars_data.get("buildingSqft"))),
+            building_sqft=self._parse_int(
+                chars_data.get("sqFtTotLiving", chars_data.get("buildingSqft"))
+            ),
             living_sqft=self._parse_int(chars_data.get("sqFtTotLiving")),
-            gross_sqft=self._parse_int(chars_data.get("sqFtTotBasement", 0)) +
-                       self._parse_int(chars_data.get("sqFtTotLiving", 0)),
+            gross_sqft=self._parse_int(chars_data.get("sqFtTotBasement", 0))
+            + self._parse_int(chars_data.get("sqFtTotLiving", 0)),
             bedrooms=self._parse_int(chars_data.get("bedrooms")),
-            bathrooms=self._parse_float(chars_data.get("bathFullCount", 0)) +
-                      (self._parse_float(chars_data.get("bathHalfCount", 0)) * 0.5),
+            bathrooms=self._parse_float(chars_data.get("bathFullCount", 0))
+            + (self._parse_float(chars_data.get("bathHalfCount", 0)) * 0.5),
             full_baths=self._parse_int(chars_data.get("bathFullCount")),
             half_baths=self._parse_int(chars_data.get("bathHalfCount")),
             stories=self._parse_float(chars_data.get("stories")),
             lot_sqft=self._parse_int(data.get("sqFtLot", chars_data.get("lotSqft"))),
             lot_acres=self._parse_float(data.get("acres")),
-            garage_sqft=self._parse_int(chars_data.get("sqFtGarageAttached", 0)) +
-                        self._parse_int(chars_data.get("sqFtGarageDetached", 0)),
+            garage_sqft=self._parse_int(chars_data.get("sqFtGarageAttached", 0))
+            + self._parse_int(chars_data.get("sqFtGarageDetached", 0)),
             basement_sqft=self._parse_int(chars_data.get("sqFtTotBasement")),
             basement_finished_sqft=self._parse_int(chars_data.get("sqFtFinBasement")),
             fireplace_count=self._parse_int(chars_data.get("fireplaces")),
@@ -468,35 +462,54 @@ class KingCountyAssessor(CountyAssessorBase):
         if include_history:
             for assessment in data.get("valueHistory", []):
                 exemptions = self._parse_exemptions(assessment.get("exemptions"))
-                assessment_history.append(TaxAssessment(
-                    tax_year=self._parse_int(assessment.get("year")) or 0,
-                    assessed_value_land=self._parse_decimal(assessment.get("landValue")),
-                    assessed_value_improvements=self._parse_decimal(
-                        assessment.get("improvementValue")
-                    ),
-                    assessed_value_total=self._parse_decimal(assessment.get("totalValue")),
-                    market_value_total=self._parse_decimal(assessment.get("appraisedValue")),
-                    exemptions=exemptions,
-                    exemption_amount=self._parse_decimal(assessment.get("exemptionAmount")),
-                    taxable_value=self._parse_decimal(assessment.get("taxableValue")),
-                ))
+                assessment_history.append(
+                    TaxAssessment(
+                        tax_year=self._parse_int(assessment.get("year")) or 0,
+                        assessed_value_land=self._parse_decimal(
+                            assessment.get("landValue")
+                        ),
+                        assessed_value_improvements=self._parse_decimal(
+                            assessment.get("improvementValue")
+                        ),
+                        assessed_value_total=self._parse_decimal(
+                            assessment.get("totalValue")
+                        ),
+                        market_value_total=self._parse_decimal(
+                            assessment.get("appraisedValue")
+                        ),
+                        exemptions=exemptions,
+                        exemption_amount=self._parse_decimal(
+                            assessment.get("exemptionAmount")
+                        ),
+                        taxable_value=self._parse_decimal(
+                            assessment.get("taxableValue")
+                        ),
+                    )
+                )
 
         # Parse sales history
         sales_history = []
         if include_history:
             for sale in data.get("salesHistory", data.get("sales", [])):
-                sale_date = self._parse_date(sale.get("saleDate", sale.get("documentDate")))
+                sale_date = self._parse_date(
+                    sale.get("saleDate", sale.get("documentDate"))
+                )
                 if sale_date:
-                    sales_history.append(SaleRecord(
-                        sale_date=sale_date,
-                        sale_price=self._parse_decimal(sale.get("salePrice")) or Decimal(0),
-                        buyer_name=sale.get("grantee", sale.get("buyerName")),
-                        seller_name=sale.get("grantor", sale.get("sellerName")),
-                        document_number=sale.get("exciseTaxNbr", sale.get("documentNumber")),
-                        document_type=sale.get("saleInstrument"),
-                        sale_type=sale.get("saleReason"),
-                        is_valid_sale=sale.get("principalUse", "Y") == "Y",
-                    ))
+                    sales_history.append(
+                        SaleRecord(
+                            sale_date=sale_date,
+                            sale_price=self._parse_decimal(sale.get("salePrice"))
+                            or Decimal(0),
+                            buyer_name=sale.get("grantee", sale.get("buyerName")),
+                            seller_name=sale.get("grantor", sale.get("sellerName")),
+                            document_number=sale.get(
+                                "exciseTaxNbr", sale.get("documentNumber")
+                            ),
+                            document_type=sale.get("saleInstrument"),
+                            sale_type=sale.get("saleReason"),
+                            is_valid_sale=sale.get("principalUse", "Y") == "Y",
+                        )
+                    )
 
         return PropertyAssessment(
             parcel_id=formatted_parcel,
@@ -532,11 +545,14 @@ class KingCountyAssessor(CountyAssessorBase):
 
 # Synchronous convenience functions
 
+
 def get_king_county_property(parcel_number: str) -> Optional[PropertyAssessment]:
     """Get King County property by parcel number."""
+
     async def _get():
         async with KingCountyAssessor() as assessor:
             return await assessor.get_property_detail(parcel_number)
+
     return asyncio.run(_get())
 
 
@@ -544,23 +560,26 @@ def search_king_county_by_address(
     address: str,
     city: Optional[str] = None,
     zip_code: Optional[str] = None,
-    max_results: int = 100
+    max_results: int = 100,
 ) -> AssessorSearchResult:
     """Search King County properties by address."""
+
     async def _search():
         async with KingCountyAssessor() as assessor:
             return await assessor.search_by_address(
                 address, city=city, zip_code=zip_code, max_results=max_results
             )
+
     return asyncio.run(_search())
 
 
 def search_king_county_by_owner(
-    owner_name: str,
-    max_results: int = 100
+    owner_name: str, max_results: int = 100
 ) -> AssessorSearchResult:
     """Search King County properties by owner name."""
+
     async def _search():
         async with KingCountyAssessor() as assessor:
             return await assessor.search_by_owner(owner_name, max_results=max_results)
+
     return asyncio.run(_search())

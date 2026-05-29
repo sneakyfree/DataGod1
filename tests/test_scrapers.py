@@ -2,12 +2,15 @@
 Tests for DataGod scrapers
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
 from datetime import datetime
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 
-@pytest.mark.skip(reason="TexasCountyAPI is missing abstract method implementations - needs refactoring")
+@pytest.mark.skip(
+    reason="TexasCountyAPI is missing abstract method implementations - needs refactoring"
+)
 class TestTexasCountyAPI:
     """Tests for Texas County API integration"""
 
@@ -42,7 +45,7 @@ class TestTexasCountyAPI:
             "situs_address": "123 Main St",
             "city": "Houston",
             "zip_code": "77001",
-            "market_value": 350000
+            "market_value": 350000,
         }
 
         result = api._map_property_to_standard(raw_data)
@@ -65,7 +68,7 @@ class TestTexasCountyAPI:
             "grantor": "Jane Doe",
             "grantee": "John Smith",
             "consideration": 450000,
-            "recording_date": "2024-01-15"
+            "recording_date": "2024-01-15",
         }
 
         result = api._map_deed_to_standard(raw_data)
@@ -100,7 +103,7 @@ class TestCaliforniaCountyAPI:
             "apn": "1234-567-890",
             "owner_name": "Test Owner",
             "situs_address": "456 Oak Ave",
-            "assessed_value": 750000
+            "assessed_value": 750000,
         }
 
         result = api._map_property_to_standard(raw_data)
@@ -139,7 +142,7 @@ class TestNewYorkCountyAPI:
             "owner_name": "NYC Owner",
             "address": "100 Broadway",
             "market_value": 5000000,
-            "borough": "Manhattan"
+            "borough": "Manhattan",
         }
 
         result = api._map_property_to_standard(raw_data)
@@ -222,7 +225,11 @@ class TestScraperRegistry:
 
     def test_get_scraper_for_jurisdiction(self):
         """Test getting scraper by jurisdiction"""
-        from datagod.scrapers import get_scraper_for_jurisdiction, TexasCountyAPI, HarrisCountyAPI
+        from datagod.scrapers import (
+            HarrisCountyAPI,
+            TexasCountyAPI,
+            get_scraper_for_jurisdiction,
+        )
 
         # Test default Texas scraper
         scraper_class = get_scraper_for_jurisdiction("TX")
@@ -283,7 +290,7 @@ class TestFloridaCountyAPI:
         api = FloridaMiamiDadeAPI(jurisdiction_id=1, config=config)
 
         # Check it has the expected available_features
-        assert hasattr(api, 'available_features')
+        assert hasattr(api, "available_features")
         assert isinstance(api.available_features, list)
 
 

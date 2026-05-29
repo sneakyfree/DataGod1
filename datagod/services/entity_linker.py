@@ -9,18 +9,19 @@ This service provides:
 - Confidence scoring for entity matches
 """
 
-import re
 import logging
-from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime
+import re
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 
 class EntityType(Enum):
     """Types of entities that can be linked"""
+
     PERSON = "person"
     COMPANY = "company"
     PROPERTY = "property"
@@ -30,6 +31,7 @@ class EntityType(Enum):
 @dataclass
 class Entity:
     """Represents an entity that can be linked across data sources"""
+
     entity_id: str
     entity_type: EntityType
     primary_name: str
@@ -44,22 +46,23 @@ class Entity:
     def to_dict(self) -> Dict[str, Any]:
         """Convert entity to dictionary"""
         return {
-            'entity_id': self.entity_id,
-            'entity_type': self.entity_type.value,
-            'primary_name': self.primary_name,
-            'aliases': self.aliases,
-            'identifiers': self.identifiers,
-            'addresses': self.addresses,
-            'source_records': self.source_records,
-            'confidence_score': self.confidence_score,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
+            "entity_id": self.entity_id,
+            "entity_type": self.entity_type.value,
+            "primary_name": self.primary_name,
+            "aliases": self.aliases,
+            "identifiers": self.identifiers,
+            "addresses": self.addresses,
+            "source_records": self.source_records,
+            "confidence_score": self.confidence_score,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
         }
 
 
 @dataclass
 class EntityMatch:
     """Represents a potential match between entities"""
+
     entity1_id: str
     entity2_id: str
     confidence: float
@@ -85,27 +88,40 @@ class EntityLinker:
 
     # Address abbreviation mappings for normalization
     ADDRESS_ABBREVIATIONS = {
-        'street': 'st', 'st.': 'st',
-        'avenue': 'ave', 'ave.': 'ave',
-        'boulevard': 'blvd', 'blvd.': 'blvd',
-        'drive': 'dr', 'dr.': 'dr',
-        'road': 'rd', 'rd.': 'rd',
-        'lane': 'ln', 'ln.': 'ln',
-        'court': 'ct', 'ct.': 'ct',
-        'circle': 'cir', 'cir.': 'cir',
-        'place': 'pl', 'pl.': 'pl',
-        'north': 'n', 'n.': 'n',
-        'south': 's', 's.': 's',
-        'east': 'e', 'e.': 'e',
-        'west': 'w', 'w.': 'w',
-        'apartment': 'apt', 'apt.': 'apt',
-        'suite': 'ste', 'ste.': 'ste',
-        'unit': 'unit',
+        "street": "st",
+        "st.": "st",
+        "avenue": "ave",
+        "ave.": "ave",
+        "boulevard": "blvd",
+        "blvd.": "blvd",
+        "drive": "dr",
+        "dr.": "dr",
+        "road": "rd",
+        "rd.": "rd",
+        "lane": "ln",
+        "ln.": "ln",
+        "court": "ct",
+        "ct.": "ct",
+        "circle": "cir",
+        "cir.": "cir",
+        "place": "pl",
+        "pl.": "pl",
+        "north": "n",
+        "n.": "n",
+        "south": "s",
+        "s.": "s",
+        "east": "e",
+        "e.": "e",
+        "west": "w",
+        "w.": "w",
+        "apartment": "apt",
+        "apt.": "apt",
+        "suite": "ste",
+        "ste.": "ste",
+        "unit": "unit",
     }
 
-    def __init__(self,
-                 merge_threshold: float = None,
-                 review_threshold: float = None):
+    def __init__(self, merge_threshold: float = None, review_threshold: float = None):
         """
         Initialize the EntityLinker.
 
@@ -119,10 +135,17 @@ class EntityLinker:
         # Cache for entity lookups
         self.entity_cache: Dict[str, Entity] = {}
 
-        logger.info(f"EntityLinker initialized with thresholds: merge={self.merge_threshold}, review={self.review_threshold}")
+        logger.info(
+            f"EntityLinker initialized with thresholds: merge={self.merge_threshold}, review={self.review_threshold}"
+        )
 
-    def link_person(self, name: str, dob: str = None, address: str = None,
-                   identifiers: Dict[str, str] = None) -> Tuple[Optional[Entity], List[EntityMatch]]:
+    def link_person(
+        self,
+        name: str,
+        dob: str = None,
+        address: str = None,
+        identifiers: Dict[str, str] = None,
+    ) -> Tuple[Optional[Entity], List[EntityMatch]]:
         """
         Link a person entity to existing entities.
 
@@ -145,19 +168,20 @@ class EntityLinker:
                 continue
 
             confidence, factors = self._calculate_person_match(
-                normalized_name, dob, address, identifiers,
-                entity
+                normalized_name, dob, address, identifiers, entity
             )
 
             if confidence >= self.review_threshold:
-                action = 'merge' if confidence >= self.merge_threshold else 'review'
-                matches.append(EntityMatch(
-                    entity1_id='new',
-                    entity2_id=entity_id,
-                    confidence=confidence,
-                    match_factors=factors,
-                    recommended_action=action
-                ))
+                action = "merge" if confidence >= self.merge_threshold else "review"
+                matches.append(
+                    EntityMatch(
+                        entity1_id="new",
+                        entity2_id=entity_id,
+                        confidence=confidence,
+                        match_factors=factors,
+                        recommended_action=action,
+                    )
+                )
 
         # Sort by confidence
         matches.sort(key=lambda m: m.confidence, reverse=True)
@@ -168,8 +192,9 @@ class EntityLinker:
 
         return None, matches
 
-    def link_company(self, name: str, ein: str = None, state: str = None,
-                    address: str = None) -> Tuple[Optional[Entity], List[EntityMatch]]:
+    def link_company(
+        self, name: str, ein: str = None, state: str = None, address: str = None
+    ) -> Tuple[Optional[Entity], List[EntityMatch]]:
         """
         Link a company entity to existing entities.
 
@@ -194,14 +219,16 @@ class EntityLinker:
             )
 
             if confidence >= self.review_threshold:
-                action = 'merge' if confidence >= self.merge_threshold else 'review'
-                matches.append(EntityMatch(
-                    entity1_id='new',
-                    entity2_id=entity_id,
-                    confidence=confidence,
-                    match_factors=factors,
-                    recommended_action=action
-                ))
+                action = "merge" if confidence >= self.merge_threshold else "review"
+                matches.append(
+                    EntityMatch(
+                        entity1_id="new",
+                        entity2_id=entity_id,
+                        confidence=confidence,
+                        match_factors=factors,
+                        recommended_action=action,
+                    )
+                )
 
         matches.sort(key=lambda m: m.confidence, reverse=True)
 
@@ -210,8 +237,9 @@ class EntityLinker:
 
         return None, matches
 
-    def link_property(self, address: str, parcel_id: str = None,
-                     legal_description: str = None) -> Tuple[Optional[Entity], List[EntityMatch]]:
+    def link_property(
+        self, address: str, parcel_id: str = None, legal_description: str = None
+    ) -> Tuple[Optional[Entity], List[EntityMatch]]:
         """
         Link a property entity to existing entities.
 
@@ -235,14 +263,16 @@ class EntityLinker:
             )
 
             if confidence >= self.review_threshold:
-                action = 'merge' if confidence >= self.merge_threshold else 'review'
-                matches.append(EntityMatch(
-                    entity1_id='new',
-                    entity2_id=entity_id,
-                    confidence=confidence,
-                    match_factors=factors,
-                    recommended_action=action
-                ))
+                action = "merge" if confidence >= self.merge_threshold else "review"
+                matches.append(
+                    EntityMatch(
+                        entity1_id="new",
+                        entity2_id=entity_id,
+                        confidence=confidence,
+                        match_factors=factors,
+                        recommended_action=action,
+                    )
+                )
 
         matches.sort(key=lambda m: m.confidence, reverse=True)
 
@@ -251,9 +281,14 @@ class EntityLinker:
 
         return None, matches
 
-    def _calculate_person_match(self, name: str, dob: str, address: str,
-                               identifiers: Dict[str, str],
-                               entity: Entity) -> Tuple[float, Dict[str, float]]:
+    def _calculate_person_match(
+        self,
+        name: str,
+        dob: str,
+        address: str,
+        identifiers: Dict[str, str],
+        entity: Entity,
+    ) -> Tuple[float, Dict[str, float]]:
         """Calculate match confidence for a person."""
         factors = {}
 
@@ -262,23 +297,23 @@ class EntityLinker:
         for alias in entity.aliases:
             alias_score = self._calculate_name_similarity(name, alias)
             name_score = max(name_score, alias_score)
-        factors['name'] = name_score
+        factors["name"] = name_score
 
         # DOB matching (weight: 0.25)
         dob_score = 0.0
-        if dob and 'dob' in entity.identifiers:
-            dob_score = 1.0 if dob == entity.identifiers['dob'] else 0.0
-        factors['dob'] = dob_score
+        if dob and "dob" in entity.identifiers:
+            dob_score = 1.0 if dob == entity.identifiers["dob"] else 0.0
+        factors["dob"] = dob_score
 
         # Address matching (weight: 0.2)
         address_score = 0.0
         if address and entity.addresses:
             normalized_address = self._normalize_address(address)
             for ent_address in entity.addresses:
-                addr_str = ent_address.get('normalized', '')
+                addr_str = ent_address.get("normalized", "")
                 score = self._calculate_address_similarity(normalized_address, addr_str)
                 address_score = max(address_score, score)
-        factors['address'] = address_score
+        factors["address"] = address_score
 
         # Identifier matching (weight: 0.15)
         id_score = 0.0
@@ -287,18 +322,19 @@ class EntityLinker:
                 if key in entity.identifiers and entity.identifiers[key] == value:
                     id_score = 1.0
                     break
-        factors['identifiers'] = id_score
+        factors["identifiers"] = id_score
 
         # Calculate weighted score
-        weights = {'name': 0.4, 'dob': 0.25, 'address': 0.2, 'identifiers': 0.15}
-        total_weight = sum(weights[k] for k in factors if factors[k] > 0 or k == 'name')
+        weights = {"name": 0.4, "dob": 0.25, "address": 0.2, "identifiers": 0.15}
+        total_weight = sum(weights[k] for k in factors if factors[k] > 0 or k == "name")
 
         confidence = sum(factors[k] * weights[k] for k in factors) / total_weight
 
         return confidence, factors
 
-    def _calculate_company_match(self, name: str, ein: str, state: str,
-                                address: str, entity: Entity) -> Tuple[float, Dict[str, float]]:
+    def _calculate_company_match(
+        self, name: str, ein: str, state: str, address: str, entity: Entity
+    ) -> Tuple[float, Dict[str, float]]:
         """Calculate match confidence for a company."""
         factors = {}
 
@@ -310,83 +346,87 @@ class EntityLinker:
             normalized_alias = self._normalize_company_name(alias)
             alias_score = self._jaro_winkler(normalized_input, normalized_alias)
             name_score = max(name_score, alias_score)
-        factors['name'] = name_score
+        factors["name"] = name_score
 
         # EIN matching (weight: 0.35)
         ein_score = 0.0
-        if ein and 'ein' in entity.identifiers:
-            ein_score = 1.0 if ein == entity.identifiers['ein'] else 0.0
-        factors['ein'] = ein_score
+        if ein and "ein" in entity.identifiers:
+            ein_score = 1.0 if ein == entity.identifiers["ein"] else 0.0
+        factors["ein"] = ein_score
 
         # State matching (weight: 0.1)
         state_score = 0.0
-        if state and 'state' in entity.identifiers:
-            state_score = 1.0 if state.upper() == entity.identifiers['state'].upper() else 0.0
-        factors['state'] = state_score
+        if state and "state" in entity.identifiers:
+            state_score = (
+                1.0 if state.upper() == entity.identifiers["state"].upper() else 0.0
+            )
+        factors["state"] = state_score
 
         # Address matching (weight: 0.2)
         address_score = 0.0
         if address and entity.addresses:
             normalized_address = self._normalize_address(address)
             for ent_address in entity.addresses:
-                addr_str = ent_address.get('normalized', '')
+                addr_str = ent_address.get("normalized", "")
                 score = self._calculate_address_similarity(normalized_address, addr_str)
                 address_score = max(address_score, score)
-        factors['address'] = address_score
+        factors["address"] = address_score
 
         # Calculate weighted score - only count weights for provided data
-        weights = {'name': 0.35, 'ein': 0.35, 'state': 0.1, 'address': 0.2}
+        weights = {"name": 0.35, "ein": 0.35, "state": 0.1, "address": 0.2}
 
         # Determine which factors were actually provided (not just empty/missing)
-        provided_factors = ['name']  # Name is always provided
+        provided_factors = ["name"]  # Name is always provided
         if ein:
-            provided_factors.append('ein')
+            provided_factors.append("ein")
         if state:
-            provided_factors.append('state')
+            provided_factors.append("state")
         if address:
-            provided_factors.append('address')
+            provided_factors.append("address")
 
         total_weight = sum(weights[k] for k in provided_factors)
         if total_weight == 0:
-            total_weight = weights['name']
+            total_weight = weights["name"]
 
-        confidence = sum(factors[k] * weights[k] for k in provided_factors) / total_weight
+        confidence = (
+            sum(factors[k] * weights[k] for k in provided_factors) / total_weight
+        )
 
         return confidence, factors
 
-    def _calculate_property_match(self, address: str, parcel_id: str,
-                                 legal_description: str,
-                                 entity: Entity) -> Tuple[float, Dict[str, float]]:
+    def _calculate_property_match(
+        self, address: str, parcel_id: str, legal_description: str, entity: Entity
+    ) -> Tuple[float, Dict[str, float]]:
         """Calculate match confidence for a property."""
         factors = {}
 
         # Parcel ID matching - unique identifier, if it matches exactly, very high confidence
         parcel_score = 0.0
         parcel_exact_match = False
-        if parcel_id and 'parcel_id' in entity.identifiers:
+        if parcel_id and "parcel_id" in entity.identifiers:
             normalized_parcel = self._normalize_parcel_id(parcel_id)
-            entity_parcel = self._normalize_parcel_id(entity.identifiers['parcel_id'])
+            entity_parcel = self._normalize_parcel_id(entity.identifiers["parcel_id"])
             if normalized_parcel == entity_parcel:
                 parcel_score = 1.0
                 parcel_exact_match = True
-        factors['parcel_id'] = parcel_score
+        factors["parcel_id"] = parcel_score
 
         # Address matching
         address_score = 0.0
         if address and entity.addresses:
             for ent_address in entity.addresses:
-                addr_str = ent_address.get('normalized', '')
+                addr_str = ent_address.get("normalized", "")
                 score = self._calculate_address_similarity(address, addr_str)
                 address_score = max(address_score, score)
-        factors['address'] = address_score
+        factors["address"] = address_score
 
         # Legal description matching
         legal_score = 0.0
-        if legal_description and 'legal_description' in entity.identifiers:
+        if legal_description and "legal_description" in entity.identifiers:
             legal_score = self._calculate_legal_description_similarity(
-                legal_description, entity.identifiers['legal_description']
+                legal_description, entity.identifiers["legal_description"]
             )
-        factors['legal_description'] = legal_score
+        factors["legal_description"] = legal_score
 
         # Parcel ID is a unique identifier - if it matches exactly, confidence is very high
         # regardless of other factors
@@ -394,23 +434,25 @@ class EntityLinker:
             return 0.95, factors
 
         # Calculate weighted score - only count weights for provided data
-        weights = {'parcel_id': 0.5, 'address': 0.35, 'legal_description': 0.15}
+        weights = {"parcel_id": 0.5, "address": 0.35, "legal_description": 0.15}
 
         # Determine which factors were actually provided
         provided_factors = []
         if parcel_id:
-            provided_factors.append('parcel_id')
+            provided_factors.append("parcel_id")
         if address:
-            provided_factors.append('address')
+            provided_factors.append("address")
         if legal_description:
-            provided_factors.append('legal_description')
+            provided_factors.append("legal_description")
 
         # At least one factor must be provided
         if not provided_factors:
             return 0.0, factors
 
         total_weight = sum(weights[k] for k in provided_factors)
-        confidence = sum(factors[k] * weights[k] for k in provided_factors) / total_weight
+        confidence = (
+            sum(factors[k] * weights[k] for k in provided_factors) / total_weight
+        )
 
         return confidence, factors
 
@@ -423,13 +465,13 @@ class EntityLinker:
         name = name.lower().strip()
 
         # Remove common suffixes and prefixes
-        name = re.sub(r'\b(jr|sr|ii|iii|iv|mr|mrs|ms|dr|phd|md|esq)\.?\b', '', name)
+        name = re.sub(r"\b(jr|sr|ii|iii|iv|mr|mrs|ms|dr|phd|md|esq)\.?\b", "", name)
 
         # Remove punctuation
-        name = re.sub(r'[^\w\s]', '', name)
+        name = re.sub(r"[^\w\s]", "", name)
 
         # Collapse whitespace
-        name = ' '.join(name.split())
+        name = " ".join(name.split())
 
         return name
 
@@ -442,17 +484,38 @@ class EntityLinker:
         name = name.lower().strip()
 
         # Remove common business suffixes
-        suffixes = ['llc', 'l.l.c.', 'inc', 'inc.', 'incorporated', 'corp', 'corp.',
-                   'corporation', 'co', 'co.', 'company', 'ltd', 'ltd.', 'limited',
-                   'lp', 'l.p.', 'llp', 'l.l.p.', 'pllc', 'p.l.l.c.', 'pc', 'p.c.']
+        suffixes = [
+            "llc",
+            "l.l.c.",
+            "inc",
+            "inc.",
+            "incorporated",
+            "corp",
+            "corp.",
+            "corporation",
+            "co",
+            "co.",
+            "company",
+            "ltd",
+            "ltd.",
+            "limited",
+            "lp",
+            "l.p.",
+            "llp",
+            "l.l.p.",
+            "pllc",
+            "p.l.l.c.",
+            "pc",
+            "p.c.",
+        ]
         for suffix in suffixes:
-            name = re.sub(rf'\b{re.escape(suffix)}\b', '', name)
+            name = re.sub(rf"\b{re.escape(suffix)}\b", "", name)
 
         # Remove punctuation
-        name = re.sub(r'[^\w\s]', '', name)
+        name = re.sub(r"[^\w\s]", "", name)
 
         # Collapse whitespace
-        name = ' '.join(name.split())
+        name = " ".join(name.split())
 
         return name
 
@@ -466,13 +529,13 @@ class EntityLinker:
 
         # Apply abbreviations
         for full, abbrev in self.ADDRESS_ABBREVIATIONS.items():
-            address = re.sub(rf'\b{re.escape(full)}\b', abbrev, address)
+            address = re.sub(rf"\b{re.escape(full)}\b", abbrev, address)
 
         # Remove punctuation except hyphen
-        address = re.sub(r'[^\w\s-]', '', address)
+        address = re.sub(r"[^\w\s-]", "", address)
 
         # Collapse whitespace
-        address = ' '.join(address.split())
+        address = " ".join(address.split())
 
         return address
 
@@ -482,7 +545,7 @@ class EntityLinker:
             return ""
 
         # Remove all non-alphanumeric characters
-        return re.sub(r'[^a-zA-Z0-9]', '', parcel_id.upper())
+        return re.sub(r"[^a-zA-Z0-9]", "", parcel_id.upper())
 
     def _calculate_name_similarity(self, name1: str, name2: str) -> float:
         """Calculate similarity between two names using Jaro-Winkler."""
@@ -522,7 +585,9 @@ class EntityLinker:
         # Combine both metrics
         return 0.6 * jaccard + 0.4 * jaro
 
-    def _calculate_legal_description_similarity(self, legal1: str, legal2: str) -> float:
+    def _calculate_legal_description_similarity(
+        self, legal1: str, legal2: str
+    ) -> float:
         """Calculate similarity between legal descriptions."""
         if not legal1 or not legal2:
             return 0.0
@@ -532,7 +597,7 @@ class EntityLinker:
         legal2 = legal2.lower().strip()
 
         # Extract key elements (lot, block, section, etc.)
-        pattern = r'(lot|block|section|township|range|subdivision)\s*[\d\w]+'
+        pattern = r"(lot|block|section|township|range|subdivision)\s*[\d\w]+"
 
         elements1 = set(re.findall(pattern, legal1))
         elements2 = set(re.findall(pattern, legal2))
@@ -545,7 +610,9 @@ class EntityLinker:
 
         return len(intersection) / len(union) if union else 0.0
 
-    def _jaro_winkler(self, s1: str, s2: str, winkler_prefix_weight: float = 0.1) -> float:
+    def _jaro_winkler(
+        self, s1: str, s2: str, winkler_prefix_weight: float = 0.1
+    ) -> float:
         """Calculate Jaro-Winkler similarity between two strings."""
         if s1 == s2:
             return 1.0
@@ -595,7 +662,9 @@ class EntityLinker:
         transpositions //= 2
 
         # Calculate Jaro similarity
-        jaro = (matches / len1 + matches / len2 + (matches - transpositions) / matches) / 3
+        jaro = (
+            matches / len1 + matches / len2 + (matches - transpositions) / matches
+        ) / 3
 
         # Apply Winkler prefix bonus
         prefix = 0
@@ -672,8 +741,8 @@ class EntityLinker:
             type_counts[entity_type] = type_counts.get(entity_type, 0) + 1
 
         return {
-            'total_entities': len(self.entity_cache),
-            'entities_by_type': type_counts,
-            'merge_threshold': self.merge_threshold,
-            'review_threshold': self.review_threshold,
+            "total_entities": len(self.entity_cache),
+            "entities_by_type": type_counts,
+            "merge_threshold": self.merge_threshold,
+            "review_threshold": self.review_threshold,
         }

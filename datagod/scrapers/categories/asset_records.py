@@ -17,18 +17,20 @@ Free Sources:
 """
 
 import asyncio
-import aiohttp
-from dataclasses import dataclass, field
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List, Dict, Any
 import logging
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
 
 class AircraftCategory(Enum):
     """FAA aircraft categories"""
+
     LAND = "Land"
     SEA = "Sea"
     AMPHIBIAN = "Amphibian"
@@ -42,6 +44,7 @@ class AircraftCategory(Enum):
 
 class AircraftType(Enum):
     """FAA aircraft type classifications"""
+
     FIXED_WING_SINGLE = "Fixed Wing Single-Engine"
     FIXED_WING_MULTI = "Fixed Wing Multi-Engine"
     ROTORCRAFT = "Rotorcraft"
@@ -53,6 +56,7 @@ class AircraftType(Enum):
 
 class RegistrationStatus(Enum):
     """FAA registration status"""
+
     VALID = "Valid"
     EXPIRED = "Expired"
     CANCELLED = "Cancelled"
@@ -63,6 +67,7 @@ class RegistrationStatus(Enum):
 
 class VesselType(Enum):
     """USCG vessel types"""
+
     RECREATIONAL = "Recreational"
     COMMERCIAL = "Commercial"
     FISHING = "Fishing"
@@ -74,6 +79,7 @@ class VesselType(Enum):
 
 class VesselService(Enum):
     """USCG vessel service types"""
+
     COASTWISE = "Coastwise"
     FISHERY = "Fishery"
     RECREATIONAL = "Recreational"
@@ -83,6 +89,7 @@ class VesselService(Enum):
 @dataclass
 class Aircraft:
     """FAA aircraft registration record"""
+
     n_number: str  # Registration number (N12345)
     serial_number: Optional[str] = None
     manufacturer: Optional[str] = None
@@ -115,6 +122,7 @@ class Aircraft:
 @dataclass
 class Pilot:
     """FAA airmen certification record"""
+
     certificate_number: Optional[str] = None
     name: str = ""
     address: Optional[str] = None
@@ -133,6 +141,7 @@ class Pilot:
 @dataclass
 class Vessel:
     """USCG documented vessel record"""
+
     documentation_number: str
     vessel_name: Optional[str] = None
     hailing_port: Optional[str] = None
@@ -163,6 +172,7 @@ class Vessel:
 @dataclass
 class StateBoatRegistration:
     """State boat registration record"""
+
     registration_number: str
     state: str
     vessel_name: Optional[str] = None
@@ -218,7 +228,7 @@ class AssetRecordsScraper:
         "TX": "https://tpwd.texas.gov/fishboat/boat/owner/titles_and_registration/",
         "VA": "https://www.dgif.virginia.gov/boating/registration/",
         "WA": "https://www.dol.wa.gov/vehicles/vessel-registration.html",
-        "WI": "https://dnr.wisconsin.gov/topic/Boat/registration"
+        "WI": "https://dnr.wisconsin.gov/topic/Boat/registration",
     }
 
     def __init__(self):
@@ -229,9 +239,7 @@ class AssetRecordsScraper:
         """Get or create aiohttp session"""
         if self._session is None or self._session.closed:
             timeout = aiohttp.ClientTimeout(total=30)
-            headers = {
-                "User-Agent": "DataGod/1.0 (Public Records Research)"
-            }
+            headers = {"User-Agent": "DataGod/1.0 (Public Records Research)"}
             self._session = aiohttp.ClientSession(timeout=timeout, headers=headers)
         return self._session
 
@@ -256,10 +264,7 @@ class AssetRecordsScraper:
 
     # FAA Aircraft Registry
 
-    async def search_aircraft_by_n_number(
-        self,
-        n_number: str
-    ) -> Optional[Aircraft]:
+    async def search_aircraft_by_n_number(self, n_number: str) -> Optional[Aircraft]:
         """
         Search FAA registry by N-number
 
@@ -281,10 +286,7 @@ class AssetRecordsScraper:
         return None
 
     async def search_aircraft_by_owner(
-        self,
-        owner_name: str,
-        state: Optional[str] = None,
-        limit: int = 100
+        self, owner_name: str, state: Optional[str] = None, limit: int = 100
     ) -> List[Aircraft]:
         """
         Search FAA registry by owner name
@@ -305,10 +307,7 @@ class AssetRecordsScraper:
 
         return results
 
-    async def search_aircraft_by_serial(
-        self,
-        serial_number: str
-    ) -> Optional[Aircraft]:
+    async def search_aircraft_by_serial(self, serial_number: str) -> Optional[Aircraft]:
         """
         Search FAA registry by serial number
 
@@ -330,7 +329,7 @@ class AssetRecordsScraper:
         first_name: Optional[str] = None,
         state: Optional[str] = None,
         certificate_type: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[Pilot]:
         """
         Search FAA airmen certification database
@@ -356,10 +355,7 @@ class AssetRecordsScraper:
     # USCG Vessel Documentation
 
     async def search_vessels_by_name(
-        self,
-        vessel_name: str,
-        hailing_port: Optional[str] = None,
-        limit: int = 100
+        self, vessel_name: str, hailing_port: Optional[str] = None, limit: int = 100
     ) -> List[Vessel]:
         """
         Search USCG documented vessels by name
@@ -381,10 +377,7 @@ class AssetRecordsScraper:
         return results
 
     async def search_vessels_by_owner(
-        self,
-        owner_name: str,
-        state: Optional[str] = None,
-        limit: int = 100
+        self, owner_name: str, state: Optional[str] = None, limit: int = 100
     ) -> List[Vessel]:
         """
         Search USCG documented vessels by owner
@@ -404,8 +397,7 @@ class AssetRecordsScraper:
         return results
 
     async def get_vessel_by_documentation_number(
-        self,
-        doc_number: str
+        self, doc_number: str
     ) -> Optional[Vessel]:
         """
         Get vessel by USCG documentation number
@@ -440,7 +432,7 @@ class AssetRecordsScraper:
         registration_number: Optional[str] = None,
         owner_name: Optional[str] = None,
         hull_id: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[StateBoatRegistration]:
         """
         Search state boat registrations
@@ -481,18 +473,19 @@ class AssetRecordsScraper:
             "faa_airmen_inquiry": "https://amsrvs.registry.faa.gov/airmeninquiry",
             "faa_releasable_database": "https://www.faa.gov/licenses_certificates/aircraft_certification/aircraft_registry/releasable_aircraft_download",
             "uscg_vessel_search": "https://www.st.nmfs.noaa.gov/st1/CoastGuard/VesselByName.html",
-            "uscg_documentation_center": "https://www.dco.uscg.mil/Our-Organization/Assistant-Commandant-for-Prevention-Policy-CG-5P/Inspections-Compliance-CG-5PC-/Office-of-Investigations-Casualty-Analysis/National-Vessel-Documentation-Center/"
+            "uscg_documentation_center": "https://www.dco.uscg.mil/Our-Organization/Assistant-Commandant-for-Prevention-Policy-CG-5P/Inspections-Compliance-CG-5PC-/Office-of-Investigations-Casualty-Analysis/National-Vessel-Documentation-Center/",
         }
 
 
 # Convenience functions
+
 
 def get_faa_resources() -> Dict[str, str]:
     """Get FAA resource URLs"""
     return {
         "aircraft_registry": "https://registry.faa.gov/AircraftInquiry",
         "airmen_inquiry": "https://amsrvs.registry.faa.gov/airmeninquiry",
-        "releasable_database": "https://www.faa.gov/licenses_certificates/aircraft_certification/aircraft_registry/releasable_aircraft_download"
+        "releasable_database": "https://www.faa.gov/licenses_certificates/aircraft_certification/aircraft_registry/releasable_aircraft_download",
     }
 
 
@@ -503,11 +496,10 @@ def get_state_boat_url(state: str) -> Optional[str]:
 
 
 def search_aircraft_sync(
-    n_number: Optional[str] = None,
-    owner_name: Optional[str] = None,
-    limit: int = 100
+    n_number: Optional[str] = None, owner_name: Optional[str] = None, limit: int = 100
 ) -> List[Aircraft]:
     """Synchronous aircraft search"""
+
     async def _search():
         scraper = AssetRecordsScraper()
         try:

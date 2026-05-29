@@ -23,16 +23,16 @@ from bs4 import BeautifulSoup
 
 from .base_county_scraper import (
     BaseCountyScraper,
-    CountyConfig,
-    PropertyRecord,
-    DeedRecord,
-    MortgageRecord,
-    TaxRecord,
-    CourtCase,
-    LienRecord,
-    RecordType,
-    CaseType,
     CaseStatus,
+    CaseType,
+    CountyConfig,
+    CourtCase,
+    DeedRecord,
+    LienRecord,
+    MortgageRecord,
+    PropertyRecord,
+    RecordType,
+    TaxRecord,
 )
 
 logger = logging.getLogger(__name__)
@@ -69,8 +69,12 @@ class KingCountyScraper(BaseCountyScraper):
         super().__init__(config or KING_COUNTY_CONFIG)
 
         # API endpoints
-        self.assessor_api = "https://blue.kingcounty.com/Assessor/eRealProperty/Dashboard.aspx"
-        self.parcel_search = "https://blue.kingcounty.com/Assessor/eRealProperty/Search.aspx"
+        self.assessor_api = (
+            "https://blue.kingcounty.com/Assessor/eRealProperty/Dashboard.aspx"
+        )
+        self.parcel_search = (
+            "https://blue.kingcounty.com/Assessor/eRealProperty/Search.aspx"
+        )
         self.recorder_search = "https://recordsearch.kingcounty.gov/LandmarkWeb/"
         self.court_search = "https://dw.courts.wa.gov/"
         self.tax_search = "https://payment.kingcounty.gov/Home/Index"
@@ -87,10 +91,7 @@ class KingCountyScraper(BaseCountyScraper):
     # ==================== Property Records ====================
 
     async def search_property_by_address(
-        self,
-        address: str,
-        city: Optional[str] = None,
-        zip_code: Optional[str] = None
+        self, address: str, city: Optional[str] = None, zip_code: Optional[str] = None
     ) -> List[PropertyRecord]:
         """
         Search King County Assessor (eReal Property) by address.
@@ -124,7 +125,11 @@ class KingCountyScraper(BaseCountyScraper):
                                     parcel = cols[0].get_text(strip=True)
                                     prop_address = cols[1].get_text(strip=True)
                                     owner = cols[2].get_text(strip=True)
-                                    prop_city = cols[3].get_text(strip=True) if len(cols) > 3 else city
+                                    prop_city = (
+                                        cols[3].get_text(strip=True)
+                                        if len(cols) > 3
+                                        else city
+                                    )
 
                                     record = PropertyRecord(
                                         parcel_id=parcel,
@@ -186,7 +191,9 @@ class KingCountyScraper(BaseCountyScraper):
 
         return results
 
-    async def search_property_by_parcel(self, parcel_id: str) -> Optional[PropertyRecord]:
+    async def search_property_by_parcel(
+        self, parcel_id: str
+    ) -> Optional[PropertyRecord]:
         """
         Get detailed property information by Parcel Number.
 
@@ -210,11 +217,19 @@ class KingCountyScraper(BaseCountyScraper):
                         # Owner section
                         owner_section = soup.find("div", {"id": "ownerInfo"})
                         if owner_section:
-                            owner_name = owner_section.find("span", {"id": "TaxpayerName"})
-                            details["owner"] = owner_name.get_text(strip=True) if owner_name else None
+                            owner_name = owner_section.find(
+                                "span", {"id": "TaxpayerName"}
+                            )
+                            details["owner"] = (
+                                owner_name.get_text(strip=True) if owner_name else None
+                            )
 
-                            mailing = owner_section.find("div", {"id": "MailingAddress"})
-                            details["mailing_address"] = mailing.get_text(strip=True) if mailing else None
+                            mailing = owner_section.find(
+                                "div", {"id": "MailingAddress"}
+                            )
+                            details["mailing_address"] = (
+                                mailing.get_text(strip=True) if mailing else None
+                            )
 
                         # Property address
                         addr_span = soup.find("span", {"id": "SitusAddress"})
@@ -222,7 +237,9 @@ class KingCountyScraper(BaseCountyScraper):
 
                         # City
                         city_span = soup.find("span", {"id": "DistrictName"})
-                        details["city"] = city_span.get_text(strip=True) if city_span else "Seattle"
+                        details["city"] = (
+                            city_span.get_text(strip=True) if city_span else "Seattle"
+                        )
 
                         # Values
                         value_section = soup.find("div", {"id": "valuation"})
@@ -230,12 +247,22 @@ class KingCountyScraper(BaseCountyScraper):
                             land = value_section.find("span", {"id": "LandVal"})
                             imp = value_section.find("span", {"id": "ImpsVal"})
                             total = value_section.find("span", {"id": "TotalVal"})
-                            appraised = value_section.find("span", {"id": "ApprLandVal"})
+                            appraised = value_section.find(
+                                "span", {"id": "ApprLandVal"}
+                            )
 
-                            details["land_value"] = self._parse_currency(land.get_text() if land else "0")
-                            details["improvement_value"] = self._parse_currency(imp.get_text() if imp else "0")
-                            details["assessed_value"] = self._parse_currency(total.get_text() if total else "0")
-                            details["appraised_value"] = self._parse_currency(appraised.get_text() if appraised else "0")
+                            details["land_value"] = self._parse_currency(
+                                land.get_text() if land else "0"
+                            )
+                            details["improvement_value"] = self._parse_currency(
+                                imp.get_text() if imp else "0"
+                            )
+                            details["assessed_value"] = self._parse_currency(
+                                total.get_text() if total else "0"
+                            )
+                            details["appraised_value"] = self._parse_currency(
+                                appraised.get_text() if appraised else "0"
+                            )
 
                         # Property characteristics
                         char_section = soup.find("div", {"id": "buildingInfo"})
@@ -247,16 +274,30 @@ class KingCountyScraper(BaseCountyScraper):
                             baths = char_section.find("span", {"id": "BathFullCount"})
                             prop_type = char_section.find("span", {"id": "PresentUse"})
 
-                            details["year_built"] = self._parse_int(year_built.get_text() if year_built else "0")
-                            details["sqft"] = self._parse_int(sqft.get_text() if sqft else "0")
-                            details["lot_sqft"] = self._parse_int(lot_size.get_text() if lot_size else "0")
-                            details["bedrooms"] = self._parse_int(beds.get_text() if beds else "0")
-                            details["bathrooms"] = float(baths.get_text()) if baths else None
-                            details["property_type"] = prop_type.get_text(strip=True) if prop_type else None
+                            details["year_built"] = self._parse_int(
+                                year_built.get_text() if year_built else "0"
+                            )
+                            details["sqft"] = self._parse_int(
+                                sqft.get_text() if sqft else "0"
+                            )
+                            details["lot_sqft"] = self._parse_int(
+                                lot_size.get_text() if lot_size else "0"
+                            )
+                            details["bedrooms"] = self._parse_int(
+                                beds.get_text() if beds else "0"
+                            )
+                            details["bathrooms"] = (
+                                float(baths.get_text()) if baths else None
+                            )
+                            details["property_type"] = (
+                                prop_type.get_text(strip=True) if prop_type else None
+                            )
 
                         # Legal description
                         legal_span = soup.find("span", {"id": "LegalDescr"})
-                        details["legal_description"] = legal_span.get_text(strip=True) if legal_span else None
+                        details["legal_description"] = (
+                            legal_span.get_text(strip=True) if legal_span else None
+                        )
 
                         return PropertyRecord(
                             parcel_id=parcel_id,
@@ -294,7 +335,7 @@ class KingCountyScraper(BaseCountyScraper):
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         as_grantor: bool = True,
-        as_grantee: bool = True
+        as_grantee: bool = True,
     ) -> List[DeedRecord]:
         """
         Search King County Recorder for deeds by party name.
@@ -337,7 +378,11 @@ class KingCountyScraper(BaseCountyScraper):
                                     rec_date = cols[2].get_text(strip=True)
                                     grantor = cols[3].get_text(strip=True)
                                     grantee = cols[4].get_text(strip=True)
-                                    consideration = cols[5].get_text(strip=True) if len(cols) > 5 else "0"
+                                    consideration = (
+                                        cols[5].get_text(strip=True)
+                                        if len(cols) > 5
+                                        else "0"
+                                    )
 
                                     record = DeedRecord(
                                         document_number=doc_num,
@@ -345,7 +390,9 @@ class KingCountyScraper(BaseCountyScraper):
                                         recording_date=self._parse_date(rec_date),
                                         grantor=grantor,
                                         grantee=grantee,
-                                        consideration=self._parse_currency(consideration),
+                                        consideration=self._parse_currency(
+                                            consideration
+                                        ),
                                         county="King",
                                         state="WA",
                                         source_url=f"{self.recorder_search}Document/View/{doc_num}",
@@ -361,7 +408,7 @@ class KingCountyScraper(BaseCountyScraper):
         self,
         parcel_id: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[DeedRecord]:
         """Search recorder by parcel number."""
         results = []
@@ -393,7 +440,9 @@ class KingCountyScraper(BaseCountyScraper):
                                     record = DeedRecord(
                                         document_number=cols[0].get_text(strip=True),
                                         record_type=cols[1].get_text(strip=True),
-                                        recording_date=self._parse_date(cols[2].get_text(strip=True)),
+                                        recording_date=self._parse_date(
+                                            cols[2].get_text(strip=True)
+                                        ),
                                         grantor=cols[3].get_text(strip=True),
                                         grantee=cols[4].get_text(strip=True),
                                         parcel_id=parcel_id,
@@ -413,7 +462,7 @@ class KingCountyScraper(BaseCountyScraper):
         name: Optional[str] = None,
         parcel_id: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[MortgageRecord]:
         """Search for deed of trust records (Washington uses Deeds of Trust)."""
         results = []
@@ -450,10 +499,14 @@ class KingCountyScraper(BaseCountyScraper):
                                     record = MortgageRecord(
                                         document_number=cols[0].get_text(strip=True),
                                         record_type="DEED OF TRUST",
-                                        recording_date=self._parse_date(cols[2].get_text(strip=True)),
+                                        recording_date=self._parse_date(
+                                            cols[2].get_text(strip=True)
+                                        ),
                                         trustor=cols[3].get_text(strip=True),
                                         beneficiary=cols[4].get_text(strip=True),
-                                        loan_amount=self._parse_currency(cols[5].get_text(strip=True)),
+                                        loan_amount=self._parse_currency(
+                                            cols[5].get_text(strip=True)
+                                        ),
                                         parcel_id=parcel_id,
                                         county="King",
                                         state="WA",
@@ -470,7 +523,7 @@ class KingCountyScraper(BaseCountyScraper):
         self,
         name: Optional[str] = None,
         parcel_id: Optional[str] = None,
-        lien_type: Optional[str] = None
+        lien_type: Optional[str] = None,
     ) -> List[LienRecord]:
         """Search for lien records."""
         results = []
@@ -498,18 +551,30 @@ class KingCountyScraper(BaseCountyScraper):
                             html = await response.text()
                             soup = BeautifulSoup(html, "html.parser")
 
-                            results_table = soup.find("table", {"id": "searchResultsTable"})
+                            results_table = soup.find(
+                                "table", {"id": "searchResultsTable"}
+                            )
                             if results_table:
                                 for row in results_table.find_all("tr")[1:]:
                                     cols = row.find_all("td")
                                     if len(cols) >= 5:
                                         record = LienRecord(
-                                            document_number=cols[0].get_text(strip=True),
+                                            document_number=cols[0].get_text(
+                                                strip=True
+                                            ),
                                             lien_type=lt,
-                                            recording_date=self._parse_date(cols[2].get_text(strip=True)),
+                                            recording_date=self._parse_date(
+                                                cols[2].get_text(strip=True)
+                                            ),
                                             debtor=cols[3].get_text(strip=True),
                                             creditor=cols[4].get_text(strip=True),
-                                            amount=self._parse_currency(cols[5].get_text(strip=True)) if len(cols) > 5 else 0.0,
+                                            amount=(
+                                                self._parse_currency(
+                                                    cols[5].get_text(strip=True)
+                                                )
+                                                if len(cols) > 5
+                                                else 0.0
+                                            ),
                                             parcel_id=parcel_id,
                                             county="King",
                                             state="WA",
@@ -531,7 +596,7 @@ class KingCountyScraper(BaseCountyScraper):
         name: str,
         case_type: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """
         Search King County Superior Court cases by party name.
@@ -579,11 +644,19 @@ class KingCountyScraper(BaseCountyScraper):
                                     if " vs " in case_title.lower():
                                         parts = case_title.lower().split(" vs ")
                                         plaintiff = parts[0].strip().title()
-                                        defendant = parts[1].strip().title() if len(parts) > 1 else None
+                                        defendant = (
+                                            parts[1].strip().title()
+                                            if len(parts) > 1
+                                            else None
+                                        )
                                     elif " v. " in case_title.lower():
                                         parts = case_title.lower().split(" v. ")
                                         plaintiff = parts[0].strip().title()
-                                        defendant = parts[1].strip().title() if len(parts) > 1 else None
+                                        defendant = (
+                                            parts[1].strip().title()
+                                            if len(parts) > 1
+                                            else None
+                                        )
 
                                     record = CourtCase(
                                         case_number=case_number,
@@ -606,8 +679,7 @@ class KingCountyScraper(BaseCountyScraper):
         return results
 
     async def search_court_cases_by_case_number(
-        self,
-        case_number: str
+        self, case_number: str
     ) -> Optional[CourtCase]:
         """Get detailed case information by case number."""
         try:
@@ -623,7 +695,9 @@ class KingCountyScraper(BaseCountyScraper):
 
                         # Case header
                         case_title = soup.find("h1", class_="caseTitle")
-                        details["title"] = case_title.get_text(strip=True) if case_title else None
+                        details["title"] = (
+                            case_title.get_text(strip=True) if case_title else None
+                        )
 
                         # Case info
                         info_div = soup.find("div", {"id": "caseInfo"})
@@ -632,7 +706,12 @@ class KingCountyScraper(BaseCountyScraper):
                                 label = row.find("span", class_="label")
                                 value = row.find("span", class_="value")
                                 if label and value:
-                                    key = label.get_text(strip=True).lower().replace(" ", "_").replace(":", "")
+                                    key = (
+                                        label.get_text(strip=True)
+                                        .lower()
+                                        .replace(" ", "_")
+                                        .replace(":", "")
+                                    )
                                     details[key] = value.get_text(strip=True)
 
                         # Parties
@@ -640,8 +719,12 @@ class KingCountyScraper(BaseCountyScraper):
                         if parties_div:
                             plaintiff = parties_div.find("div", class_="plaintiff")
                             defendant = parties_div.find("div", class_="defendant")
-                            details["plaintiff"] = plaintiff.get_text(strip=True) if plaintiff else None
-                            details["defendant"] = defendant.get_text(strip=True) if defendant else None
+                            details["plaintiff"] = (
+                                plaintiff.get_text(strip=True) if plaintiff else None
+                            )
+                            details["defendant"] = (
+                                defendant.get_text(strip=True) if defendant else None
+                            )
 
                         # Docket
                         docket_entries = []
@@ -650,10 +733,12 @@ class KingCountyScraper(BaseCountyScraper):
                             for row in docket_table.find_all("tr")[1:]:
                                 cols = row.find_all("td")
                                 if len(cols) >= 2:
-                                    docket_entries.append({
-                                        "date": cols[0].get_text(strip=True),
-                                        "entry": cols[1].get_text(strip=True),
-                                    })
+                                    docket_entries.append(
+                                        {
+                                            "date": cols[0].get_text(strip=True),
+                                            "entry": cols[1].get_text(strip=True),
+                                        }
+                                    )
 
                         return CourtCase(
                             case_number=case_number,
@@ -681,50 +766,39 @@ class KingCountyScraper(BaseCountyScraper):
         self,
         name: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """Search civil cases."""
         return await self.search_court_cases_by_name(
-            name=name,
-            case_type="Civil",
-            start_date=start_date,
-            end_date=end_date
+            name=name, case_type="Civil", start_date=start_date, end_date=end_date
         )
 
     async def search_family_cases(
         self,
         name: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """Search family court cases."""
         return await self.search_court_cases_by_name(
-            name=name,
-            case_type="Family",
-            start_date=start_date,
-            end_date=end_date
+            name=name, case_type="Family", start_date=start_date, end_date=end_date
         )
 
     async def search_probate_cases(
         self,
         name: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """Search probate cases."""
         return await self.search_court_cases_by_name(
-            name=name,
-            case_type="Probate",
-            start_date=start_date,
-            end_date=end_date
+            name=name, case_type="Probate", start_date=start_date, end_date=end_date
         )
 
     # ==================== Tax Records ====================
 
     async def search_tax_records(
-        self,
-        parcel_id: str,
-        tax_year: Optional[int] = None
+        self, parcel_id: str, tax_year: Optional[int] = None
     ) -> List[TaxRecord]:
         """
         Search King County Treasury for tax records.
@@ -755,11 +829,23 @@ class KingCountyScraper(BaseCountyScraper):
                                     record = TaxRecord(
                                         parcel_id=parcel_id,
                                         tax_year=year,
-                                        assessed_value=self._parse_currency(cols[1].get_text(strip=True)),
-                                        tax_amount=self._parse_currency(cols[2].get_text(strip=True)),
-                                        amount_paid=self._parse_currency(cols[3].get_text(strip=True)),
-                                        amount_due=self._parse_currency(cols[4].get_text(strip=True)),
-                                        status=cols[5].get_text(strip=True) if len(cols) > 5 else "",
+                                        assessed_value=self._parse_currency(
+                                            cols[1].get_text(strip=True)
+                                        ),
+                                        tax_amount=self._parse_currency(
+                                            cols[2].get_text(strip=True)
+                                        ),
+                                        amount_paid=self._parse_currency(
+                                            cols[3].get_text(strip=True)
+                                        ),
+                                        amount_due=self._parse_currency(
+                                            cols[4].get_text(strip=True)
+                                        ),
+                                        status=(
+                                            cols[5].get_text(strip=True)
+                                            if len(cols) > 5
+                                            else ""
+                                        ),
                                         county="King",
                                         state="WA",
                                         source_url=str(response.url),
@@ -816,9 +902,7 @@ class KingCountyScraper(BaseCountyScraper):
 
 # Synchronous wrapper functions
 def search_property_by_address(
-    address: str,
-    city: Optional[str] = None,
-    zip_code: Optional[str] = None
+    address: str, city: Optional[str] = None, zip_code: Optional[str] = None
 ) -> List[PropertyRecord]:
     """Synchronous wrapper for property search by address."""
     scraper = KingCountyScraper()
@@ -834,17 +918,14 @@ def search_property_by_owner(owner_name: str) -> List[PropertyRecord]:
 def search_deeds_by_name(
     name: str,
     start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None,
 ) -> List[DeedRecord]:
     """Synchronous wrapper for deed search."""
     scraper = KingCountyScraper()
     return asyncio.run(scraper.search_deeds_by_name(name, start_date, end_date))
 
 
-def search_court_cases(
-    name: str,
-    case_type: Optional[str] = None
-) -> List[CourtCase]:
+def search_court_cases(name: str, case_type: Optional[str] = None) -> List[CourtCase]:
     """Synchronous wrapper for court case search."""
     scraper = KingCountyScraper()
     return asyncio.run(scraper.search_court_cases_by_name(name, case_type))

@@ -12,16 +12,18 @@ Tests cover:
 - State summaries
 """
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
+
 from datagod.monitoring.scraper_health import (
-    HealthStatus,
-    ScraperMetrics,
     HealthCheckResult,
+    HealthStatus,
     ScraperHealthMonitor,
-    get_scraper_health,
+    ScraperMetrics,
     check_all_scrapers,
     get_monitor,
+    get_scraper_health,
 )
 
 
@@ -50,10 +52,7 @@ class TestScraperMetrics:
 
     def test_create_metrics(self):
         """Test creating scraper metrics"""
-        metrics = ScraperMetrics(
-            scraper_id="test_scraper",
-            state_code="CA"
-        )
+        metrics = ScraperMetrics(scraper_id="test_scraper", state_code="CA")
         assert metrics.scraper_id == "test_scraper"
         assert metrics.state_code == "CA"
         assert metrics.total_requests == 0
@@ -70,7 +69,7 @@ class TestScraperMetrics:
             state_code="CA",
             total_requests=100,
             successful_requests=75,
-            failed_requests=25
+            failed_requests=25,
         )
         assert metrics.success_rate == 0.75
 
@@ -81,7 +80,7 @@ class TestScraperMetrics:
             state_code="CA",
             total_requests=100,
             successful_requests=75,
-            failed_requests=25
+            failed_requests=25,
         )
         assert metrics.failure_rate == 0.25
 
@@ -91,7 +90,7 @@ class TestScraperMetrics:
             scraper_id="test",
             state_code="CA",
             successful_requests=10,
-            total_response_time_ms=5000.0
+            total_response_time_ms=5000.0,
         )
         assert metrics.avg_response_time_ms == 500.0
 
@@ -103,20 +102,14 @@ class TestScraperMetrics:
     def test_quota_usage_percent(self):
         """Test quota usage calculation"""
         metrics = ScraperMetrics(
-            scraper_id="test",
-            state_code="CA",
-            api_quota_used=750,
-            api_quota_limit=1000
+            scraper_id="test", state_code="CA", api_quota_used=750, api_quota_limit=1000
         )
         assert metrics.quota_usage_percent == 75.0
 
     def test_quota_usage_no_limit(self):
         """Test quota usage with no limit"""
         metrics = ScraperMetrics(
-            scraper_id="test",
-            state_code="CA",
-            api_quota_used=500,
-            api_quota_limit=0
+            scraper_id="test", state_code="CA", api_quota_used=500, api_quota_limit=0
         )
         assert metrics.quota_usage_percent == 0.0
 
@@ -127,7 +120,7 @@ class TestScraperMetrics:
             state_code="CA",
             total_requests=100,
             successful_requests=95,
-            failed_requests=5
+            failed_requests=5,
         )
         assert metrics.health_status == HealthStatus.HEALTHY
 
@@ -138,7 +131,7 @@ class TestScraperMetrics:
             state_code="CA",
             total_requests=100,
             successful_requests=85,
-            failed_requests=15
+            failed_requests=15,
         )
         assert metrics.health_status == HealthStatus.DEGRADED
 
@@ -149,7 +142,7 @@ class TestScraperMetrics:
             state_code="CA",
             total_requests=100,
             successful_requests=70,
-            failed_requests=30
+            failed_requests=30,
         )
         assert metrics.health_status == HealthStatus.UNHEALTHY
 
@@ -160,7 +153,7 @@ class TestScraperMetrics:
             state_code="CA",
             total_requests=100,
             successful_requests=40,
-            failed_requests=60
+            failed_requests=60,
         )
         assert metrics.health_status == HealthStatus.CRITICAL
 
@@ -172,7 +165,7 @@ class TestScraperMetrics:
             total_requests=100,
             successful_requests=100,
             api_quota_used=1100,
-            api_quota_limit=1000
+            api_quota_limit=1000,
         )
         assert metrics.health_status == HealthStatus.CRITICAL
 
@@ -189,14 +182,14 @@ class TestScraperMetrics:
             total_requests=100,
             successful_requests=90,
             failed_requests=10,
-            records_fetched=500
+            records_fetched=500,
         )
         result = metrics.to_dict()
-        assert result['scraper_id'] == "test"
-        assert result['state_code'] == "CA"
-        assert result['total_requests'] == 100
-        assert result['success_rate'] == 0.9
-        assert result['health_status'] == "healthy"
+        assert result["scraper_id"] == "test"
+        assert result["state_code"] == "CA"
+        assert result["total_requests"] == 100
+        assert result["success_rate"] == 0.9
+        assert result["health_status"] == "healthy"
 
 
 class TestHealthCheckResult:
@@ -207,7 +200,7 @@ class TestHealthCheckResult:
         result = HealthCheckResult(
             scraper_id="test",
             status=HealthStatus.HEALTHY,
-            message="All systems operational"
+            message="All systems operational",
         )
         assert result.scraper_id == "test"
         assert result.status == HealthStatus.HEALTHY
@@ -220,13 +213,13 @@ class TestHealthCheckResult:
             status=HealthStatus.DEGRADED,
             message="High latency",
             response_time_ms=150.5,
-            details={"avg_latency": 150}
+            details={"avg_latency": 150},
         )
         data = result.to_dict()
-        assert data['scraper_id'] == "test"
-        assert data['status'] == "degraded"
-        assert data['message'] == "High latency"
-        assert data['response_time_ms'] == 150.5
+        assert data["scraper_id"] == "test"
+        assert data["status"] == "degraded"
+        assert data["message"] == "High latency"
+        assert data["response_time_ms"] == 150.5
 
 
 class TestScraperHealthMonitor:
@@ -248,19 +241,21 @@ class TestScraperHealthMonitor:
         monitor = ScraperHealthMonitor(
             freshness_threshold_hours=12,
             response_time_warn_ms=1000,
-            response_time_critical_ms=5000
+            response_time_critical_ms=5000,
         )
         assert monitor.freshness_threshold == timedelta(hours=12)
         assert monitor.response_time_warn == 1000
 
-    def test_record_successful_request(self, monitor, sample_scraper_id, sample_state_code):
+    def test_record_successful_request(
+        self, monitor, sample_scraper_id, sample_state_code
+    ):
         """Test recording a successful request"""
         monitor.record_request(
             sample_scraper_id,
             sample_state_code,
             success=True,
             response_time_ms=100.0,
-            records_count=50
+            records_count=50,
         )
         metrics = monitor.get_metrics(sample_scraper_id)
         assert metrics is not None
@@ -275,20 +270,22 @@ class TestScraperHealthMonitor:
             sample_state_code,
             success=False,
             response_time_ms=5000.0,
-            error_message="Connection timeout"
+            error_message="Connection timeout",
         )
         metrics = monitor.get_metrics(sample_scraper_id)
         assert metrics.failed_requests == 1
         assert metrics.last_error_message == "Connection timeout"
 
-    def test_record_multiple_requests(self, monitor, sample_scraper_id, sample_state_code):
+    def test_record_multiple_requests(
+        self, monitor, sample_scraper_id, sample_state_code
+    ):
         """Test recording multiple requests"""
         for i in range(10):
             monitor.record_request(
                 sample_scraper_id,
                 sample_state_code,
                 success=True,
-                response_time_ms=100.0
+                response_time_ms=100.0,
             )
         metrics = monitor.get_metrics(sample_scraper_id)
         assert metrics.total_requests == 10
@@ -329,7 +326,9 @@ class TestScraperHealthMonitor:
         result = monitor.check_health("unknown_scraper")
         assert result.status == HealthStatus.UNKNOWN
 
-    def test_check_health_with_func(self, monitor, sample_scraper_id, sample_state_code):
+    def test_check_health_with_func(
+        self, monitor, sample_scraper_id, sample_state_code
+    ):
         """Test health check with custom function"""
         monitor.record_request(sample_scraper_id, sample_state_code, True, 100.0)
 
@@ -341,7 +340,9 @@ class TestScraperHealthMonitor:
         result = monitor.check_health(sample_scraper_id, lambda: False)
         assert result.status == HealthStatus.UNHEALTHY
 
-    def test_check_health_func_exception(self, monitor, sample_scraper_id, sample_state_code):
+    def test_check_health_func_exception(
+        self, monitor, sample_scraper_id, sample_state_code
+    ):
         """Test health check with function that raises exception"""
         monitor.record_request(sample_scraper_id, sample_state_code, True, 100.0)
 
@@ -363,9 +364,27 @@ class TestScraperHealthMonitor:
 
     def test_get_error_summary(self, monitor, sample_scraper_id, sample_state_code):
         """Test getting error summary"""
-        monitor.record_request(sample_scraper_id, sample_state_code, False, 0, error_message="Connection timeout")
-        monitor.record_request(sample_scraper_id, sample_state_code, False, 0, error_message="Rate limit exceeded (429)")
-        monitor.record_request(sample_scraper_id, sample_state_code, False, 0, error_message="Connection refused")
+        monitor.record_request(
+            sample_scraper_id,
+            sample_state_code,
+            False,
+            0,
+            error_message="Connection timeout",
+        )
+        monitor.record_request(
+            sample_scraper_id,
+            sample_state_code,
+            False,
+            0,
+            error_message="Rate limit exceeded (429)",
+        )
+        monitor.record_request(
+            sample_scraper_id,
+            sample_state_code,
+            False,
+            0,
+            error_message="Connection refused",
+        )
 
         summary = monitor.get_error_summary(sample_scraper_id)
         assert sample_scraper_id in summary
@@ -390,28 +409,32 @@ class TestScraperHealthMonitor:
         monitor.record_request("scraper2", "NY", True, 150.0)
 
         health = monitor.get_overall_health()
-        assert health['status'] == 'healthy'
-        assert health['scraper_count'] == 2
-        assert health['healthy_count'] == 2
+        assert health["status"] == "healthy"
+        assert health["scraper_count"] == 2
+        assert health["healthy_count"] == 2
 
     def test_get_overall_health_degraded(self, monitor):
         """Test overall health when degraded"""
         # Create a degraded scraper (>10% failure rate)
         for i in range(10):
-            monitor.record_request("bad_scraper", "CA", success=(i < 8), response_time_ms=100.0)
+            monitor.record_request(
+                "bad_scraper", "CA", success=(i < 8), response_time_ms=100.0
+            )
 
         health = monitor.get_overall_health()
-        assert health['status'] in ['degraded', 'healthy']
+        assert health["status"] in ["degraded", "healthy"]
 
     def test_get_overall_health_empty(self, monitor):
         """Test overall health with no scrapers"""
         health = monitor.get_overall_health()
-        assert health['status'] == 'unknown'
-        assert health['scraper_count'] == 0
+        assert health["status"] == "unknown"
+        assert health["scraper_count"] == 0
 
     def test_reset_metrics_single(self, monitor, sample_scraper_id, sample_state_code):
         """Test resetting metrics for single scraper"""
-        monitor.record_request(sample_scraper_id, sample_state_code, True, 100.0, records_count=50)
+        monitor.record_request(
+            sample_scraper_id, sample_state_code, True, 100.0, records_count=50
+        )
         monitor.reset_metrics(sample_scraper_id)
 
         metrics = monitor.get_metrics(sample_scraper_id)
@@ -452,7 +475,9 @@ class TestErrorClassification:
 
     def test_classify_auth(self, monitor):
         """Test classifying authentication errors"""
-        assert monitor._classify_error("Authentication failed (401)") == "authentication"
+        assert (
+            monitor._classify_error("Authentication failed (401)") == "authentication"
+        )
         assert monitor._classify_error("Access denied (403)") == "authentication"
 
     def test_classify_not_found(self, monitor):

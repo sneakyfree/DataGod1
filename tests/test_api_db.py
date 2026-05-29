@@ -3,8 +3,9 @@ Tests for API database module (api/src/db.py)
 Tests database connection and initialization
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 
 class TestDatabaseConnection:
@@ -12,19 +13,22 @@ class TestDatabaseConnection:
 
     def test_check_db_connection_success(self):
         """Test database connection check returns True on success"""
-        with patch('api.src.api_v2_simple.check_db_connection', return_value=True):
+        with patch("api.src.api_v2_simple.check_db_connection", return_value=True):
             from api.src.api_v2_simple import check_db_connection
+
             result = check_db_connection()
             assert result is True
 
     def test_engine_creation(self):
         """Test engine can be created"""
         from api.src.db import engine
+
         assert engine is not None
 
     def test_session_local_exists(self):
         """Test SessionLocal factory exists"""
         from api.src.db import SessionLocal
+
         assert SessionLocal is not None
 
 
@@ -34,11 +38,13 @@ class TestDatabaseInit:
     def test_init_db_function_exists(self):
         """Test init_db function exists"""
         from api.src.db import init_db
+
         assert init_db is not None
 
     def test_get_db_generator(self):
         """Test get_db is a generator"""
         from api.src.db import get_db
+
         assert get_db is not None
 
 
@@ -47,7 +53,7 @@ class TestDatabaseDependency:
 
     def test_get_db_yields_session(self):
         """Test get_db yields a session"""
-        from api.src.db import get_db, SessionLocal
+        from api.src.db import SessionLocal, get_db
 
         # Get the generator
         gen = get_db()
@@ -94,6 +100,7 @@ class TestStripeService:
     def test_stripe_service_import(self):
         """Test stripe service can be imported"""
         from api.src.stripe_service import StripeService
+
         assert StripeService is not None
 
     def test_stripe_service_initialization(self):
@@ -119,11 +126,13 @@ class TestMonitoringMiddleware:
     def test_monitoring_middleware_import(self):
         """Test monitoring middleware can be imported"""
         from api.src.middleware.monitoring import MonitoringMiddleware
+
         assert MonitoringMiddleware is not None
 
     def test_metrics_collector_class(self):
         """Test MetricsCollector class exists and works"""
         from api.src.middleware.monitoring import MetricsCollector
+
         assert MetricsCollector is not None
 
         # Test singleton pattern
@@ -134,6 +143,7 @@ class TestMonitoringMiddleware:
     def test_health_checker_exists(self):
         """Test HealthChecker class exists"""
         from api.src.middleware.monitoring import HealthChecker
+
         assert HealthChecker is not None
 
         # Test can instantiate
@@ -153,11 +163,11 @@ class TestMonitoringMiddleware:
             method="GET",
             status_code=200,
             latency=0.5,
-            user_id="test_user"
+            user_id="test_user",
         )
 
         metrics = collector.get_metrics()
-        assert metrics['total_requests'] >= 1
+        assert metrics["total_requests"] >= 1
 
     def test_health_checker_liveness(self):
         """Test HealthChecker liveness check"""
@@ -166,5 +176,5 @@ class TestMonitoringMiddleware:
         checker = HealthChecker()
         liveness = checker.get_liveness()
 
-        assert liveness['status'] == 'ok'
-        assert 'timestamp' in liveness
+        assert liveness["status"] == "ok"
+        assert "timestamp" in liveness

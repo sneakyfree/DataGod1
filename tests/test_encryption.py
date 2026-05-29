@@ -2,13 +2,15 @@
 Tests for PII Field-Level Encryption (Gap P5)
 """
 
-import pytest
 import os
+
+import pytest
+
 from datagod.security.encryption import (
     FieldEncryptor,
-    get_encryptor,
-    encrypt_field,
     decrypt_field,
+    encrypt_field,
+    get_encryptor,
 )
 
 
@@ -18,6 +20,7 @@ class TestFieldEncryptor:
     def setup_method(self):
         # Generate a fresh key for testing
         from cryptography.fernet import Fernet
+
         self.test_key = Fernet.generate_key().decode()
         self.encryptor = FieldEncryptor(key=self.test_key)
 
@@ -62,6 +65,7 @@ class TestConvenienceFunctions:
 
     def setup_method(self):
         from cryptography.fernet import Fernet
+
         os.environ["ENCRYPTION_KEY"] = Fernet.generate_key().decode()
 
     def teardown_method(self):

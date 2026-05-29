@@ -28,21 +28,22 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
+
 import aiohttp
 from bs4 import BeautifulSoup
 
 from .base import (
+    CaseDocument,
+    CaseEvent,
+    CaseParty,
+    CaseStatus,
+    CaseType,
+    CourtCase,
+    CourtLevel,
     CourtSystemBase,
     CourtType,
-    CourtLevel,
-    CaseType,
-    CaseStatus,
-    PartyType,
     PartyRole,
-    CourtCase,
-    CaseParty,
-    CaseEvent,
-    CaseDocument,
+    PartyType,
     SearchCriteria,
     SearchResult,
 )
@@ -52,6 +53,7 @@ logger = logging.getLogger(__name__)
 
 class CivilCaseSubtype(Enum):
     """Subtypes of civil cases commonly found in county courts."""
+
     # Contract
     BREACH_OF_CONTRACT = "breach_of_contract"
     COLLECTIONS = "collections"
@@ -92,6 +94,7 @@ class CivilCaseSubtype(Enum):
 @dataclass
 class CivilJudgment:
     """A judgment in a civil case."""
+
     judgment_date: date
     judgment_type: str  # Default, Summary, Consent, etc.
     in_favor_of: str  # Party name
@@ -111,6 +114,7 @@ class CivilJudgment:
 @dataclass
 class EvictionRecord:
     """Specialized record for eviction cases."""
+
     case_number: str
     filing_date: date
     landlord_name: str
@@ -144,6 +148,7 @@ class EvictionRecord:
 @dataclass
 class ForeclosureRecord:
     """Specialized record for foreclosure cases."""
+
     case_number: str
     filing_date: date
 
@@ -185,6 +190,7 @@ class ForeclosureRecord:
 @dataclass
 class SmallClaimCase:
     """Specialized record for small claims cases."""
+
     case_number: str
     filing_date: date
 
@@ -236,19 +242,16 @@ class CountyCivilCourtBase(CourtSystemBase):
         r"tenant": CaseType.LANDLORD_TENANT,
         r"landlord": CaseType.LANDLORD_TENANT,
         r"lt\b": CaseType.LANDLORD_TENANT,
-
         # Foreclosure
         r"foreclos": CaseType.FORECLOSURE,
         r"mtg\s*fc": CaseType.FORECLOSURE,
         r"mortgage": CaseType.FORECLOSURE,
-
         # Contract/Debt
         r"contract": CaseType.CONTRACT,
         r"debt": CaseType.DEBT_COLLECTION,
         r"collect": CaseType.DEBT_COLLECTION,
         r"credit\s*card": CaseType.DEBT_COLLECTION,
         r"breach": CaseType.CONTRACT,
-
         # Tort
         r"personal\s*injury": CaseType.PERSONAL_INJURY,
         r"pi\b": CaseType.PERSONAL_INJURY,
@@ -256,18 +259,15 @@ class CountyCivilCourtBase(CourtSystemBase):
         r"tort": CaseType.TORT,
         r"auto\s*(accident|neg)": CaseType.PERSONAL_INJURY,
         r"malpractice": CaseType.MEDICAL_MALPRACTICE,
-
         # Property
         r"property": CaseType.PROPERTY,
         r"quiet\s*title": CaseType.PROPERTY,
         r"partition": CaseType.PROPERTY,
         r"eject": CaseType.PROPERTY,
-
         # Small Claims
         r"small\s*claim": CaseType.SMALL_CLAIMS,
         r"sc\b": CaseType.SMALL_CLAIMS,
         r"minor\s*claim": CaseType.SMALL_CLAIMS,
-
         # General Civil
         r"civil": CaseType.CIVIL_GENERAL,
         r"cv\b": CaseType.CIVIL_GENERAL,
@@ -291,9 +291,9 @@ class CountyCivilCourtBase(CourtSystemBase):
         """Parse judgment information from case detail page."""
         # Look for judgment section
         judgment_section = (
-            soup.find("div", {"id": "judgment"}) or
-            soup.find("section", {"id": "judgment"}) or
-            soup.find("table", {"id": "tblJudgment"})
+            soup.find("div", {"id": "judgment"})
+            or soup.find("section", {"id": "judgment"})
+            or soup.find("table", {"id": "tblJudgment"})
         )
 
         if not judgment_section:
@@ -316,9 +316,7 @@ class CountyCivilCourtBase(CourtSystemBase):
 
         # Build judgment record
         judgment_date = self._parse_date(
-            judgment_data.get("date") or
-            judgment_data.get("judgment date") or
-            ""
+            judgment_data.get("date") or judgment_data.get("judgment date") or ""
         )
 
         if not judgment_date:
@@ -343,7 +341,7 @@ class CountyCivilCourtBase(CourtSystemBase):
         property_address: Optional[str] = None,
         filed_start_date: Optional[date] = None,
         filed_end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> List[EvictionRecord]:
         """
         Search for eviction cases.
@@ -369,7 +367,7 @@ class CountyCivilCourtBase(CourtSystemBase):
             case_types=[CaseType.EVICTION, CaseType.LANDLORD_TENANT],
             filed_start_date=filed_start_date,
             filed_end_date=filed_end_date,
-            max_results=max_results
+            max_results=max_results,
         )
 
         # Convert to EvictionRecord
@@ -418,7 +416,7 @@ class CountyCivilCourtBase(CourtSystemBase):
         property_address: Optional[str] = None,
         filed_start_date: Optional[date] = None,
         filed_end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> List[ForeclosureRecord]:
         """
         Search for foreclosure cases.
@@ -443,7 +441,7 @@ class CountyCivilCourtBase(CourtSystemBase):
             case_types=[CaseType.FORECLOSURE],
             filed_start_date=filed_start_date,
             filed_end_date=filed_end_date,
-            max_results=max_results
+            max_results=max_results,
         )
 
         foreclosures = []
@@ -488,7 +486,7 @@ class CountyCivilCourtBase(CourtSystemBase):
         party_name: str,
         filed_start_date: Optional[date] = None,
         filed_end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> List[SmallClaimCase]:
         """
         Search for small claims cases.
@@ -507,7 +505,7 @@ class CountyCivilCourtBase(CourtSystemBase):
             case_types=[CaseType.SMALL_CLAIMS],
             filed_start_date=filed_start_date,
             filed_end_date=filed_end_date,
-            max_results=max_results
+            max_results=max_results,
         )
 
         small_claims = []
@@ -561,10 +559,11 @@ class CookCountyCivil(CountyCivilCourtBase):
         filed_end_date: Optional[date] = None,
         case_types: Optional[List[CaseType]] = None,
         include_closed: bool = True,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Cook County civil cases by party name."""
         import time
+
         start_time = time.time()
 
         # Get search page to initialize session
@@ -575,8 +574,14 @@ class CookCountyCivil(CountyCivilCourtBase):
 
         data = {
             "partyName": party_name,
-            "partyType": "A" if party_type == "any" else ("P" if party_type == "plaintiff" else "D"),
-            "startDate": filed_start_date.strftime("%m/%d/%Y") if filed_start_date else "",
+            "partyType": (
+                "A"
+                if party_type == "any"
+                else ("P" if party_type == "plaintiff" else "D")
+            ),
+            "startDate": (
+                filed_start_date.strftime("%m/%d/%Y") if filed_start_date else ""
+            ),
             "endDate": filed_end_date.strftime("%m/%d/%Y") if filed_end_date else "",
         }
 
@@ -585,7 +590,7 @@ class CookCountyCivil(CountyCivilCourtBase):
                 search_url,
                 method="POST",
                 json=data,
-                headers={"Content-Type": "application/json"}
+                headers={"Content-Type": "application/json"},
             )
         except Exception as e:
             logger.error(f"Cook County search failed: {e}")
@@ -650,7 +655,7 @@ class CookCountyCivil(CountyCivilCourtBase):
                 search_url,
                 method="POST",
                 json={"caseNumber": case_number},
-                headers={"Content-Type": "application/json"}
+                headers={"Content-Type": "application/json"},
             )
         except Exception as e:
             logger.error(f"Cook County case search failed: {e}")
@@ -689,7 +694,7 @@ class CookCountyCivil(CountyCivilCourtBase):
                 detail_url,
                 method="POST",
                 json={"caseNumber": case_number},
-                headers={"Content-Type": "application/json"}
+                headers={"Content-Type": "application/json"},
             )
 
             detail_data = json_response.get("d", {})
@@ -761,10 +766,11 @@ class LosAngelesCivil(CountyCivilCourtBase):
         filed_end_date: Optional[date] = None,
         case_types: Optional[List[CaseType]] = None,
         include_closed: bool = True,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search LA County civil cases by party name."""
         import time
+
         start_time = time.time()
 
         if not self._authenticated:
@@ -865,7 +871,9 @@ class LosAngelesCivil(CountyCivilCourtBase):
             court_type=self.COURT_TYPE,
             court_level=self.COURT_LEVEL,
             case_title=json_response.get("caseTitle", ""),
-            case_type=self._determine_civil_case_type(json_response.get("caseType", "")),
+            case_type=self._determine_civil_case_type(
+                json_response.get("caseType", "")
+            ),
             status=self._parse_case_status(json_response.get("status", "")),
             filing_date=self._parse_date(json_response.get("filingDate", "")),
             county=self.COUNTY,
@@ -886,7 +894,7 @@ class LosAngelesCivil(CountyCivilCourtBase):
             json_response = await self._fetch_json(
                 auth_url,
                 method="POST",
-                json={"username": username, "password": password}
+                json={"username": username, "password": password},
             )
 
             if json_response.get("success"):
@@ -922,10 +930,11 @@ class HarrisCountyCivil(CountyCivilCourtBase):
         filed_end_date: Optional[date] = None,
         case_types: Optional[List[CaseType]] = None,
         include_closed: bool = True,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Harris County civil cases by party name."""
         import time
+
         start_time = time.time()
 
         # Harris County uses a public portal
@@ -953,7 +962,7 @@ class HarrisCountyCivil(CountyCivilCourtBase):
         results_table = soup.find("table", {"id": "gvSearchResults"})
 
         if results_table:
-            for row in results_table.find_all("tr")[1:max_results+1]:  # Skip header
+            for row in results_table.find_all("tr")[1 : max_results + 1]:  # Skip header
                 cells = row.find_all("td")
                 if len(cells) >= 4:
                     case = CourtCase(
@@ -962,10 +971,16 @@ class HarrisCountyCivil(CountyCivilCourtBase):
                         court_type=self.COURT_TYPE,
                         court_level=self.COURT_LEVEL,
                         case_title=cells[1].get_text(strip=True),
-                        case_type=self._determine_civil_case_type(cells[2].get_text(strip=True)),
+                        case_type=self._determine_civil_case_type(
+                            cells[2].get_text(strip=True)
+                        ),
                         case_type_raw=cells[2].get_text(strip=True),
-                        status=self._parse_case_status(cells[3].get_text(strip=True) if len(cells) > 3 else ""),
-                        filing_date=self._parse_date(cells[4].get_text(strip=True) if len(cells) > 4 else ""),
+                        status=self._parse_case_status(
+                            cells[3].get_text(strip=True) if len(cells) > 3 else ""
+                        ),
+                        filing_date=self._parse_date(
+                            cells[4].get_text(strip=True) if len(cells) > 4 else ""
+                        ),
                         county=self.COUNTY,
                         state=self.STATE,
                         source_system="Harris County District Clerk",
@@ -1040,10 +1055,8 @@ class HarrisCountyCivil(CountyCivilCourtBase):
 
 # Factory function to get appropriate civil court scraper
 
-def get_civil_court_scraper(
-    state: str,
-    county: str
-) -> Optional[CountyCivilCourtBase]:
+
+def get_civil_court_scraper(state: str, county: str) -> Optional[CountyCivilCourtBase]:
     """
     Get a civil court scraper for a specific county.
 
@@ -1081,11 +1094,9 @@ def list_supported_civil_courts() -> List[Dict[str, str]]:
 
 # Synchronous wrapper functions
 
+
 def search_civil_cases(
-    state: str,
-    county: str,
-    party_name: str,
-    **kwargs
+    state: str, county: str, party_name: str, **kwargs
 ) -> SearchResult:
     """Synchronous wrapper for civil case search."""
     scraper = get_civil_court_scraper(state, county)
@@ -1095,14 +1106,11 @@ def search_civil_cases(
     async def _search():
         async with scraper:
             return await scraper.search_by_party(party_name, **kwargs)
+
     return asyncio.run(_search())
 
 
-def search_evictions(
-    state: str,
-    county: str,
-    **kwargs
-) -> List[EvictionRecord]:
+def search_evictions(state: str, county: str, **kwargs) -> List[EvictionRecord]:
     """Synchronous wrapper for eviction search."""
     scraper = get_civil_court_scraper(state, county)
     if not scraper:
@@ -1111,14 +1119,11 @@ def search_evictions(
     async def _search():
         async with scraper:
             return await scraper.search_evictions(**kwargs)
+
     return asyncio.run(_search())
 
 
-def search_foreclosures(
-    state: str,
-    county: str,
-    **kwargs
-) -> List[ForeclosureRecord]:
+def search_foreclosures(state: str, county: str, **kwargs) -> List[ForeclosureRecord]:
     """Synchronous wrapper for foreclosure search."""
     scraper = get_civil_court_scraper(state, county)
     if not scraper:
@@ -1127,4 +1132,5 @@ def search_foreclosures(
     async def _search():
         async with scraper:
             return await scraper.search_foreclosures(**kwargs)
+
     return asyncio.run(_search())

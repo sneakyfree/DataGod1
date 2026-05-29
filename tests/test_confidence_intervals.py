@@ -3,10 +3,11 @@ Tests for Confidence Intervals in Scenario Builder (Gap P8)
 """
 
 import pytest
+
 from datagod.intelligence.scenario_builder import (
-    ScenarioUniverseBuilder,
-    ScenarioResult,
     ScenarioConfidence,
+    ScenarioResult,
+    ScenarioUniverseBuilder,
 )
 
 
@@ -26,8 +27,8 @@ class TestConfidenceIntervals:
             risk_data={},
         )
         for r in results:
-            assert hasattr(r, 'confidence_interval_lower')
-            assert hasattr(r, 'confidence_interval_upper')
+            assert hasattr(r, "confidence_interval_lower")
+            assert hasattr(r, "confidence_interval_upper")
             assert 0.0 <= r.confidence_interval_lower <= 1.0
             assert 0.0 <= r.confidence_interval_upper <= 1.0
 
@@ -57,9 +58,13 @@ class TestConfidenceIntervals:
         # Rich data
         rich_results = await self.builder.analyze(
             property_data={
-                "value": 300000, "active_listing": True, "mls_status": True,
-                "property_status": "active", "listing_info": True,
-                "condition": "good", "years_owned": 5,
+                "value": 300000,
+                "active_listing": True,
+                "mls_status": True,
+                "property_status": "active",
+                "listing_info": True,
+                "condition": "good",
+                "years_owned": 5,
             },
             entity_data={"type": "individual"},
             lien_data={"lien_search": True, "title_search": True},
@@ -67,21 +72,36 @@ class TestConfidenceIntervals:
         )
         # Compare average CI widths
         if sparse_results and rich_results:
-            sparse_widths = [r.confidence_interval_upper - r.confidence_interval_lower for r in sparse_results]
-            rich_widths = [r.confidence_interval_upper - r.confidence_interval_lower for r in rich_results]
-            avg_sparse = sum(sparse_widths) / len(sparse_widths) if sparse_widths else 1.0
+            sparse_widths = [
+                r.confidence_interval_upper - r.confidence_interval_lower
+                for r in sparse_results
+            ]
+            rich_widths = [
+                r.confidence_interval_upper - r.confidence_interval_lower
+                for r in rich_results
+            ]
+            avg_sparse = (
+                sum(sparse_widths) / len(sparse_widths) if sparse_widths else 1.0
+            )
             avg_rich = sum(rich_widths) / len(rich_widths) if rich_widths else 1.0
             # Rich data should have same or narrower CIs on average
             assert avg_rich <= avg_sparse + 0.1  # Allow small tolerance
 
     def test_calculate_confidence_returns_four_values(self):
         """Internal method should return (score, level, ci_lower, ci_upper)."""
-        from datagod.intelligence.scenario_builder import ScenarioType, ScenarioCategory
+        from datagod.intelligence.scenario_builder import ScenarioCategory, ScenarioType
+
         st = ScenarioType(
-            id="test", name="Test", category=ScenarioCategory.RISK,
-            description="test", required_data=["a", "b"], indicators=["c", "d"],
+            id="test",
+            name="Test",
+            category=ScenarioCategory.RISK,
+            description="test",
+            required_data=["a", "b"],
+            indicators=["c", "d"],
         )
-        result = self.builder._calculate_confidence(st, missing_data=["a"], available_indicators=["c"])
+        result = self.builder._calculate_confidence(
+            st, missing_data=["a"], available_indicators=["c"]
+        )
         assert len(result) == 4
         score, level, ci_lower, ci_upper = result
         assert isinstance(score, float)

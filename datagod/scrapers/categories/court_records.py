@@ -16,24 +16,26 @@ Supports:
 CourtListener API Documentation: https://www.courtlistener.com/api/rest-info/
 """
 
-import logging
 import asyncio
-import aiohttp
+import logging
 import os
 import re
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Dict, List, Any, Optional, Tuple
-from urllib.parse import urlencode, quote
+from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import quote, urlencode
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
 
 class CaseType(Enum):
     """Types of court cases"""
+
     CIVIL = "civil"
     CRIMINAL = "criminal"
     FAMILY = "family"
@@ -49,6 +51,7 @@ class CaseType(Enum):
 
 class CaseStatus(Enum):
     """Case status values"""
+
     OPEN = "open"
     CLOSED = "closed"
     PENDING = "pending"
@@ -61,6 +64,7 @@ class CaseStatus(Enum):
 
 class PartyType(Enum):
     """Types of case parties"""
+
     PLAINTIFF = "plaintiff"
     DEFENDANT = "defendant"
     PETITIONER = "petitioner"
@@ -77,6 +81,7 @@ class PartyType(Enum):
 
 class CourtLevel(Enum):
     """Court levels"""
+
     FEDERAL_DISTRICT = "federal_district"
     FEDERAL_APPELLATE = "federal_appellate"
     FEDERAL_BANKRUPTCY = "federal_bankruptcy"
@@ -91,6 +96,7 @@ class CourtLevel(Enum):
 @dataclass
 class CaseParty:
     """Represents a party in a court case"""
+
     name: str
     party_type: PartyType
     party_id: Optional[str] = None
@@ -101,19 +107,20 @@ class CaseParty:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'name': self.name,
-            'party_type': self.party_type.value,
-            'party_id': self.party_id,
-            'address': self.address,
-            'attorney_name': self.attorney_name,
-            'attorney_firm': self.attorney_firm,
-            'is_business': self.is_business
+            "name": self.name,
+            "party_type": self.party_type.value,
+            "party_id": self.party_id,
+            "address": self.address,
+            "attorney_name": self.attorney_name,
+            "attorney_firm": self.attorney_firm,
+            "is_business": self.is_business,
         }
 
 
 @dataclass
 class CourtCase:
     """Represents a court case record"""
+
     case_number: str
     case_type: CaseType
     court_name: str
@@ -141,45 +148,56 @@ class CourtCase:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'case_number': self.case_number,
-            'case_type': self.case_type.value,
-            'court_name': self.court_name,
-            'filing_date': self.filing_date.isoformat() if self.filing_date else None,
-            'case_title': self.case_title,
-            'status': self.status.value,
-            'judge_name': self.judge_name,
-            'parties': [p.to_dict() for p in self.parties],
-            'jurisdiction': self.jurisdiction,
-            'county': self.county,
-            'state': self.state,
-            'disposition': self.disposition,
-            'disposition_date': self.disposition_date.isoformat() if self.disposition_date else None,
-            'amount_claimed': self.amount_claimed,
-            'amount_awarded': self.amount_awarded,
-            'docket_id': self.docket_id,
-            'court_id': self.court_id,
-            'pacer_case_id': self.pacer_case_id,
-            'nature_of_suit': self.nature_of_suit,
-            'cause': self.cause,
-            'jury_demand': self.jury_demand,
-            'source_url': self.source_url,
-            'fetched_at': self.fetched_at.isoformat()
+            "case_number": self.case_number,
+            "case_type": self.case_type.value,
+            "court_name": self.court_name,
+            "filing_date": self.filing_date.isoformat() if self.filing_date else None,
+            "case_title": self.case_title,
+            "status": self.status.value,
+            "judge_name": self.judge_name,
+            "parties": [p.to_dict() for p in self.parties],
+            "jurisdiction": self.jurisdiction,
+            "county": self.county,
+            "state": self.state,
+            "disposition": self.disposition,
+            "disposition_date": (
+                self.disposition_date.isoformat() if self.disposition_date else None
+            ),
+            "amount_claimed": self.amount_claimed,
+            "amount_awarded": self.amount_awarded,
+            "docket_id": self.docket_id,
+            "court_id": self.court_id,
+            "pacer_case_id": self.pacer_case_id,
+            "nature_of_suit": self.nature_of_suit,
+            "cause": self.cause,
+            "jury_demand": self.jury_demand,
+            "source_url": self.source_url,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
     @property
     def plaintiffs(self) -> List[CaseParty]:
         """Get all plaintiffs/petitioners"""
-        return [p for p in self.parties if p.party_type in (PartyType.PLAINTIFF, PartyType.PETITIONER)]
+        return [
+            p
+            for p in self.parties
+            if p.party_type in (PartyType.PLAINTIFF, PartyType.PETITIONER)
+        ]
 
     @property
     def defendants(self) -> List[CaseParty]:
         """Get all defendants/respondents"""
-        return [p for p in self.parties if p.party_type in (PartyType.DEFENDANT, PartyType.RESPONDENT)]
+        return [
+            p
+            for p in self.parties
+            if p.party_type in (PartyType.DEFENDANT, PartyType.RESPONDENT)
+        ]
 
 
 @dataclass
 class DocketEntry:
     """Represents a docket entry in a case"""
+
     entry_number: int
     date_filed: Optional[date] = None
     description: str = ""
@@ -193,22 +211,23 @@ class DocketEntry:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'entry_number': self.entry_number,
-            'date_filed': self.date_filed.isoformat() if self.date_filed else None,
-            'description': self.description,
-            'document_number': self.document_number,
-            'page_count': self.page_count,
-            'attachment_count': self.attachment_count,
-            'recap_document_id': self.recap_document_id,
-            'pacer_doc_id': self.pacer_doc_id,
-            'is_available': self.is_available,
-            'source_url': self.source_url,
+            "entry_number": self.entry_number,
+            "date_filed": self.date_filed.isoformat() if self.date_filed else None,
+            "description": self.description,
+            "document_number": self.document_number,
+            "page_count": self.page_count,
+            "attachment_count": self.attachment_count,
+            "recap_document_id": self.recap_document_id,
+            "pacer_doc_id": self.pacer_doc_id,
+            "is_available": self.is_available,
+            "source_url": self.source_url,
         }
 
 
 @dataclass
 class Opinion:
     """Represents a court opinion"""
+
     opinion_id: str
     case_name: str
     court_name: str
@@ -227,26 +246,27 @@ class Opinion:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'opinion_id': self.opinion_id,
-            'case_name': self.case_name,
-            'court_name': self.court_name,
-            'date_filed': self.date_filed.isoformat() if self.date_filed else None,
-            'date_argued': self.date_argued.isoformat() if self.date_argued else None,
-            'docket_number': self.docket_number,
-            'citation': self.citation,
-            'status': self.status,
-            'author': self.author,
-            'opinion_type': self.opinion_type,
-            'text_excerpt': self.text_excerpt,
-            'download_url': self.download_url,
-            'cluster_id': self.cluster_id,
-            'source_url': self.source_url,
+            "opinion_id": self.opinion_id,
+            "case_name": self.case_name,
+            "court_name": self.court_name,
+            "date_filed": self.date_filed.isoformat() if self.date_filed else None,
+            "date_argued": self.date_argued.isoformat() if self.date_argued else None,
+            "docket_number": self.docket_number,
+            "citation": self.citation,
+            "status": self.status,
+            "author": self.author,
+            "opinion_type": self.opinion_type,
+            "text_excerpt": self.text_excerpt,
+            "download_url": self.download_url,
+            "cluster_id": self.cluster_id,
+            "source_url": self.source_url,
         }
 
 
 @dataclass
 class CaseSearch:
     """Search parameters for court cases"""
+
     case_number: Optional[str] = None
     party_name: Optional[str] = None
     case_type: Optional[CaseType] = None
@@ -262,6 +282,7 @@ class CaseSearch:
 @dataclass
 class PartySearch:
     """Search parameters for party-based searches"""
+
     name: str
     party_type: Optional[PartyType] = None
     state: Optional[str] = None
@@ -275,58 +296,194 @@ class PartySearch:
 # Federal court identifiers
 FEDERAL_COURTS = {
     # District Courts
-    'cacd': {'name': 'Central District of California', 'state': 'CA', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'caed': {'name': 'Eastern District of California', 'state': 'CA', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'cand': {'name': 'Northern District of California', 'state': 'CA', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'casd': {'name': 'Southern District of California', 'state': 'CA', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'txed': {'name': 'Eastern District of Texas', 'state': 'TX', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'txnd': {'name': 'Northern District of Texas', 'state': 'TX', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'txsd': {'name': 'Southern District of Texas', 'state': 'TX', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'txwd': {'name': 'Western District of Texas', 'state': 'TX', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'nysd': {'name': 'Southern District of New York', 'state': 'NY', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'nyed': {'name': 'Eastern District of New York', 'state': 'NY', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'nynd': {'name': 'Northern District of New York', 'state': 'NY', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'nywd': {'name': 'Western District of New York', 'state': 'NY', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'flsd': {'name': 'Southern District of Florida', 'state': 'FL', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'flmd': {'name': 'Middle District of Florida', 'state': 'FL', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'flnd': {'name': 'Northern District of Florida', 'state': 'FL', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'ilnd': {'name': 'Northern District of Illinois', 'state': 'IL', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'ilcd': {'name': 'Central District of Illinois', 'state': 'IL', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'ilsd': {'name': 'Southern District of Illinois', 'state': 'IL', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'dcd': {'name': 'District of Columbia', 'state': 'DC', 'level': CourtLevel.FEDERAL_DISTRICT},
-    'ded': {'name': 'District of Delaware', 'state': 'DE', 'level': CourtLevel.FEDERAL_DISTRICT},
+    "cacd": {
+        "name": "Central District of California",
+        "state": "CA",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "caed": {
+        "name": "Eastern District of California",
+        "state": "CA",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "cand": {
+        "name": "Northern District of California",
+        "state": "CA",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "casd": {
+        "name": "Southern District of California",
+        "state": "CA",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "txed": {
+        "name": "Eastern District of Texas",
+        "state": "TX",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "txnd": {
+        "name": "Northern District of Texas",
+        "state": "TX",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "txsd": {
+        "name": "Southern District of Texas",
+        "state": "TX",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "txwd": {
+        "name": "Western District of Texas",
+        "state": "TX",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "nysd": {
+        "name": "Southern District of New York",
+        "state": "NY",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "nyed": {
+        "name": "Eastern District of New York",
+        "state": "NY",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "nynd": {
+        "name": "Northern District of New York",
+        "state": "NY",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "nywd": {
+        "name": "Western District of New York",
+        "state": "NY",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "flsd": {
+        "name": "Southern District of Florida",
+        "state": "FL",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "flmd": {
+        "name": "Middle District of Florida",
+        "state": "FL",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "flnd": {
+        "name": "Northern District of Florida",
+        "state": "FL",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "ilnd": {
+        "name": "Northern District of Illinois",
+        "state": "IL",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "ilcd": {
+        "name": "Central District of Illinois",
+        "state": "IL",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "ilsd": {
+        "name": "Southern District of Illinois",
+        "state": "IL",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "dcd": {
+        "name": "District of Columbia",
+        "state": "DC",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
+    "ded": {
+        "name": "District of Delaware",
+        "state": "DE",
+        "level": CourtLevel.FEDERAL_DISTRICT,
+    },
     # Appellate Courts
-    'ca1': {'name': 'First Circuit Court of Appeals', 'state': None, 'level': CourtLevel.FEDERAL_APPELLATE},
-    'ca2': {'name': 'Second Circuit Court of Appeals', 'state': None, 'level': CourtLevel.FEDERAL_APPELLATE},
-    'ca3': {'name': 'Third Circuit Court of Appeals', 'state': None, 'level': CourtLevel.FEDERAL_APPELLATE},
-    'ca4': {'name': 'Fourth Circuit Court of Appeals', 'state': None, 'level': CourtLevel.FEDERAL_APPELLATE},
-    'ca5': {'name': 'Fifth Circuit Court of Appeals', 'state': None, 'level': CourtLevel.FEDERAL_APPELLATE},
-    'ca6': {'name': 'Sixth Circuit Court of Appeals', 'state': None, 'level': CourtLevel.FEDERAL_APPELLATE},
-    'ca7': {'name': 'Seventh Circuit Court of Appeals', 'state': None, 'level': CourtLevel.FEDERAL_APPELLATE},
-    'ca8': {'name': 'Eighth Circuit Court of Appeals', 'state': None, 'level': CourtLevel.FEDERAL_APPELLATE},
-    'ca9': {'name': 'Ninth Circuit Court of Appeals', 'state': None, 'level': CourtLevel.FEDERAL_APPELLATE},
-    'ca10': {'name': 'Tenth Circuit Court of Appeals', 'state': None, 'level': CourtLevel.FEDERAL_APPELLATE},
-    'ca11': {'name': 'Eleventh Circuit Court of Appeals', 'state': None, 'level': CourtLevel.FEDERAL_APPELLATE},
-    'cadc': {'name': 'DC Circuit Court of Appeals', 'state': 'DC', 'level': CourtLevel.FEDERAL_APPELLATE},
-    'cafc': {'name': 'Federal Circuit Court of Appeals', 'state': None, 'level': CourtLevel.FEDERAL_APPELLATE},
+    "ca1": {
+        "name": "First Circuit Court of Appeals",
+        "state": None,
+        "level": CourtLevel.FEDERAL_APPELLATE,
+    },
+    "ca2": {
+        "name": "Second Circuit Court of Appeals",
+        "state": None,
+        "level": CourtLevel.FEDERAL_APPELLATE,
+    },
+    "ca3": {
+        "name": "Third Circuit Court of Appeals",
+        "state": None,
+        "level": CourtLevel.FEDERAL_APPELLATE,
+    },
+    "ca4": {
+        "name": "Fourth Circuit Court of Appeals",
+        "state": None,
+        "level": CourtLevel.FEDERAL_APPELLATE,
+    },
+    "ca5": {
+        "name": "Fifth Circuit Court of Appeals",
+        "state": None,
+        "level": CourtLevel.FEDERAL_APPELLATE,
+    },
+    "ca6": {
+        "name": "Sixth Circuit Court of Appeals",
+        "state": None,
+        "level": CourtLevel.FEDERAL_APPELLATE,
+    },
+    "ca7": {
+        "name": "Seventh Circuit Court of Appeals",
+        "state": None,
+        "level": CourtLevel.FEDERAL_APPELLATE,
+    },
+    "ca8": {
+        "name": "Eighth Circuit Court of Appeals",
+        "state": None,
+        "level": CourtLevel.FEDERAL_APPELLATE,
+    },
+    "ca9": {
+        "name": "Ninth Circuit Court of Appeals",
+        "state": None,
+        "level": CourtLevel.FEDERAL_APPELLATE,
+    },
+    "ca10": {
+        "name": "Tenth Circuit Court of Appeals",
+        "state": None,
+        "level": CourtLevel.FEDERAL_APPELLATE,
+    },
+    "ca11": {
+        "name": "Eleventh Circuit Court of Appeals",
+        "state": None,
+        "level": CourtLevel.FEDERAL_APPELLATE,
+    },
+    "cadc": {
+        "name": "DC Circuit Court of Appeals",
+        "state": "DC",
+        "level": CourtLevel.FEDERAL_APPELLATE,
+    },
+    "cafc": {
+        "name": "Federal Circuit Court of Appeals",
+        "state": None,
+        "level": CourtLevel.FEDERAL_APPELLATE,
+    },
     # Supreme Court
-    'scotus': {'name': 'Supreme Court of the United States', 'state': None, 'level': CourtLevel.SUPREME_COURT},
+    "scotus": {
+        "name": "Supreme Court of the United States",
+        "state": None,
+        "level": CourtLevel.SUPREME_COURT,
+    },
 }
 
 # CourtListener API configuration
 COURTLISTENER_CONFIG = {
-    'base_url': 'https://www.courtlistener.com/api/rest/v4',
-    'search_url': 'https://www.courtlistener.com/api/rest/v4/search/',
-    'docket_url': 'https://www.courtlistener.com/api/rest/v4/dockets/',
-    'opinion_url': 'https://www.courtlistener.com/api/rest/v4/opinions/',
-    'cluster_url': 'https://www.courtlistener.com/api/rest/v4/clusters/',
-    'court_url': 'https://www.courtlistener.com/api/rest/v4/courts/',
-    'party_url': 'https://www.courtlistener.com/api/rest/v4/parties/',
-    'attorney_url': 'https://www.courtlistener.com/api/rest/v4/attorneys/',
-    'auth_required': True,
-    'auth_env_var': 'COURTLISTENER_API_KEY',
-    'rate_limit': 5000,  # Per hour with auth
-    'documentation': 'https://www.courtlistener.com/api/rest-info/',
+    "base_url": "https://www.courtlistener.com/api/rest/v4",
+    "search_url": "https://www.courtlistener.com/api/rest/v4/search/",
+    "docket_url": "https://www.courtlistener.com/api/rest/v4/dockets/",
+    "opinion_url": "https://www.courtlistener.com/api/rest/v4/opinions/",
+    "cluster_url": "https://www.courtlistener.com/api/rest/v4/clusters/",
+    "court_url": "https://www.courtlistener.com/api/rest/v4/courts/",
+    "party_url": "https://www.courtlistener.com/api/rest/v4/parties/",
+    "attorney_url": "https://www.courtlistener.com/api/rest/v4/attorneys/",
+    "auth_required": True,
+    "auth_env_var": "COURTLISTENER_API_KEY",
+    "rate_limit": 5000,  # Per hour with auth
+    "documentation": "https://www.courtlistener.com/api/rest-info/",
 }
 
 
@@ -361,12 +518,14 @@ class CourtListenerAPI:
         Args:
             api_key: CourtListener API key (optional but recommended)
         """
-        self.api_key = api_key or os.environ.get('COURTLISTENER_API_KEY')
+        self.api_key = api_key or os.environ.get("COURTLISTENER_API_KEY")
         self.config = COURTLISTENER_CONFIG
         self._last_request_time = 0
         # Rate limit: with key ~1.4 req/sec, without ~1 per 36 sec
         self._min_request_interval = 0.75 if self.api_key else 36.0
-        logger.info(f"CourtListenerAPI initialized (API key: {'present' if self.api_key else 'not set'})")
+        logger.info(
+            f"CourtListenerAPI initialized (API key: {'present' if self.api_key else 'not set'})"
+        )
 
     async def _rate_limit(self):
         """Enforce rate limiting between requests."""
@@ -379,7 +538,7 @@ class CourtListenerAPI:
         self,
         url: str,
         params: Dict[str, Any] = None,
-        session: aiohttp.ClientSession = None
+        session: aiohttp.ClientSession = None,
     ) -> Dict[str, Any]:
         """
         Make an async HTTP request to CourtListener API.
@@ -395,11 +554,11 @@ class CourtListenerAPI:
         await self._rate_limit()
 
         headers = {
-            'Accept': 'application/json',
+            "Accept": "application/json",
         }
 
         if self.api_key:
-            headers['Authorization'] = f'Token {self.api_key}'
+            headers["Authorization"] = f"Token {self.api_key}"
 
         close_session = False
         if session is None:
@@ -411,7 +570,7 @@ class CourtListenerAPI:
                 url,
                 params=params,
                 headers=headers,
-                timeout=aiohttp.ClientTimeout(total=60)
+                timeout=aiohttp.ClientTimeout(total=60),
             ) as response:
                 if response.status == 200:
                     return await response.json()
@@ -421,13 +580,17 @@ class CourtListenerAPI:
                 elif response.status == 429:
                     logger.warning("CourtListener rate limit hit, waiting...")
                     await asyncio.sleep(60)
-                    return await self._make_request(url, params, session if not close_session else None)
+                    return await self._make_request(
+                        url, params, session if not close_session else None
+                    )
                 elif response.status == 404:
                     logger.warning(f"Resource not found: {url}")
                     return {}
                 else:
                     error_text = await response.text()
-                    logger.error(f"CourtListener API error {response.status}: {error_text}")
+                    logger.error(
+                        f"CourtListener API error {response.status}: {error_text}"
+                    )
                     return {}
         except asyncio.TimeoutError:
             logger.error(f"Timeout requesting: {url}")
@@ -445,7 +608,7 @@ class CourtListenerAPI:
             return None
         try:
             # CourtListener uses ISO format
-            return datetime.fromisoformat(date_str.replace('Z', '+00:00')).date()
+            return datetime.fromisoformat(date_str.replace("Z", "+00:00")).date()
         except (ValueError, TypeError):
             return None
 
@@ -457,33 +620,39 @@ class CourtListenerAPI:
         nos_lower = nature_of_suit.lower()
 
         # Criminal
-        if 'criminal' in nos_lower or nos_lower.startswith('cr'):
+        if "criminal" in nos_lower or nos_lower.startswith("cr"):
             return CaseType.CRIMINAL
 
         # Bankruptcy
-        if 'bankruptcy' in nos_lower or 'bankr' in nos_lower:
+        if "bankruptcy" in nos_lower or "bankr" in nos_lower:
             return CaseType.BANKRUPTCY
 
         # Civil categories
-        if any(kw in nos_lower for kw in ['contract', 'insurance', 'negotiable', 'recovery']):
+        if any(
+            kw in nos_lower
+            for kw in ["contract", "insurance", "negotiable", "recovery"]
+        ):
             return CaseType.CIVIL
 
-        if any(kw in nos_lower for kw in ['tort', 'personal injury', 'product liability', 'malpractice']):
+        if any(
+            kw in nos_lower
+            for kw in ["tort", "personal injury", "product liability", "malpractice"]
+        ):
             return CaseType.CIVIL
 
-        if any(kw in nos_lower for kw in ['labor', 'employment', 'erisa', 'flsa']):
+        if any(kw in nos_lower for kw in ["labor", "employment", "erisa", "flsa"]):
             return CaseType.CIVIL
 
-        if any(kw in nos_lower for kw in ['property', 'real property', 'foreclosure']):
+        if any(kw in nos_lower for kw in ["property", "real property", "foreclosure"]):
             return CaseType.CIVIL
 
-        if any(kw in nos_lower for kw in ['civil rights', 'voting', 'housing']):
+        if any(kw in nos_lower for kw in ["civil rights", "voting", "housing"]):
             return CaseType.CIVIL
 
-        if any(kw in nos_lower for kw in ['tax', 'irs']):
+        if any(kw in nos_lower for kw in ["tax", "irs"]):
             return CaseType.TAX
 
-        if 'appeal' in nos_lower:
+        if "appeal" in nos_lower:
             return CaseType.APPELLATE
 
         return CaseType.CIVIL  # Default for federal courts
@@ -497,7 +666,7 @@ class CourtListenerAPI:
         date_filed_after: date = None,
         date_filed_before: date = None,
         nature_of_suit: str = "",
-        limit: int = 20
+        limit: int = 20,
     ) -> List[CourtCase]:
         """
         Search federal court dockets.
@@ -518,49 +687,49 @@ class CourtListenerAPI:
         logger.info(f"Searching dockets: query='{query}', court='{court}'")
 
         params = {
-            'type': 'r',  # RECAP type for dockets
+            "type": "r",  # RECAP type for dockets
         }
 
         if query:
-            params['q'] = query
+            params["q"] = query
         if court:
-            params['court'] = court
+            params["court"] = court
         if case_name:
-            params['case_name'] = case_name
+            params["case_name"] = case_name
         if docket_number:
-            params['docket_number'] = docket_number
+            params["docket_number"] = docket_number
         if date_filed_after:
-            params['date_filed__gte'] = date_filed_after.isoformat()
+            params["date_filed__gte"] = date_filed_after.isoformat()
         if date_filed_before:
-            params['date_filed__lte'] = date_filed_before.isoformat()
+            params["date_filed__lte"] = date_filed_before.isoformat()
         if nature_of_suit:
-            params['nature_of_suit'] = nature_of_suit
+            params["nature_of_suit"] = nature_of_suit
 
         url = f"{self.BASE_URL}/search/"
         data = await self._make_request(url, params)
 
         cases = []
-        results = data.get('results', [])[:limit]
+        results = data.get("results", [])[:limit]
 
         for item in results:
-            court_id = item.get('court_id', '')
+            court_id = item.get("court_id", "")
             court_info = FEDERAL_COURTS.get(court_id, {})
 
             case = CourtCase(
-                case_number=item.get('docket_number', ''),
-                case_type=self._classify_case_type(item.get('nature_of_suit', '')),
-                court_name=court_info.get('name', item.get('court', '')),
-                filing_date=self._parse_date(item.get('date_filed')),
-                case_title=item.get('case_name', ''),
+                case_number=item.get("docket_number", ""),
+                case_type=self._classify_case_type(item.get("nature_of_suit", "")),
+                court_name=court_info.get("name", item.get("court", "")),
+                filing_date=self._parse_date(item.get("date_filed")),
+                case_title=item.get("case_name", ""),
                 status=CaseStatus.UNKNOWN,
-                judge_name=item.get('assigned_to_str'),
-                jurisdiction='Federal',
-                state=court_info.get('state'),
-                docket_id=str(item.get('docket_id', '')),
+                judge_name=item.get("assigned_to_str"),
+                jurisdiction="Federal",
+                state=court_info.get("state"),
+                docket_id=str(item.get("docket_id", "")),
                 court_id=court_id,
-                pacer_case_id=item.get('pacer_case_id'),
-                nature_of_suit=item.get('nature_of_suit'),
-                cause=item.get('cause'),
+                pacer_case_id=item.get("pacer_case_id"),
+                nature_of_suit=item.get("nature_of_suit"),
+                cause=item.get("cause"),
                 source_url=f"https://www.courtlistener.com/docket/{item.get('docket_id')}/",
                 raw_data=item,
             )
@@ -587,46 +756,54 @@ class CourtListenerAPI:
         if not data:
             return None
 
-        court_id = data.get('court_id', '')
+        court_id = data.get("court_id", "")
         court_info = FEDERAL_COURTS.get(court_id, {})
 
         # Get parties
         parties = []
-        for party_data in data.get('parties', []):
-            party_type = self._parse_party_type(party_data.get('party_type', {}).get('name', ''))
+        for party_data in data.get("parties", []):
+            party_type = self._parse_party_type(
+                party_data.get("party_type", {}).get("name", "")
+            )
             party = CaseParty(
-                name=party_data.get('name', ''),
+                name=party_data.get("name", ""),
                 party_type=party_type,
-                party_id=str(party_data.get('id', '')),
+                party_id=str(party_data.get("id", "")),
             )
 
             # Get attorney if available
-            attorneys = party_data.get('attorneys', [])
+            attorneys = party_data.get("attorneys", [])
             if attorneys:
                 atty = attorneys[0]
-                party.attorney_name = atty.get('name')
-                party.attorney_firm = atty.get('firm')
+                party.attorney_name = atty.get("name")
+                party.attorney_firm = atty.get("firm")
 
             parties.append(party)
 
         case = CourtCase(
-            case_number=data.get('docket_number', ''),
-            case_type=self._classify_case_type(data.get('nature_of_suit', ''), data.get('cause')),
-            court_name=court_info.get('name', data.get('court', {}).get('full_name', '')),
-            filing_date=self._parse_date(data.get('date_filed')),
-            case_title=data.get('case_name', ''),
-            status=CaseStatus.CLOSED if data.get('date_terminated') else CaseStatus.OPEN,
-            judge_name=data.get('assigned_to_str'),
+            case_number=data.get("docket_number", ""),
+            case_type=self._classify_case_type(
+                data.get("nature_of_suit", ""), data.get("cause")
+            ),
+            court_name=court_info.get(
+                "name", data.get("court", {}).get("full_name", "")
+            ),
+            filing_date=self._parse_date(data.get("date_filed")),
+            case_title=data.get("case_name", ""),
+            status=(
+                CaseStatus.CLOSED if data.get("date_terminated") else CaseStatus.OPEN
+            ),
+            judge_name=data.get("assigned_to_str"),
             parties=parties,
-            jurisdiction='Federal',
-            state=court_info.get('state'),
-            docket_id=str(data.get('id', '')),
+            jurisdiction="Federal",
+            state=court_info.get("state"),
+            docket_id=str(data.get("id", "")),
             court_id=court_id,
-            pacer_case_id=data.get('pacer_case_id'),
-            nature_of_suit=data.get('nature_of_suit'),
-            cause=data.get('cause'),
-            jury_demand=data.get('jury_demand'),
-            disposition=data.get('date_terminated'),
+            pacer_case_id=data.get("pacer_case_id"),
+            nature_of_suit=data.get("nature_of_suit"),
+            cause=data.get("cause"),
+            jury_demand=data.get("jury_demand"),
+            disposition=data.get("date_terminated"),
             source_url=f"https://www.courtlistener.com/docket/{docket_id}/",
             raw_data=data,
         )
@@ -634,9 +811,7 @@ class CourtListenerAPI:
         return case
 
     async def get_docket_entries(
-        self,
-        docket_id: str,
-        limit: int = 100
+        self, docket_id: str, limit: int = 100
     ) -> List[DocketEntry]:
         """
         Get docket entries for a case.
@@ -652,22 +827,22 @@ class CourtListenerAPI:
 
         url = f"{self.BASE_URL}/docket-entries/"
         params = {
-            'docket': docket_id,
-            'page_size': min(limit, 100),
+            "docket": docket_id,
+            "page_size": min(limit, 100),
         }
 
         data = await self._make_request(url, params)
         entries = []
 
-        for item in data.get('results', []):
+        for item in data.get("results", []):
             entry = DocketEntry(
-                entry_number=item.get('entry_number', 0),
-                date_filed=self._parse_date(item.get('date_filed')),
-                description=item.get('description', ''),
-                document_number=item.get('document_number'),
-                page_count=item.get('page_count'),
-                attachment_count=len(item.get('recap_documents', [])),
-                is_available=bool(item.get('recap_documents')),
+                entry_number=item.get("entry_number", 0),
+                date_filed=self._parse_date(item.get("date_filed")),
+                description=item.get("description", ""),
+                document_number=item.get("document_number"),
+                page_count=item.get("page_count"),
+                attachment_count=len(item.get("recap_documents", [])),
+                is_available=bool(item.get("recap_documents")),
                 source_url=f"https://www.courtlistener.com/docket/{docket_id}/?page=1#entry-{item.get('entry_number', 0)}",
             )
             entries.append(entry)
@@ -684,7 +859,7 @@ class CourtListenerAPI:
         date_filed_after: date = None,
         date_filed_before: date = None,
         cited_gt: int = None,
-        limit: int = 20
+        limit: int = 20,
     ) -> List[Opinion]:
         """
         Search court opinions.
@@ -705,48 +880,52 @@ class CourtListenerAPI:
         logger.info(f"Searching opinions: query='{query}'")
 
         params = {
-            'type': 'o',  # Opinion type
+            "type": "o",  # Opinion type
         }
 
         if query:
-            params['q'] = query
+            params["q"] = query
         if court:
-            params['court'] = court
+            params["court"] = court
         if case_name:
-            params['case_name'] = case_name
+            params["case_name"] = case_name
         if judge:
-            params['judge'] = judge
+            params["judge"] = judge
         if date_filed_after:
-            params['date_filed__gte'] = date_filed_after.isoformat()
+            params["date_filed__gte"] = date_filed_after.isoformat()
         if date_filed_before:
-            params['date_filed__lte'] = date_filed_before.isoformat()
+            params["date_filed__lte"] = date_filed_before.isoformat()
         if cited_gt:
-            params['cited_gt'] = cited_gt
+            params["cited_gt"] = cited_gt
 
         url = f"{self.BASE_URL}/search/"
         data = await self._make_request(url, params)
 
         opinions = []
-        results = data.get('results', [])[:limit]
+        results = data.get("results", [])[:limit]
 
         for item in results:
-            court_id = item.get('court_id', '')
+            court_id = item.get("court_id", "")
             court_info = FEDERAL_COURTS.get(court_id, {})
 
             opinion = Opinion(
-                opinion_id=str(item.get('id', '')),
-                case_name=item.get('case_name', ''),
-                court_name=court_info.get('name', item.get('court', '')),
-                date_filed=self._parse_date(item.get('date_filed')),
-                date_argued=self._parse_date(item.get('date_argued')),
-                docket_number=item.get('docket_number'),
-                citation=item.get('citation', [None])[0] if item.get('citation') else None,
-                status=item.get('status'),
-                author=item.get('author'),
-                opinion_type=item.get('type'),
-                text_excerpt=item.get('snippet', '')[:500] if item.get('snippet') else None,
-                cluster_id=str(item.get('cluster_id', '')),
-                download_url=item.get('download_url'),
+                opinion_id=str(item.get("id", "")),
+                case_name=item.get("case_name", ""),
+                court_name=court_info.get("name", item.get("court", "")),
+                date_filed=self._parse_date(item.get("date_filed")),
+                date_argued=self._parse_date(item.get("date_argued")),
+                docket_number=item.get("docket_number"),
+                citation=(
+                    item.get("citation", [None])[0] if item.get("citation") else None
+                ),
+                status=item.get("status"),
+                author=item.get("author"),
+                opinion_type=item.get("type"),
+                text_excerpt=(
+                    item.get("snippet", "")[:500] if item.get("snippet") else None
+                ),
+                cluster_id=str(item.get("cluster_id", "")),
+                download_url=item.get("download_url"),
                 source_url=f"https://www.courtlistener.com/opinion/{item.get('cluster_id')}/",
                 raw_data=item,
             )
@@ -774,29 +953,35 @@ class CourtListenerAPI:
             return None
 
         # Get cluster info for case details
-        cluster_url = data.get('cluster')
+        cluster_url = data.get("cluster")
         cluster_data = {}
         if cluster_url:
             cluster_data = await self._make_request(cluster_url)
 
-        court_id = cluster_data.get('court_id', '')
+        court_id = cluster_data.get("court_id", "")
         court_info = FEDERAL_COURTS.get(court_id, {})
 
         opinion = Opinion(
-            opinion_id=str(data.get('id', '')),
-            case_name=cluster_data.get('case_name', ''),
-            court_name=court_info.get('name', ''),
-            date_filed=self._parse_date(cluster_data.get('date_filed')),
-            date_argued=self._parse_date(cluster_data.get('date_argued')),
-            docket_number=cluster_data.get('docket', {}).get('docket_number'),
-            citation=cluster_data.get('citation', [None])[0] if cluster_data.get('citation') else None,
-            author=data.get('author_str'),
-            opinion_type=data.get('type'),
-            text_excerpt=data.get('plain_text', '')[:1000] if data.get('plain_text') else None,
-            cluster_id=str(cluster_data.get('id', '')),
-            download_url=data.get('download_url'),
+            opinion_id=str(data.get("id", "")),
+            case_name=cluster_data.get("case_name", ""),
+            court_name=court_info.get("name", ""),
+            date_filed=self._parse_date(cluster_data.get("date_filed")),
+            date_argued=self._parse_date(cluster_data.get("date_argued")),
+            docket_number=cluster_data.get("docket", {}).get("docket_number"),
+            citation=(
+                cluster_data.get("citation", [None])[0]
+                if cluster_data.get("citation")
+                else None
+            ),
+            author=data.get("author_str"),
+            opinion_type=data.get("type"),
+            text_excerpt=(
+                data.get("plain_text", "")[:1000] if data.get("plain_text") else None
+            ),
+            cluster_id=str(cluster_data.get("id", "")),
+            download_url=data.get("download_url"),
             source_url=f"https://www.courtlistener.com/opinion/{data.get('id')}/",
-            raw_data={**data, 'cluster': cluster_data},
+            raw_data={**data, "cluster": cluster_data},
         )
 
         return opinion
@@ -808,7 +993,7 @@ class CourtListenerAPI:
         court: str = "",
         date_filed_after: date = None,
         date_filed_before: date = None,
-        limit: int = 20
+        limit: int = 20,
     ) -> List[CourtCase]:
         """
         Search cases by party name.
@@ -828,38 +1013,38 @@ class CourtListenerAPI:
 
         # Search using party name in case name field
         params = {
-            'type': 'r',
-            'q': f'"{party_name}"',
+            "type": "r",
+            "q": f'"{party_name}"',
         }
 
         if court:
-            params['court'] = court
+            params["court"] = court
         if date_filed_after:
-            params['date_filed__gte'] = date_filed_after.isoformat()
+            params["date_filed__gte"] = date_filed_after.isoformat()
         if date_filed_before:
-            params['date_filed__lte'] = date_filed_before.isoformat()
+            params["date_filed__lte"] = date_filed_before.isoformat()
 
         url = f"{self.BASE_URL}/search/"
         data = await self._make_request(url, params)
 
         cases = []
-        results = data.get('results', [])[:limit]
+        results = data.get("results", [])[:limit]
 
         for item in results:
-            court_id = item.get('court_id', '')
+            court_id = item.get("court_id", "")
             court_info = FEDERAL_COURTS.get(court_id, {})
 
             case = CourtCase(
-                case_number=item.get('docket_number', ''),
-                case_type=self._classify_case_type(item.get('nature_of_suit', '')),
-                court_name=court_info.get('name', item.get('court', '')),
-                filing_date=self._parse_date(item.get('date_filed')),
-                case_title=item.get('case_name', ''),
+                case_number=item.get("docket_number", ""),
+                case_type=self._classify_case_type(item.get("nature_of_suit", "")),
+                court_name=court_info.get("name", item.get("court", "")),
+                filing_date=self._parse_date(item.get("date_filed")),
+                case_title=item.get("case_name", ""),
                 status=CaseStatus.UNKNOWN,
-                judge_name=item.get('assigned_to_str'),
-                jurisdiction='Federal',
-                state=court_info.get('state'),
-                docket_id=str(item.get('docket_id', '')),
+                judge_name=item.get("assigned_to_str"),
+                jurisdiction="Federal",
+                state=court_info.get("state"),
+                docket_id=str(item.get("docket_id", "")),
                 court_id=court_id,
                 source_url=f"https://www.courtlistener.com/docket/{item.get('docket_id')}/",
                 raw_data=item,
@@ -879,13 +1064,15 @@ class CourtListenerAPI:
         logger.info("Getting court list")
 
         url = f"{self.BASE_URL}/courts/"
-        params = {'page_size': 200}
+        params = {"page_size": 200}
 
         all_courts = []
         while url:
-            data = await self._make_request(url, params if 'page' not in str(url) else None)
-            all_courts.extend(data.get('results', []))
-            url = data.get('next')
+            data = await self._make_request(
+                url, params if "page" not in str(url) else None
+            )
+            all_courts.extend(data.get("results", []))
+            url = data.get("next")
             if url and len(all_courts) >= 500:  # Safety limit
                 break
 
@@ -893,10 +1080,7 @@ class CourtListenerAPI:
         return all_courts
 
     async def search_attorneys(
-        self,
-        name: str,
-        firm: str = "",
-        limit: int = 20
+        self, name: str, firm: str = "", limit: int = 20
     ) -> List[Dict[str, Any]]:
         """
         Search for attorneys.
@@ -913,11 +1097,11 @@ class CourtListenerAPI:
 
         url = f"{self.BASE_URL}/attorneys/"
         params = {
-            'name__icontains': name,
+            "name__icontains": name,
         }
 
         data = await self._make_request(url, params)
-        attorneys = data.get('results', [])[:limit]
+        attorneys = data.get("results", [])[:limit]
 
         logger.info(f"Found {len(attorneys)} attorneys")
         return attorneys
@@ -926,21 +1110,21 @@ class CourtListenerAPI:
         """Parse party type from CourtListener format."""
         name_lower = party_type_name.lower()
 
-        if 'plaintiff' in name_lower:
+        if "plaintiff" in name_lower:
             return PartyType.PLAINTIFF
-        elif 'defendant' in name_lower:
+        elif "defendant" in name_lower:
             return PartyType.DEFENDANT
-        elif 'petitioner' in name_lower:
+        elif "petitioner" in name_lower:
             return PartyType.PETITIONER
-        elif 'respondent' in name_lower:
+        elif "respondent" in name_lower:
             return PartyType.RESPONDENT
-        elif 'appellant' in name_lower:
+        elif "appellant" in name_lower:
             return PartyType.APPELLANT
-        elif 'appellee' in name_lower:
+        elif "appellee" in name_lower:
             return PartyType.APPELLEE
-        elif 'creditor' in name_lower:
+        elif "creditor" in name_lower:
             return PartyType.CREDITOR
-        elif 'debtor' in name_lower:
+        elif "debtor" in name_lower:
             return PartyType.DEBTOR
 
         return PartyType.OTHER
@@ -948,14 +1132,14 @@ class CourtListenerAPI:
     def get_coverage_stats(self) -> Dict[str, Any]:
         """Get coverage statistics."""
         return {
-            'category': self.CATEGORY,
-            'display_name': self.DISPLAY_NAME,
-            'federal_courts': len(FEDERAL_COURTS),
-            'court_levels': ['District', 'Appellate', 'Bankruptcy', 'Supreme Court'],
-            'data_types': ['Dockets', 'Opinions', 'Parties', 'Attorneys', 'Documents'],
-            'auth_required': 'Optional (increases rate limit)',
-            'rate_limit': '5000/hour with key, 100/hour without',
-            'api_key_present': bool(self.api_key),
+            "category": self.CATEGORY,
+            "display_name": self.DISPLAY_NAME,
+            "federal_courts": len(FEDERAL_COURTS),
+            "court_levels": ["District", "Appellate", "Bankruptcy", "Supreme Court"],
+            "data_types": ["Dockets", "Opinions", "Parties", "Attorneys", "Documents"],
+            "auth_required": "Optional (increases rate limit)",
+            "rate_limit": "5000/hour with key, 100/hour without",
+            "api_key_present": bool(self.api_key),
         }
 
 
@@ -968,10 +1152,39 @@ class CourtRecordsScraper(ABC):
     """
 
     # Case type keywords for classification
-    CIVIL_KEYWORDS = ['civil', 'contract', 'tort', 'personal injury', 'negligence', 'breach']
-    CRIMINAL_KEYWORDS = ['criminal', 'felony', 'misdemeanor', 'dui', 'dwi', 'theft', 'assault']
-    FAMILY_KEYWORDS = ['family', 'divorce', 'custody', 'child support', 'adoption', 'paternity']
-    PROBATE_KEYWORDS = ['probate', 'estate', 'will', 'trust', 'guardianship', 'conservatorship']
+    CIVIL_KEYWORDS = [
+        "civil",
+        "contract",
+        "tort",
+        "personal injury",
+        "negligence",
+        "breach",
+    ]
+    CRIMINAL_KEYWORDS = [
+        "criminal",
+        "felony",
+        "misdemeanor",
+        "dui",
+        "dwi",
+        "theft",
+        "assault",
+    ]
+    FAMILY_KEYWORDS = [
+        "family",
+        "divorce",
+        "custody",
+        "child support",
+        "adoption",
+        "paternity",
+    ]
+    PROBATE_KEYWORDS = [
+        "probate",
+        "estate",
+        "will",
+        "trust",
+        "guardianship",
+        "conservatorship",
+    ]
 
     def __init__(self, jurisdiction: str, config: Dict[str, Any] = None):
         """
@@ -1046,17 +1259,17 @@ class CourtRecordsScraper(ABC):
             return CaseType.PROBATE
         elif any(kw in text_lower for kw in self.CIVIL_KEYWORDS):
             return CaseType.CIVIL
-        elif 'bankruptcy' in text_lower:
+        elif "bankruptcy" in text_lower:
             return CaseType.BANKRUPTCY
-        elif 'small claim' in text_lower:
+        elif "small claim" in text_lower:
             return CaseType.SMALL_CLAIMS
-        elif 'tax' in text_lower:
+        elif "tax" in text_lower:
             return CaseType.TAX
-        elif 'traffic' in text_lower:
+        elif "traffic" in text_lower:
             return CaseType.TRAFFIC
-        elif 'juvenile' in text_lower:
+        elif "juvenile" in text_lower:
             return CaseType.JUVENILE
-        elif 'appeal' in text_lower:
+        elif "appeal" in text_lower:
             return CaseType.APPELLATE
 
         return CaseType.UNKNOWN
@@ -1073,19 +1286,19 @@ class CourtRecordsScraper(ABC):
         """
         status_lower = status_text.lower().strip()
 
-        if any(s in status_lower for s in ['open', 'active', 'pending trial']):
+        if any(s in status_lower for s in ["open", "active", "pending trial"]):
             return CaseStatus.OPEN
-        elif any(s in status_lower for s in ['closed', 'disposed', 'final']):
+        elif any(s in status_lower for s in ["closed", "disposed", "final"]):
             return CaseStatus.CLOSED
-        elif any(s in status_lower for s in ['pending', 'awaiting']):
+        elif any(s in status_lower for s in ["pending", "awaiting"]):
             return CaseStatus.PENDING
-        elif 'dismiss' in status_lower:
+        elif "dismiss" in status_lower:
             return CaseStatus.DISMISSED
-        elif 'settle' in status_lower:
+        elif "settle" in status_lower:
             return CaseStatus.SETTLED
-        elif 'appeal' in status_lower:
+        elif "appeal" in status_lower:
             return CaseStatus.APPEALED
-        elif any(s in status_lower for s in ['hold', 'stayed', 'abated']):
+        elif any(s in status_lower for s in ["hold", "stayed", "abated"]):
             return CaseStatus.ON_HOLD
 
         return CaseStatus.UNKNOWN
@@ -1102,27 +1315,27 @@ class CourtRecordsScraper(ABC):
         """
         party_lower = party_text.lower().strip()
 
-        if 'plaintiff' in party_lower:
+        if "plaintiff" in party_lower:
             return PartyType.PLAINTIFF
-        elif 'defendant' in party_lower:
+        elif "defendant" in party_lower:
             return PartyType.DEFENDANT
-        elif 'petitioner' in party_lower:
+        elif "petitioner" in party_lower:
             return PartyType.PETITIONER
-        elif 'respondent' in party_lower:
+        elif "respondent" in party_lower:
             return PartyType.RESPONDENT
-        elif 'appellant' in party_lower:
+        elif "appellant" in party_lower:
             return PartyType.APPELLANT
-        elif 'appellee' in party_lower:
+        elif "appellee" in party_lower:
             return PartyType.APPELLEE
-        elif 'creditor' in party_lower:
+        elif "creditor" in party_lower:
             return PartyType.CREDITOR
-        elif 'debtor' in party_lower:
+        elif "debtor" in party_lower:
             return PartyType.DEBTOR
-        elif 'attorney' in party_lower or 'counsel' in party_lower:
+        elif "attorney" in party_lower or "counsel" in party_lower:
             return PartyType.ATTORNEY
-        elif 'judge' in party_lower:
+        elif "judge" in party_lower:
             return PartyType.JUDGE
-        elif 'witness' in party_lower:
+        elif "witness" in party_lower:
             return PartyType.WITNESS
 
         return PartyType.OTHER
@@ -1138,10 +1351,10 @@ class CourtRecordsScraper(ABC):
             Normalized case number
         """
         # Remove extra whitespace
-        normalized = ' '.join(case_number.split())
+        normalized = " ".join(case_number.split())
 
         # Standardize common separators
-        normalized = normalized.replace(' - ', '-').replace(' / ', '/')
+        normalized = normalized.replace(" - ", "-").replace(" / ", "/")
 
         return normalized.upper()
 
@@ -1160,7 +1373,7 @@ class CourtRecordsScraper(ABC):
 
         try:
             # Remove currency symbols, commas, and whitespace
-            cleaned = re.sub(r'[\$,\s]', '', amount_str)
+            cleaned = re.sub(r"[\$,\s]", "", amount_str)
             return float(cleaned)
         except (ValueError, TypeError):
             return None
@@ -1179,12 +1392,12 @@ class CourtRecordsScraper(ABC):
             return None
 
         formats = [
-            '%Y-%m-%d',
-            '%m/%d/%Y',
-            '%m-%d-%Y',
-            '%Y%m%d',
-            '%d-%b-%Y',
-            '%B %d, %Y',
+            "%Y-%m-%d",
+            "%m/%d/%Y",
+            "%m-%d-%Y",
+            "%Y%m%d",
+            "%d-%b-%Y",
+            "%B %d, %Y",
         ]
 
         for fmt in formats:
@@ -1198,8 +1411,8 @@ class CourtRecordsScraper(ABC):
     def get_statistics(self) -> Dict[str, Any]:
         """Get scraper statistics."""
         return {
-            'jurisdiction': self.jurisdiction,
-            'scraper_class': self.__class__.__name__,
+            "jurisdiction": self.jurisdiction,
+            "scraper_class": self.__class__.__name__,
         }
 
 
@@ -1218,8 +1431,8 @@ class StateCourtScraper(CourtRecordsScraper):
         """
         super().__init__(jurisdiction=state_code, config=config)
         self.state_code = state_code.upper()
-        self.base_url = config.get('base_url', '') if config else ''
-        self.court_api = config.get('court_api', '') if config else ''
+        self.base_url = config.get("base_url", "") if config else ""
+        self.court_api = config.get("court_api", "") if config else ""
 
     def search_cases(self, search: CaseSearch) -> List[CourtCase]:
         """Search for court cases in this state."""
@@ -1251,10 +1464,7 @@ def get_courtlistener_api(api_key: str = None) -> CourtListenerAPI:
 
 
 def search_federal_cases(
-    query: str = "",
-    court: str = "",
-    party_name: str = "",
-    limit: int = 20
+    query: str = "", court: str = "", party_name: str = "", limit: int = 20
 ) -> List[Dict[str, Any]]:
     """
     Search federal court cases (synchronous wrapper).
@@ -1272,17 +1482,19 @@ def search_federal_cases(
     loop = asyncio.get_event_loop()
 
     if party_name:
-        cases = loop.run_until_complete(api.search_by_party(party_name, court=court, limit=limit))
+        cases = loop.run_until_complete(
+            api.search_by_party(party_name, court=court, limit=limit)
+        )
     else:
-        cases = loop.run_until_complete(api.search_dockets(query=query, court=court, limit=limit))
+        cases = loop.run_until_complete(
+            api.search_dockets(query=query, court=court, limit=limit)
+        )
 
     return [c.to_dict() for c in cases]
 
 
 def search_opinions(
-    query: str,
-    court: str = "",
-    limit: int = 20
+    query: str, court: str = "", limit: int = 20
 ) -> List[Dict[str, Any]]:
     """
     Search court opinions (synchronous wrapper).
@@ -1297,7 +1509,9 @@ def search_opinions(
     """
     api = get_courtlistener_api()
     loop = asyncio.get_event_loop()
-    opinions = loop.run_until_complete(api.search_opinions(query=query, court=court, limit=limit))
+    opinions = loop.run_until_complete(
+        api.search_opinions(query=query, court=court, limit=limit)
+    )
     return [o.to_dict() for o in opinions]
 
 
@@ -1306,7 +1520,7 @@ def search_court_records(
     states: List[str] = None,
     case_types: List[CaseType] = None,
     date_from: date = None,
-    date_to: date = None
+    date_to: date = None,
 ) -> List[CourtCase]:
     """
     Convenience function to search court records across multiple jurisdictions.
@@ -1329,10 +1543,7 @@ def search_court_records(
 
     federal_cases = loop.run_until_complete(
         api.search_by_party(
-            party_name,
-            date_filed_after=date_from,
-            date_filed_before=date_to,
-            limit=50
+            party_name, date_filed_after=date_from, date_filed_before=date_to, limit=50
         )
     )
     results.extend(federal_cases)

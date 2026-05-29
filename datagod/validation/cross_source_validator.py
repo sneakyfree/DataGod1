@@ -10,38 +10,41 @@ Features:
 - Record reconciliation
 """
 
-import re
 import logging
-from datetime import date, datetime, timedelta
+import re
 from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional, Tuple, Set
+from datetime import date, datetime, timedelta
 from enum import Enum
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
 
 class DiscrepancyType(Enum):
     """Types of cross-source discrepancies"""
-    VALUE_MISMATCH = "value_mismatch"       # Different values for same field
+
+    VALUE_MISMATCH = "value_mismatch"  # Different values for same field
     MISSING_IN_SOURCE = "missing_in_source"  # Field present in one source only
     FORMAT_DIFFERENCE = "format_difference"  # Same value, different format
-    DATE_DIFFERENCE = "date_difference"      # Dates differ by small amount
-    CASE_DIFFERENCE = "case_difference"      # Same value, different case
+    DATE_DIFFERENCE = "date_difference"  # Dates differ by small amount
+    CASE_DIFFERENCE = "case_difference"  # Same value, different case
     PRECISION_DIFFERENCE = "precision_diff"  # Numbers differ slightly
 
 
 class DiscrepancySeverity(Enum):
     """Severity levels for discrepancies"""
+
     CRITICAL = "critical"  # Major inconsistency, needs resolution
-    HIGH = "high"          # Significant difference
-    MEDIUM = "medium"      # Notable difference
-    LOW = "low"            # Minor difference
-    INFO = "info"          # Informational only
+    HIGH = "high"  # Significant difference
+    MEDIUM = "medium"  # Notable difference
+    LOW = "low"  # Minor difference
+    INFO = "info"  # Informational only
 
 
 @dataclass
 class SourceDiscrepancy:
     """Represents a discrepancy between sources"""
+
     field: str
     discrepancy_type: DiscrepancyType
     severity: DiscrepancySeverity
@@ -56,22 +59,25 @@ class SourceDiscrepancy:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'field': self.field,
-            'discrepancy_type': self.discrepancy_type.value,
-            'severity': self.severity.value,
-            'source1_name': self.source1_name,
-            'source1_value': str(self.source1_value) if self.source1_value else None,
-            'source2_name': self.source2_name,
-            'source2_value': str(self.source2_value) if self.source2_value else None,
-            'message': self.message,
-            'recommended_value': str(self.recommended_value) if self.recommended_value else None,
-            'confidence': self.confidence,
+            "field": self.field,
+            "discrepancy_type": self.discrepancy_type.value,
+            "severity": self.severity.value,
+            "source1_name": self.source1_name,
+            "source1_value": str(self.source1_value) if self.source1_value else None,
+            "source2_name": self.source2_name,
+            "source2_value": str(self.source2_value) if self.source2_value else None,
+            "message": self.message,
+            "recommended_value": (
+                str(self.recommended_value) if self.recommended_value else None
+            ),
+            "confidence": self.confidence,
         }
 
 
 @dataclass
 class CrossSourceResult:
     """Result of cross-source validation"""
+
     is_consistent: bool = True
     discrepancies: List[SourceDiscrepancy] = field(default_factory=list)
     sources_compared: List[str] = field(default_factory=list)
@@ -81,7 +87,10 @@ class CrossSourceResult:
     def add_discrepancy(self, discrepancy: SourceDiscrepancy):
         """Add a discrepancy"""
         self.discrepancies.append(discrepancy)
-        if discrepancy.severity in (DiscrepancySeverity.CRITICAL, DiscrepancySeverity.HIGH):
+        if discrepancy.severity in (
+            DiscrepancySeverity.CRITICAL,
+            DiscrepancySeverity.HIGH,
+        ):
             self.is_consistent = False
         # Update consistency score
         severity_weights = {
@@ -97,12 +106,12 @@ class CrossSourceResult:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'is_consistent': self.is_consistent,
-            'consistency_score': round(self.consistency_score, 3),
-            'discrepancy_count': len(self.discrepancies),
-            'sources_compared': self.sources_compared,
-            'discrepancies': [d.to_dict() for d in self.discrepancies],
-            'reconciled_record': self.reconciled_record,
+            "is_consistent": self.is_consistent,
+            "consistency_score": round(self.consistency_score, 3),
+            "discrepancy_count": len(self.discrepancies),
+            "sources_compared": self.sources_compared,
+            "discrepancies": [d.to_dict() for d in self.discrepancies],
+            "reconciled_record": self.reconciled_record,
         }
 
 
@@ -119,33 +128,61 @@ class CrossSourceValidator:
 
     # Fields that must match exactly
     EXACT_MATCH_FIELDS = {
-        'parcel_id', 'document_number', 'case_number', 'entity_id',
-        'ssn_last4', 'ein', 'state'
+        "parcel_id",
+        "document_number",
+        "case_number",
+        "entity_id",
+        "ssn_last4",
+        "ein",
+        "state",
     }
 
     # Fields where minor differences are acceptable
     FUZZY_MATCH_FIELDS = {
-        'address', 'owner_name', 'grantor', 'grantee', 'plaintiff',
-        'defendant', 'entity_name', 'first_name', 'last_name'
+        "address",
+        "owner_name",
+        "grantor",
+        "grantee",
+        "plaintiff",
+        "defendant",
+        "entity_name",
+        "first_name",
+        "last_name",
     }
 
     # Numeric fields with tolerance
     NUMERIC_FIELDS = {
-        'assessed_value', 'market_value', 'last_sale_price', 'consideration',
-        'amount_claimed', 'judgment_amount', 'square_feet', 'lot_size',
-        'bedrooms', 'bathrooms', 'latitude', 'longitude'
+        "assessed_value",
+        "market_value",
+        "last_sale_price",
+        "consideration",
+        "amount_claimed",
+        "judgment_amount",
+        "square_feet",
+        "lot_size",
+        "bedrooms",
+        "bathrooms",
+        "latitude",
+        "longitude",
     }
 
     # Date fields
     DATE_FIELDS = {
-        'last_sale_date', 'recording_date', 'filing_date', 'disposition_date',
-        'formation_date', 'dissolution_date', 'date_of_birth'
+        "last_sale_date",
+        "recording_date",
+        "filing_date",
+        "disposition_date",
+        "formation_date",
+        "dissolution_date",
+        "date_of_birth",
     }
 
-    def __init__(self,
-                 date_tolerance_days: int = 7,
-                 numeric_tolerance_percent: float = 0.05,
-                 fuzzy_threshold: float = 0.85):
+    def __init__(
+        self,
+        date_tolerance_days: int = 7,
+        numeric_tolerance_percent: float = 0.05,
+        fuzzy_threshold: float = 0.85,
+    ):
         """
         Initialize the validator.
 
@@ -170,13 +207,10 @@ class CrossSourceValidator:
         """
         if len(records) < 2:
             return CrossSourceResult(
-                is_consistent=True,
-                sources_compared=[name for name, _ in records]
+                is_consistent=True, sources_compared=[name for name, _ in records]
             )
 
-        result = CrossSourceResult(
-            sources_compared=[name for name, _ in records]
-        )
+        result = CrossSourceResult(sources_compared=[name for name, _ in records])
 
         # Get all fields across all records
         all_fields: Set[str] = set()
@@ -185,20 +219,22 @@ class CrossSourceValidator:
 
         # Compare each pair of records
         for i, (source1_name, record1) in enumerate(records):
-            for source2_name, record2 in records[i + 1:]:
+            for source2_name, record2 in records[i + 1 :]:
                 self._compare_records(
-                    result,
-                    source1_name, record1,
-                    source2_name, record2,
-                    all_fields
+                    result, source1_name, record1, source2_name, record2, all_fields
                 )
 
         return result
 
-    def _compare_records(self, result: CrossSourceResult,
-                         source1_name: str, record1: Dict[str, Any],
-                         source2_name: str, record2: Dict[str, Any],
-                         all_fields: Set[str]):
+    def _compare_records(
+        self,
+        result: CrossSourceResult,
+        source1_name: str,
+        record1: Dict[str, Any],
+        source2_name: str,
+        record2: Dict[str, Any],
+        all_fields: Set[str],
+    ):
         """Compare two records and add discrepancies to result"""
 
         for field in all_fields:
@@ -215,18 +251,20 @@ class CrossSourceValidator:
                 missing_source = source2_name if value1 is not None else source1_name
                 present_value = value1 if value1 is not None else value2
 
-                result.add_discrepancy(SourceDiscrepancy(
-                    field=field,
-                    discrepancy_type=DiscrepancyType.MISSING_IN_SOURCE,
-                    severity=self._get_missing_severity(field),
-                    source1_name=present_source,
-                    source1_value=present_value,
-                    source2_name=missing_source,
-                    source2_value=None,
-                    message=f"Field '{field}' missing in {missing_source}",
-                    recommended_value=present_value,
-                    confidence=0.7
-                ))
+                result.add_discrepancy(
+                    SourceDiscrepancy(
+                        field=field,
+                        discrepancy_type=DiscrepancyType.MISSING_IN_SOURCE,
+                        severity=self._get_missing_severity(field),
+                        source1_name=present_source,
+                        source1_value=present_value,
+                        source2_name=missing_source,
+                        source2_value=None,
+                        message=f"Field '{field}' missing in {missing_source}",
+                        recommended_value=present_value,
+                        confidence=0.7,
+                    )
+                )
                 continue
 
             # Compare values based on field type
@@ -236,8 +274,9 @@ class CrossSourceValidator:
             if discrepancy:
                 result.add_discrepancy(discrepancy)
 
-    def _compare_values(self, field: str, value1: Any, value2: Any,
-                        source1_name: str, source2_name: str) -> Optional[SourceDiscrepancy]:
+    def _compare_values(
+        self, field: str, value1: Any, value2: Any, source1_name: str, source2_name: str
+    ) -> Optional[SourceDiscrepancy]:
         """Compare two values and return discrepancy if any"""
 
         # Exact match fields
@@ -252,21 +291,27 @@ class CrossSourceValidator:
                     source2_name=source2_name,
                     source2_value=value2,
                     message=f"Critical field '{field}' has different values",
-                    confidence=0.0
+                    confidence=0.0,
                 )
             return None
 
         # Numeric fields
         if field in self.NUMERIC_FIELDS:
-            return self._compare_numeric(field, value1, value2, source1_name, source2_name)
+            return self._compare_numeric(
+                field, value1, value2, source1_name, source2_name
+            )
 
         # Date fields
         if field in self.DATE_FIELDS:
-            return self._compare_dates(field, value1, value2, source1_name, source2_name)
+            return self._compare_dates(
+                field, value1, value2, source1_name, source2_name
+            )
 
         # Fuzzy match fields
         if field in self.FUZZY_MATCH_FIELDS:
-            return self._compare_fuzzy(field, value1, value2, source1_name, source2_name)
+            return self._compare_fuzzy(
+                field, value1, value2, source1_name, source2_name
+            )
 
         # Default: exact string comparison (case insensitive)
         str1 = str(value1).strip().lower()
@@ -287,7 +332,7 @@ class CrossSourceValidator:
                 source2_value=value2,
                 message=f"Field '{field}' differs only in case",
                 recommended_value=value1,  # Prefer first source
-                confidence=0.9
+                confidence=0.9,
             )
 
         return SourceDiscrepancy(
@@ -299,11 +344,12 @@ class CrossSourceValidator:
             source2_name=source2_name,
             source2_value=value2,
             message=f"Field '{field}' has different values",
-            confidence=0.5
+            confidence=0.5,
         )
 
-    def _compare_numeric(self, field: str, value1: Any, value2: Any,
-                         source1_name: str, source2_name: str) -> Optional[SourceDiscrepancy]:
+    def _compare_numeric(
+        self, field: str, value1: Any, value2: Any, source1_name: str, source2_name: str
+    ) -> Optional[SourceDiscrepancy]:
         """Compare numeric values with tolerance"""
         try:
             num1 = float(value1)
@@ -329,11 +375,15 @@ class CrossSourceValidator:
                     source2_value=num2,
                     message=f"Field '{field}' differs by {diff_pct:.1%}",
                     recommended_value=(num1 + num2) / 2,  # Average
-                    confidence=0.8
+                    confidence=0.8,
                 )
 
             # Significant difference
-            severity = DiscrepancySeverity.HIGH if diff_pct > 0.2 else DiscrepancySeverity.MEDIUM
+            severity = (
+                DiscrepancySeverity.HIGH
+                if diff_pct > 0.2
+                else DiscrepancySeverity.MEDIUM
+            )
             return SourceDiscrepancy(
                 field=field,
                 discrepancy_type=DiscrepancyType.VALUE_MISMATCH,
@@ -343,7 +393,7 @@ class CrossSourceValidator:
                 source2_name=source2_name,
                 source2_value=num2,
                 message=f"Field '{field}' differs by {diff_pct:.1%}",
-                confidence=0.5
+                confidence=0.5,
             )
 
         except (ValueError, TypeError):
@@ -356,11 +406,12 @@ class CrossSourceValidator:
                 source2_name=source2_name,
                 source2_value=value2,
                 message=f"Field '{field}' has incompatible numeric values",
-                confidence=0.3
+                confidence=0.3,
             )
 
-    def _compare_dates(self, field: str, value1: Any, value2: Any,
-                       source1_name: str, source2_name: str) -> Optional[SourceDiscrepancy]:
+    def _compare_dates(
+        self, field: str, value1: Any, value2: Any, source1_name: str, source2_name: str
+    ) -> Optional[SourceDiscrepancy]:
         """Compare date values with tolerance"""
         date1 = self._parse_date(value1)
         date2 = self._parse_date(value2)
@@ -375,7 +426,7 @@ class CrossSourceValidator:
                 source2_name=source2_name,
                 source2_value=value2,
                 message=f"Field '{field}' has unparseable date format",
-                confidence=0.4
+                confidence=0.4,
             )
 
         if date1 == date2:
@@ -394,10 +445,12 @@ class CrossSourceValidator:
                 source2_value=date2,
                 message=f"Field '{field}' differs by {diff} days",
                 recommended_value=max(date1, date2),  # Prefer more recent
-                confidence=0.7
+                confidence=0.7,
             )
 
-        severity = DiscrepancySeverity.HIGH if diff > 365 else DiscrepancySeverity.MEDIUM
+        severity = (
+            DiscrepancySeverity.HIGH if diff > 365 else DiscrepancySeverity.MEDIUM
+        )
         return SourceDiscrepancy(
             field=field,
             discrepancy_type=DiscrepancyType.VALUE_MISMATCH,
@@ -407,11 +460,12 @@ class CrossSourceValidator:
             source2_name=source2_name,
             source2_value=date2,
             message=f"Field '{field}' differs by {diff} days",
-            confidence=0.4
+            confidence=0.4,
         )
 
-    def _compare_fuzzy(self, field: str, value1: Any, value2: Any,
-                       source1_name: str, source2_name: str) -> Optional[SourceDiscrepancy]:
+    def _compare_fuzzy(
+        self, field: str, value1: Any, value2: Any, source1_name: str, source2_name: str
+    ) -> Optional[SourceDiscrepancy]:
         """Compare text values with fuzzy matching"""
         str1 = self._normalize_text(str(value1))
         str2 = self._normalize_text(str(value2))
@@ -432,10 +486,12 @@ class CrossSourceValidator:
                 source2_value=value2,
                 message=f"Field '{field}' similar ({similarity:.0%} match)",
                 recommended_value=value1,  # Prefer first source
-                confidence=similarity
+                confidence=similarity,
             )
 
-        severity = DiscrepancySeverity.HIGH if similarity < 0.5 else DiscrepancySeverity.MEDIUM
+        severity = (
+            DiscrepancySeverity.HIGH if similarity < 0.5 else DiscrepancySeverity.MEDIUM
+        )
         return SourceDiscrepancy(
             field=field,
             discrepancy_type=DiscrepancyType.VALUE_MISMATCH,
@@ -445,16 +501,16 @@ class CrossSourceValidator:
             source2_name=source2_name,
             source2_value=value2,
             message=f"Field '{field}' mismatch ({similarity:.0%} similarity)",
-            confidence=similarity
+            confidence=similarity,
         )
 
     def _normalize_text(self, text: str) -> str:
         """Normalize text for comparison"""
         text = text.lower().strip()
         # Remove common punctuation
-        text = re.sub(r'[,.\-\'\"()]', ' ', text)
+        text = re.sub(r"[,.\-\'\"()]", " ", text)
         # Normalize whitespace
-        text = ' '.join(text.split())
+        text = " ".join(text.split())
         return text
 
     def _calculate_similarity(self, s1: str, s2: str) -> float:
@@ -498,8 +554,9 @@ class CrossSourceValidator:
                 transpositions += 1
             k += 1
 
-        jaro = (matches / len1 + matches / len2 +
-                (matches - transpositions / 2) / matches) / 3
+        jaro = (
+            matches / len1 + matches / len2 + (matches - transpositions / 2) / matches
+        ) / 3
 
         # Winkler modification
         prefix = 0
@@ -520,7 +577,7 @@ class CrossSourceValidator:
         if isinstance(value, datetime):
             return value.date()
         if isinstance(value, str):
-            for fmt in ['%Y-%m-%d', '%m/%d/%Y', '%m-%d-%Y']:
+            for fmt in ["%Y-%m-%d", "%m/%d/%Y", "%m-%d-%Y"]:
                 try:
                     return datetime.strptime(value, fmt).date()
                 except ValueError:
@@ -535,8 +592,11 @@ class CrossSourceValidator:
             return DiscrepancySeverity.MEDIUM
         return DiscrepancySeverity.LOW
 
-    def reconcile(self, records: List[Tuple[str, Dict[str, Any]]],
-                  priority_order: Optional[List[str]] = None) -> Dict[str, Any]:
+    def reconcile(
+        self,
+        records: List[Tuple[str, Dict[str, Any]]],
+        priority_order: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
         """
         Reconcile records from multiple sources into a single record.
 
@@ -590,34 +650,44 @@ class CrossSourceValidator:
 
         for result in results:
             for disc in result.discrepancies:
-                by_type[disc.discrepancy_type.value] = by_type.get(disc.discrepancy_type.value, 0) + 1
-                by_severity[disc.severity.value] = by_severity.get(disc.severity.value, 0) + 1
+                by_type[disc.discrepancy_type.value] = (
+                    by_type.get(disc.discrepancy_type.value, 0) + 1
+                )
+                by_severity[disc.severity.value] = (
+                    by_severity.get(disc.severity.value, 0) + 1
+                )
                 by_field[disc.field] = by_field.get(disc.field, 0) + 1
 
-        avg_score = sum(r.consistency_score for r in results) / total if total > 0 else 0
+        avg_score = (
+            sum(r.consistency_score for r in results) / total if total > 0 else 0
+        )
 
         return {
-            'total_comparisons': total,
-            'consistent_records': consistent,
-            'inconsistent_records': total - consistent,
-            'consistency_rate': consistent / total if total > 0 else 0,
-            'average_consistency_score': round(avg_score, 3),
-            'total_discrepancies': sum(len(r.discrepancies) for r in results),
-            'discrepancies_by_type': by_type,
-            'discrepancies_by_severity': by_severity,
-            'discrepancies_by_field': by_field,
+            "total_comparisons": total,
+            "consistent_records": consistent,
+            "inconsistent_records": total - consistent,
+            "consistency_rate": consistent / total if total > 0 else 0,
+            "average_consistency_score": round(avg_score, 3),
+            "total_discrepancies": sum(len(r.discrepancies) for r in results),
+            "discrepancies_by_type": by_type,
+            "discrepancies_by_severity": by_severity,
+            "discrepancies_by_field": by_field,
         }
 
 
 # Convenience functions
-def validate_cross_source(records: List[Tuple[str, Dict[str, Any]]]) -> CrossSourceResult:
+def validate_cross_source(
+    records: List[Tuple[str, Dict[str, Any]]]
+) -> CrossSourceResult:
     """Validate records from multiple sources"""
     validator = CrossSourceValidator()
     return validator.validate(records)
 
 
-def reconcile_records(records: List[Tuple[str, Dict[str, Any]]],
-                      priority_order: Optional[List[str]] = None) -> Dict[str, Any]:
+def reconcile_records(
+    records: List[Tuple[str, Dict[str, Any]]],
+    priority_order: Optional[List[str]] = None,
+) -> Dict[str, Any]:
     """Reconcile records from multiple sources"""
     validator = CrossSourceValidator()
     return validator.reconcile(records, priority_order)

@@ -3,19 +3,20 @@ Tests for analytics and search API endpoints.
 Verifies time-series, summary, trends, and entity search endpoints.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
-from datetime import datetime, timedelta
-import sys
 import os
+import sys
+from datetime import datetime, timedelta
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Add project root to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'api', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "api", "src"))
 
 # Set environment for testing
-os.environ.setdefault('TESTING', '1')
-os.environ.setdefault('DATABASE_URL', 'sqlite:///test.db')
+os.environ.setdefault("TESTING", "1")
+os.environ.setdefault("DATABASE_URL", "sqlite:///test.db")
 
 
 class TestAnalyticsTimeSeries:
@@ -24,12 +25,13 @@ class TestAnalyticsTimeSeries:
     def test_time_series_default_period(self):
         """Time-series should default to monthly period."""
         from datagod.models import Record
+
         # Verify we can import the endpoint's dependencies
         assert Record is not None
 
     def test_time_series_valid_periods(self):
         """Valid period values: day, week, month."""
-        valid_periods = ['day', 'week', 'month']
+        valid_periods = ["day", "week", "month"]
         for period in valid_periods:
             assert period in valid_periods
 
@@ -92,6 +94,7 @@ class TestEntitySearch:
     def test_search_query_sanitization(self):
         """Search queries should be sanitized."""
         from datagod.utils.sanitize import sanitize_input
+
         dangerous = "<script>alert('xss')</script>"
         safe = sanitize_input(dangerous)
         assert "<script>" not in safe
@@ -109,6 +112,7 @@ class TestSubscriptionGate:
     def test_tier_ordering(self):
         """Tiers should be ordered: free < basic < pro < enterprise."""
         from datagod.middleware.subscription_gate import TIER_LEVELS
+
         assert TIER_LEVELS["free"] < TIER_LEVELS["basic"]
         assert TIER_LEVELS["basic"] < TIER_LEVELS["pro"]
         assert TIER_LEVELS["pro"] < TIER_LEVELS["enterprise"]
@@ -116,6 +120,7 @@ class TestSubscriptionGate:
     def test_tier_limits_exist(self):
         """All tiers should have defined limits."""
         from datagod.middleware.subscription_gate import TIER_LIMITS
+
         for tier in ["free", "basic", "pro", "enterprise"]:
             assert tier in TIER_LIMITS
             assert "searches_per_day" in TIER_LIMITS[tier]
@@ -123,6 +128,7 @@ class TestSubscriptionGate:
     def test_free_tier_has_limits(self):
         """Free tier should have restrictive limits."""
         from datagod.middleware.subscription_gate import TIER_LIMITS
+
         free_limits = TIER_LIMITS["free"]
         assert free_limits["searches_per_day"] > 0
         assert free_limits["exports_per_day"] > 0
@@ -130,6 +136,7 @@ class TestSubscriptionGate:
     def test_enterprise_tier_unlimited(self):
         """Enterprise tier should have unlimited (-1) for key features."""
         from datagod.middleware.subscription_gate import TIER_LIMITS
+
         ent_limits = TIER_LIMITS["enterprise"]
         assert ent_limits["searches_per_day"] == -1
         assert ent_limits["exports_per_day"] == -1
@@ -137,6 +144,7 @@ class TestSubscriptionGate:
     def test_check_usage_limit(self):
         """Usage limit check should respect tier boundaries."""
         from datagod.middleware.subscription_gate import check_usage_limit
+
         # Enterprise should always pass
         assert check_usage_limit("enterprise", "searches_per_day", 999999) is True
 
@@ -147,6 +155,7 @@ class TestWebSocketManager:
     def test_manager_initialization(self):
         """WebSocket manager should initialize with empty connections."""
         from api.src.websocket_manager import ConnectionManager
+
         mgr = ConnectionManager()
         assert mgr.connection_count == 0
         assert mgr.user_count == 0
@@ -154,6 +163,7 @@ class TestWebSocketManager:
     def test_manager_stats(self):
         """Stats should return connection and room counts."""
         from api.src.websocket_manager import ConnectionManager
+
         mgr = ConnectionManager()
         stats = mgr.get_stats()
         assert "total_connections" in stats
@@ -222,6 +232,7 @@ class TestPerformanceCache:
     def test_cache_manager_init(self):
         """CacheManager should initialize with default settings."""
         from datagod.performance import CacheManager
+
         cache = CacheManager(max_size=100, default_ttl=60)
         stats = cache.get_stats()
         assert stats["max_size"] == 100
@@ -231,6 +242,7 @@ class TestPerformanceCache:
     def test_cache_set_get(self):
         """CacheManager should store and retrieve values."""
         from datagod.performance import CacheManager
+
         cache = CacheManager()
         cache.set("test_key", "test_value", ttl=60)
         result = cache.get("test_key")
@@ -239,6 +251,7 @@ class TestPerformanceCache:
     def test_cache_miss(self):
         """Non-existent keys should return None."""
         from datagod.performance import CacheManager
+
         cache = CacheManager()
         result = cache.get("nonexistent")
         assert result is None
@@ -246,6 +259,7 @@ class TestPerformanceCache:
     def test_cache_clear(self):
         """Clear should remove all entries."""
         from datagod.performance import CacheManager
+
         cache = CacheManager()
         cache.set("k1", "v1")
         cache.set("k2", "v2")
@@ -256,6 +270,7 @@ class TestPerformanceCache:
     def test_batch_processor_init(self):
         """AsyncBatchProcessor should initialize with correct settings."""
         from datagod.performance import AsyncBatchProcessor
+
         proc = AsyncBatchProcessor(batch_size=25, max_concurrent=5)
         assert proc.batch_size == 25
         assert proc.max_concurrent == 5
@@ -263,9 +278,14 @@ class TestPerformanceCache:
     def test_ux_package_imports(self):
         """UX package should export all expected symbols."""
         from datagod.ux import (
-            GuidedIntakeWizard, IntakeSchema, FieldType,
-            MultiViewReportGenerator, ReportView, ExportFormat
+            ExportFormat,
+            FieldType,
+            GuidedIntakeWizard,
+            IntakeSchema,
+            MultiViewReportGenerator,
+            ReportView,
         )
+
         assert GuidedIntakeWizard is not None
         assert MultiViewReportGenerator is not None
         assert ReportView is not None

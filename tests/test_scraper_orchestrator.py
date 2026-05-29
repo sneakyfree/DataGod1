@@ -3,19 +3,20 @@ Tests for Scraper Orchestration System
 Tests task queue, worker management, and scheduling
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
 import time
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from datagod.scrapers.scraper_orchestrator import (
-    TaskStatus,
-    TaskPriority,
     ScrapingTask,
-    WorkerStats,
+    TaskPriority,
     TaskQueue,
+    TaskStatus,
+    WorkerStats,
 )
 
 
@@ -60,7 +61,7 @@ class TestScrapingTask:
             scraper_config={"county": "Harris"},
             jurisdiction_id=1,
             jurisdiction_name="Harris County",
-            priority=TaskPriority.HIGH
+            priority=TaskPriority.HIGH,
         )
 
         assert task.scraper_class == "TexasAPIIntegration"
@@ -77,7 +78,7 @@ class TestScrapingTask:
             scraper_class="CaliforniaAPIIntegration",
             scraper_config={},
             jurisdiction_id=2,
-            jurisdiction_name="Los Angeles County"
+            jurisdiction_name="Los Angeles County",
         )
 
         assert task.priority == TaskPriority.NORMAL.value
@@ -88,30 +89,34 @@ class TestScrapingTask:
             scraper_class="TestScraper",
             scraper_config={"key": "value"},
             jurisdiction_id=10,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         result = task.to_dict()
 
-        assert result['task_id'] == task.task_id
-        assert result['scraper_class'] == "TestScraper"
-        assert result['jurisdiction_id'] == 10
-        assert result['jurisdiction_name'] == "Test County"
-        assert result['status'] == "pending"
-        assert result['priority'] == 3  # NORMAL
-        assert result['created_at'] is not None
+        assert result["task_id"] == task.task_id
+        assert result["scraper_class"] == "TestScraper"
+        assert result["jurisdiction_id"] == 10
+        assert result["jurisdiction_name"] == "Test County"
+        assert result["status"] == "pending"
+        assert result["priority"] == 3  # NORMAL
+        assert result["created_at"] is not None
 
     def test_task_comparison(self):
         """Test tasks are compared by priority"""
         high_priority = ScrapingTask.create(
-            scraper_class="Test", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Test",
-            priority=TaskPriority.HIGH
+            scraper_class="Test",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Test",
+            priority=TaskPriority.HIGH,
         )
         low_priority = ScrapingTask.create(
-            scraper_class="Test", scraper_config={},
-            jurisdiction_id=2, jurisdiction_name="Test2",
-            priority=TaskPriority.LOW
+            scraper_class="Test",
+            scraper_config={},
+            jurisdiction_id=2,
+            jurisdiction_name="Test2",
+            priority=TaskPriority.LOW,
         )
 
         # Lower priority value = higher priority
@@ -120,9 +125,11 @@ class TestScrapingTask:
     def test_task_max_retries(self):
         """Test custom max retries"""
         task = ScrapingTask.create(
-            scraper_class="Test", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Test",
-            max_retries=5
+            scraper_class="Test",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Test",
+            max_retries=5,
         )
 
         assert task.max_retries == 5
@@ -148,7 +155,7 @@ class TestWorkerStats:
             tasks_completed=10,
             tasks_failed=2,
             total_records=500,
-            total_time_seconds=120.5
+            total_time_seconds=120.5,
         )
 
         assert stats.tasks_completed == 10
@@ -165,8 +172,10 @@ class TestTaskQueue:
         queue = TaskQueue()
 
         task = ScrapingTask.create(
-            scraper_class="Test", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Test"
+            scraper_class="Test",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Test",
         )
         queue.put(task)
 
@@ -182,19 +191,25 @@ class TestTaskQueue:
 
         # Add tasks in random priority order
         low = ScrapingTask.create(
-            scraper_class="Low", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Low",
-            priority=TaskPriority.LOW
+            scraper_class="Low",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Low",
+            priority=TaskPriority.LOW,
         )
         critical = ScrapingTask.create(
-            scraper_class="Critical", scraper_config={},
-            jurisdiction_id=2, jurisdiction_name="Critical",
-            priority=TaskPriority.CRITICAL
+            scraper_class="Critical",
+            scraper_config={},
+            jurisdiction_id=2,
+            jurisdiction_name="Critical",
+            priority=TaskPriority.CRITICAL,
         )
         normal = ScrapingTask.create(
-            scraper_class="Normal", scraper_config={},
-            jurisdiction_id=3, jurisdiction_name="Normal",
-            priority=TaskPriority.NORMAL
+            scraper_class="Normal",
+            scraper_config={},
+            jurisdiction_id=3,
+            jurisdiction_name="Normal",
+            priority=TaskPriority.NORMAL,
         )
 
         queue.put(low)
@@ -219,8 +234,10 @@ class TestTaskQueue:
 
         for i in range(5):
             task = ScrapingTask.create(
-                scraper_class="Test", scraper_config={},
-                jurisdiction_id=i, jurisdiction_name=f"Test{i}"
+                scraper_class="Test",
+                scraper_config={},
+                jurisdiction_id=i,
+                jurisdiction_name=f"Test{i}",
             )
             queue.put(task)
 
@@ -231,8 +248,10 @@ class TestTaskQueue:
         queue = TaskQueue()
 
         task = ScrapingTask.create(
-            scraper_class="PeekTest", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Test"
+            scraper_class="PeekTest",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Test",
         )
         queue.put(task)
 
@@ -250,8 +269,10 @@ class TestTaskQueue:
         queue = TaskQueue()
 
         task = ScrapingTask.create(
-            scraper_class="Test", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Test"
+            scraper_class="Test",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Test",
         )
         queue.put(task)
 
@@ -269,8 +290,10 @@ class TestTaskQueue:
         queue = TaskQueue()
 
         task = ScrapingTask.create(
-            scraper_class="Test", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Test"
+            scraper_class="Test",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Test",
         )
         queue.put(task)
 
@@ -287,8 +310,10 @@ class TestTaskQueue:
 
         for i in range(3):
             task = ScrapingTask.create(
-                scraper_class="Test", scraper_config={},
-                jurisdiction_id=i, jurisdiction_name=f"Test{i}"
+                scraper_class="Test",
+                scraper_config={},
+                jurisdiction_id=i,
+                jurisdiction_name=f"Test{i}",
             )
             queue.put(task)
 
@@ -303,8 +328,10 @@ class TestTaskQueue:
             # Create queue and add tasks
             queue1 = TaskQueue(persist_path=persist_path)
             task = ScrapingTask.create(
-                scraper_class="Persist", scraper_config={},
-                jurisdiction_id=1, jurisdiction_name="Test"
+                scraper_class="Persist",
+                scraper_config={},
+                jurisdiction_id=1,
+                jurisdiction_name="Test",
             )
             queue1.put(task)
 
@@ -327,8 +354,10 @@ class TestTaskQueue:
         queue = TaskQueue()
 
         task = ScrapingTask.create(
-            scraper_class="Test", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Test"
+            scraper_class="Test",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Test",
         )
         assert task.status == TaskStatus.PENDING
 
@@ -343,8 +372,10 @@ class TestTaskTimestamps:
         """Test task has creation timestamp"""
         before = datetime.utcnow()
         task = ScrapingTask.create(
-            scraper_class="Test", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Test"
+            scraper_class="Test",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Test",
         )
         after = datetime.utcnow()
 
@@ -353,8 +384,10 @@ class TestTaskTimestamps:
     def test_task_started_at_initially_none(self):
         """Test started_at is None initially"""
         task = ScrapingTask.create(
-            scraper_class="Test", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Test"
+            scraper_class="Test",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Test",
         )
 
         assert task.started_at is None
@@ -363,16 +396,18 @@ class TestTaskTimestamps:
     def test_task_dict_includes_timestamps(self):
         """Test to_dict includes timestamp fields"""
         task = ScrapingTask.create(
-            scraper_class="Test", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Test"
+            scraper_class="Test",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Test",
         )
         task.started_at = datetime.utcnow()
         task.completed_at = datetime.utcnow()
 
         result = task.to_dict()
-        assert result['created_at'] is not None
-        assert result['started_at'] is not None
-        assert result['completed_at'] is not None
+        assert result["created_at"] is not None
+        assert result["started_at"] is not None
+        assert result["completed_at"] is not None
 
 
 class TestTaskErrorHandling:
@@ -381,8 +416,10 @@ class TestTaskErrorHandling:
     def test_task_error_field(self):
         """Test task error field"""
         task = ScrapingTask.create(
-            scraper_class="Test", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Test"
+            scraper_class="Test",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Test",
         )
 
         assert task.error is None
@@ -396,9 +433,11 @@ class TestTaskErrorHandling:
     def test_task_retry_count(self):
         """Test task retry count"""
         task = ScrapingTask.create(
-            scraper_class="Test", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Test",
-            max_retries=3
+            scraper_class="Test",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Test",
+            max_retries=3,
         )
 
         assert task.retry_count == 0
@@ -410,8 +449,10 @@ class TestTaskErrorHandling:
     def test_task_result_field(self):
         """Test task result field"""
         task = ScrapingTask.create(
-            scraper_class="Test", scraper_config={},
-            jurisdiction_id=1, jurisdiction_name="Test"
+            scraper_class="Test",
+            scraper_config={},
+            jurisdiction_id=1,
+            jurisdiction_name="Test",
         )
 
         assert task.result is None
@@ -422,10 +463,10 @@ class TestTaskErrorHandling:
 
 # Import additional classes for orchestrator tests
 from datagod.scrapers.scraper_orchestrator import (
-    ScraperOrchestrator,
     ScheduledTask,
-    ScraperScheduler,
     ScraperMonitor,
+    ScraperOrchestrator,
+    ScraperScheduler,
     get_orchestrator,
 )
 
@@ -439,17 +480,14 @@ class TestScraperOrchestrator:
 
         assert orchestrator.max_workers == 3
         assert orchestrator._running is False
-        assert orchestrator._metrics['total_tasks'] == 0
-        assert orchestrator._metrics['completed_tasks'] == 0
+        assert orchestrator._metrics["total_tasks"] == 0
+        assert orchestrator._metrics["completed_tasks"] == 0
 
     def test_orchestrator_initialization_with_persist_path(self):
         """Test orchestrator with persistence path"""
         with tempfile.TemporaryDirectory() as tmpdir:
             persist_path = os.path.join(tmpdir, "queue.json")
-            orchestrator = ScraperOrchestrator(
-                max_workers=5,
-                persist_path=persist_path
-            )
+            orchestrator = ScraperOrchestrator(max_workers=5, persist_path=persist_path)
 
             assert orchestrator.task_queue._persist_path == persist_path
 
@@ -478,11 +516,11 @@ class TestScraperOrchestrator:
             scraper_name="MockScraper",
             scraper_config={"county": "Harris"},
             jurisdiction_id=1,
-            jurisdiction_name="Harris County"
+            jurisdiction_name="Harris County",
         )
 
         assert task_id is not None
-        assert orchestrator._metrics['total_tasks'] == 1
+        assert orchestrator._metrics["total_tasks"] == 1
         assert orchestrator.task_queue.size() == 1
 
     def test_add_task_unknown_scraper(self):
@@ -494,7 +532,7 @@ class TestScraperOrchestrator:
                 scraper_name="UnknownScraper",
                 scraper_config={},
                 jurisdiction_id=1,
-                jurisdiction_name="Test County"
+                jurisdiction_name="Test County",
             )
 
         assert "Unknown scraper" in str(exc_info.value)
@@ -510,10 +548,10 @@ class TestScraperOrchestrator:
 
         tasks = [
             {
-                'scraper_name': 'MockScraper',
-                'scraper_config': {},
-                'jurisdiction_id': i,
-                'jurisdiction_name': f'County {i}'
+                "scraper_name": "MockScraper",
+                "scraper_config": {},
+                "jurisdiction_id": i,
+                "jurisdiction_name": f"County {i}",
             }
             for i in range(5)
         ]
@@ -521,7 +559,7 @@ class TestScraperOrchestrator:
         task_ids = orchestrator.add_bulk_tasks(tasks)
 
         assert len(task_ids) == 5
-        assert orchestrator._metrics['total_tasks'] == 5
+        assert orchestrator._metrics["total_tasks"] == 5
 
     def test_start_and_stop(self):
         """Test starting and stopping the orchestrator"""
@@ -533,13 +571,13 @@ class TestScraperOrchestrator:
         assert orchestrator._running is True
         assert orchestrator._executor is not None
         assert len(orchestrator._workers) == 2
-        assert orchestrator._metrics['start_time'] is not None
+        assert orchestrator._metrics["start_time"] is not None
 
         # Stop
         orchestrator.stop(wait=True)
 
         assert orchestrator._running is False
-        assert orchestrator._metrics['end_time'] is not None
+        assert orchestrator._metrics["end_time"] is not None
 
     def test_start_when_already_running(self):
         """Test starting when already running logs warning"""
@@ -572,14 +610,14 @@ class TestScraperOrchestrator:
             scraper_name="MockScraper",
             scraper_config={},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         status = orchestrator.get_task_status(task_id)
 
         assert status is not None
-        assert status['task_id'] == task_id
-        assert status['jurisdiction_name'] == "Test County"
+        assert status["task_id"] == task_id
+        assert status["jurisdiction_name"] == "Test County"
 
     def test_get_task_status_nonexistent(self):
         """Test getting status of nonexistent task"""
@@ -602,15 +640,15 @@ class TestScraperOrchestrator:
                 scraper_name="MockScraper",
                 scraper_config={},
                 jurisdiction_id=i,
-                jurisdiction_name=f"County {i}"
+                jurisdiction_name=f"County {i}",
             )
 
         status = orchestrator.get_queue_status()
 
-        assert status['queue_size'] == 3
-        assert status['total_tasks'] == 3
-        assert 'by_status' in status
-        assert 'workers' in status
+        assert status["queue_size"] == 3
+        assert status["total_tasks"] == 3
+        assert "by_status" in status
+        assert "workers" in status
 
     def test_get_worker_stats(self):
         """Test getting worker statistics"""
@@ -621,10 +659,10 @@ class TestScraperOrchestrator:
         stats = orchestrator.get_worker_stats()
 
         assert len(stats) == 2
-        assert 'worker-0' in stats
-        assert 'worker-1' in stats
-        assert stats['worker-0']['tasks_completed'] == 0
-        assert stats['worker-0']['is_active'] is True
+        assert "worker-0" in stats
+        assert "worker-1" in stats
+        assert stats["worker-0"]["tasks_completed"] == 0
+        assert stats["worker-0"]["is_active"] is True
 
         orchestrator.stop(wait=True)
 
@@ -635,13 +673,13 @@ class TestScraperOrchestrator:
 
         metrics = orchestrator.get_metrics()
 
-        assert 'total_tasks' in metrics
-        assert 'completed_tasks' in metrics
-        assert 'failed_tasks' in metrics
-        assert 'total_records' in metrics
-        assert 'duration_seconds' in metrics
-        assert 'queue_status' in metrics
-        assert 'worker_stats' in metrics
+        assert "total_tasks" in metrics
+        assert "completed_tasks" in metrics
+        assert "failed_tasks" in metrics
+        assert "total_records" in metrics
+        assert "duration_seconds" in metrics
+        assert "queue_status" in metrics
+        assert "worker_stats" in metrics
 
         orchestrator.stop(wait=True)
 
@@ -651,9 +689,9 @@ class TestScraperOrchestrator:
 
         metrics = orchestrator.get_metrics()
 
-        assert 'total_tasks' in metrics
+        assert "total_tasks" in metrics
         # No duration_seconds since start_time is None
-        assert 'duration_seconds' not in metrics
+        assert "duration_seconds" not in metrics
 
     def test_set_callbacks(self):
         """Test setting callback functions"""
@@ -683,7 +721,7 @@ class TestScraperOrchestrator:
             scraper_name="MockScraper",
             scraper_config={},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         result = orchestrator.cancel_task(task_id)
@@ -706,7 +744,7 @@ class TestScraperOrchestrator:
             scraper_name="MockScraper",
             scraper_config={},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         # Manually set status to RUNNING
@@ -733,7 +771,7 @@ class TestScraperOrchestrator:
                 scraper_name="MockScraper",
                 scraper_config={},
                 jurisdiction_id=i,
-                jurisdiction_name=f"County {i}"
+                jurisdiction_name=f"County {i}",
             )
             if i < 2:
                 task = orchestrator.task_queue.get_task(task_id)
@@ -800,16 +838,16 @@ class TestScraperOrchestratorExecution:
             scraper_class="MockScraper",
             scraper_config={},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         result = orchestrator._execute_task(task, "worker-0")
 
-        assert result['records_count'] == 2
+        assert result["records_count"] == 2
         assert task.status == TaskStatus.COMPLETED
         assert task.completed_at is not None
-        assert orchestrator._metrics['completed_tasks'] == 1
-        assert orchestrator._metrics['total_records'] == 2
+        assert orchestrator._metrics["completed_tasks"] == 1
+        assert orchestrator._metrics["total_records"] == 2
 
         orchestrator.stop(wait=True)
 
@@ -837,7 +875,7 @@ class TestScraperOrchestratorExecution:
             scraper_class="MockScraper",
             scraper_config={},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         orchestrator._execute_task(task, "worker-0")
@@ -866,12 +904,12 @@ class TestScraperOrchestratorExecution:
             scraper_config={},
             jurisdiction_id=1,
             jurisdiction_name="Test County",
-            max_retries=3
+            max_retries=3,
         )
 
         result = orchestrator._execute_task(task, "worker-0")
 
-        assert 'error' in result
+        assert "error" in result
         # Task is re-queued, so status becomes QUEUED (put() changes status)
         assert task.status in (TaskStatus.RETRY, TaskStatus.QUEUED)
         assert task.retry_count == 1
@@ -903,7 +941,7 @@ class TestScraperOrchestratorExecution:
             scraper_config={},
             jurisdiction_id=1,
             jurisdiction_name="Test County",
-            max_retries=3
+            max_retries=3,
         )
         task.retry_count = 2  # Already retried twice
 
@@ -911,7 +949,7 @@ class TestScraperOrchestratorExecution:
 
         assert task.status == TaskStatus.FAILED
         assert task.completed_at is not None
-        assert orchestrator._metrics['failed_tasks'] == 1
+        assert orchestrator._metrics["failed_tasks"] == 1
         assert len(error_callback_called) == 1
 
         orchestrator.stop(wait=True)
@@ -925,13 +963,13 @@ class TestScraperOrchestratorExecution:
             scraper_class="NonExistentScraper",
             scraper_config={},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         result = orchestrator._execute_task(task, "worker-0")
 
-        assert 'error' in result
-        assert "Scraper class not found" in result['error']
+        assert "error" in result
+        assert "Scraper class not found" in result["error"]
 
         orchestrator.stop(wait=True)
 
@@ -962,12 +1000,12 @@ class TestScraperOrchestratorExecution:
             scraper_class="MockScraper",
             scraper_config={},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         result = orchestrator._execute_task(task, "worker-0")
 
-        assert result['saved_count'] == 1
+        assert result["saved_count"] == 1
 
         orchestrator.stop(wait=True)
 
@@ -983,7 +1021,7 @@ class TestScheduledTask:
             scraper_config={"key": "value"},
             jurisdiction_id=1,
             jurisdiction_name="Test County",
-            interval_hours=12
+            interval_hours=12,
         )
 
         assert scheduled.schedule_id == "sched-1"
@@ -999,7 +1037,7 @@ class TestScheduledTask:
             scraper_name="TestScraper",
             scraper_config={},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         # Set next_run to past
@@ -1014,7 +1052,7 @@ class TestScheduledTask:
             scraper_name="TestScraper",
             scraper_config={},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         # Set next_run to future
@@ -1029,7 +1067,7 @@ class TestScheduledTask:
             scraper_name="TestScraper",
             scraper_config={},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         scheduled.is_active = False
@@ -1045,7 +1083,7 @@ class TestScheduledTask:
             scraper_config={},
             jurisdiction_id=1,
             jurisdiction_name="Test County",
-            interval_hours=6
+            interval_hours=6,
         )
 
         before_update = datetime.utcnow()
@@ -1086,7 +1124,7 @@ class TestScraperScheduler:
             scraper_config={},
             jurisdiction_id=1,
             jurisdiction_name="Test County",
-            interval_hours=24
+            interval_hours=24,
         )
 
         assert schedule_id is not None
@@ -1107,7 +1145,7 @@ class TestScraperScheduler:
             scraper_name="MockScraper",
             scraper_config={},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         result = scheduler.remove_schedule(schedule_id)
@@ -1138,7 +1176,7 @@ class TestScraperScheduler:
             scraper_name="MockScraper",
             scraper_config={},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         result = scheduler.pause_schedule(schedule_id)
@@ -1169,7 +1207,7 @@ class TestScraperScheduler:
             scraper_name="MockScraper",
             scraper_config={},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         scheduler.pause_schedule(schedule_id)
@@ -1230,14 +1268,14 @@ class TestScraperScheduler:
                 scraper_name="MockScraper",
                 scraper_config={},
                 jurisdiction_id=i,
-                jurisdiction_name=f"County {i}"
+                jurisdiction_name=f"County {i}",
             )
 
         schedules = scheduler.get_schedules()
 
         assert len(schedules) == 3
-        assert all('schedule_id' in s for s in schedules)
-        assert all('jurisdiction_name' in s for s in schedules)
+        assert all("schedule_id" in s for s in schedules)
+        assert all("jurisdiction_name" in s for s in schedules)
 
 
 class TestScraperMonitor:
@@ -1268,9 +1306,9 @@ class TestScraperMonitor:
         monitor.record_snapshot()
 
         assert len(monitor._history) == 1
-        assert 'timestamp' in monitor._history[0]
-        assert 'metrics' in monitor._history[0]
-        assert 'queue_status' in monitor._history[0]
+        assert "timestamp" in monitor._history[0]
+        assert "metrics" in monitor._history[0]
+        assert "queue_status" in monitor._history[0]
 
     def test_record_snapshot_trims_history(self):
         """Test snapshot history is trimmed at max size"""
@@ -1293,14 +1331,14 @@ class TestScraperMonitor:
 
         data = monitor.get_dashboard_data()
 
-        assert 'current' in data
-        assert 'schedules' in data
-        assert 'history' in data
-        assert 'summary' in data
+        assert "current" in data
+        assert "schedules" in data
+        assert "history" in data
+        assert "summary" in data
 
-        assert 'metrics' in data['current']
-        assert 'queue_status' in data['current']
-        assert 'worker_stats' in data['current']
+        assert "metrics" in data["current"]
+        assert "queue_status" in data["current"]
+        assert "worker_stats" in data["current"]
 
         orchestrator.stop(wait=True)
 
@@ -1311,22 +1349,22 @@ class TestScraperMonitor:
 
         data = monitor.get_dashboard_data()
 
-        assert data['schedules'] == []
+        assert data["schedules"] == []
 
     def test_calculate_summary(self):
         """Test calculating summary statistics"""
         orchestrator = ScraperOrchestrator()
-        orchestrator._metrics['completed_tasks'] = 8
-        orchestrator._metrics['failed_tasks'] = 2
-        orchestrator._metrics['total_records'] = 100
-        orchestrator._metrics['start_time'] = datetime.utcnow()
+        orchestrator._metrics["completed_tasks"] = 8
+        orchestrator._metrics["failed_tasks"] = 2
+        orchestrator._metrics["total_records"] = 100
+        orchestrator._metrics["start_time"] = datetime.utcnow()
 
         monitor = ScraperMonitor(orchestrator)
         summary = monitor._calculate_summary()
 
-        assert summary['total_tasks_processed'] == 10
-        assert summary['success_rate'] == 80.0
-        assert summary['total_records'] == 100
+        assert summary["total_tasks_processed"] == 10
+        assert summary["success_rate"] == 80.0
+        assert summary["total_records"] == 100
 
     def test_export_report(self):
         """Test exporting monitoring report"""
@@ -1339,11 +1377,11 @@ class TestScraperMonitor:
 
             assert os.path.exists(filepath)
 
-            with open(filepath, 'r') as f:
+            with open(filepath, "r") as f:
                 report = json.load(f)
 
-            assert 'generated_at' in report
-            assert 'dashboard_data' in report
+            assert "generated_at" in report
+            assert "dashboard_data" in report
 
 
 class TestGetOrchestrator:
@@ -1388,8 +1426,10 @@ class TestTaskQueuePersistence:
             queue = TaskQueue(persist_path=persist_path)
 
             task = ScrapingTask.create(
-                scraper_class="Test", scraper_config={},
-                jurisdiction_id=1, jurisdiction_name="Test"
+                scraper_class="Test",
+                scraper_config={},
+                jurisdiction_id=1,
+                jurisdiction_name="Test",
             )
             queue.put(task)
 
@@ -1410,8 +1450,8 @@ class TestTaskQueuePersistence:
             persist_path = os.path.join(tmpdir, "queue.json")
 
             # Create file with data
-            with open(persist_path, 'w') as f:
-                json.dump({'queue': [], 'tasks': {'task1': {}}}, f)
+            with open(persist_path, "w") as f:
+                json.dump({"queue": [], "tasks": {"task1": {}}}, f)
 
             # Should log info
             queue = TaskQueue(persist_path=persist_path)

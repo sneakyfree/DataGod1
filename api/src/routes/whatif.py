@@ -4,15 +4,17 @@ What-If Simulation API Routes (DNA Strand Gene 3.5 + 4.3)
 Endpoints for counterfactual reasoning and parameter sensitivity analysis.
 """
 
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any, List
 
 router = APIRouter(prefix="/whatif", tags=["what-if"])
 
 
 class SimulateRequest(BaseModel):
     """Request to run a what-if simulation."""
+
     baseline_data: Dict[str, Any] = Field(
         ..., description="Current property/entity/lien data"
     )
@@ -23,6 +25,7 @@ class SimulateRequest(BaseModel):
 
 class SimulateResponse(BaseModel):
     """What-if simulation result."""
+
     simulation_id: str
     baseline_scenario_count: int
     simulated_scenario_count: int
@@ -37,6 +40,7 @@ class SimulateResponse(BaseModel):
 async def list_parameters():
     """List all tunable parameters for what-if simulation."""
     from datagod.intelligence.whatif_engine import WhatIfEngine
+
     engine = WhatIfEngine()
     return {
         "parameters": engine.get_parameters(),
@@ -53,6 +57,7 @@ async def run_simulation(request: SimulateRequest):
     against the baseline to reveal sensitivity and counterfactual insights.
     """
     from datagod.intelligence.whatif_engine import WhatIfEngine
+
     engine = WhatIfEngine()
 
     try:

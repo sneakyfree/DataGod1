@@ -12,16 +12,18 @@ Tests cover:
 - Export functions
 """
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
+
 from datagod.monitoring.metrics_collector import (
-    MetricType,
-    Metric,
     AggregatedMetric,
+    Metric,
     MetricsCollector,
+    MetricType,
     get_collector,
-    record_metric,
     get_metrics,
+    record_metric,
 )
 
 
@@ -48,11 +50,7 @@ class TestMetric:
 
     def test_create_metric(self):
         """Test creating a metric"""
-        metric = Metric(
-            name="test.metric",
-            value=100.0,
-            metric_type=MetricType.GAUGE
-        )
+        metric = Metric(name="test.metric", value=100.0, metric_type=MetricType.GAUGE)
         assert metric.name == "test.metric"
         assert metric.value == 100.0
         assert metric.metric_type == MetricType.GAUGE
@@ -63,17 +61,14 @@ class TestMetric:
             name="test.metric",
             value=50.0,
             metric_type=MetricType.COUNTER,
-            tags={"state": "CA", "county": "Los Angeles"}
+            tags={"state": "CA", "county": "Los Angeles"},
         )
         assert metric.tags["state"] == "CA"
 
     def test_metric_with_unit(self):
         """Test metric with unit"""
         metric = Metric(
-            name="response_time",
-            value=150.0,
-            metric_type=MetricType.TIMER,
-            unit="ms"
+            name="response_time", value=150.0, metric_type=MetricType.TIMER, unit="ms"
         )
         assert metric.unit == "ms"
 
@@ -84,13 +79,13 @@ class TestMetric:
             value=100.0,
             metric_type=MetricType.GAUGE,
             tags={"env": "prod"},
-            unit="count"
+            unit="count",
         )
         result = metric.to_dict()
-        assert result['name'] == "test"
-        assert result['value'] == 100.0
-        assert result['type'] == "gauge"
-        assert result['tags'] == {"env": "prod"}
+        assert result["name"] == "test"
+        assert result["value"] == 100.0
+        assert result["type"] == "gauge"
+        assert result["tags"] == {"env": "prod"}
 
 
 class TestAggregatedMetric:
@@ -108,7 +103,7 @@ class TestAggregatedMetric:
             avg_value=5.0,
             std_dev=2.5,
             start_time=datetime.now() - timedelta(hours=1),
-            end_time=datetime.now()
+            end_time=datetime.now(),
         )
         assert agg.count == 100
         assert agg.avg_value == 5.0
@@ -125,12 +120,12 @@ class TestAggregatedMetric:
             avg_value=10.0,
             std_dev=3.0,
             start_time=datetime.now(),
-            end_time=datetime.now()
+            end_time=datetime.now(),
         )
         result = agg.to_dict()
-        assert result['count'] == 10
-        assert result['avg'] == 10.0
-        assert 'start_time' in result
+        assert result["count"] == 10
+        assert result["avg"] == 10.0
+        assert "start_time" in result
 
 
 class TestMetricsCollector:
@@ -298,8 +293,8 @@ class TestMetricsCollector:
         collector.increment("counter.test")
 
         summary = collector.get_summary()
-        assert summary['metric_names'] >= 3
-        assert 'by_category' in summary
+        assert summary["metric_names"] >= 3
+        assert "by_category" in summary
 
     def test_cleanup_old_metrics(self, collector):
         """Test cleaning up old metrics"""
@@ -330,9 +325,9 @@ class TestMetricsCollector:
         collector.gauge("test2", 2.0)
 
         export = collector.export_json()
-        assert 'metrics' in export
-        assert 'summary' in export
-        assert 'exported_at' in export
+        assert "metrics" in export
+        assert "summary" in export
+        assert "exported_at" in export
 
     def test_clear(self, collector):
         """Test clearing all metrics"""
@@ -354,9 +349,11 @@ class TestTimeFunction:
 
     def test_time_function_decorator(self, collector):
         """Test timing a function"""
+
         @collector.time_function("my_function")
         def slow_function():
             import time
+
             time.sleep(0.01)  # 10ms
             return "result"
 

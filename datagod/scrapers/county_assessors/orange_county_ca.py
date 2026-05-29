@@ -24,20 +24,21 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 from .base import (
-    CountyAssessorBase,
-    PropertyType,
-    PropertyClass,
-    ExemptionType,
-    PropertyAssessment,
-    PropertyCharacteristics,
-    TaxAssessment,
-    OwnershipRecord,
-    SaleRecord,
     AssessorSearchCriteria,
     AssessorSearchResult,
+    CountyAssessorBase,
+    ExemptionType,
+    OwnershipRecord,
+    PropertyAssessment,
+    PropertyCharacteristics,
+    PropertyClass,
+    PropertyType,
+    SaleRecord,
+    TaxAssessment,
 )
 
 logger = logging.getLogger(__name__)
@@ -189,10 +190,11 @@ class OrangeCountyAssessor(CountyAssessorBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> AssessorSearchResult:
         """Search for properties by address."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -236,18 +238,13 @@ class OrangeCountyAssessor(CountyAssessorBase):
             page_size=max_results,
             has_more=json_response.get("hasMore", False),
             search_criteria=AssessorSearchCriteria(
-                street_address=street_address,
-                city=city,
-                zip_code=zip_code
+                street_address=street_address, city=city, zip_code=zip_code
             ),
             search_time_ms=search_time,
             source_system=self.SYSTEM_NAME,
         )
 
-    async def search_by_parcel_id(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def search_by_parcel_id(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """Search for a property by APN."""
         formatted_apn = self._format_apn(parcel_id)
 
@@ -257,8 +254,7 @@ class OrangeCountyAssessor(CountyAssessorBase):
 
         try:
             json_response = await self._fetch_json(
-                self.DETAIL_URL,
-                params={"apn": formatted_apn}
+                self.DETAIL_URL, params={"apn": formatted_apn}
             )
 
             if json_response.get("property"):
@@ -270,12 +266,11 @@ class OrangeCountyAssessor(CountyAssessorBase):
         return None
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> AssessorSearchResult:
         """Search for properties by owner name."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -318,23 +313,18 @@ class OrangeCountyAssessor(CountyAssessorBase):
             source_system=self.SYSTEM_NAME,
         )
 
-    async def get_property_detail(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def get_property_detail(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """Get detailed property information."""
         formatted_apn = self._format_apn(parcel_id)
 
         try:
             json_response = await self._fetch_json(
-                self.DETAIL_URL,
-                params={"apn": formatted_apn, "include": "all"}
+                self.DETAIL_URL, params={"apn": formatted_apn, "include": "all"}
             )
 
             if json_response.get("property"):
                 return self._parse_property_detail(
-                    json_response["property"],
-                    include_history=True
+                    json_response["property"], include_history=True
                 )
 
         except Exception as e:
@@ -342,7 +332,9 @@ class OrangeCountyAssessor(CountyAssessorBase):
 
         return None
 
-    def _parse_search_result(self, data: Dict[str, Any]) -> Optional[PropertyAssessment]:
+    def _parse_search_result(
+        self, data: Dict[str, Any]
+    ) -> Optional[PropertyAssessment]:
         """Parse a search result into PropertyAssessment."""
         apn = data.get("apn", data.get("parcelNumber", ""))
         if not apn:
@@ -381,9 +373,7 @@ class OrangeCountyAssessor(CountyAssessorBase):
         )
 
     def _parse_property_detail(
-        self,
-        data: Dict[str, Any],
-        include_history: bool = False
+        self, data: Dict[str, Any], include_history: bool = False
     ) -> PropertyAssessment:
         """Parse detailed property data."""
         apn = data.get("apn", data.get("parcelNumber", ""))
@@ -427,16 +417,26 @@ class OrangeCountyAssessor(CountyAssessorBase):
         assessment_history = []
         if include_history:
             for assessment in data.get("assessmentHistory", []):
-                assessment_history.append(TaxAssessment(
-                    tax_year=self._parse_int(assessment.get("year")) or 0,
-                    assessed_value_land=self._parse_decimal(assessment.get("landValue")),
-                    assessed_value_improvements=self._parse_decimal(
-                        assessment.get("improvementValue")
-                    ),
-                    assessed_value_total=self._parse_decimal(assessment.get("totalValue")),
-                    exemption_amount=self._parse_decimal(assessment.get("exemptionAmount")),
-                    taxable_value=self._parse_decimal(assessment.get("taxableValue")),
-                ))
+                assessment_history.append(
+                    TaxAssessment(
+                        tax_year=self._parse_int(assessment.get("year")) or 0,
+                        assessed_value_land=self._parse_decimal(
+                            assessment.get("landValue")
+                        ),
+                        assessed_value_improvements=self._parse_decimal(
+                            assessment.get("improvementValue")
+                        ),
+                        assessed_value_total=self._parse_decimal(
+                            assessment.get("totalValue")
+                        ),
+                        exemption_amount=self._parse_decimal(
+                            assessment.get("exemptionAmount")
+                        ),
+                        taxable_value=self._parse_decimal(
+                            assessment.get("taxableValue")
+                        ),
+                    )
+                )
 
         # Parse sales history
         sales_history = []
@@ -444,14 +444,17 @@ class OrangeCountyAssessor(CountyAssessorBase):
             for sale in data.get("salesHistory", []):
                 sale_date = self._parse_date(sale.get("saleDate"))
                 if sale_date:
-                    sales_history.append(SaleRecord(
-                        sale_date=sale_date,
-                        sale_price=self._parse_decimal(sale.get("salePrice")) or Decimal(0),
-                        buyer_name=sale.get("grantee"),
-                        seller_name=sale.get("grantor"),
-                        document_number=sale.get("documentNumber"),
-                        document_type=sale.get("documentType"),
-                    ))
+                    sales_history.append(
+                        SaleRecord(
+                            sale_date=sale_date,
+                            sale_price=self._parse_decimal(sale.get("salePrice"))
+                            or Decimal(0),
+                            buyer_name=sale.get("grantee"),
+                            seller_name=sale.get("grantor"),
+                            document_number=sale.get("documentNumber"),
+                            document_type=sale.get("documentType"),
+                        )
+                    )
 
         return PropertyAssessment(
             parcel_id=formatted_apn,
@@ -485,11 +488,14 @@ class OrangeCountyAssessor(CountyAssessorBase):
 
 # Synchronous convenience functions
 
+
 def get_orange_county_property(apn: str) -> Optional[PropertyAssessment]:
     """Get Orange County property by APN."""
+
     async def _get():
         async with OrangeCountyAssessor() as assessor:
             return await assessor.get_property_detail(apn)
+
     return asyncio.run(_get())
 
 
@@ -497,23 +503,26 @@ def search_orange_county_by_address(
     address: str,
     city: Optional[str] = None,
     zip_code: Optional[str] = None,
-    max_results: int = 100
+    max_results: int = 100,
 ) -> AssessorSearchResult:
     """Search Orange County properties by address."""
+
     async def _search():
         async with OrangeCountyAssessor() as assessor:
             return await assessor.search_by_address(
                 address, city=city, zip_code=zip_code, max_results=max_results
             )
+
     return asyncio.run(_search())
 
 
 def search_orange_county_by_owner(
-    owner_name: str,
-    max_results: int = 100
+    owner_name: str, max_results: int = 100
 ) -> AssessorSearchResult:
     """Search Orange County properties by owner name."""
+
     async def _search():
         async with OrangeCountyAssessor() as assessor:
             return await assessor.search_by_owner(owner_name, max_results=max_results)
+
     return asyncio.run(_search())

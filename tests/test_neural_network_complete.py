@@ -12,18 +12,19 @@ This module tests:
 Coverage target: 100% of neural network modules
 """
 
-import pytest
 import os
 import sys
-from datetime import datetime, date
-from unittest.mock import patch, MagicMock, Mock
-from typing import Dict, List, Any, Tuple
+from datetime import date, datetime
+from typing import Any, Dict, List, Tuple
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 # Set test environment before imports
 os.environ["TESTING"] = "1"
 
 # Add paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 class TestMortgageDataDatasetInit:
@@ -31,23 +32,23 @@ class TestMortgageDataDatasetInit:
 
     def test_dataset_init_structure(self):
         """Test dataset initialization structure."""
-        records = [{'id': 1}, {'id': 2}]
-        entities = [{'id': 1}]
+        records = [{"id": 1}, {"id": 2}]
+        entities = [{"id": 1}]
         relationships = []
 
         dataset = {
-            'records': records,
-            'entities': entities,
-            'relationships': relationships
+            "records": records,
+            "entities": entities,
+            "relationships": relationships,
         }
 
-        assert len(dataset['records']) == 2
-        assert len(dataset['entities']) == 1
-        assert len(dataset['relationships']) == 0
+        assert len(dataset["records"]) == 2
+        assert len(dataset["entities"]) == 1
+        assert len(dataset["relationships"]) == 0
 
     def test_dataset_length(self):
         """Test dataset length calculation."""
-        records = [{'id': i} for i in range(100)]
+        records = [{"id": i} for i in range(100)]
 
         length = len(records)
         assert length == 100
@@ -55,14 +56,14 @@ class TestMortgageDataDatasetInit:
     def test_dataset_getitem(self):
         """Test dataset __getitem__ method."""
         records = [
-            {'amount': 250000, 'date': datetime(2024, 1, 15)},
-            {'amount': 300000, 'date': datetime(2024, 6, 15)}
+            {"amount": 250000, "date": datetime(2024, 1, 15)},
+            {"amount": 300000, "date": datetime(2024, 6, 15)},
         ]
 
         idx = 0
         record = records[idx]
 
-        assert record['amount'] == 250000
+        assert record["amount"] == 250000
 
 
 class TestFeatureExtraction:
@@ -70,16 +71,12 @@ class TestFeatureExtraction:
 
     def test_extract_numeric_features(self):
         """Test extracting numeric features."""
-        record = {
-            'amount': 250000.0,
-            'interest_rate': 5.5,
-            'term_months': 360
-        }
+        record = {"amount": 250000.0, "interest_rate": 5.5, "term_months": 360}
 
         features = [
-            record.get('amount', 0.0),
-            record.get('interest_rate', 0.0),
-            record.get('term_months', 0)
+            record.get("amount", 0.0),
+            record.get("interest_rate", 0.0),
+            record.get("term_months", 0),
         ]
 
         assert features[0] == 250000.0
@@ -88,9 +85,9 @@ class TestFeatureExtraction:
 
     def test_handle_missing_amount(self):
         """Test handling missing amount field."""
-        record = {'title': 'Test Record'}
+        record = {"title": "Test Record"}
 
-        amount = record.get('amount') or 0.0
+        amount = record.get("amount") or 0.0
         assert amount == 0.0
 
     def test_date_to_timestamp(self):
@@ -194,6 +191,7 @@ class TestLossFunctions:
 
     def test_mse_loss(self):
         """Test MSE loss calculation."""
+
         def mse_loss(pred, target):
             return (pred - target) ** 2
 
@@ -206,14 +204,10 @@ class TestOptimizer:
 
     def test_adam_parameters(self):
         """Test Adam optimizer parameters."""
-        optimizer_config = {
-            'lr': 0.001,
-            'betas': (0.9, 0.999),
-            'eps': 1e-8
-        }
+        optimizer_config = {"lr": 0.001, "betas": (0.9, 0.999), "eps": 1e-8}
 
-        assert optimizer_config['lr'] == 0.001
-        assert optimizer_config['betas'][0] == 0.9
+        assert optimizer_config["lr"] == 0.001
+        assert optimizer_config["betas"][0] == 0.9
 
     def test_learning_rate_value(self):
         """Test learning rate is reasonable."""
@@ -230,12 +224,12 @@ class TestDeviceSelection:
         # Simulate torch.cuda.is_available()
         cuda_available = False  # Most test environments
 
-        device = 'cuda' if cuda_available else 'cpu'
-        assert device == 'cpu'
+        device = "cuda" if cuda_available else "cpu"
+        assert device == "cpu"
 
     def test_device_string(self):
         """Test device string format."""
-        devices = ['cpu', 'cuda', 'cuda:0', 'cuda:1']
+        devices = ["cpu", "cuda", "cuda:0", "cuda:1"]
 
         for device in devices:
             assert isinstance(device, str)
@@ -340,29 +334,29 @@ class TestModelSerialization:
     def test_model_state_dict_structure(self):
         """Test model state dict structure."""
         state_dict = {
-            'layer1.weight': 'tensor',
-            'layer1.bias': 'tensor',
-            'layer2.weight': 'tensor',
-            'layer2.bias': 'tensor',
-            'bn1.weight': 'tensor',
-            'bn1.bias': 'tensor'
+            "layer1.weight": "tensor",
+            "layer1.bias": "tensor",
+            "layer2.weight": "tensor",
+            "layer2.bias": "tensor",
+            "bn1.weight": "tensor",
+            "bn1.bias": "tensor",
         }
 
-        assert 'layer1.weight' in state_dict
-        assert 'layer1.bias' in state_dict
+        assert "layer1.weight" in state_dict
+        assert "layer1.bias" in state_dict
 
     def test_checkpoint_structure(self):
         """Test checkpoint structure."""
         checkpoint = {
-            'epoch': 50,
-            'model_state_dict': {},
-            'optimizer_state_dict': {},
-            'loss': 0.25,
-            'accuracy': 0.85
+            "epoch": 50,
+            "model_state_dict": {},
+            "optimizer_state_dict": {},
+            "loss": 0.25,
+            "accuracy": 0.85,
         }
 
-        assert checkpoint['epoch'] == 50
-        assert checkpoint['accuracy'] == 0.85
+        assert checkpoint["epoch"] == 50
+        assert checkpoint["accuracy"] == 0.85
 
 
 class TestInference:
@@ -427,8 +421,8 @@ class TestFeatureEngineering:
 
     def test_one_hot_encoding(self):
         """Test one-hot encoding."""
-        categories = ['mortgage', 'deed', 'lien']
-        value = 'deed'
+        categories = ["mortgage", "deed", "lien"]
+        value = "deed"
 
         one_hot = [1 if c == value else 0 for c in categories]
 
@@ -439,29 +433,29 @@ class TestFeatureEngineering:
         dt = datetime(2024, 6, 15)
 
         features = {
-            'year': dt.year,
-            'month': dt.month,
-            'day': dt.day,
-            'day_of_week': dt.weekday(),
-            'quarter': (dt.month - 1) // 3 + 1
+            "year": dt.year,
+            "month": dt.month,
+            "day": dt.day,
+            "day_of_week": dt.weekday(),
+            "quarter": (dt.month - 1) // 3 + 1,
         }
 
-        assert features['year'] == 2024
-        assert features['quarter'] == 2
+        assert features["year"] == 2024
+        assert features["quarter"] == 2
 
     def test_amount_bins(self):
         """Test amount binning."""
         amount = 275000
 
         bins = [0, 100000, 250000, 500000, 1000000]
-        bin_labels = ['low', 'medium', 'high', 'very_high']
+        bin_labels = ["low", "medium", "high", "very_high"]
 
         bin_idx = 0
         for i, threshold in enumerate(bins[1:]):
             if amount >= threshold:
                 bin_idx = i + 1
 
-        assert bin_labels[bin_idx] == 'high'
+        assert bin_labels[bin_idx] == "high"
 
 
 class TestModelMetrics:
@@ -513,13 +507,13 @@ class TestTensorOperations:
 
     def test_tensor_dtype(self):
         """Test tensor data type."""
-        dtypes = ['float32', 'float64', 'int32', 'int64']
+        dtypes = ["float32", "float64", "int32", "int64"]
 
         for dtype in dtypes:
-            assert dtype in ['float32', 'float64', 'int32', 'int64']
+            assert dtype in ["float32", "float64", "int32", "int64"]
 
     def test_tensor_device(self):
         """Test tensor device placement."""
-        device = 'cpu'
+        device = "cpu"
 
-        assert device in ['cpu', 'cuda', 'cuda:0']
+        assert device in ["cpu", "cuda", "cuda:0"]

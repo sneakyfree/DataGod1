@@ -18,21 +18,23 @@ Tests cover:
 - Batch validation
 """
 
-import pytest
 from datetime import date, datetime
+
+import pytest
+
 from datagod.validation.schema_validator import (
+    BaseSchema,
+    BusinessEntitySchema,
+    CourtCaseSchema,
+    DeedSchema,
+    FieldSchema,
     FieldType,
-    ValidationSeverity,
+    PersonSchema,
+    PropertySchema,
+    SchemaValidator,
     ValidationError,
     ValidationResult,
-    FieldSchema,
-    BaseSchema,
-    PropertySchema,
-    DeedSchema,
-    CourtCaseSchema,
-    BusinessEntitySchema,
-    PersonSchema,
-    SchemaValidator,
+    ValidationSeverity,
     validate_record,
 )
 
@@ -84,9 +86,7 @@ class TestValidationError:
     def test_create_validation_error(self):
         """Test creating a validation error"""
         error = ValidationError(
-            field="name",
-            message="Field is required",
-            severity=ValidationSeverity.ERROR
+            field="name", message="Field is required", severity=ValidationSeverity.ERROR
         )
         assert error.field == "name"
         assert error.message == "Field is required"
@@ -99,7 +99,7 @@ class TestValidationError:
             message="Value out of range",
             severity=ValidationSeverity.ERROR,
             expected="18-100",
-            actual=150
+            actual=150,
         )
         assert error.expected == "18-100"
         assert error.actual == 150
@@ -111,24 +111,21 @@ class TestValidationError:
             message="Invalid format",
             severity=ValidationSeverity.ERROR,
             expected="valid email",
-            actual="notanemail"
+            actual="notanemail",
         )
         result = error.to_dict()
-        assert result['field'] == "email"
-        assert result['message'] == "Invalid format"
-        assert result['severity'] == "error"
-        assert result['expected'] == "valid email"
-        assert result['actual'] == "notanemail"
+        assert result["field"] == "email"
+        assert result["message"] == "Invalid format"
+        assert result["severity"] == "error"
+        assert result["expected"] == "valid email"
+        assert result["actual"] == "notanemail"
 
     def test_validation_error_to_dict_null_values(self):
         """Test to_dict with null expected/actual"""
-        error = ValidationError(
-            field="test",
-            message="Test error"
-        )
+        error = ValidationError(field="test", message="Test error")
         result = error.to_dict()
-        assert result['expected'] is None
-        assert result['actual'] is None
+        assert result["expected"] is None
+        assert result["actual"] is None
 
 
 class TestValidationResult:
@@ -167,18 +164,16 @@ class TestValidationResult:
     def test_result_to_dict(self):
         """Test converting result to dictionary"""
         result = ValidationResult(
-            is_valid=True,
-            record_type="property",
-            record_id="123"
+            is_valid=True, record_type="property", record_id="123"
         )
         result.add_warning("field1", "Minor issue")
 
         data = result.to_dict()
-        assert data['is_valid'] is True
-        assert data['error_count'] == 0
-        assert data['warning_count'] == 1
-        assert data['record_type'] == "property"
-        assert data['record_id'] == "123"
+        assert data["is_valid"] is True
+        assert data["error_count"] == 0
+        assert data["warning_count"] == 1
+        assert data["record_type"] == "property"
+        assert data["record_id"] == "123"
 
 
 class TestFieldSchema:
@@ -187,9 +182,7 @@ class TestFieldSchema:
     def test_create_basic_field_schema(self):
         """Test creating a basic field schema"""
         schema = FieldSchema(
-            name="test_field",
-            field_type=FieldType.STRING,
-            required=True
+            name="test_field", field_type=FieldType.STRING, required=True
         )
         assert schema.name == "test_field"
         assert schema.field_type == FieldType.STRING
@@ -198,10 +191,7 @@ class TestFieldSchema:
     def test_field_schema_with_constraints(self):
         """Test field schema with length constraints"""
         schema = FieldSchema(
-            name="name",
-            field_type=FieldType.STRING,
-            min_length=1,
-            max_length=100
+            name="name", field_type=FieldType.STRING, min_length=1, max_length=100
         )
         assert schema.min_length == 1
         assert schema.max_length == 100
@@ -209,35 +199,31 @@ class TestFieldSchema:
     def test_field_schema_with_pattern(self):
         """Test field schema with regex pattern"""
         schema = FieldSchema(
-            name="zip_code",
-            field_type=FieldType.STRING,
-            pattern=r'^\d{5}$'
+            name="zip_code", field_type=FieldType.STRING, pattern=r"^\d{5}$"
         )
-        assert schema.pattern == r'^\d{5}$'
+        assert schema.pattern == r"^\d{5}$"
 
     def test_field_schema_with_allowed_values(self):
         """Test field schema with allowed values"""
         schema = FieldSchema(
             name="status",
             field_type=FieldType.STRING,
-            allowed_values=['ACTIVE', 'INACTIVE', 'PENDING']
+            allowed_values=["ACTIVE", "INACTIVE", "PENDING"],
         )
-        assert 'ACTIVE' in schema.allowed_values
+        assert "ACTIVE" in schema.allowed_values
         assert len(schema.allowed_values) == 3
 
     def test_field_schema_with_value_constraints(self):
         """Test field schema with numeric constraints"""
         schema = FieldSchema(
-            name="age",
-            field_type=FieldType.INTEGER,
-            min_value=0,
-            max_value=150
+            name="age", field_type=FieldType.INTEGER, min_value=0, max_value=150
         )
         assert schema.min_value == 0
         assert schema.max_value == 150
 
     def test_field_schema_with_custom_validator(self):
         """Test field schema with custom validator"""
+
         def is_even(value):
             return value % 2 == 0
 
@@ -245,7 +231,7 @@ class TestFieldSchema:
             name="even_number",
             field_type=FieldType.INTEGER,
             custom_validator=is_even,
-            error_message="Must be an even number"
+            error_message="Must be an even number",
         )
         assert schema.custom_validator is not None
         assert schema.error_message == "Must be an even number"
@@ -326,14 +312,14 @@ class TestPropertySchema:
         """Test state field has pattern constraint"""
         schema = PropertySchema()
         state_field = schema.get_field("state")
-        assert state_field.pattern == r'^[A-Z]{2}$'
+        assert state_field.pattern == r"^[A-Z]{2}$"
 
     def test_property_type_allowed_values(self):
         """Test property_type has allowed values"""
         schema = PropertySchema()
         prop_type = schema.get_field("property_type")
-        assert 'SFR' in prop_type.allowed_values
-        assert 'CONDO' in prop_type.allowed_values
+        assert "SFR" in prop_type.allowed_values
+        assert "CONDO" in prop_type.allowed_values
 
 
 class TestDeedSchema:
@@ -358,9 +344,9 @@ class TestDeedSchema:
         """Test document_type has allowed values"""
         schema = DeedSchema()
         doc_type = schema.get_field("document_type")
-        assert 'DEED' in doc_type.allowed_values
-        assert 'MORTGAGE' in doc_type.allowed_values
-        assert 'LIEN' in doc_type.allowed_values
+        assert "DEED" in doc_type.allowed_values
+        assert "MORTGAGE" in doc_type.allowed_values
+        assert "LIEN" in doc_type.allowed_values
 
 
 class TestCourtCaseSchema:
@@ -385,9 +371,9 @@ class TestCourtCaseSchema:
         """Test case_type allowed values"""
         schema = CourtCaseSchema()
         case_type = schema.get_field("case_type")
-        assert 'CIVIL' in case_type.allowed_values
-        assert 'CRIMINAL' in case_type.allowed_values
-        assert 'FAMILY' in case_type.allowed_values
+        assert "CIVIL" in case_type.allowed_values
+        assert "CRIMINAL" in case_type.allowed_values
+        assert "FAMILY" in case_type.allowed_values
 
 
 class TestBusinessEntitySchema:
@@ -411,7 +397,7 @@ class TestBusinessEntitySchema:
         """Test EIN field pattern"""
         schema = BusinessEntitySchema()
         ein_field = schema.get_field("ein")
-        assert ein_field.pattern == r'^\d{2}-\d{7}$'
+        assert ein_field.pattern == r"^\d{2}-\d{7}$"
 
 
 class TestPersonSchema:
@@ -500,7 +486,7 @@ class TestSchemaValidator:
             "address": "123 Main St",
             "city": "Test",
             "state": "CA",
-            "zip_code": "90210"
+            "zip_code": "90210",
         }
         result = validator.validate(record, schema)
         assert result.is_valid is True
@@ -522,7 +508,7 @@ class TestSchemaValidator:
             "address": None,  # Required but null
             "city": "Test",
             "state": "CA",
-            "zip_code": "90210"
+            "zip_code": "90210",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is False
@@ -544,7 +530,7 @@ class TestSchemaValidatorTypeValidation:
             "address": "123 Main St",
             "city": "Test",
             "state": "CA",
-            "zip_code": "90210"
+            "zip_code": "90210",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is True
@@ -556,7 +542,7 @@ class TestSchemaValidatorTypeValidation:
             "address": "123 Main St",
             "city": "Test",
             "state": "CA",
-            "zip_code": "90210"
+            "zip_code": "90210",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is False
@@ -571,7 +557,7 @@ class TestSchemaValidatorTypeValidation:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "bedrooms": 3
+            "bedrooms": 3,
         }
         result = validator.validate(record, "property")
         assert result.is_valid is True
@@ -584,7 +570,7 @@ class TestSchemaValidatorTypeValidation:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "bedrooms": "three"
+            "bedrooms": "three",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is False
@@ -597,7 +583,7 @@ class TestSchemaValidatorTypeValidation:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "bathrooms": 2  # Int should be accepted for float field
+            "bathrooms": 2,  # Int should be accepted for float field
         }
         result = validator.validate(record, "property")
         assert result.is_valid is True
@@ -609,7 +595,7 @@ class TestSchemaValidatorTypeValidation:
             "document_type": "DEED",
             "recording_date": "2024-01-15",
             "county": "Test",
-            "state": "CA"
+            "state": "CA",
         }
         result = validator.validate(record, "deed")
         assert result.is_valid is True
@@ -621,7 +607,7 @@ class TestSchemaValidatorTypeValidation:
             "document_type": "DEED",
             "recording_date": "01/15/2024",
             "county": "Test",
-            "state": "CA"
+            "state": "CA",
         }
         result = validator.validate(record, "deed")
         assert result.is_valid is True
@@ -633,7 +619,7 @@ class TestSchemaValidatorTypeValidation:
             "document_type": "DEED",
             "recording_date": date(2024, 1, 15),
             "county": "Test",
-            "state": "CA"
+            "state": "CA",
         }
         result = validator.validate(record, "deed")
         assert result.is_valid is True
@@ -662,7 +648,7 @@ class TestSchemaValidatorLengthConstraints:
             "address": "123 Main Street",  # >= 5 chars
             "city": "Test",
             "state": "CA",
-            "zip_code": "90210"
+            "zip_code": "90210",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is True
@@ -674,7 +660,7 @@ class TestSchemaValidatorLengthConstraints:
             "address": "A",  # Too short (< 5 chars)
             "city": "Test",
             "state": "CA",
-            "zip_code": "90210"
+            "zip_code": "90210",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is False
@@ -688,7 +674,7 @@ class TestSchemaValidatorLengthConstraints:
             "address": "123 Main St",
             "city": "Test",
             "state": "CA",
-            "zip_code": "90210"
+            "zip_code": "90210",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is False
@@ -708,7 +694,7 @@ class TestSchemaValidatorPatternValidation:
             "address": "123 Main St",
             "city": "Test",
             "state": "CA",  # Valid 2-letter uppercase
-            "zip_code": "90210"
+            "zip_code": "90210",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is True
@@ -720,7 +706,7 @@ class TestSchemaValidatorPatternValidation:
             "address": "123 Main St",
             "city": "Test",
             "state": "ca",  # Lowercase invalid
-            "zip_code": "90210"
+            "zip_code": "90210",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is False
@@ -732,7 +718,7 @@ class TestSchemaValidatorPatternValidation:
             "address": "123 Main St",
             "city": "Test",
             "state": "CAL",  # Too long
-            "zip_code": "90210"
+            "zip_code": "90210",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is False
@@ -744,7 +730,7 @@ class TestSchemaValidatorPatternValidation:
             "address": "123 Main St",
             "city": "Test",
             "state": "CA",
-            "zip_code": "90210"
+            "zip_code": "90210",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is True
@@ -756,7 +742,7 @@ class TestSchemaValidatorPatternValidation:
             "address": "123 Main St",
             "city": "Test",
             "state": "CA",
-            "zip_code": "90210-1234"
+            "zip_code": "90210-1234",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is True
@@ -768,7 +754,7 @@ class TestSchemaValidatorPatternValidation:
             "address": "123 Main St",
             "city": "Test",
             "state": "CA",
-            "zip_code": "9021"  # Too short
+            "zip_code": "9021",  # Too short
         }
         result = validator.validate(record, "property")
         assert result.is_valid is False
@@ -780,7 +766,7 @@ class TestSchemaValidatorPatternValidation:
             "entity_name": "Test Corp",
             "entity_type": "CORPORATION",
             "state": "CA",
-            "ein": "12-3456789"
+            "ein": "12-3456789",
         }
         result = validator.validate(record, "business_entity")
         assert result.is_valid is True
@@ -792,7 +778,7 @@ class TestSchemaValidatorPatternValidation:
             "entity_name": "Test Corp",
             "entity_type": "CORPORATION",
             "state": "CA",
-            "ein": "123456789"  # Missing dash
+            "ein": "123456789",  # Missing dash
         }
         result = validator.validate(record, "business_entity")
         assert result.is_valid is False
@@ -813,7 +799,7 @@ class TestSchemaValidatorValueConstraints:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "bedrooms": 3
+            "bedrooms": 3,
         }
         result = validator.validate(record, "property")
         assert result.is_valid is True
@@ -826,7 +812,7 @@ class TestSchemaValidatorValueConstraints:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "bedrooms": -1
+            "bedrooms": -1,
         }
         result = validator.validate(record, "property")
         assert result.is_valid is False
@@ -839,7 +825,7 @@ class TestSchemaValidatorValueConstraints:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "bedrooms": 100
+            "bedrooms": 100,
         }
         result = validator.validate(record, "property")
         assert result.is_valid is False
@@ -852,7 +838,7 @@ class TestSchemaValidatorValueConstraints:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "year_built": 2020
+            "year_built": 2020,
         }
         result = validator.validate(record, "property")
         assert result.is_valid is True
@@ -865,7 +851,7 @@ class TestSchemaValidatorValueConstraints:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "year_built": 1500
+            "year_built": 1500,
         }
         result = validator.validate(record, "property")
         assert result.is_valid is False
@@ -878,7 +864,7 @@ class TestSchemaValidatorValueConstraints:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "latitude": 34.0522
+            "latitude": 34.0522,
         }
         result = validator.validate(record, "property")
         assert result.is_valid is True
@@ -891,7 +877,7 @@ class TestSchemaValidatorValueConstraints:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "latitude": 100.0  # Invalid: > 90
+            "latitude": 100.0,  # Invalid: > 90
         }
         result = validator.validate(record, "property")
         assert result.is_valid is False
@@ -912,7 +898,7 @@ class TestSchemaValidatorAllowedValues:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "property_type": "SFR"
+            "property_type": "SFR",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is True
@@ -925,7 +911,7 @@ class TestSchemaValidatorAllowedValues:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "property_type": "CASTLE"  # Not in allowed values
+            "property_type": "CASTLE",  # Not in allowed values
         }
         result = validator.validate(record, "property")
         assert result.is_valid is False
@@ -938,7 +924,7 @@ class TestSchemaValidatorAllowedValues:
             "court_name": "Test Court",
             "filing_date": "2024-01-15",
             "state": "CA",
-            "case_status": "OPEN"
+            "case_status": "OPEN",
         }
         result = validator.validate(record, "court_case")
         assert result.is_valid is True
@@ -956,7 +942,7 @@ class TestSchemaValidatorUnknownFields:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "unknown_field": "value"
+            "unknown_field": "value",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is True  # Unknown fields don't invalidate
@@ -973,7 +959,7 @@ class TestSchemaValidatorUnknownFields:
             "city": "Test",
             "state": "CA",
             "zip_code": "90210",
-            "unknown_field": "value"
+            "unknown_field": "value",
         }
         result = validator.validate(record, "property")
         assert result.is_valid is True
@@ -985,12 +971,11 @@ class TestSchemaValidatorCustomValidation:
 
     def test_custom_validator_pass(self):
         """Test custom validator that passes"""
+
         def is_valid_ssn(value):
             return len(value) == 4 and value.isdigit()
 
-        fields = [
-            FieldSchema("ssn", FieldType.STRING, custom_validator=is_valid_ssn)
-        ]
+        fields = [FieldSchema("ssn", FieldType.STRING, custom_validator=is_valid_ssn)]
         schema = BaseSchema("test", fields)
         validator = SchemaValidator()
 
@@ -999,12 +984,11 @@ class TestSchemaValidatorCustomValidation:
 
     def test_custom_validator_fail(self):
         """Test custom validator that fails"""
+
         def is_valid_ssn(value):
             return len(value) == 4 and value.isdigit()
 
-        fields = [
-            FieldSchema("ssn", FieldType.STRING, custom_validator=is_valid_ssn)
-        ]
+        fields = [FieldSchema("ssn", FieldType.STRING, custom_validator=is_valid_ssn)]
         schema = BaseSchema("test", fields)
         validator = SchemaValidator()
 
@@ -1013,12 +997,11 @@ class TestSchemaValidatorCustomValidation:
 
     def test_custom_validator_exception(self):
         """Test custom validator that raises exception"""
+
         def bad_validator(value):
             raise ValueError("Test error")
 
-        fields = [
-            FieldSchema("test", FieldType.STRING, custom_validator=bad_validator)
-        ]
+        fields = [FieldSchema("test", FieldType.STRING, custom_validator=bad_validator)]
         schema = BaseSchema("test", fields)
         validator = SchemaValidator()
 
@@ -1043,9 +1026,21 @@ class TestSchemaValidatorBatch:
     def test_validate_batch_some_invalid(self, validator):
         """Test batch validation with some invalid records"""
         records = [
-            {"parcel_id": "1", "address": "123 Main St", "city": "A", "state": "CA", "zip_code": "90210"},
+            {
+                "parcel_id": "1",
+                "address": "123 Main St",
+                "city": "A",
+                "state": "CA",
+                "zip_code": "90210",
+            },
             {"parcel_id": "2"},  # Missing required fields
-            {"parcel_id": "3", "address": "456 Oak Ave", "city": "B", "state": "CA", "zip_code": "90210"},
+            {
+                "parcel_id": "3",
+                "address": "456 Oak Ave",
+                "city": "B",
+                "state": "CA",
+                "zip_code": "90210",
+            },
         ]
         results = validator.validate_batch(records, "property")
         assert len(results) == 3
@@ -1071,25 +1066,37 @@ class TestSchemaValidatorStatistics:
         results = validator.validate_batch(sample_records_batch, "property")
         stats = validator.get_statistics(results)
 
-        assert stats['total_records'] == 3
-        assert stats['valid_records'] == 3
-        assert stats['invalid_records'] == 0
-        assert stats['validation_rate'] == 1.0
+        assert stats["total_records"] == 3
+        assert stats["valid_records"] == 3
+        assert stats["invalid_records"] == 0
+        assert stats["validation_rate"] == 1.0
 
     def test_get_statistics_some_invalid(self, validator):
         """Test statistics with some invalid records"""
         records = [
-            {"parcel_id": "1", "address": "123 Main St", "city": "A", "state": "CA", "zip_code": "90210"},
+            {
+                "parcel_id": "1",
+                "address": "123 Main St",
+                "city": "A",
+                "state": "CA",
+                "zip_code": "90210",
+            },
             {"parcel_id": "2"},  # Invalid
-            {"parcel_id": "3", "address": "456 Oak Ave", "city": "B", "state": "CA", "zip_code": "90210"},
+            {
+                "parcel_id": "3",
+                "address": "456 Oak Ave",
+                "city": "B",
+                "state": "CA",
+                "zip_code": "90210",
+            },
         ]
         results = validator.validate_batch(records, "property")
         stats = validator.get_statistics(results)
 
-        assert stats['total_records'] == 3
-        assert stats['valid_records'] == 2
-        assert stats['invalid_records'] == 1
-        assert stats['validation_rate'] == 2/3
+        assert stats["total_records"] == 3
+        assert stats["valid_records"] == 2
+        assert stats["invalid_records"] == 1
+        assert stats["validation_rate"] == 2 / 3
 
     def test_get_statistics_errors_by_field(self, validator):
         """Test error counting by field"""
@@ -1100,14 +1107,14 @@ class TestSchemaValidatorStatistics:
         results = validator.validate_batch(records, "property")
         stats = validator.get_statistics(results)
 
-        assert 'address' in stats['errors_by_field']
-        assert stats['errors_by_field']['address'] == 2
+        assert "address" in stats["errors_by_field"]
+        assert stats["errors_by_field"]["address"] == 2
 
     def test_get_statistics_empty(self, validator):
         """Test statistics with empty results"""
         stats = validator.get_statistics([])
-        assert stats['total_records'] == 0
-        assert stats['validation_rate'] == 0
+        assert stats["total_records"] == 0
+        assert stats["validation_rate"] == 0
 
 
 class TestValidateRecordFunction:

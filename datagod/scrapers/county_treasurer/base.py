@@ -23,6 +23,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
+
 import aiohttp
 from bs4 import BeautifulSoup
 
@@ -31,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 class TaxStatus(Enum):
     """Status of property tax payment."""
+
     CURRENT = "current"
     DELINQUENT = "delinquent"
     PAID = "paid"
@@ -46,6 +48,7 @@ class TaxStatus(Enum):
 
 class LienStatus(Enum):
     """Status of a tax lien."""
+
     ACTIVE = "active"
     REDEEMED = "redeemed"
     FORECLOSED = "foreclosed"
@@ -59,6 +62,7 @@ class LienStatus(Enum):
 
 class TaxSaleType(Enum):
     """Type of tax sale."""
+
     TAX_LIEN_SALE = "tax_lien_sale"
     TAX_DEED_SALE = "tax_deed_sale"
     SCAVENGER_SALE = "scavenger_sale"
@@ -72,6 +76,7 @@ class TaxSaleType(Enum):
 
 class PaymentMethod(Enum):
     """Method of tax payment."""
+
     CASH = "cash"
     CHECK = "check"
     CREDIT_CARD = "credit_card"
@@ -88,6 +93,7 @@ class PaymentMethod(Enum):
 @dataclass
 class TaxBillItem:
     """Individual line item on a tax bill."""
+
     description: str
     amount: Decimal
     taxing_authority: Optional[str] = None
@@ -99,6 +105,7 @@ class TaxBillItem:
 @dataclass
 class TaxBill:
     """Property tax bill for a specific period."""
+
     bill_number: Optional[str] = None
     tax_year: int = 0
     parcel_id: str = ""
@@ -144,6 +151,7 @@ class TaxBill:
 @dataclass
 class TaxPayment:
     """Record of a tax payment."""
+
     payment_id: Optional[str] = None
     parcel_id: str = ""
     tax_year: int = 0
@@ -173,6 +181,7 @@ class TaxPayment:
 @dataclass
 class TaxLien:
     """Tax lien certificate record."""
+
     lien_number: str
     parcel_id: str
 
@@ -223,6 +232,7 @@ class TaxLien:
 @dataclass
 class TaxSaleProperty:
     """Property listed for tax sale."""
+
     sale_id: Optional[str] = None
     parcel_id: str = ""
 
@@ -276,6 +286,7 @@ class TaxSaleProperty:
 @dataclass
 class PropertyTaxRecord:
     """Complete property tax record with history."""
+
     parcel_id: str
     property_address: Optional[str] = None
     city: Optional[str] = None
@@ -329,6 +340,7 @@ class PropertyTaxRecord:
 @dataclass
 class TaxSearchCriteria:
     """Search criteria for tax record lookup."""
+
     parcel_id: Optional[str] = None
     property_address: Optional[str] = None
     owner_name: Optional[str] = None
@@ -341,6 +353,7 @@ class TaxSearchCriteria:
 @dataclass
 class TaxSearchResult:
     """Result from a tax record search operation."""
+
     records: List[PropertyTaxRecord]
     total_count: int = 0
     page_number: int = 1
@@ -402,6 +415,7 @@ class CountyTreasurerBase(ABC):
     async def _rate_limit(self):
         """Enforce rate limiting between requests."""
         import time
+
         now = time.time()
         elapsed = now - self._last_request_time
         if elapsed < self.REQUEST_DELAY:
@@ -423,11 +437,13 @@ class CountyTreasurerBase(ABC):
             except aiohttp.ClientError as e:
                 if attempt == self.MAX_RETRIES - 1:
                     raise
-                await asyncio.sleep(2 ** attempt)
+                await asyncio.sleep(2**attempt)
 
         return ""
 
-    async def _fetch_json(self, url: str, params: Optional[Dict] = None) -> Dict[str, Any]:
+    async def _fetch_json(
+        self, url: str, params: Optional[Dict] = None
+    ) -> Dict[str, Any]:
         """Fetch JSON content from a URL."""
         await self._rate_limit()
 
@@ -442,7 +458,7 @@ class CountyTreasurerBase(ABC):
             except aiohttp.ClientError as e:
                 if attempt == self.MAX_RETRIES - 1:
                     raise
-                await asyncio.sleep(2 ** attempt)
+                await asyncio.sleep(2**attempt)
 
         return {}
 
@@ -583,10 +599,7 @@ class CountyTreasurerBase(ABC):
     # Abstract methods (must be implemented by subclasses)
 
     @abstractmethod
-    async def get_tax_record(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyTaxRecord]:
+    async def get_tax_record(self, parcel_id: str) -> Optional[PropertyTaxRecord]:
         """Get property tax record by parcel ID."""
         pass
 
@@ -596,24 +609,20 @@ class CountyTreasurerBase(ABC):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> TaxSearchResult:
         """Search for tax records by property address."""
         pass
 
     @abstractmethod
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> TaxSearchResult:
         """Search for tax records by owner name."""
         pass
 
     async def get_tax_bill(
-        self,
-        parcel_id: str,
-        tax_year: Optional[int] = None
+        self, parcel_id: str, tax_year: Optional[int] = None
     ) -> Optional[TaxBill]:
         """Get tax bill for a specific year."""
         record = await self.get_tax_record(parcel_id)
@@ -633,7 +642,7 @@ class CountyTreasurerBase(ABC):
         self,
         parcel_id: str,
         start_year: Optional[int] = None,
-        end_year: Optional[int] = None
+        end_year: Optional[int] = None,
     ) -> List[TaxPayment]:
         """Get payment history for a property."""
         record = await self.get_tax_record(parcel_id)
@@ -650,9 +659,7 @@ class CountyTreasurerBase(ABC):
         return payments
 
     async def get_delinquent_properties(
-        self,
-        min_amount: Optional[Decimal] = None,
-        max_results: int = 500
+        self, min_amount: Optional[Decimal] = None, max_results: int = 500
     ) -> TaxSearchResult:
         """Get list of delinquent properties."""
         # Default implementation - override for systems with delinquent list
@@ -666,7 +673,7 @@ class CountyTreasurerBase(ABC):
         self,
         sale_type: Optional[TaxSaleType] = None,
         upcoming_only: bool = True,
-        max_results: int = 500
+        max_results: int = 500,
     ) -> List[TaxSaleProperty]:
         """Get properties scheduled for tax sale."""
         # Default returns empty - override for systems with tax sale data
@@ -676,7 +683,7 @@ class CountyTreasurerBase(ABC):
         self,
         parcel_id: Optional[str] = None,
         status: Optional[LienStatus] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> List[TaxLien]:
         """Get tax liens, optionally filtered by parcel or status."""
         # Default returns empty - override for systems with lien data

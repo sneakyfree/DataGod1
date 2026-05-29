@@ -21,14 +21,16 @@ Includes:
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 
 class LicenseType(Enum):
     """Types of pest control licenses"""
+
     OPERATOR = "pest_control_operator"
     APPLICATOR = "pesticide_applicator"
     CERTIFIED_COMMERCIAL = "certified_commercial_applicator"
@@ -47,6 +49,7 @@ class LicenseType(Enum):
 
 class LicenseStatus(Enum):
     """License status"""
+
     ACTIVE = "active"
     EXPIRED = "expired"
     SUSPENDED = "suspended"
@@ -58,6 +61,7 @@ class LicenseStatus(Enum):
 
 class CategoryType(Enum):
     """Pest control category certifications"""
+
     GENERAL = "general_pest"
     TERMITE = "termite_subterranean"
     DRYWOOD_TERMITE = "drywood_termite"
@@ -79,6 +83,7 @@ class CategoryType(Enum):
 @dataclass
 class PestControlLicense:
     """Pest control license record"""
+
     license_number: str
     license_type: LicenseType
     status: LicenseStatus
@@ -118,13 +123,19 @@ class PestControlLicense:
             "phone": self.phone,
             "email": self.email,
             "issue_date": self.issue_date.isoformat() if self.issue_date else None,
-            "expiration_date": self.expiration_date.isoformat() if self.expiration_date else None,
+            "expiration_date": (
+                self.expiration_date.isoformat() if self.expiration_date else None
+            ),
             "categories": [c.value for c in self.categories],
             "category_descriptions": self.category_descriptions,
             "insurance_on_file": self.insurance_on_file,
             "bond_on_file": self.bond_on_file,
             "epa_certification": self.epa_certification,
-            "continuing_education_due": self.continuing_education_due.isoformat() if self.continuing_education_due else None,
+            "continuing_education_due": (
+                self.continuing_education_due.isoformat()
+                if self.continuing_education_due
+                else None
+            ),
             "data_source": self.data_source,
         }
 
@@ -132,6 +143,7 @@ class PestControlLicense:
 @dataclass
 class DisciplinaryAction:
     """Disciplinary action against a license holder"""
+
     action_id: str
     license_number: str
     action_date: date
@@ -156,13 +168,16 @@ class DisciplinaryAction:
             "suspension_days": self.suspension_days,
             "probation_months": self.probation_months,
             "resolved": self.resolved,
-            "resolution_date": self.resolution_date.isoformat() if self.resolution_date else None,
+            "resolution_date": (
+                self.resolution_date.isoformat() if self.resolution_date else None
+            ),
         }
 
 
 @dataclass
 class PestControlCompany:
     """Pest control company information"""
+
     company_id: str
     company_name: str
     dba_name: Optional[str] = None
@@ -584,10 +599,7 @@ class BasePestControlAPI:
         results.append(sample_license)
         return results
 
-    async def verify_license(
-        self,
-        license_number: str
-    ) -> Optional[PestControlLicense]:
+    async def verify_license(self, license_number: str) -> Optional[PestControlLicense]:
         """Verify a pest control license"""
         if not self.session:
             raise RuntimeError("Session not initialized. Use async context manager.")
@@ -616,7 +628,11 @@ class BasePestControlAPI:
             state=self.state,
             city=city,
             license_number=f"{self.state}PCO-12345",
-            services_offered=["General Pest Control", "Termite Treatment", "Rodent Control"],
+            services_offered=[
+                "General Pest Control",
+                "Termite Treatment",
+                "Rodent Control",
+            ],
             status=LicenseStatus.ACTIVE,
         )
 
@@ -699,6 +715,7 @@ def get_pest_control_api(state: str) -> BasePestControlAPI:
 
 # Convenience functions
 
+
 def get_state_pest_control_agency(state: str) -> Dict[str, str]:
     """Get state pest control licensing agency information"""
     return STATE_PEST_CONTROL_AGENCIES.get(state.upper(), {})
@@ -712,6 +729,7 @@ def search_pest_control_licenses(
     city: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Search for pest control licenses"""
+
     async def _search():
         api = get_pest_control_api(state)
         async with api:
@@ -722,19 +740,21 @@ def search_pest_control_licenses(
                 city=city,
             )
             return [r.to_dict() for r in results]
+
     return asyncio.run(_search())
 
 
 def verify_pest_control_license(
-    state: str,
-    license_number: str
+    state: str, license_number: str
 ) -> Optional[Dict[str, Any]]:
     """Verify a pest control license"""
+
     async def _verify():
         api = get_pest_control_api(state)
         async with api:
             result = await api.verify_license(license_number)
             return result.to_dict() if result else None
+
     return asyncio.run(_verify())
 
 
@@ -744,11 +764,13 @@ def search_pest_control_companies(
     city: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Search for pest control companies"""
+
     async def _search():
         api = get_pest_control_api(state)
         async with api:
             results = await api.search_companies(name=name, city=city)
             return [r.to_dict() for r in results]
+
     return asyncio.run(_search())
 
 
@@ -757,6 +779,7 @@ def search_all_states_pest_control(
     company_name: Optional[str] = None,
 ) -> Dict[str, List[Dict[str, Any]]]:
     """Search for pest control licenses across all states"""
+
     async def _search():
         results = {}
         for state in STATE_PEST_CONTROL_AGENCIES.keys():
@@ -769,6 +792,7 @@ def search_all_states_pest_control(
                 if state_results:
                     results[state] = [r.to_dict() for r in state_results]
         return results
+
     return asyncio.run(_search())
 
 

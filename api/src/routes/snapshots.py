@@ -5,16 +5,17 @@ Provides endpoints for creating and retrieving immutable data snapshots
 with SQLite DB persistence and SHA-256 integrity verification.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
-from datetime import datetime
 import hashlib
 import json
-import uuid
+import logging
 import os
 import sqlite3
-import logging
+import uuid
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -22,17 +23,20 @@ router = APIRouter(prefix="/snapshots", tags=["snapshots"])
 
 # --- DB-Backed Snapshot Store ---
 
-_SNAPSHOT_DB = os.getenv("SNAPSHOT_DB", os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-    "snapshots.db"
-))
+_SNAPSHOT_DB = os.getenv(
+    "SNAPSHOT_DB",
+    os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "snapshots.db"
+    ),
+)
 
 
 def _get_db() -> sqlite3.Connection:
     """Get snapshot DB connection, creating table if needed."""
     conn = sqlite3.connect(_SNAPSHOT_DB)
     conn.row_factory = sqlite3.Row
-    conn.execute("""
+    conn.execute(
+        """
         CREATE TABLE IF NOT EXISTS audit_snapshots (
             snapshot_id TEXT PRIMARY KEY,
             data_hash TEXT NOT NULL,
@@ -44,13 +48,15 @@ def _get_db() -> sqlite3.Connection:
             model_version TEXT DEFAULT '1.0.0',
             rules_version TEXT DEFAULT '1.0.0'
         )
-    """)
+    """
+    )
     conn.commit()
     return conn
 
 
 class SnapshotCreate(BaseModel):
     """Request to create a snapshot."""
+
     data: Dict[str, Any]
     source: str
     description: Optional[str] = None
@@ -58,6 +64,7 @@ class SnapshotCreate(BaseModel):
 
 class SnapshotResponse(BaseModel):
     """Response containing snapshot details."""
+
     snapshot_id: str
     data_hash: str
     source: str
@@ -71,6 +78,7 @@ class SnapshotResponse(BaseModel):
 
 class SnapshotSummary(BaseModel):
     """Summary of a snapshot without full data."""
+
     snapshot_id: str
     data_hash: str
     source: str
@@ -80,6 +88,7 @@ class SnapshotSummary(BaseModel):
 
 class DeltaReport(BaseModel):
     """Report of changes between two snapshots."""
+
     snapshot_before: str
     snapshot_after: str
     changes: List[Dict[str, Any]]
@@ -88,7 +97,7 @@ class DeltaReport(BaseModel):
 
 def compute_data_hash(data: Dict[str, Any]) -> str:
     """Compute SHA-256 hash of data for reproducibility."""
-    json_bytes = json.dumps(data, sort_keys=True, default=str).encode('utf-8')
+    json_bytes = json.dumps(data, sort_keys=True, default=str).encode("utf-8")
     return hashlib.sha256(json_bytes).hexdigest()
 
 
@@ -124,8 +133,14 @@ async def create_snapshot(request: SnapshotCreate):
             """INSERT INTO audit_snapshots
                (snapshot_id, data_hash, source, description, created_at, data_json)
                VALUES (?, ?, ?, ?, ?, ?)""",
-            (snapshot_id, data_hash, request.source, request.description,
-             created_at, json.dumps(request.data, sort_keys=True, default=str))
+            (
+                snapshot_id,
+                data_hash,
+                request.source,
+                request.description,
+                created_at,
+                json.dumps(request.data, sort_keys=True, default=str),
+            ),
         )
         db.commit()
     finally:
@@ -167,7 +182,7 @@ async def get_snapshot(snapshot_id: str):
     if stored_hash != computed_hash:
         raise HTTPException(
             status_code=500,
-            detail="Data integrity violation: snapshot SHA-256 hash mismatch"
+            detail="Data integrity violation: snapshot SHA-256 hash mismatch",
         )
 
     return SnapshotResponse(**snapshot)
@@ -177,7 +192,7 @@ async def get_snapshot(snapshot_id: str):
 async def list_snapshots(
     source: Optional[str] = Query(None, description="Filter by source"),
     limit: int = Query(50, ge=1, le=200, description="Max results"),
-    offset: int = Query(0, ge=0, description="Offset for pagination")
+    offset: int = Query(0, ge=0, description="Offset for pagination"),
 ):
     """List available snapshots."""
     db = _get_db()
@@ -186,13 +201,13 @@ async def list_snapshots(
             rows = db.execute(
                 "SELECT snapshot_id, data_hash, source, description, created_at "
                 "FROM audit_snapshots WHERE source = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
-                (source, limit, offset)
+                (source, limit, offset),
             ).fetchall()
         else:
             rows = db.execute(
                 "SELECT snapshot_id, data_hash, source, description, created_at "
                 "FROM audit_snapshots ORDER BY created_at DESC LIMIT ? OFFSET ?",
-                (limit, offset)
+                (limit, offset),
             ).fetchall()
     finally:
         db.close()
@@ -237,7 +252,7 @@ async def verify_snapshot(snapshot_id: str):
         "computed_hash": computed_hash,
         "verified": stored_hash == computed_hash,
         "algorithm": "sha256",
-        "verified_at": datetime.utcnow().isoformat() + "Z"
+        "verified_at": datetime.utcnow().isoformat() + "Z",
     }
 
 
@@ -258,9 +273,13 @@ async def compare_snapshots(snapshot_before: str, snapshot_after: str):
         db.close()
 
     if not row_before:
-        raise HTTPException(status_code=404, detail=f"Snapshot {snapshot_before} not found")
+        raise HTTPException(
+            status_code=404, detail=f"Snapshot {snapshot_before} not found"
+        )
     if not row_after:
-        raise HTTPException(status_code=404, detail=f"Snapshot {snapshot_after} not found")
+        raise HTTPException(
+            status_code=404, detail=f"Snapshot {snapshot_after} not found"
+        )
 
     before = json.loads(row_before["data_json"])
     after = json.loads(row_after["data_json"])
@@ -271,18 +290,20 @@ async def compare_snapshots(snapshot_before: str, snapshot_after: str):
         old_value = before.get(key)
         new_value = after.get(key)
         if old_value != new_value:
-            changes.append({
-                "field": key,
-                "old_value": old_value,
-                "new_value": new_value,
-                "reason": "data_change"
-            })
+            changes.append(
+                {
+                    "field": key,
+                    "old_value": old_value,
+                    "new_value": new_value,
+                    "reason": "data_change",
+                }
+            )
 
     return DeltaReport(
         snapshot_before=snapshot_before,
         snapshot_after=snapshot_after,
         changes=changes,
-        change_count=len(changes)
+        change_count=len(changes),
     )
 
 

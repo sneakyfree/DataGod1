@@ -3,9 +3,10 @@ Extended tests for root DatabaseManager (db_manager.py)
 Additional tests for uncovered methods and error handling paths.
 """
 
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Use in-memory SQLite for tests
 TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -15,7 +16,8 @@ TEST_DATABASE_URL = "sqlite:///:memory:"
 def db_manager():
     """Create test database manager with initialized database."""
     from db_manager import DatabaseManager
-    with patch('db_manager.DATABASE_URL', TEST_DATABASE_URL):
+
+    with patch("db_manager.DATABASE_URL", TEST_DATABASE_URL):
         dm = DatabaseManager(database_url=TEST_DATABASE_URL)
         dm.init_database()
         return dm
@@ -51,15 +53,15 @@ class TestJurisdictionOperationsExtended:
             area_sq_miles=4751.0,
             description="Los Angeles County",
             contact_info={"phone": "555-1234"},
-            metadata={"key": "value"}
+            metadata={"key": "value"},
         )
         assert jid is not None
 
         # Verify the data
         jurisdiction = db_manager.get_jurisdiction(jid)
         assert jurisdiction is not None
-        assert jurisdiction['name'] == "Full County"
-        assert jurisdiction['state'] == "CA"
+        assert jurisdiction["name"] == "Full County"
+        assert jurisdiction["state"] == "CA"
 
     def test_get_jurisdiction_not_found(self, db_manager):
         """Test getting non-existent jurisdiction"""
@@ -74,9 +76,23 @@ class TestJurisdictionOperationsExtended:
     def test_list_jurisdictions_with_filters(self, db_manager):
         """Test listing jurisdictions with all filters"""
         # Create test jurisdictions
-        db_manager.create_jurisdiction(name="Filter County 1", state="TX", county="Harris", jurisdiction_type="county", api_available=True)
-        db_manager.create_jurisdiction(name="Filter County 2", state="TX", county="Dallas", jurisdiction_type="county", api_available=False)
-        db_manager.create_jurisdiction(name="Filter County 3", state="CA", county="LA", jurisdiction_type="city")
+        db_manager.create_jurisdiction(
+            name="Filter County 1",
+            state="TX",
+            county="Harris",
+            jurisdiction_type="county",
+            api_available=True,
+        )
+        db_manager.create_jurisdiction(
+            name="Filter County 2",
+            state="TX",
+            county="Dallas",
+            jurisdiction_type="county",
+            api_available=False,
+        )
+        db_manager.create_jurisdiction(
+            name="Filter County 3", state="CA", county="LA", jurisdiction_type="city"
+        )
 
         # Test state filter
         results = db_manager.list_jurisdictions(state="TX")
@@ -108,15 +124,12 @@ class TestJurisdictionOperationsExtended:
         jid = db_manager.create_jurisdiction(name="Update Test County", state="WA")
 
         result = db_manager.update_jurisdiction(
-            jid,
-            state="OR",
-            county="Updated County",
-            population=50000
+            jid, state="OR", county="Updated County", population=50000
         )
         assert result is True
 
         updated = db_manager.get_jurisdiction(jid)
-        assert updated['state'] == "OR"
+        assert updated["state"] == "OR"
 
     def test_delete_jurisdiction_not_found(self, db_manager):
         """Test deleting non-existent jurisdiction"""
@@ -139,9 +152,7 @@ class TestDataSourceOperationsExtended:
     def test_create_data_source_jurisdiction_not_found(self, db_manager):
         """Test creating data source with non-existent jurisdiction"""
         result = db_manager.create_data_source(
-            jurisdiction_id=9999,
-            source_name="Test Source",
-            source_type="api"
+            jurisdiction_id=9999, source_name="Test Source", source_type="api"
         )
         assert result is None
 
@@ -208,7 +219,7 @@ class TestDataSourceOperationsExtended:
         db_manager.record_scrape(dsid, success=False)
 
         ds = db_manager.get_data_source(dsid)
-        assert ds['status'] == "error"
+        assert ds["status"] == "error"
 
 
 class TestRecordOperationsExtended:
@@ -238,7 +249,7 @@ class TestRecordOperationsExtended:
             document_number="DOC123456",
             url="http://example.com/doc",
             raw_data={"field": "value"},
-            metadata={"type": "residential"}
+            metadata={"type": "residential"},
         )
         assert rid is not None
 
@@ -253,9 +264,24 @@ class TestRecordOperationsExtended:
         dsid = db_manager.create_data_source(jid, "Bulk Source", "api")
 
         records = [
-            {"jurisdiction_id": jid, "data_source_id": dsid, "record_type": "deed", "title": "Record 1"},
-            {"jurisdiction_id": jid, "data_source_id": dsid, "record_type": "deed", "title": "Record 2"},
-            {"jurisdiction_id": jid, "data_source_id": dsid, "record_type": "deed", "title": "Record 3"},
+            {
+                "jurisdiction_id": jid,
+                "data_source_id": dsid,
+                "record_type": "deed",
+                "title": "Record 1",
+            },
+            {
+                "jurisdiction_id": jid,
+                "data_source_id": dsid,
+                "record_type": "deed",
+                "title": "Record 2",
+            },
+            {
+                "jurisdiction_id": jid,
+                "data_source_id": dsid,
+                "record_type": "deed",
+                "title": "Record 3",
+            },
         ]
 
         count = db_manager.bulk_create_records(records)
@@ -267,10 +293,16 @@ class TestRecordOperationsExtended:
         dsid = db_manager.create_data_source(jid, "Search Source", "api")
 
         db_manager.create_record(
-            jid, dsid, "deed", "Test Property Transfer",
-            grantor="John Doe", grantee="Jane Smith",
-            amount=250000.00, city="Houston", state="TX",
-            date=datetime.utcnow()
+            jid,
+            dsid,
+            "deed",
+            "Test Property Transfer",
+            grantor="John Doe",
+            grantee="Jane Smith",
+            amount=250000.00,
+            city="Houston",
+            state="TX",
+            date=datetime.utcnow(),
         )
 
         # Test text query
@@ -316,8 +348,8 @@ class TestRecordOperationsExtended:
         db_manager.create_record(jid, dsid, "deed", "Stats Record 2", amount=200000.00)
 
         stats = db_manager.get_record_stats()
-        assert 'total_records' in stats
-        assert stats['total_records'] >= 2
+        assert "total_records" in stats
+        assert stats["total_records"] >= 2
 
 
 class TestEntityOperationsExtended:
@@ -337,7 +369,7 @@ class TestEntityOperationsExtended:
             email="john@example.com",
             description="Test person entity",
             data={"occupation": "Engineer"},
-            metadata={"verified": True}
+            metadata={"verified": True},
         )
         assert eid is not None
 
@@ -348,8 +380,12 @@ class TestEntityOperationsExtended:
 
     def test_search_entities_with_all_filters(self, db_manager):
         """Test searching entities with all filters"""
-        db_manager.create_entity("Search Test Person", "person", city="Dallas", state="TX")
-        db_manager.create_entity("Search Test Company", "company", city="Austin", state="TX")
+        db_manager.create_entity(
+            "Search Test Person", "person", city="Dallas", state="TX"
+        )
+        db_manager.create_entity(
+            "Search Test Company", "company", city="Austin", state="TX"
+        )
 
         # Test by query
         results = db_manager.search_entities(query="Search Test")
@@ -390,7 +426,7 @@ class TestRelationshipOperations:
             context="Property ownership",
             confidence_score=0.95,
             evidence={"document": "deed"},
-            metadata={"verified": True}
+            metadata={"verified": True},
         )
         assert rel_id is not None
 
@@ -426,12 +462,12 @@ class TestDashboardStats:
 
         stats = db_manager.get_dashboard_stats()
 
-        assert 'totalRecords' in stats
-        assert 'jurisdictions' in stats
-        assert 'dataSources' in stats
-        assert 'activeScrapers' in stats
-        assert 'totalEntities' in stats
-        assert 'recentRecords' in stats
+        assert "totalRecords" in stats
+        assert "jurisdictions" in stats
+        assert "dataSources" in stats
+        assert "activeScrapers" in stats
+        assert "totalEntities" in stats
+        assert "recentRecords" in stats
 
 
 class TestUserOperations:
@@ -447,7 +483,7 @@ class TestUserOperations:
             roles=["user", "admin"],
             disabled=False,
             email_verified=True,
-            subscription_tier="pro"
+            subscription_tier="pro",
         )
         assert uid is not None
 
@@ -463,7 +499,7 @@ class TestUserOperations:
 
         user = db_manager.get_user(uid)
         assert user is not None
-        assert user['username'] == "getuser"
+        assert user["username"] == "getuser"
 
     def test_get_user_not_found(self, db_manager):
         """Test getting non-existent user"""
@@ -476,7 +512,7 @@ class TestUserOperations:
 
         user = db_manager.get_user_by_username("byusername")
         assert user is not None
-        assert user['email'] == "byusername@example.com"
+        assert user["email"] == "byusername@example.com"
 
     def test_get_user_by_username_not_found(self, db_manager):
         """Test getting non-existent username"""
@@ -489,7 +525,7 @@ class TestUserOperations:
 
         user = db_manager.get_user_by_email("byemail@example.com")
         assert user is not None
-        assert user['username'] == "byemail"
+        assert user["username"] == "byemail"
 
     def test_get_user_by_email_not_found(self, db_manager):
         """Test getting non-existent email"""
@@ -502,7 +538,7 @@ class TestUserOperations:
 
         user = db_manager.get_user_for_auth("authuser")
         assert user is not None
-        assert 'hashed_password' in user
+        assert "hashed_password" in user
 
     def test_check_user_locked_not_locked(self, db_manager):
         """Test checking unlocked user"""
@@ -518,8 +554,20 @@ class TestUserOperations:
 
     def test_list_users(self, db_manager):
         """Test listing users"""
-        db_manager.create_user("listuser1", "list1@example.com", "hash123", disabled=False, subscription_tier="free")
-        db_manager.create_user("listuser2", "list2@example.com", "hash123", disabled=True, subscription_tier="pro")
+        db_manager.create_user(
+            "listuser1",
+            "list1@example.com",
+            "hash123",
+            disabled=False,
+            subscription_tier="free",
+        )
+        db_manager.create_user(
+            "listuser2",
+            "list2@example.com",
+            "hash123",
+            disabled=True,
+            subscription_tier="pro",
+        )
 
         # List all
         users = db_manager.list_users()
@@ -550,8 +598,8 @@ class TestUserOperations:
         assert result is True
 
         user = db_manager.get_user(uid)
-        assert user['full_name'] == "Updated Name"
-        assert user['disabled'] is True
+        assert user["full_name"] == "Updated Name"
+        assert user["disabled"] is True
 
     def test_update_user_not_found(self, db_manager):
         """Test updating non-existent user"""
@@ -599,8 +647,20 @@ class TestUserOperations:
 
     def test_count_users(self, db_manager):
         """Test counting users"""
-        db_manager.create_user("countuser1", "count1@example.com", "hash", disabled=False, subscription_tier="free")
-        db_manager.create_user("countuser2", "count2@example.com", "hash", disabled=True, subscription_tier="pro")
+        db_manager.create_user(
+            "countuser1",
+            "count1@example.com",
+            "hash",
+            disabled=False,
+            subscription_tier="free",
+        )
+        db_manager.create_user(
+            "countuser2",
+            "count2@example.com",
+            "hash",
+            disabled=True,
+            subscription_tier="pro",
+        )
 
         total = db_manager.count_users()
         assert total >= 2
@@ -619,7 +679,7 @@ class TestUserOperations:
         assert result is True
 
         user = db_manager.get_user_by_username("loginuser")
-        assert user['login_count'] >= 1
+        assert user["login_count"] >= 1
 
     def test_record_login_failure(self, db_manager):
         """Test recording failed login"""
@@ -650,22 +710,28 @@ class TestUserOperations:
         """Test setting password reset token"""
         db_manager.create_user("resetuser", "reset@example.com", "hash123")
 
-        result = db_manager.set_password_reset_token("reset@example.com", "token123", expires_hours=2)
+        result = db_manager.set_password_reset_token(
+            "reset@example.com", "token123", expires_hours=2
+        )
         assert result is True
 
     def test_set_password_reset_token_not_found(self, db_manager):
         """Test setting password reset token for non-existent user"""
-        result = db_manager.set_password_reset_token("nonexistent@example.com", "token123")
+        result = db_manager.set_password_reset_token(
+            "nonexistent@example.com", "token123"
+        )
         assert result is False
 
     def test_get_user_by_reset_token(self, db_manager):
         """Test getting user by reset token"""
         db_manager.create_user("tokenuser", "token@example.com", "hash123")
-        db_manager.set_password_reset_token("token@example.com", "valid_token", expires_hours=1)
+        db_manager.set_password_reset_token(
+            "token@example.com", "valid_token", expires_hours=1
+        )
 
         user = db_manager.get_user_by_reset_token("valid_token")
         assert user is not None
-        assert user['username'] == "tokenuser"
+        assert user["username"] == "tokenuser"
 
     def test_get_user_by_reset_token_invalid(self, db_manager):
         """Test getting user by invalid reset token"""
@@ -693,7 +759,7 @@ class TestUserOperations:
         assert result is True
 
         user = db_manager.get_user(uid)
-        assert user['api_calls_today'] >= 1
+        assert user["api_calls_today"] >= 1
 
     def test_increment_api_calls_not_found(self, db_manager):
         """Test incrementing API calls for non-existent user"""
@@ -708,7 +774,7 @@ class TestUserOperations:
         assert result is True
 
         user = db_manager.get_user(uid)
-        assert user['exports_this_month'] >= 1
+        assert user["exports_this_month"] >= 1
 
     def test_increment_exports_not_found(self, db_manager):
         """Test incrementing exports for non-existent user"""

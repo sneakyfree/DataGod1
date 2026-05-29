@@ -2,9 +2,11 @@
 Simple test to verify DataGod API v2 is working
 """
 
-import requests
 import json
 from datetime import datetime
+
+import requests
+
 
 # Test the API
 def test_api():
@@ -34,10 +36,7 @@ def test_api():
 
     # Test authentication
     try:
-        auth_data = {
-            "username": "admin",
-            "password": "admin123"
-        }
+        auth_data = {"username": "admin", "password": "admin123"}
         response = requests.post("http://localhost:8000/api/v2/token", data=auth_data)
         if response.status_code == 200:
             print("✅ Authentication working")
@@ -47,7 +46,9 @@ def test_api():
 
             # Test protected endpoint with token
             headers = {"Authorization": f"Bearer {token_data['access_token']}"}
-            response = requests.get("http://localhost:8000/api/v2/users/me", headers=headers)
+            response = requests.get(
+                "http://localhost:8000/api/v2/users/me", headers=headers
+            )
             if response.status_code == 200:
                 print("✅ Protected endpoint working")
                 print(f"   User: {response.json()['username']}")
@@ -59,6 +60,7 @@ def test_api():
         print(f"❌ Authentication error: {e}")
 
     print("🎉 API testing completed!")
+
 
 if __name__ == "__main__":
     test_api()

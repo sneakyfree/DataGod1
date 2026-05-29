@@ -15,9 +15,9 @@ import logging
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class NewsCategory(Enum):
     """News article categories"""
+
     BUSINESS = "business"
     TECHNOLOGY = "technology"
     POLITICS = "politics"
@@ -40,6 +41,7 @@ class NewsCategory(Enum):
 
 class NewsSentiment(Enum):
     """Sentiment analysis result"""
+
     POSITIVE = "positive"
     NEGATIVE = "negative"
     NEUTRAL = "neutral"
@@ -49,6 +51,7 @@ class NewsSentiment(Enum):
 
 class NewsSourceType(Enum):
     """Types of news sources"""
+
     MAJOR_OUTLET = "major_outlet"
     LOCAL_NEWS = "local_news"
     WIRE_SERVICE = "wire_service"
@@ -62,6 +65,7 @@ class NewsSourceType(Enum):
 @dataclass
 class NewsSource:
     """Represents a news source/publisher"""
+
     source_id: str
     name: str
     source_type: NewsSourceType = NewsSourceType.UNKNOWN
@@ -71,26 +75,27 @@ class NewsSource:
     language: str = "en"
     categories: List[NewsCategory] = field(default_factory=list)
     state: Optional[str] = None  # For local news
-    city: Optional[str] = None   # For local news
+    city: Optional[str] = None  # For local news
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'source_id': self.source_id,
-            'name': self.name,
-            'source_type': self.source_type.value,
-            'url': self.url,
-            'description': self.description,
-            'country': self.country,
-            'language': self.language,
-            'categories': [c.value for c in self.categories],
-            'state': self.state,
-            'city': self.city
+            "source_id": self.source_id,
+            "name": self.name,
+            "source_type": self.source_type.value,
+            "url": self.url,
+            "description": self.description,
+            "country": self.country,
+            "language": self.language,
+            "categories": [c.value for c in self.categories],
+            "state": self.state,
+            "city": self.city,
         }
 
 
 @dataclass
 class NewsArticle:
     """Represents a news article"""
+
     article_id: str
     title: str
     source: NewsSource
@@ -110,27 +115,28 @@ class NewsArticle:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'article_id': self.article_id,
-            'title': self.title,
-            'source': self.source.to_dict(),
-            'published_at': self.published_at.isoformat(),
-            'url': self.url,
-            'author': self.author,
-            'description': self.description,
-            'content': self.content,
-            'image_url': self.image_url,
-            'category': self.category.value,
-            'sentiment': self.sentiment.value,
-            'keywords': self.keywords,
-            'entities_mentioned': self.entities_mentioned,
-            'locations_mentioned': self.locations_mentioned,
-            'fetched_at': self.fetched_at.isoformat()
+            "article_id": self.article_id,
+            "title": self.title,
+            "source": self.source.to_dict(),
+            "published_at": self.published_at.isoformat(),
+            "url": self.url,
+            "author": self.author,
+            "description": self.description,
+            "content": self.content,
+            "image_url": self.image_url,
+            "category": self.category.value,
+            "sentiment": self.sentiment.value,
+            "keywords": self.keywords,
+            "entities_mentioned": self.entities_mentioned,
+            "locations_mentioned": self.locations_mentioned,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class PressRelease:
     """Represents a press release"""
+
     release_id: str
     headline: str
     source_company: str
@@ -148,25 +154,26 @@ class PressRelease:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'release_id': self.release_id,
-            'headline': self.headline,
-            'source_company': self.source_company,
-            'published_at': self.published_at.isoformat(),
-            'url': self.url,
-            'summary': self.summary,
-            'full_text': self.full_text,
-            'contact_name': self.contact_name,
-            'contact_email': self.contact_email,
-            'contact_phone': self.contact_phone,
-            'ticker_symbols': self.ticker_symbols,
-            'topics': self.topics,
-            'fetched_at': self.fetched_at.isoformat()
+            "release_id": self.release_id,
+            "headline": self.headline,
+            "source_company": self.source_company,
+            "published_at": self.published_at.isoformat(),
+            "url": self.url,
+            "summary": self.summary,
+            "full_text": self.full_text,
+            "contact_name": self.contact_name,
+            "contact_email": self.contact_email,
+            "contact_phone": self.contact_phone,
+            "ticker_symbols": self.ticker_symbols,
+            "topics": self.topics,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class NewsSearch:
     """Search parameters for news articles"""
+
     keywords: Optional[str] = None
     phrase: Optional[str] = None  # Exact phrase match
     exclude_keywords: Optional[List[str]] = None
@@ -177,7 +184,7 @@ class NewsSearch:
     language: str = "en"
     country: Optional[str] = None
     state: Optional[str] = None  # For local news
-    city: Optional[str] = None   # For local news
+    city: Optional[str] = None  # For local news
     sort_by: str = "publishedAt"  # publishedAt, relevancy, popularity
     page_size: int = 20
     page: int = 1
@@ -186,6 +193,7 @@ class NewsSearch:
 @dataclass
 class EntityNewsSearch:
     """Search for news about a specific entity (person, company, property)"""
+
     entity_name: str
     entity_type: str  # person, company, property, address
     additional_keywords: Optional[List[str]] = None
@@ -236,11 +244,13 @@ class NewsAPIScraper(ABC):
         pass
 
     @abstractmethod
-    def get_top_headlines(self,
-                         country: str = "us",
-                         category: NewsCategory = None,
-                         sources: List[str] = None,
-                         keywords: str = None) -> List[NewsArticle]:
+    def get_top_headlines(
+        self,
+        country: str = "us",
+        category: NewsCategory = None,
+        sources: List[str] = None,
+        keywords: str = None,
+    ) -> List[NewsArticle]:
         """
         Get top headlines.
 
@@ -256,10 +266,9 @@ class NewsAPIScraper(ABC):
         pass
 
     @abstractmethod
-    def get_sources(self,
-                   category: NewsCategory = None,
-                   country: str = None,
-                   language: str = "en") -> List[NewsSource]:
+    def get_sources(
+        self, category: NewsCategory = None, country: str = None, language: str = "en"
+    ) -> List[NewsSource]:
         """
         Get available news sources.
 
@@ -278,14 +287,71 @@ class NewsAPIScraper(ABC):
         text_lower = text.lower()
 
         category_keywords = {
-            NewsCategory.BUSINESS: ['business', 'company', 'corporate', 'market', 'stock', 'earnings'],
-            NewsCategory.TECHNOLOGY: ['tech', 'technology', 'software', 'startup', 'digital', 'ai', 'app'],
-            NewsCategory.POLITICS: ['politics', 'election', 'vote', 'congress', 'senate', 'governor'],
-            NewsCategory.REAL_ESTATE: ['real estate', 'property', 'housing', 'home', 'mortgage', 'foreclosure'],
-            NewsCategory.LEGAL: ['lawsuit', 'court', 'legal', 'attorney', 'judge', 'verdict', 'trial'],
-            NewsCategory.FINANCE: ['finance', 'bank', 'loan', 'investment', 'credit', 'debt'],
-            NewsCategory.CRIME: ['crime', 'arrest', 'police', 'robbery', 'fraud', 'theft'],
-            NewsCategory.GOVERNMENT: ['government', 'city council', 'mayor', 'county', 'public'],
+            NewsCategory.BUSINESS: [
+                "business",
+                "company",
+                "corporate",
+                "market",
+                "stock",
+                "earnings",
+            ],
+            NewsCategory.TECHNOLOGY: [
+                "tech",
+                "technology",
+                "software",
+                "startup",
+                "digital",
+                "ai",
+                "app",
+            ],
+            NewsCategory.POLITICS: [
+                "politics",
+                "election",
+                "vote",
+                "congress",
+                "senate",
+                "governor",
+            ],
+            NewsCategory.REAL_ESTATE: [
+                "real estate",
+                "property",
+                "housing",
+                "home",
+                "mortgage",
+                "foreclosure",
+            ],
+            NewsCategory.LEGAL: [
+                "lawsuit",
+                "court",
+                "legal",
+                "attorney",
+                "judge",
+                "verdict",
+                "trial",
+            ],
+            NewsCategory.FINANCE: [
+                "finance",
+                "bank",
+                "loan",
+                "investment",
+                "credit",
+                "debt",
+            ],
+            NewsCategory.CRIME: [
+                "crime",
+                "arrest",
+                "police",
+                "robbery",
+                "fraud",
+                "theft",
+            ],
+            NewsCategory.GOVERNMENT: [
+                "government",
+                "city council",
+                "mayor",
+                "county",
+                "public",
+            ],
         }
 
         for category, keywords in category_keywords.items():
@@ -310,9 +376,9 @@ class GoogleNewsScraper(ABC):
         logger.info("Initialized GoogleNewsScraper")
 
     @abstractmethod
-    def search_news(self, query: str,
-                   language: str = "en",
-                   country: str = "US") -> List[NewsArticle]:
+    def search_news(
+        self, query: str, language: str = "en", country: str = "US"
+    ) -> List[NewsArticle]:
         """
         Search Google News RSS feed.
 
@@ -327,9 +393,9 @@ class GoogleNewsScraper(ABC):
         pass
 
     @abstractmethod
-    def get_topic_headlines(self, topic: str,
-                           language: str = "en",
-                           country: str = "US") -> List[NewsArticle]:
+    def get_topic_headlines(
+        self, topic: str, language: str = "en", country: str = "US"
+    ) -> List[NewsArticle]:
         """
         Get headlines for a topic.
 
@@ -347,8 +413,9 @@ class GoogleNewsScraper(ABC):
         pass
 
     @abstractmethod
-    def get_location_news(self, location: str,
-                         language: str = "en") -> List[NewsArticle]:
+    def get_location_news(
+        self, location: str, language: str = "en"
+    ) -> List[NewsArticle]:
         """
         Get news for a specific location.
 
@@ -372,16 +439,31 @@ class LocalNewsAggregator(ABC):
 
     # Major local news sources by state (sample)
     STATE_SOURCES = {
-        'CA': ['latimes.com', 'sfchronicle.com', 'sandiegouniontribune.com', 'mercurynews.com'],
-        'TX': ['dallasnews.com', 'houstonchronicle.com', 'statesman.com', 'expressnews.com'],
-        'NY': ['nytimes.com', 'newsday.com', 'nydailynews.com', 'buffalonews.com'],
-        'FL': ['miamiherald.com', 'tampabay.com', 'orlandosentinel.com', 'sun-sentinel.com'],
-        'IL': ['chicagotribune.com', 'suntimes.com'],
-        'PA': ['inquirer.com', 'post-gazette.com'],
-        'OH': ['dispatch.com', 'cleveland.com', 'cincinnati.com'],
-        'GA': ['ajc.com'],
-        'NC': ['charlotteobserver.com', 'newsobserver.com'],
-        'MI': ['freep.com', 'detroitnews.com'],
+        "CA": [
+            "latimes.com",
+            "sfchronicle.com",
+            "sandiegouniontribune.com",
+            "mercurynews.com",
+        ],
+        "TX": [
+            "dallasnews.com",
+            "houstonchronicle.com",
+            "statesman.com",
+            "expressnews.com",
+        ],
+        "NY": ["nytimes.com", "newsday.com", "nydailynews.com", "buffalonews.com"],
+        "FL": [
+            "miamiherald.com",
+            "tampabay.com",
+            "orlandosentinel.com",
+            "sun-sentinel.com",
+        ],
+        "IL": ["chicagotribune.com", "suntimes.com"],
+        "PA": ["inquirer.com", "post-gazette.com"],
+        "OH": ["dispatch.com", "cleveland.com", "cincinnati.com"],
+        "GA": ["ajc.com"],
+        "NC": ["charlotteobserver.com", "newsobserver.com"],
+        "MI": ["freep.com", "detroitnews.com"],
     }
 
     def __init__(self, config: Dict[str, Any] = None):
@@ -389,12 +471,14 @@ class LocalNewsAggregator(ABC):
         logger.info("Initialized LocalNewsAggregator")
 
     @abstractmethod
-    def search_local_news(self,
-                         keywords: str,
-                         state: str,
-                         city: str = None,
-                         date_from: date = None,
-                         date_to: date = None) -> List[NewsArticle]:
+    def search_local_news(
+        self,
+        keywords: str,
+        state: str,
+        city: str = None,
+        date_from: date = None,
+        date_to: date = None,
+    ) -> List[NewsArticle]:
         """
         Search local news sources.
 
@@ -440,7 +524,7 @@ class LocalNewsAggregator(ABC):
     def get_source_state(self, source_url: str) -> Optional[str]:
         """Determine which state a news source covers."""
         domain = urlparse(source_url).netloc.lower()
-        domain = domain.replace('www.', '')
+        domain = domain.replace("www.", "")
 
         for state, sources in self.STATE_SOURCES.items():
             if domain in sources:
@@ -459,10 +543,10 @@ class PressReleaseAggregator(ABC):
 
     # Major press release services
     WIRE_SERVICES = [
-        'prnewswire.com',
-        'businesswire.com',
-        'globenewswire.com',
-        'accesswire.com',
+        "prnewswire.com",
+        "businesswire.com",
+        "globenewswire.com",
+        "accesswire.com",
     ]
 
     def __init__(self, config: Dict[str, Any] = None):
@@ -470,12 +554,14 @@ class PressReleaseAggregator(ABC):
         logger.info("Initialized PressReleaseAggregator")
 
     @abstractmethod
-    def search_releases(self,
-                       keywords: str = None,
-                       company_name: str = None,
-                       ticker: str = None,
-                       date_from: date = None,
-                       date_to: date = None) -> List[PressRelease]:
+    def search_releases(
+        self,
+        keywords: str = None,
+        company_name: str = None,
+        ticker: str = None,
+        date_from: date = None,
+        date_to: date = None,
+    ) -> List[PressRelease]:
         """
         Search press releases.
 
@@ -492,8 +578,9 @@ class PressReleaseAggregator(ABC):
         pass
 
     @abstractmethod
-    def get_company_releases(self, company_name: str,
-                            limit: int = 20) -> List[PressRelease]:
+    def get_company_releases(
+        self, company_name: str, limit: int = 20
+    ) -> List[PressRelease]:
         """
         Get press releases for a company.
 
@@ -515,18 +602,14 @@ class EntityNewsFinder:
     a person, company, property, or address.
     """
 
-    def __init__(self,
-                 newsapi_key: str = None,
-                 config: Dict[str, Any] = None):
+    def __init__(self, newsapi_key: str = None, config: Dict[str, Any] = None):
         self.newsapi_key = newsapi_key
         self.config = config or {}
         logger.info("Initialized EntityNewsFinder")
 
-    def search_person_news(self,
-                          name: str,
-                          state: str = None,
-                          date_from: date = None,
-                          date_to: date = None) -> List[NewsArticle]:
+    def search_person_news(
+        self, name: str, state: str = None, date_from: date = None, date_to: date = None
+    ) -> List[NewsArticle]:
         """
         Search for news articles mentioning a person.
 
@@ -541,10 +624,10 @@ class EntityNewsFinder:
         """
         search = EntityNewsSearch(
             entity_name=name,
-            entity_type='person',
+            entity_type="person",
             date_from=date_from,
             date_to=date_to,
-            state=state
+            state=state,
         )
 
         logger.info(f"Searching news for person: {name}")
@@ -552,12 +635,14 @@ class EntityNewsFinder:
         # Placeholder - actual implementation would search multiple sources
         return []
 
-    def search_company_news(self,
-                           company_name: str,
-                           ticker: str = None,
-                           date_from: date = None,
-                           date_to: date = None,
-                           include_press_releases: bool = True) -> List[NewsArticle]:
+    def search_company_news(
+        self,
+        company_name: str,
+        ticker: str = None,
+        date_from: date = None,
+        date_to: date = None,
+        include_press_releases: bool = True,
+    ) -> List[NewsArticle]:
         """
         Search for news articles about a company.
 
@@ -576,12 +661,14 @@ class EntityNewsFinder:
         # Placeholder - actual implementation would search multiple sources
         return []
 
-    def search_property_news(self,
-                            address: str,
-                            city: str = None,
-                            state: str = None,
-                            date_from: date = None,
-                            date_to: date = None) -> List[NewsArticle]:
+    def search_property_news(
+        self,
+        address: str,
+        city: str = None,
+        state: str = None,
+        date_from: date = None,
+        date_to: date = None,
+    ) -> List[NewsArticle]:
         """
         Search for news articles mentioning a property address.
 
@@ -605,12 +692,13 @@ class EntityNewsFinder:
 # Convenience Functions
 # =============================================================================
 
+
 def search_news(
     keywords: str,
     sources: List[str] = None,
     date_from: date = None,
     date_to: date = None,
-    state: str = None
+    state: str = None,
 ) -> List[NewsArticle]:
     """
     Convenience function to search news across multiple sources.
@@ -630,7 +718,7 @@ def search_news(
         sources=sources,
         date_from=date_from,
         date_to=date_to,
-        state=state
+        state=state,
     )
 
     logger.info(f"Searching news: {keywords}")
@@ -644,7 +732,7 @@ def search_entity_news(
     entity_type: str = "person",
     state: str = None,
     date_from: date = None,
-    date_to: date = None
+    date_to: date = None,
 ) -> List[NewsArticle]:
     """
     Convenience function to search news about an entity.
@@ -664,7 +752,7 @@ def search_entity_news(
         entity_type=entity_type,
         state=state,
         date_from=date_from,
-        date_to=date_to
+        date_to=date_to,
     )
 
     logger.info(f"Searching news for {entity_type}: {entity_name}")
@@ -674,9 +762,7 @@ def search_entity_news(
 
 
 def get_local_headlines(
-    state: str,
-    city: str = None,
-    category: NewsCategory = None
+    state: str, city: str = None, category: NewsCategory = None
 ) -> List[NewsArticle]:
     """
     Convenience function to get local news headlines.

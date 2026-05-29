@@ -3,11 +3,12 @@ Tests for Fairness Monitor (Gap P4 – Disparate Impact)
 """
 
 import pytest
+
 from datagod.compliance.fairness import (
-    FairnessMonitor,
-    FairnessReport,
     FairnessCheck,
     FairnessMetric,
+    FairnessMonitor,
+    FairnessReport,
     FairnessStatus,
 )
 
@@ -74,7 +75,9 @@ class TestFairnessMonitor:
             {"jurisdiction": "NY", "anomaly_count": 11},
             {"jurisdiction": "TX", "anomaly_count": 10},
         ]
-        report = self.monitor.analyze_jurisdiction_bias(records, metric_field="anomaly_count")
+        report = self.monitor.analyze_jurisdiction_bias(
+            records, metric_field="anomaly_count"
+        )
         assert isinstance(report, FairnessReport)
 
     def test_jurisdiction_bias_with_bias(self):
@@ -85,10 +88,16 @@ class TestFairnessMonitor:
             {"jurisdiction": "TX", "anomaly_count": 95},
             {"jurisdiction": "FL", "anomaly_count": 3},
         ]
-        report = self.monitor.analyze_jurisdiction_bias(records, metric_field="anomaly_count")
+        report = self.monitor.analyze_jurisdiction_bias(
+            records, metric_field="anomaly_count"
+        )
         assert isinstance(report, FairnessReport)
         # With only 4 records, z-score thresholds may not trigger — just verify report is valid
-        assert report.overall_status in [FairnessStatus.PASS, FairnessStatus.WARNING, FairnessStatus.FAIL]
+        assert report.overall_status in [
+            FairnessStatus.PASS,
+            FairnessStatus.WARNING,
+            FairnessStatus.FAIL,
+        ]
 
     def test_report_to_dict(self):
         outcomes = [

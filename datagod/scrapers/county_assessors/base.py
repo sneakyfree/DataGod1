@@ -22,6 +22,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
+
 import aiohttp
 from bs4 import BeautifulSoup
 
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 class PropertyType(Enum):
     """Types of properties."""
+
     # Residential
     SINGLE_FAMILY = "single_family"
     MULTI_FAMILY = "multi_family"
@@ -69,6 +71,7 @@ class PropertyType(Enum):
 
 class PropertyClass(Enum):
     """Property classification codes (varies by jurisdiction)."""
+
     # Common classifications
     CLASS_1 = "class_1"  # Often residential
     CLASS_2 = "class_2"  # Often commercial
@@ -104,6 +107,7 @@ class PropertyClass(Enum):
 
 class ExemptionType(Enum):
     """Types of property tax exemptions."""
+
     HOMESTEAD = "homestead"
     SENIOR_CITIZEN = "senior_citizen"
     VETERAN = "veteran"
@@ -128,6 +132,7 @@ class ExemptionType(Enum):
 @dataclass
 class PropertyCharacteristics:
     """Physical characteristics of a property."""
+
     # Building info
     year_built: Optional[int] = None
     effective_year: Optional[int] = None  # Year of major renovation
@@ -187,6 +192,7 @@ class PropertyCharacteristics:
 @dataclass
 class TaxAssessment:
     """Tax assessment information for a specific year."""
+
     tax_year: int
     assessed_value_land: Optional[Decimal] = None
     assessed_value_improvements: Optional[Decimal] = None
@@ -217,6 +223,7 @@ class TaxAssessment:
 @dataclass
 class OwnershipRecord:
     """Property ownership record."""
+
     owner_name: str
     owner_type: Optional[str] = None  # Individual, Corporation, Trust, etc.
     mailing_address: Optional[str] = None
@@ -234,6 +241,7 @@ class OwnershipRecord:
 @dataclass
 class SaleRecord:
     """Property sale/transfer record."""
+
     sale_date: date
     sale_price: Decimal
     buyer_name: Optional[str] = None
@@ -248,6 +256,7 @@ class SaleRecord:
 @dataclass
 class PropertyAssessment:
     """Complete property assessment record."""
+
     # Identifiers
     parcel_id: str  # APN, PIN, Folio, etc.
     property_address: str
@@ -309,6 +318,7 @@ class PropertyAssessment:
 @dataclass
 class AssessorSearchCriteria:
     """Criteria for searching property assessments."""
+
     # Address search
     street_number: Optional[str] = None
     street_name: Optional[str] = None
@@ -345,6 +355,7 @@ class AssessorSearchCriteria:
 @dataclass
 class AssessorSearchResult:
     """Result of a property assessment search."""
+
     properties: List[PropertyAssessment]
     total_count: int
     page_number: int
@@ -393,7 +404,7 @@ class CountyAssessorBase(ABC):
         if self._owns_session:
             self.session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=self.TIMEOUT),
-                headers=self._get_headers()
+                headers=self._get_headers(),
             )
         return self
 
@@ -415,6 +426,7 @@ class CountyAssessorBase(ABC):
     async def _rate_limit(self):
         """Enforce rate limiting between requests."""
         import time
+
         current_time = time.time()
         elapsed = current_time - self._last_request_time
         if elapsed < self.REQUEST_DELAY:
@@ -440,15 +452,19 @@ class CountyAssessorBase(ABC):
                     raise ValueError(f"Unsupported HTTP method: {method}")
 
             except aiohttp.ClientError as e:
-                logger.warning(f"Request failed (attempt {attempt + 1}/{self.MAX_RETRIES}): {e}")
+                logger.warning(
+                    f"Request failed (attempt {attempt + 1}/{self.MAX_RETRIES}): {e}"
+                )
                 if attempt < self.MAX_RETRIES - 1:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                 else:
                     raise
 
         raise RuntimeError(f"Failed to fetch {url} after {self.MAX_RETRIES} attempts")
 
-    async def _fetch_json(self, url: str, method: str = "GET", **kwargs) -> Dict[str, Any]:
+    async def _fetch_json(
+        self, url: str, method: str = "GET", **kwargs
+    ) -> Dict[str, Any]:
         """Fetch a URL and parse JSON response."""
         if not self.session:
             raise RuntimeError("Session not initialized.")
@@ -466,7 +482,9 @@ class CountyAssessorBase(ABC):
     def _normalize_parcel_id(self, parcel_id: str) -> str:
         """Normalize a parcel ID to standard format."""
         # Remove common separators and spaces
-        normalized = parcel_id.replace("-", "").replace(".", "").replace(" ", "").strip()
+        normalized = (
+            parcel_id.replace("-", "").replace(".", "").replace(" ", "").strip()
+        )
         return normalized.upper()
 
     def _parse_property_type(self, raw_type: str) -> PropertyType:
@@ -496,7 +514,6 @@ class CountyAssessorBase(ABC):
             "MOBILE": PropertyType.MOBILE_HOME,
             "MOBILE HOME": PropertyType.MOBILE_HOME,
             "MANUFACTURED": PropertyType.MANUFACTURED,
-
             # Commercial
             "COMMERCIAL": PropertyType.COMMERCIAL,
             "COM": PropertyType.COMMERCIAL,
@@ -509,7 +526,6 @@ class CountyAssessorBase(ABC):
             "MOTEL": PropertyType.HOTEL_MOTEL,
             "MIXED": PropertyType.MIXED_USE,
             "MIXED USE": PropertyType.MIXED_USE,
-
             # Land
             "VACANT": PropertyType.VACANT_LAND,
             "VACANT LAND": PropertyType.VACANT_LAND,
@@ -519,7 +535,6 @@ class CountyAssessorBase(ABC):
             "FARM": PropertyType.FARM,
             "RANCH": PropertyType.RANCH,
             "TIMBER": PropertyType.TIMBER,
-
             # Special
             "EXEMPT": PropertyType.EXEMPT,
             "GOVERNMENT": PropertyType.GOVERNMENT,
@@ -628,7 +643,7 @@ class CountyAssessorBase(ABC):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> AssessorSearchResult:
         """
         Search for properties by address.
@@ -645,10 +660,7 @@ class CountyAssessorBase(ABC):
         pass
 
     @abstractmethod
-    async def search_by_parcel_id(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def search_by_parcel_id(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """
         Search for a property by parcel ID (APN, PIN, Folio, etc.).
 
@@ -662,9 +674,7 @@ class CountyAssessorBase(ABC):
 
     @abstractmethod
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> AssessorSearchResult:
         """
         Search for properties by owner name.
@@ -679,10 +689,7 @@ class CountyAssessorBase(ABC):
         pass
 
     @abstractmethod
-    async def get_property_detail(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def get_property_detail(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """
         Get detailed property information including characteristics and history.
 
@@ -695,9 +702,7 @@ class CountyAssessorBase(ABC):
         pass
 
     async def get_assessment_history(
-        self,
-        parcel_id: str,
-        years: int = 5
+        self, parcel_id: str, years: int = 5
     ) -> List[TaxAssessment]:
         """
         Get assessment history for a property.
@@ -717,10 +722,7 @@ class CountyAssessorBase(ABC):
             return property_data.assessment_history[:years]
         return []
 
-    async def get_sales_history(
-        self,
-        parcel_id: str
-    ) -> List[SaleRecord]:
+    async def get_sales_history(self, parcel_id: str) -> List[SaleRecord]:
         """
         Get sales history for a property.
 
@@ -741,36 +743,38 @@ class CountyAssessorBase(ABC):
 
 # Synchronous wrapper functions
 
+
 def search_by_address_sync(
-    assessor: CountyAssessorBase,
-    street_address: str,
-    **kwargs
+    assessor: CountyAssessorBase, street_address: str, **kwargs
 ) -> AssessorSearchResult:
     """Synchronous wrapper for search_by_address."""
+
     async def _search():
         async with assessor:
             return await assessor.search_by_address(street_address, **kwargs)
+
     return asyncio.run(_search())
 
 
 def search_by_owner_sync(
-    assessor: CountyAssessorBase,
-    owner_name: str,
-    **kwargs
+    assessor: CountyAssessorBase, owner_name: str, **kwargs
 ) -> AssessorSearchResult:
     """Synchronous wrapper for search_by_owner."""
+
     async def _search():
         async with assessor:
             return await assessor.search_by_owner(owner_name, **kwargs)
+
     return asyncio.run(_search())
 
 
 def get_property_sync(
-    assessor: CountyAssessorBase,
-    parcel_id: str
+    assessor: CountyAssessorBase, parcel_id: str
 ) -> Optional[PropertyAssessment]:
     """Synchronous wrapper for get_property_detail."""
+
     async def _get():
         async with assessor:
             return await assessor.get_property_detail(parcel_id)
+
     return asyncio.run(_get())

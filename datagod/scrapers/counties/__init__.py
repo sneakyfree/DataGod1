@@ -19,16 +19,16 @@ Pilot Counties (Top 10 by Population):
 
 from .base_county_scraper import (
     BaseCountyScraper,
-    CountyConfig,
-    PropertyRecord,
-    DeedRecord,
-    MortgageRecord,
-    TaxRecord,
-    CourtCase,
-    LienRecord,
-    RecordType,
-    CaseType,
     CaseStatus,
+    CaseType,
+    CountyConfig,
+    CourtCase,
+    DeedRecord,
+    LienRecord,
+    MortgageRecord,
+    PropertyRecord,
+    RecordType,
+    TaxRecord,
 )
 
 # Import county-specific scrapers as they're implemented

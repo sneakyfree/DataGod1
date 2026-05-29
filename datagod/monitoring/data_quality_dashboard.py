@@ -11,28 +11,30 @@ Features:
 - Quality score calculations
 """
 
-import logging
-from datetime import datetime, timedelta
-from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional, Tuple
-from enum import Enum
-from collections import defaultdict
 import json
+import logging
+from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 
 class FreshnessStatus(Enum):
     """Data freshness status levels"""
-    FRESH = "fresh"           # Updated within 24 hours
-    RECENT = "recent"         # Updated within 7 days
-    STALE = "stale"           # Updated within 30 days
-    OUTDATED = "outdated"     # Not updated in 30+ days
-    UNKNOWN = "unknown"       # No update timestamp
+
+    FRESH = "fresh"  # Updated within 24 hours
+    RECENT = "recent"  # Updated within 7 days
+    STALE = "stale"  # Updated within 30 days
+    OUTDATED = "outdated"  # Not updated in 30+ days
+    UNKNOWN = "unknown"  # No update timestamp
 
 
 class QualityGrade(Enum):
     """Data quality grades"""
+
     A = "A"  # 90-100%
     B = "B"  # 80-89%
     C = "C"  # 70-79%
@@ -43,6 +45,7 @@ class QualityGrade(Enum):
 @dataclass
 class CoverageMetrics:
     """Coverage metrics for a jurisdiction"""
+
     jurisdiction_id: str
     jurisdiction_name: str
     total_records: int = 0
@@ -74,46 +77,49 @@ class CoverageMetrics:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'jurisdiction_id': self.jurisdiction_id,
-            'jurisdiction_name': self.jurisdiction_name,
-            'total_records': self.total_records,
-            'property_records': self.property_records,
-            'deed_records': self.deed_records,
-            'court_records': self.court_records,
-            'business_records': self.business_records,
-            'license_records': self.license_records,
-            'last_updated': self.last_updated.isoformat() if self.last_updated else None,
-            'data_sources': self.data_sources,
-            'coverage_percent': round(self.coverage_percent, 2),
-            'freshness_status': self.freshness_status.value,
+            "jurisdiction_id": self.jurisdiction_id,
+            "jurisdiction_name": self.jurisdiction_name,
+            "total_records": self.total_records,
+            "property_records": self.property_records,
+            "deed_records": self.deed_records,
+            "court_records": self.court_records,
+            "business_records": self.business_records,
+            "license_records": self.license_records,
+            "last_updated": (
+                self.last_updated.isoformat() if self.last_updated else None
+            ),
+            "data_sources": self.data_sources,
+            "coverage_percent": round(self.coverage_percent, 2),
+            "freshness_status": self.freshness_status.value,
         }
 
 
 @dataclass
 class QualityScore:
     """Data quality score for a dataset"""
+
     completeness: float = 0.0  # Percentage of non-null fields
-    accuracy: float = 0.0      # Validation pass rate
-    consistency: float = 0.0   # Cross-source agreement rate
-    timeliness: float = 0.0    # Data freshness score
-    uniqueness: float = 0.0    # Deduplication rate
+    accuracy: float = 0.0  # Validation pass rate
+    consistency: float = 0.0  # Cross-source agreement rate
+    timeliness: float = 0.0  # Data freshness score
+    uniqueness: float = 0.0  # Deduplication rate
 
     @property
     def overall_score(self) -> float:
         """Calculate weighted overall score"""
         weights = {
-            'completeness': 0.25,
-            'accuracy': 0.30,
-            'consistency': 0.20,
-            'timeliness': 0.15,
-            'uniqueness': 0.10,
+            "completeness": 0.25,
+            "accuracy": 0.30,
+            "consistency": 0.20,
+            "timeliness": 0.15,
+            "uniqueness": 0.10,
         }
         return (
-            self.completeness * weights['completeness'] +
-            self.accuracy * weights['accuracy'] +
-            self.consistency * weights['consistency'] +
-            self.timeliness * weights['timeliness'] +
-            self.uniqueness * weights['uniqueness']
+            self.completeness * weights["completeness"]
+            + self.accuracy * weights["accuracy"]
+            + self.consistency * weights["consistency"]
+            + self.timeliness * weights["timeliness"]
+            + self.uniqueness * weights["uniqueness"]
         )
 
     @property
@@ -134,19 +140,20 @@ class QualityScore:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'completeness': round(self.completeness, 2),
-            'accuracy': round(self.accuracy, 2),
-            'consistency': round(self.consistency, 2),
-            'timeliness': round(self.timeliness, 2),
-            'uniqueness': round(self.uniqueness, 2),
-            'overall_score': round(self.overall_score, 2),
-            'grade': self.grade.value,
+            "completeness": round(self.completeness, 2),
+            "accuracy": round(self.accuracy, 2),
+            "consistency": round(self.consistency, 2),
+            "timeliness": round(self.timeliness, 2),
+            "uniqueness": round(self.uniqueness, 2),
+            "overall_score": round(self.overall_score, 2),
+            "grade": self.grade.value,
         }
 
 
 @dataclass
 class ErrorLogEntry:
     """An error log entry"""
+
     timestamp: datetime
     source: str
     error_type: str
@@ -159,20 +166,21 @@ class ErrorLogEntry:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'timestamp': self.timestamp.isoformat(),
-            'source': self.source,
-            'error_type': self.error_type,
-            'message': self.message,
-            'jurisdiction': self.jurisdiction,
-            'record_id': self.record_id,
-            'stack_trace': self.stack_trace,
-            'resolved': self.resolved,
+            "timestamp": self.timestamp.isoformat(),
+            "source": self.source,
+            "error_type": self.error_type,
+            "message": self.message,
+            "jurisdiction": self.jurisdiction,
+            "record_id": self.record_id,
+            "stack_trace": self.stack_trace,
+            "resolved": self.resolved,
         }
 
 
 @dataclass
 class QuotaStatus:
     """API quota status"""
+
     api_name: str
     used: int
     limit: int
@@ -203,14 +211,14 @@ class QuotaStatus:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'api_name': self.api_name,
-            'used': self.used,
-            'limit': self.limit,
-            'remaining': self.remaining,
-            'usage_percent': round(self.usage_percent, 2),
-            'reset_at': self.reset_at.isoformat() if self.reset_at else None,
-            'is_critical': self.is_critical,
-            'is_warning': self.is_warning,
+            "api_name": self.api_name,
+            "used": self.used,
+            "limit": self.limit,
+            "remaining": self.remaining,
+            "usage_percent": round(self.usage_percent, 2),
+            "reset_at": self.reset_at.isoformat() if self.reset_at else None,
+            "is_critical": self.is_critical,
+            "is_warning": self.is_warning,
         }
 
 
@@ -228,12 +236,62 @@ class DataQualityDashboard:
 
     # US States and territories
     ALL_STATES = [
-        'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-        'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-        'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-        'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-        'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
-        'DC', 'PR', 'VI', 'GU', 'AS', 'MP',  # DC and territories
+        "AL",
+        "AK",
+        "AZ",
+        "AR",
+        "CA",
+        "CO",
+        "CT",
+        "DE",
+        "FL",
+        "GA",
+        "HI",
+        "ID",
+        "IL",
+        "IN",
+        "IA",
+        "KS",
+        "KY",
+        "LA",
+        "ME",
+        "MD",
+        "MA",
+        "MI",
+        "MN",
+        "MS",
+        "MO",
+        "MT",
+        "NE",
+        "NV",
+        "NH",
+        "NJ",
+        "NM",
+        "NY",
+        "NC",
+        "ND",
+        "OH",
+        "OK",
+        "OR",
+        "PA",
+        "RI",
+        "SC",
+        "SD",
+        "TN",
+        "TX",
+        "UT",
+        "VT",
+        "VA",
+        "WA",
+        "WV",
+        "WI",
+        "WY",
+        "DC",
+        "PR",
+        "VI",
+        "GU",
+        "AS",
+        "MP",  # DC and territories
     ]
 
     def __init__(self, retention_hours: int = 168):  # 1 week default
@@ -248,14 +306,20 @@ class DataQualityDashboard:
         self._error_logs: List[ErrorLogEntry] = []
         self._quota_status: Dict[str, QuotaStatus] = {}
         self._retention_hours = retention_hours
-        self._historical_coverage: Dict[str, List[Tuple[datetime, float]]] = defaultdict(list)
+        self._historical_coverage: Dict[str, List[Tuple[datetime, float]]] = (
+            defaultdict(list)
+        )
 
     # ========== Coverage Management ==========
 
-    def update_coverage(self, jurisdiction_id: str, jurisdiction_name: str,
-                        record_counts: Dict[str, int],
-                        data_sources: List[str] = None,
-                        coverage_percent: float = None):
+    def update_coverage(
+        self,
+        jurisdiction_id: str,
+        jurisdiction_name: str,
+        record_counts: Dict[str, int],
+        data_sources: List[str] = None,
+        coverage_percent: float = None,
+    ):
         """
         Update coverage metrics for a jurisdiction.
 
@@ -269,33 +333,35 @@ class DataQualityDashboard:
         metrics = CoverageMetrics(
             jurisdiction_id=jurisdiction_id,
             jurisdiction_name=jurisdiction_name,
-            property_records=record_counts.get('property', 0),
-            deed_records=record_counts.get('deed', 0),
-            court_records=record_counts.get('court', 0),
-            business_records=record_counts.get('business', 0),
-            license_records=record_counts.get('license', 0),
+            property_records=record_counts.get("property", 0),
+            deed_records=record_counts.get("deed", 0),
+            court_records=record_counts.get("court", 0),
+            business_records=record_counts.get("business", 0),
+            license_records=record_counts.get("license", 0),
             last_updated=datetime.now(),
             data_sources=data_sources or [],
         )
         metrics.total_records = (
-            metrics.property_records +
-            metrics.deed_records +
-            metrics.court_records +
-            metrics.business_records +
-            metrics.license_records
+            metrics.property_records
+            + metrics.deed_records
+            + metrics.court_records
+            + metrics.business_records
+            + metrics.license_records
         )
 
         if coverage_percent is not None:
             metrics.coverage_percent = coverage_percent
         else:
             # Calculate coverage based on categories with data
-            categories_with_data = sum([
-                1 if metrics.property_records > 0 else 0,
-                1 if metrics.deed_records > 0 else 0,
-                1 if metrics.court_records > 0 else 0,
-                1 if metrics.business_records > 0 else 0,
-                1 if metrics.license_records > 0 else 0,
-            ])
+            categories_with_data = sum(
+                [
+                    1 if metrics.property_records > 0 else 0,
+                    1 if metrics.deed_records > 0 else 0,
+                    1 if metrics.court_records > 0 else 0,
+                    1 if metrics.business_records > 0 else 0,
+                    1 if metrics.license_records > 0 else 0,
+                ]
+            )
             metrics.coverage_percent = (categories_with_data / 5) * 100
 
         self._coverage[jurisdiction_id] = metrics
@@ -303,8 +369,10 @@ class DataQualityDashboard:
             (datetime.now(), metrics.coverage_percent)
         )
 
-        logger.debug(f"Updated coverage for {jurisdiction_id}: "
-                    f"{metrics.total_records} records, {metrics.coverage_percent}% coverage")
+        logger.debug(
+            f"Updated coverage for {jurisdiction_id}: "
+            f"{metrics.total_records} records, {metrics.coverage_percent}% coverage"
+        )
 
     def get_coverage(self, jurisdiction_id: str) -> Optional[CoverageMetrics]:
         """Get coverage metrics for a jurisdiction"""
@@ -324,31 +392,34 @@ class DataQualityDashboard:
         summary = {}
         for state in self.ALL_STATES:
             state_metrics = [
-                m for k, m in self._coverage.items()
+                m
+                for k, m in self._coverage.items()
                 if k == state or k.startswith(f"{state}-")
             ]
 
             if state_metrics:
                 total_records = sum(m.total_records for m in state_metrics)
-                avg_coverage = sum(m.coverage_percent for m in state_metrics) / len(state_metrics)
+                avg_coverage = sum(m.coverage_percent for m in state_metrics) / len(
+                    state_metrics
+                )
                 freshness_counts = defaultdict(int)
                 for m in state_metrics:
                     freshness_counts[m.freshness_status.value] += 1
 
                 summary[state] = {
-                    'county_count': len(state_metrics),
-                    'total_records': total_records,
-                    'avg_coverage_percent': round(avg_coverage, 2),
-                    'freshness': dict(freshness_counts),
-                    'has_coverage': True,
+                    "county_count": len(state_metrics),
+                    "total_records": total_records,
+                    "avg_coverage_percent": round(avg_coverage, 2),
+                    "freshness": dict(freshness_counts),
+                    "has_coverage": True,
                 }
             else:
                 summary[state] = {
-                    'county_count': 0,
-                    'total_records': 0,
-                    'avg_coverage_percent': 0.0,
-                    'freshness': {},
-                    'has_coverage': False,
+                    "county_count": 0,
+                    "total_records": 0,
+                    "avg_coverage_percent": 0.0,
+                    "freshness": {},
+                    "has_coverage": False,
                 }
 
         return summary
@@ -361,19 +432,19 @@ class DataQualityDashboard:
             Dict mapping state codes to coverage percentages
         """
         summary = self.get_state_coverage_summary()
-        return {
-            state: data['avg_coverage_percent']
-            for state, data in summary.items()
-        }
+        return {state: data["avg_coverage_percent"] for state, data in summary.items()}
 
     # ========== Quality Scoring ==========
 
-    def update_quality_score(self, dataset_id: str,
-                              completeness: float = None,
-                              accuracy: float = None,
-                              consistency: float = None,
-                              timeliness: float = None,
-                              uniqueness: float = None):
+    def update_quality_score(
+        self,
+        dataset_id: str,
+        completeness: float = None,
+        accuracy: float = None,
+        consistency: float = None,
+        timeliness: float = None,
+        uniqueness: float = None,
+    ):
         """
         Update quality score for a dataset.
 
@@ -388,15 +459,21 @@ class DataQualityDashboard:
         existing = self._quality_scores.get(dataset_id, QualityScore())
 
         self._quality_scores[dataset_id] = QualityScore(
-            completeness=completeness if completeness is not None else existing.completeness,
+            completeness=(
+                completeness if completeness is not None else existing.completeness
+            ),
             accuracy=accuracy if accuracy is not None else existing.accuracy,
-            consistency=consistency if consistency is not None else existing.consistency,
+            consistency=(
+                consistency if consistency is not None else existing.consistency
+            ),
             timeliness=timeliness if timeliness is not None else existing.timeliness,
             uniqueness=uniqueness if uniqueness is not None else existing.uniqueness,
         )
 
-        logger.debug(f"Updated quality score for {dataset_id}: "
-                    f"{self._quality_scores[dataset_id].overall_score}")
+        logger.debug(
+            f"Updated quality score for {dataset_id}: "
+            f"{self._quality_scores[dataset_id].overall_score}"
+        )
 
     def get_quality_score(self, dataset_id: str) -> Optional[QualityScore]:
         """Get quality score for a dataset"""
@@ -415,11 +492,11 @@ class DataQualityDashboard:
         """
         if not self._quality_scores:
             return {
-                'dataset_count': 0,
-                'avg_score': 0.0,
-                'grade_distribution': {},
-                'lowest_scoring': [],
-                'highest_scoring': [],
+                "dataset_count": 0,
+                "avg_score": 0.0,
+                "grade_distribution": {},
+                "lowest_scoring": [],
+                "highest_scoring": [],
             }
 
         scores = list(self._quality_scores.values())
@@ -428,29 +505,34 @@ class DataQualityDashboard:
             grade_distribution[score.grade.value] += 1
 
         sorted_datasets = sorted(
-            self._quality_scores.items(),
-            key=lambda x: x[1].overall_score
+            self._quality_scores.items(), key=lambda x: x[1].overall_score
         )
 
         return {
-            'dataset_count': len(scores),
-            'avg_score': round(sum(s.overall_score for s in scores) / len(scores), 2),
-            'grade_distribution': dict(grade_distribution),
-            'lowest_scoring': [
-                {'dataset': k, 'score': round(v.overall_score, 2)}
+            "dataset_count": len(scores),
+            "avg_score": round(sum(s.overall_score for s in scores) / len(scores), 2),
+            "grade_distribution": dict(grade_distribution),
+            "lowest_scoring": [
+                {"dataset": k, "score": round(v.overall_score, 2)}
                 for k, v in sorted_datasets[:5]
             ],
-            'highest_scoring': [
-                {'dataset': k, 'score': round(v.overall_score, 2)}
+            "highest_scoring": [
+                {"dataset": k, "score": round(v.overall_score, 2)}
                 for k, v in sorted_datasets[-5:][::-1]
             ],
         }
 
     # ========== Error Logging ==========
 
-    def log_error(self, source: str, error_type: str, message: str,
-                  jurisdiction: str = None, record_id: str = None,
-                  stack_trace: str = None):
+    def log_error(
+        self,
+        source: str,
+        error_type: str,
+        message: str,
+        jurisdiction: str = None,
+        record_id: str = None,
+        stack_trace: str = None,
+    ):
         """
         Log an error.
 
@@ -474,10 +556,15 @@ class DataQualityDashboard:
         self._error_logs.append(entry)
         logger.debug(f"Logged error from {source}: {error_type} - {message[:100]}")
 
-    def get_errors(self, source: str = None, error_type: str = None,
-                   jurisdiction: str = None, since: datetime = None,
-                   include_resolved: bool = False,
-                   limit: int = 100) -> List[ErrorLogEntry]:
+    def get_errors(
+        self,
+        source: str = None,
+        error_type: str = None,
+        jurisdiction: str = None,
+        since: datetime = None,
+        include_resolved: bool = False,
+        limit: int = 100,
+    ) -> List[ErrorLogEntry]:
         """
         Get error log entries with optional filters.
 
@@ -534,13 +621,13 @@ class DataQualityDashboard:
                 by_jurisdiction[error.jurisdiction] += 1
 
         return {
-            'total_errors': len(self._error_logs),
-            'unresolved_count': len(unresolved),
-            'resolved_count': len(self._error_logs) - len(unresolved),
-            'by_source': dict(by_source),
-            'by_type': dict(by_type),
-            'by_jurisdiction': dict(by_jurisdiction),
-            'recent_errors': [e.to_dict() for e in self.get_errors(limit=10)],
+            "total_errors": len(self._error_logs),
+            "unresolved_count": len(unresolved),
+            "resolved_count": len(self._error_logs) - len(unresolved),
+            "by_source": dict(by_source),
+            "by_type": dict(by_type),
+            "by_jurisdiction": dict(by_jurisdiction),
+            "recent_errors": [e.to_dict() for e in self.get_errors(limit=10)],
         }
 
     def cleanup_old_errors(self):
@@ -554,8 +641,9 @@ class DataQualityDashboard:
 
     # ========== Quota Management ==========
 
-    def update_quota(self, api_name: str, used: int, limit: int,
-                     reset_at: datetime = None):
+    def update_quota(
+        self, api_name: str, used: int, limit: int, reset_at: datetime = None
+    ):
         """
         Update API quota status.
 
@@ -574,11 +662,13 @@ class DataQualityDashboard:
 
         status = self._quota_status[api_name]
         if status.is_critical:
-            logger.warning(f"API quota critical for {api_name}: "
-                          f"{status.usage_percent}% used")
+            logger.warning(
+                f"API quota critical for {api_name}: " f"{status.usage_percent}% used"
+            )
         elif status.is_warning:
-            logger.info(f"API quota warning for {api_name}: "
-                       f"{status.usage_percent}% used")
+            logger.info(
+                f"API quota warning for {api_name}: " f"{status.usage_percent}% used"
+            )
 
     def get_quota(self, api_name: str) -> Optional[QuotaStatus]:
         """Get quota status for an API"""
@@ -597,10 +687,10 @@ class DataQualityDashboard:
         """
         if not self._quota_status:
             return {
-                'api_count': 0,
-                'critical_count': 0,
-                'warning_count': 0,
-                'quotas': [],
+                "api_count": 0,
+                "critical_count": 0,
+                "warning_count": 0,
+                "quotas": [],
             }
 
         quotas = list(self._quota_status.values())
@@ -608,15 +698,15 @@ class DataQualityDashboard:
         warning = [q for q in quotas if q.is_warning and not q.is_critical]
 
         return {
-            'api_count': len(quotas),
-            'critical_count': len(critical),
-            'warning_count': len(warning),
-            'critical_apis': [q.api_name for q in critical],
-            'warning_apis': [q.api_name for q in warning],
-            'quotas': sorted(
+            "api_count": len(quotas),
+            "critical_count": len(critical),
+            "warning_count": len(warning),
+            "critical_apis": [q.api_name for q in critical],
+            "warning_apis": [q.api_name for q in warning],
+            "quotas": sorted(
                 [q.to_dict() for q in quotas],
-                key=lambda x: x['usage_percent'],
-                reverse=True
+                key=lambda x: x["usage_percent"],
+                reverse=True,
             ),
         }
 
@@ -631,28 +721,28 @@ class DataQualityDashboard:
         """
         coverage_summary = self.get_state_coverage_summary()
         states_with_coverage = sum(
-            1 for s in coverage_summary.values() if s['has_coverage']
+            1 for s in coverage_summary.values() if s["has_coverage"]
         )
-        total_records = sum(s['total_records'] for s in coverage_summary.values())
+        total_records = sum(s["total_records"] for s in coverage_summary.values())
 
         return {
-            'timestamp': datetime.now().isoformat(),
-            'overview': {
-                'states_covered': states_with_coverage,
-                'total_states': len(self.ALL_STATES),
-                'coverage_percent': round(
+            "timestamp": datetime.now().isoformat(),
+            "overview": {
+                "states_covered": states_with_coverage,
+                "total_states": len(self.ALL_STATES),
+                "coverage_percent": round(
                     (states_with_coverage / len(self.ALL_STATES)) * 100, 2
                 ),
-                'total_records': total_records,
-                'jurisdictions_tracked': len(self._coverage),
+                "total_records": total_records,
+                "jurisdictions_tracked": len(self._coverage),
             },
-            'coverage': {
-                'by_state': coverage_summary,
-                'heatmap_data': self.get_coverage_heatmap_data(),
+            "coverage": {
+                "by_state": coverage_summary,
+                "heatmap_data": self.get_coverage_heatmap_data(),
             },
-            'quality': self.get_quality_summary(),
-            'errors': self.get_error_summary(),
-            'quotas': self.get_quota_summary(),
+            "quality": self.get_quality_summary(),
+            "errors": self.get_error_summary(),
+            "quotas": self.get_quota_summary(),
         }
 
     def export_to_json(self, filepath: str = None) -> str:
@@ -669,7 +759,7 @@ class DataQualityDashboard:
         json_str = json.dumps(data, indent=2, default=str)
 
         if filepath:
-            with open(filepath, 'w') as f:
+            with open(filepath, "w") as f:
                 f.write(json_str)
             logger.info(f"Exported dashboard data to {filepath}")
 
@@ -698,10 +788,16 @@ def get_dashboard() -> DataQualityDashboard:
 
 
 # Convenience functions
-def update_coverage(jurisdiction_id: str, jurisdiction_name: str,
-                    record_counts: Dict[str, int], **kwargs):
+def update_coverage(
+    jurisdiction_id: str,
+    jurisdiction_name: str,
+    record_counts: Dict[str, int],
+    **kwargs,
+):
     """Update coverage for a jurisdiction"""
-    get_dashboard().update_coverage(jurisdiction_id, jurisdiction_name, record_counts, **kwargs)
+    get_dashboard().update_coverage(
+        jurisdiction_id, jurisdiction_name, record_counts, **kwargs
+    )
 
 
 def log_data_error(source: str, error_type: str, message: str, **kwargs):

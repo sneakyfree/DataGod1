@@ -25,21 +25,23 @@ disclosed winners.
 """
 
 import asyncio
+import json
+import logging
+import re
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
 import aiohttp
 from bs4 import BeautifulSoup
-from dataclasses import dataclass, field
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List, Dict, Any
-import json
-import re
-import logging
 
 logger = logging.getLogger(__name__)
 
 
 class LotteryGame(Enum):
     """Types of lottery games"""
+
     # Multi-State Games
     POWERBALL = "powerball"
     MEGA_MILLIONS = "mega_millions"
@@ -77,6 +79,7 @@ class LotteryGame(Enum):
 
 class PrizeType(Enum):
     """Prize payment types"""
+
     JACKPOT = "jackpot"
     SECOND_PRIZE = "second_prize"
     THIRD_PRIZE = "third_prize"
@@ -91,6 +94,7 @@ class PrizeType(Enum):
 
 class PaymentOption(Enum):
     """Prize payment options"""
+
     CASH_LUMP_SUM = "cash_lump_sum"
     ANNUITY = "annuity"
     INSTALLMENTS = "installments"
@@ -99,6 +103,7 @@ class PaymentOption(Enum):
 
 class ClaimStatus(Enum):
     """Claim status"""
+
     CLAIMED = "claimed"
     PENDING = "pending"
     UNCLAIMED = "unclaimed"
@@ -110,6 +115,7 @@ class ClaimStatus(Enum):
 @dataclass
 class LotteryWinner:
     """Lottery winner record"""
+
     # Winner identification
     winner_name: str
     city: Optional[str] = None
@@ -156,6 +162,7 @@ class LotteryWinner:
 @dataclass
 class SearchCriteria:
     """Search criteria for lottery winners"""
+
     winner_name: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
@@ -169,6 +176,7 @@ class SearchCriteria:
 @dataclass
 class SearchResult:
     """Search result container"""
+
     winners: List[LotteryWinner] = field(default_factory=list)
     total_count: int = 0
     page: int = 1
@@ -236,7 +244,7 @@ class BaseLotteryAPI:
         """Parse currency string to float"""
         if not amount_str:
             return 0.0
-        cleaned = re.sub(r'[^\d.]', '', str(amount_str))
+        cleaned = re.sub(r"[^\d.]", "", str(amount_str))
         try:
             return float(cleaned)
         except ValueError:
@@ -306,16 +314,13 @@ class BaseLotteryAPI:
         min_amount: Optional[float] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for lottery winners - override in subclass"""
         raise NotImplementedError
 
     async def get_recent_winners(
-        self,
-        days: int = 30,
-        min_amount: float = 10000,
-        max_results: int = 100
+        self, days: int = 30, min_amount: float = 10000, max_results: int = 100
     ) -> SearchResult:
         """Get recent winners above threshold"""
         raise NotImplementedError
@@ -324,7 +329,7 @@ class BaseLotteryAPI:
         self,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Get jackpot winners"""
         raise NotImplementedError
@@ -349,10 +354,11 @@ class CaliforniaLotteryAPI(BaseLotteryAPI):
         min_amount: Optional[float] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search California lottery winners"""
         import time
+
         start_time = time.time()
 
         params = {"limit": min(max_results, 100)}
@@ -417,34 +423,32 @@ class CaliforniaLotteryAPI(BaseLotteryAPI):
         )
 
     async def get_recent_winners(
-        self,
-        days: int = 30,
-        min_amount: float = 10000,
-        max_results: int = 100
+        self, days: int = 30, min_amount: float = 10000, max_results: int = 100
     ) -> SearchResult:
         """Get recent California lottery winners"""
         from datetime import timedelta
+
         end_date = date.today()
         start_date = end_date - timedelta(days=days)
         return await self.search_winners(
             start_date=start_date,
             end_date=end_date,
             min_amount=min_amount,
-            max_results=max_results
+            max_results=max_results,
         )
 
     async def get_jackpot_winners(
         self,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Get California jackpot winners"""
         return await self.search_winners(
             min_amount=1000000,
             start_date=start_date,
             end_date=end_date,
-            max_results=max_results
+            max_results=max_results,
         )
 
 
@@ -467,10 +471,11 @@ class TexasLotteryAPI(BaseLotteryAPI):
         min_amount: Optional[float] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Texas lottery winners"""
         import time
+
         start_time = time.time()
 
         params = {"pageSize": min(max_results, 100)}
@@ -529,20 +534,18 @@ class TexasLotteryAPI(BaseLotteryAPI):
         )
 
     async def get_recent_winners(
-        self,
-        days: int = 30,
-        min_amount: float = 10000,
-        max_results: int = 100
+        self, days: int = 30, min_amount: float = 10000, max_results: int = 100
     ) -> SearchResult:
         """Get recent Texas lottery winners"""
         from datetime import timedelta
+
         end_date = date.today()
         start_date = end_date - timedelta(days=days)
         return await self.search_winners(
             start_date=start_date,
             end_date=end_date,
             min_amount=min_amount,
-            max_results=max_results
+            max_results=max_results,
         )
 
 
@@ -565,10 +568,11 @@ class FloridaLotteryAPI(BaseLotteryAPI):
         min_amount: Optional[float] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search Florida lottery winners"""
         import time
+
         start_time = time.time()
 
         params = {"limit": min(max_results, 100)}
@@ -649,10 +653,11 @@ class NewYorkLotteryAPI(BaseLotteryAPI):
         min_amount: Optional[float] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search New York lottery winners"""
         import time
+
         start_time = time.time()
 
         params = {"pageSize": min(max_results, 100)}
@@ -731,14 +736,16 @@ def get_lottery_api(state: str) -> Optional[BaseLotteryAPI]:
 
 # Convenience functions
 
+
 def search_lottery_winners(
     state: str,
     name: Optional[str] = None,
     city: Optional[str] = None,
     min_amount: Optional[float] = None,
-    max_results: int = 100
+    max_results: int = 100,
 ) -> SearchResult:
     """Search lottery winners in a state"""
+
     async def _search():
         api = get_lottery_api(state)
         if not api:
@@ -749,21 +756,17 @@ def search_lottery_winners(
             )
         async with api:
             return await api.search_winners(
-                name=name,
-                city=city,
-                min_amount=min_amount,
-                max_results=max_results
+                name=name, city=city, min_amount=min_amount, max_results=max_results
             )
+
     return asyncio.run(_search())
 
 
 def get_recent_lottery_winners(
-    state: str,
-    days: int = 30,
-    min_amount: float = 10000,
-    max_results: int = 100
+    state: str, days: int = 30, min_amount: float = 10000, max_results: int = 100
 ) -> SearchResult:
     """Get recent lottery winners in a state"""
+
     async def _get():
         api = get_lottery_api(state)
         if not api:
@@ -774,18 +777,15 @@ def get_recent_lottery_winners(
             )
         async with api:
             return await api.get_recent_winners(
-                days=days,
-                min_amount=min_amount,
-                max_results=max_results
+                days=days, min_amount=min_amount, max_results=max_results
             )
+
     return asyncio.run(_get())
 
 
-def get_jackpot_winners(
-    state: str,
-    max_results: int = 100
-) -> SearchResult:
+def get_jackpot_winners(state: str, max_results: int = 100) -> SearchResult:
     """Get jackpot winners (>$1M) in a state"""
+
     async def _get():
         api = get_lottery_api(state)
         if not api:
@@ -796,6 +796,7 @@ def get_jackpot_winners(
             )
         async with api:
             return await api.get_jackpot_winners(max_results=max_results)
+
     return asyncio.run(_get())
 
 
@@ -803,9 +804,10 @@ def search_all_states_lottery_winners(
     name: Optional[str] = None,
     city: Optional[str] = None,
     min_amount: Optional[float] = None,
-    max_results_per_state: int = 50
+    max_results_per_state: int = 50,
 ) -> List[SearchResult]:
     """Search lottery winners across all available states"""
+
     async def _search_all():
         results = []
         for state_code, api_class in STATE_LOTTERY_APIS.items():
@@ -815,15 +817,18 @@ def search_all_states_lottery_winners(
                         name=name,
                         city=city,
                         min_amount=min_amount,
-                        max_results=max_results_per_state
+                        max_results=max_results_per_state,
                     )
                     results.append(result)
             except Exception as e:
                 logger.error(f"Error searching {state_code}: {e}")
-                results.append(SearchResult(
-                    winners=[],
-                    total_count=0,
-                    warnings=[f"{state_code}: {str(e)}"],
-                ))
+                results.append(
+                    SearchResult(
+                        winners=[],
+                        total_count=0,
+                        warnings=[f"{state_code}: {str(e)}"],
+                    )
+                )
         return results
+
     return asyncio.run(_search_all())

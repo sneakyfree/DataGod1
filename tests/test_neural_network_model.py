@@ -3,11 +3,12 @@ Tests for Neural Network Model module
 Tests the PyTorch-based neural network for mortgage data processing
 """
 
+from datetime import datetime
+from unittest.mock import MagicMock, patch
+
 import pytest
 import torch
 import torch.nn as nn
-from datetime import datetime
-from unittest.mock import MagicMock, patch
 
 
 class TestMortgageNeuralNetwork:
@@ -28,12 +29,12 @@ class TestMortgageNeuralNetwork:
 
         model = MortgageNeuralNetwork(input_size=10, hidden_size=64, num_classes=2)
 
-        assert hasattr(model, 'layer1')
-        assert hasattr(model, 'layer2')
-        assert hasattr(model, 'layer3')
-        assert hasattr(model, 'dropout')
-        assert hasattr(model, 'bn1')
-        assert hasattr(model, 'bn2')
+        assert hasattr(model, "layer1")
+        assert hasattr(model, "layer2")
+        assert hasattr(model, "layer3")
+        assert hasattr(model, "dropout")
+        assert hasattr(model, "bn1")
+        assert hasattr(model, "bn2")
 
     def test_network_forward_pass(self):
         """Test forward pass produces correct output shape"""
@@ -91,9 +92,7 @@ class TestMortgageDataDataset:
         mock_record.date = datetime.now()
 
         dataset = MortgageDataDataset(
-            records=[mock_record],
-            entities=[],
-            relationships=[]
+            records=[mock_record], entities=[], relationships=[]
         )
 
         assert len(dataset) == 1
@@ -109,11 +108,7 @@ class TestMortgageDataDataset:
             mock_record.date = datetime.now()
             records.append(mock_record)
 
-        dataset = MortgageDataDataset(
-            records=records,
-            entities=[],
-            relationships=[]
-        )
+        dataset = MortgageDataDataset(records=records, entities=[], relationships=[])
 
         assert len(dataset) == 5
 
@@ -126,9 +121,7 @@ class TestMortgageDataDataset:
         mock_record.date = datetime.now()
 
         dataset = MortgageDataDataset(
-            records=[mock_record],
-            entities=[],
-            relationships=[]
+            records=[mock_record], entities=[], relationships=[]
         )
 
         features, target = dataset[0]
@@ -147,9 +140,7 @@ class TestMortgageDataDataset:
         mock_record.date = None
 
         dataset = MortgageDataDataset(
-            records=[mock_record],
-            entities=[],
-            relationships=[]
+            records=[mock_record], entities=[], relationships=[]
         )
 
         features, target = dataset[0]
@@ -166,11 +157,7 @@ class TestMortgageDataProcessor:
         """Test processor initializes correctly"""
         from datagod.neural_network.model import MortgageDataProcessor
 
-        processor = MortgageDataProcessor(
-            input_size=10,
-            hidden_size=64,
-            num_classes=2
-        )
+        processor = MortgageDataProcessor(input_size=10, hidden_size=64, num_classes=2)
 
         assert processor.model is not None
         assert processor.criterion is not None
@@ -191,7 +178,7 @@ class TestMortgageDataProcessor:
         processor = MortgageDataProcessor()
 
         # Device should be either 'cpu' or 'cuda'
-        assert processor.device.type in ['cpu', 'cuda']
+        assert processor.device.type in ["cpu", "cuda"]
 
     def test_processor_has_criterion(self):
         """Test processor has loss criterion"""

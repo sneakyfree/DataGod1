@@ -3,11 +3,12 @@ Integration tests for DataGod API v2
 Tests actual API endpoints using FastAPI TestClient
 """
 
-import pytest
-import sys
-import os
 import importlib.util
+import os
+import sys
 from pathlib import Path
+
+import pytest
 
 # Get paths
 tests_path = Path(__file__).parent
@@ -18,9 +19,10 @@ api_src_path = project_root / "api" / "src"
 sys.path.insert(0, str(api_src_path))
 sys.path.insert(1, str(project_root))
 
-from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
 from datetime import datetime
+from unittest.mock import MagicMock, patch
+
+from fastapi.testclient import TestClient
 from passlib.context import CryptContext
 
 # Password hashing for mock users
@@ -47,7 +49,7 @@ class MockUserDbManager:
                 "api_calls_today": 0,
                 "exports_this_month": 0,
                 "created_at": "2024-01-01T00:00:00",
-                "updated_at": "2024-01-01T00:00:00"
+                "updated_at": "2024-01-01T00:00:00",
             },
             "user": {
                 "id": 2,
@@ -64,8 +66,8 @@ class MockUserDbManager:
                 "api_calls_today": 0,
                 "exports_this_month": 0,
                 "created_at": "2024-01-01T00:00:00",
-                "updated_at": "2024-01-01T00:00:00"
-            }
+                "updated_at": "2024-01-01T00:00:00",
+            },
         }
 
     def get_user_by_username(self, username):
@@ -86,7 +88,15 @@ class MockUserDbManager:
     def record_login(self, username, success=True):
         return True
 
-    def create_user(self, username, email, hashed_password, full_name=None, roles=None, disabled=False):
+    def create_user(
+        self,
+        username,
+        email,
+        hashed_password,
+        full_name=None,
+        roles=None,
+        disabled=False,
+    ):
         if username in self.demo_users:
             return None
         for user in self.demo_users.values():
@@ -107,7 +117,7 @@ class MockUserDbManager:
             "api_calls_today": 0,
             "exports_this_month": 0,
             "created_at": "2024-01-01T00:00:00",
-            "updated_at": "2024-01-01T00:00:00"
+            "updated_at": "2024-01-01T00:00:00",
         }
         return len(self.demo_users)
 
@@ -139,7 +149,9 @@ def create_mock_user_db_manager():
 
 
 # Load api_v2_simple module directly to set up mock
-api_v2_spec = importlib.util.spec_from_file_location("api_v2_simple", api_src_path / "api_v2_simple.py")
+api_v2_spec = importlib.util.spec_from_file_location(
+    "api_v2_simple", api_src_path / "api_v2_simple.py"
+)
 api_v2_module = importlib.util.module_from_spec(api_v2_spec)
 sys.modules["api_v2_simple"] = api_v2_module
 api_v2_spec.loader.exec_module(api_v2_module)
@@ -207,8 +219,7 @@ class TestAuthenticationEndpoints:
     def test_token_endpoint_with_valid_credentials(self, client):
         """Test token endpoint with valid credentials"""
         response = client.post(
-            "/token",
-            data={"username": "admin", "password": "admin123"}
+            "/token", data={"username": "admin", "password": "admin123"}
         )
         assert response.status_code == 200
 
@@ -220,8 +231,7 @@ class TestAuthenticationEndpoints:
     def test_token_endpoint_with_invalid_credentials(self, client):
         """Test token endpoint with invalid credentials"""
         response = client.post(
-            "/token",
-            data={"username": "admin", "password": "wrongpassword"}
+            "/token", data={"username": "admin", "password": "wrongpassword"}
         )
         assert response.status_code == 401
 
@@ -231,8 +241,7 @@ class TestAuthenticationEndpoints:
     def test_token_endpoint_with_nonexistent_user(self, client):
         """Test token endpoint with non-existent user"""
         response = client.post(
-            "/token",
-            data={"username": "nonexistent", "password": "password"}
+            "/token", data={"username": "nonexistent", "password": "password"}
         )
         assert response.status_code == 401
 
@@ -244,8 +253,8 @@ class TestAuthenticationEndpoints:
                 "username": "testuser123",
                 "email": "testuser123@example.com",
                 "password": "securepassword123",
-                "full_name": "Test User"
-            }
+                "full_name": "Test User",
+            },
         )
         # Could be 200 or 400 if user already exists
         assert response.status_code in [200, 400]
@@ -258,8 +267,8 @@ class TestAuthenticationEndpoints:
                 "username": "testuser",
                 "email": "invalid-email",
                 "password": "securepassword123",
-                "full_name": "Test User"
-            }
+                "full_name": "Test User",
+            },
         )
         assert response.status_code == 400
 
@@ -271,16 +280,15 @@ class TestAuthenticationEndpoints:
                 "username": "testuser",
                 "email": "test@example.com",
                 "password": "short",
-                "full_name": "Test User"
-            }
+                "full_name": "Test User",
+            },
         )
         assert response.status_code == 422  # Validation error
 
     def test_login_endpoint_valid_credentials(self, client):
         """Test login endpoint with valid credentials"""
         response = client.post(
-            "/auth/login",
-            json={"username": "admin", "password": "admin123"}
+            "/auth/login", json={"username": "admin", "password": "admin123"}
         )
         assert response.status_code == 200
 
@@ -290,8 +298,7 @@ class TestAuthenticationEndpoints:
     def test_login_endpoint_invalid_credentials(self, client):
         """Test login endpoint with invalid credentials"""
         response = client.post(
-            "/auth/login",
-            json={"username": "admin", "password": "wrongpassword"}
+            "/auth/login", json={"username": "admin", "password": "wrongpassword"}
         )
         assert response.status_code == 401
 
@@ -309,8 +316,7 @@ class TestProtectedEndpoints:
     def auth_token(self, client):
         """Get valid auth token"""
         response = client.post(
-            "/token",
-            data={"username": "admin", "password": "admin123"}
+            "/token", data={"username": "admin", "password": "admin123"}
         )
         return response.json()["access_token"]
 
@@ -322,8 +328,7 @@ class TestProtectedEndpoints:
     def test_users_me_with_valid_token(self, client, auth_token):
         """Test /users/me endpoint with valid token"""
         response = client.get(
-            "/users/me",
-            headers={"Authorization": f"Bearer {auth_token}"}
+            "/users/me", headers={"Authorization": f"Bearer {auth_token}"}
         )
         assert response.status_code == 200
 
@@ -334,16 +339,14 @@ class TestProtectedEndpoints:
     def test_users_me_with_invalid_token(self, client):
         """Test /users/me endpoint with invalid token"""
         response = client.get(
-            "/users/me",
-            headers={"Authorization": "Bearer invalid_token"}
+            "/users/me", headers={"Authorization": "Bearer invalid_token"}
         )
         assert response.status_code == 401
 
     def test_refresh_token_with_valid_token(self, client, auth_token):
         """Test token refresh with valid token"""
         response = client.post(
-            "/refresh-token",
-            headers={"Authorization": f"Bearer {auth_token}"}
+            "/refresh-token", headers={"Authorization": f"Bearer {auth_token}"}
         )
         assert response.status_code == 200
 
@@ -363,8 +366,7 @@ class TestPasswordResetEndpoints:
     def test_forgot_password_valid_email(self, client):
         """Test forgot password with valid email"""
         response = client.post(
-            "/auth/forgot-password",
-            json={"email": "admin@datagod.com"}
+            "/auth/forgot-password", json={"email": "admin@datagod.com"}
         )
         assert response.status_code == 200
 
@@ -373,10 +375,7 @@ class TestPasswordResetEndpoints:
 
     def test_forgot_password_invalid_email(self, client):
         """Test forgot password with invalid email format"""
-        response = client.post(
-            "/auth/forgot-password",
-            json={"email": "invalid-email"}
-        )
+        response = client.post("/auth/forgot-password", json={"email": "invalid-email"})
         # Should still return 200 to not reveal email existence
         assert response.status_code in [200, 400]
 
@@ -384,10 +383,7 @@ class TestPasswordResetEndpoints:
         """Test reset password with invalid token"""
         response = client.post(
             "/auth/reset-password",
-            json={
-                "token": "invalid_reset_token",
-                "new_password": "newpassword123"
-            }
+            json={"token": "invalid_reset_token", "new_password": "newpassword123"},
         )
         assert response.status_code == 400
 
@@ -405,8 +401,7 @@ class TestJurisdictionEndpoints:
     def auth_token(self, client):
         """Get valid auth token"""
         response = client.post(
-            "/token",
-            data={"username": "admin", "password": "admin123"}
+            "/token", data={"username": "admin", "password": "admin123"}
         )
         return response.json()["access_token"]
 
@@ -428,8 +423,7 @@ class TestJurisdictionEndpoints:
         """Test getting a specific jurisdiction by ID"""
         # Test format of request
         response = client.get(
-            "/jurisdictions/999999",
-            headers={"Authorization": f"Bearer {auth_token}"}
+            "/jurisdictions/999999", headers={"Authorization": f"Bearer {auth_token}"}
         )
         # Should be 404 (not found) or 500 (db error)
         assert response.status_code in [404, 500]
@@ -448,8 +442,7 @@ class TestSearchEndpoints:
     def auth_token(self, client):
         """Get valid auth token"""
         response = client.post(
-            "/token",
-            data={"username": "admin", "password": "admin123"}
+            "/token", data={"username": "admin", "password": "admin123"}
         )
         return response.json()["access_token"]
 
@@ -458,17 +451,14 @@ class TestSearchEndpoints:
         response = client.post(
             "/search",
             json={"query": "test"},
-            headers={"Authorization": f"Bearer {auth_token}"}
+            headers={"Authorization": f"Bearer {auth_token}"},
         )
         # Could be 200 (success), 401 (auth required), or 500 (db error)
         assert response.status_code in [200, 401, 500]
 
     def test_search_endpoint_without_auth(self, client):
         """Test search endpoint without authentication"""
-        response = client.post(
-            "/search",
-            json={"query": "test"}
-        )
+        response = client.post("/search", json={"query": "test"})
         # Should require auth
         assert response.status_code in [401, 403]
 
@@ -486,8 +476,7 @@ class TestExportEndpoints:
     def auth_token(self, client):
         """Get valid auth token"""
         response = client.post(
-            "/token",
-            data={"username": "admin", "password": "admin123"}
+            "/token", data={"username": "admin", "password": "admin123"}
         )
         return response.json()["access_token"]
 
@@ -496,17 +485,14 @@ class TestExportEndpoints:
         response = client.post(
             "/export",
             json={"format": "json"},
-            headers={"Authorization": f"Bearer {auth_token}"}
+            headers={"Authorization": f"Bearer {auth_token}"},
         )
         # Could be 200 (success), 404 (not found), or 500 (db error)
         assert response.status_code in [200, 404, 500]
 
     def test_export_without_auth(self, client):
         """Test export endpoint requires authentication"""
-        response = client.post(
-            "/export",
-            json={"format": "json"}
-        )
+        response = client.post("/export", json={"format": "json"})
         # Should require auth
         assert response.status_code in [401, 403, 404]
 
@@ -559,7 +545,7 @@ class TestErrorHandling:
         response = client.post(
             "/auth/register",
             content="not valid json",
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
         assert response.status_code == 422
 
@@ -577,16 +563,14 @@ class TestCacheEndpoints:
     def auth_token(self, client):
         """Get valid auth token"""
         response = client.post(
-            "/token",
-            data={"username": "admin", "password": "admin123"}
+            "/token", data={"username": "admin", "password": "admin123"}
         )
         return response.json()["access_token"]
 
     def test_cache_stats_endpoint(self, client, auth_token):
         """Test cache stats endpoint"""
         response = client.get(
-            "/cache/stats",
-            headers={"Authorization": f"Bearer {auth_token}"}
+            "/cache/stats", headers={"Authorization": f"Bearer {auth_token}"}
         )
         # May return stats or 404 if not implemented
         assert response.status_code in [200, 404, 500]

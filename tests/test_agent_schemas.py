@@ -2,25 +2,26 @@
 Tests for agents/schemas.py and agents/base_agent.py — coverage boost for agent framework
 """
 
-import pytest
 from datetime import datetime
 
+import pytest
+
 from datagod.agents.schemas import (
+    AgentAction,
+    AgentOutput,
     AgentPriority,
     AgentStatus,
-    ConfidenceLevel,
     AgentTask,
+    ConfidenceLevel,
     EvidenceRef,
-    AgentOutput,
-    AgentAction,
-    ToolPermission,
     ToolDefinition,
+    ToolPermission,
 )
-
 
 # ============================================================
 # Enum Tests
 # ============================================================
+
 
 class TestAgentPriority:
     def test_values(self):
@@ -61,6 +62,7 @@ class TestToolPermission:
 # Model Tests
 # ============================================================
 
+
 class TestAgentTask:
     def test_create_minimal(self):
         task = AgentTask(query="Find property records for 123 Main St")
@@ -74,7 +76,7 @@ class TestAgentTask:
             assigned_agent="lien_specialist",
             priority=AgentPriority.HIGH,
             user_id=42,
-            context={"parcel_id": "APN-123"}
+            context={"parcel_id": "APN-123"},
         )
         assert task.assigned_agent == "lien_specialist"
         assert task.priority == AgentPriority.HIGH.value
@@ -92,9 +94,7 @@ class TestAgentTask:
 class TestEvidenceRef:
     def test_create(self):
         ref = EvidenceRef(
-            ref_id="doc_001",
-            ref_type="document",
-            source="county_records"
+            ref_id="doc_001", ref_type="document", source="county_records"
         )
         assert ref.ref_id == "doc_001"
         assert ref.ref_type == "document"
@@ -107,7 +107,7 @@ class TestEvidenceRef:
             ref_type="api_response",
             source="property_api",
             snippet="Owner: John Smith",
-            url="https://api.example.com/property/123"
+            url="https://api.example.com/property/123",
         )
         assert ref.snippet == "Owner: John Smith"
         assert ref.url == "https://api.example.com/property/123"
@@ -120,7 +120,7 @@ class TestAgentOutput:
             agent_id="property_specialist",
             result={"owner": "John Smith", "liens": 3},
             result_type="property_data",
-            confidence=0.85
+            confidence=0.85,
         )
         assert output.task_id == "task_001"
         assert output.agent_id == "property_specialist"
@@ -128,62 +128,54 @@ class TestAgentOutput:
 
     def test_confidence_level_very_low(self):
         output = AgentOutput(
-            task_id="t1", agent_id="a1",
-            result={}, result_type="test",
-            confidence=0.2
+            task_id="t1", agent_id="a1", result={}, result_type="test", confidence=0.2
         )
         assert output.confidence_level == ConfidenceLevel.VERY_LOW.value
 
     def test_confidence_level_low(self):
         output = AgentOutput(
-            task_id="t1", agent_id="a1",
-            result={}, result_type="test",
-            confidence=0.4
+            task_id="t1", agent_id="a1", result={}, result_type="test", confidence=0.4
         )
         assert output.confidence_level == ConfidenceLevel.LOW.value
 
     def test_confidence_level_medium(self):
         output = AgentOutput(
-            task_id="t1", agent_id="a1",
-            result={}, result_type="test",
-            confidence=0.6
+            task_id="t1", agent_id="a1", result={}, result_type="test", confidence=0.6
         )
         assert output.confidence_level == ConfidenceLevel.MEDIUM.value
 
     def test_confidence_level_high(self):
         output = AgentOutput(
-            task_id="t1", agent_id="a1",
-            result={}, result_type="test",
-            confidence=0.8
+            task_id="t1", agent_id="a1", result={}, result_type="test", confidence=0.8
         )
         assert output.confidence_level == ConfidenceLevel.HIGH.value
 
     def test_confidence_level_very_high(self):
         output = AgentOutput(
-            task_id="t1", agent_id="a1",
-            result={}, result_type="test",
-            confidence=0.95
+            task_id="t1", agent_id="a1", result={}, result_type="test", confidence=0.95
         )
         assert output.confidence_level == ConfidenceLevel.VERY_HIGH.value
 
     def test_with_evidence(self):
-        evidence = EvidenceRef(
-            ref_id="e1", ref_type="doc", source="clerk"
-        )
+        evidence = EvidenceRef(ref_id="e1", ref_type="doc", source="clerk")
         output = AgentOutput(
-            task_id="t1", agent_id="a1",
-            result={"found": True}, result_type="search",
+            task_id="t1",
+            agent_id="a1",
+            result={"found": True},
+            result_type="search",
             confidence=0.9,
-            evidence_refs=[evidence]
+            evidence_refs=[evidence],
         )
         assert len(output.evidence_refs) == 1
 
     def test_with_warnings(self):
         output = AgentOutput(
-            task_id="t1", agent_id="a1",
-            result={}, result_type="test",
+            task_id="t1",
+            agent_id="a1",
+            result={},
+            result_type="test",
             confidence=0.5,
-            warnings=["Partial data", "Stale cache"]
+            warnings=["Partial data", "Stale cache"],
         )
         assert len(output.warnings) == 2
 
@@ -191,9 +183,7 @@ class TestAgentOutput:
 class TestAgentAction:
     def test_create(self):
         action = AgentAction(
-            task_id="task_001",
-            agent_id="lien_agent",
-            action="query_database"
+            task_id="task_001", agent_id="lien_agent", action="query_database"
         )
         assert action.task_id == "task_001"
         assert action.agent_id == "lien_agent"
@@ -206,7 +196,7 @@ class TestAgentAction:
             agent_id="lien_agent",
             action="call_api",
             success=False,
-            error="Timeout"
+            error="Timeout",
         )
         assert action.success is False
         assert action.error == "Timeout"
@@ -218,8 +208,11 @@ class TestToolDefinition:
             tool_id="property_search",
             name="Property Search",
             description="Search property records",
-            input_schema={"type": "object", "properties": {"address": {"type": "string"}}},
-            output_schema={"type": "object"}
+            input_schema={
+                "type": "object",
+                "properties": {"address": {"type": "string"}},
+            },
+            output_schema={"type": "object"},
         )
         assert tool.tool_id == "property_search"
         assert tool.enabled is True
@@ -235,7 +228,7 @@ class TestToolDefinition:
             permission=ToolPermission.READ_WRITE,
             allowed_agents=["admin_agent"],
             input_schema={},
-            output_schema={}
+            output_schema={},
         )
         assert tool.permission == ToolPermission.READ_WRITE.value
         assert "admin_agent" in tool.allowed_agents

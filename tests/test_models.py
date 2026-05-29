@@ -2,8 +2,9 @@
 Tests for DataGod models
 """
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 
 class TestJurisdictionModel:
@@ -39,9 +40,11 @@ class TestJurisdictionModel:
 class TestRecordModel:
     """Tests for Record model"""
 
-    def test_record_creation(self, db_session, sample_jurisdiction_data, sample_record_data):
+    def test_record_creation(
+        self, db_session, sample_jurisdiction_data, sample_record_data
+    ):
         """Test creating a record"""
-        from datagod.models import Jurisdiction, Record, DataSource
+        from datagod.models import DataSource, Jurisdiction, Record
 
         # Create jurisdiction first
         jurisdiction = Jurisdiction(**sample_jurisdiction_data)
@@ -50,9 +53,7 @@ class TestRecordModel:
 
         # Create data source
         data_source = DataSource(
-            jurisdiction_id=jurisdiction.id,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jurisdiction.id, source_name="Test API", source_type="api"
         )
         db_session.add(data_source)
         db_session.commit()
@@ -69,9 +70,11 @@ class TestRecordModel:
         assert record.grantor == "John Doe"
         assert record.amount == 250000.00
 
-    def test_record_timestamps(self, db_session, sample_jurisdiction_data, sample_record_data):
+    def test_record_timestamps(
+        self, db_session, sample_jurisdiction_data, sample_record_data
+    ):
         """Test record timestamp fields"""
-        from datagod.models import Jurisdiction, Record, DataSource
+        from datagod.models import DataSource, Jurisdiction, Record
 
         jurisdiction = Jurisdiction(**sample_jurisdiction_data)
         db_session.add(jurisdiction)
@@ -79,9 +82,7 @@ class TestRecordModel:
 
         # Create data source
         data_source = DataSource(
-            jurisdiction_id=jurisdiction.id,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jurisdiction.id, source_name="Test API", source_type="api"
         )
         db_session.add(data_source)
         db_session.commit()
@@ -127,9 +128,21 @@ class TestEntityModel:
 class TestRelationshipModel:
     """Tests for Relationship model"""
 
-    def test_relationship_creation(self, db_session, sample_jurisdiction_data, sample_record_data, sample_entity_data):
+    def test_relationship_creation(
+        self,
+        db_session,
+        sample_jurisdiction_data,
+        sample_record_data,
+        sample_entity_data,
+    ):
         """Test creating a relationship"""
-        from datagod.models import Jurisdiction, Record, Entity, Relationship, DataSource
+        from datagod.models import (
+            DataSource,
+            Entity,
+            Jurisdiction,
+            Record,
+            Relationship,
+        )
 
         # Create jurisdiction
         jurisdiction = Jurisdiction(**sample_jurisdiction_data)
@@ -138,9 +151,7 @@ class TestRelationshipModel:
 
         # Create data source
         data_source = DataSource(
-            jurisdiction_id=jurisdiction.id,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jurisdiction.id, source_name="Test API", source_type="api"
         )
         db_session.add(data_source)
         db_session.commit()
@@ -170,7 +181,7 @@ class TestRelationshipModel:
             role1="borrower",
             role2="lender",
             confidence_score=0.95,
-            status="active"
+            status="active",
         )
         db_session.add(relationship)
         db_session.commit()
@@ -185,7 +196,7 @@ class TestDataSourceModel:
 
     def test_data_source_creation(self, db_session, sample_jurisdiction_data):
         """Test creating a data source"""
-        from datagod.models import Jurisdiction, DataSource
+        from datagod.models import DataSource, Jurisdiction
 
         # Create jurisdiction
         jurisdiction = Jurisdiction(**sample_jurisdiction_data)
@@ -198,7 +209,7 @@ class TestDataSourceModel:
             source_name="Test API",
             source_type="api",
             api_endpoint="https://api.test.gov",
-            status="active"
+            status="active",
         )
         db_session.add(data_source)
         db_session.commit()

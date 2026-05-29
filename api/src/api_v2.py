@@ -2,53 +2,82 @@
 DataGod API v2 - Comprehensive API Layer for Mortgage Data Gathering Neural Network
 """
 
-from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Request, Query, Path, WebSocket
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+import os
+import sys
+from datetime import date, datetime, timedelta
+from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
+
+from fastapi import (
+    BackgroundTasks,
+    Depends,
+    FastAPI,
+    HTTPException,
+    Path,
+    Query,
+    Request,
+    WebSocket,
+    status,
+)
+from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
-from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, Field, validator
-from typing import Optional, List, Dict, Any, Union, TypeVar, Generic
-from datetime import datetime, timedelta, date
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
-from sqlalchemy import desc, asc, or_, and_, func, text, String
+from pydantic import BaseModel, Field, validator
+from sqlalchemy import String, and_, asc, desc, func, or_, text
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import cast
-from datagod.models import Jurisdiction, DataSource, Record, Entity, Relationship, SavedSearch, UserFavorite, UserActivity, ShareLink, ScraperRun, JurisdictionCoverage
-import sys
-import os
+
+from datagod.models import (
+    DataSource,
+    Entity,
+    Jurisdiction,
+    JurisdictionCoverage,
+    Record,
+    Relationship,
+    SavedSearch,
+    ScraperRun,
+    ShareLink,
+    UserActivity,
+    UserFavorite,
+)
 
 # Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 try:
-    from api.src.db import get_db, check_db_connection, SessionLocal
     from api.src.config import settings
+    from api.src.db import SessionLocal, check_db_connection, get_db
 except ImportError:
     # Fallback if running from within api/src
     from db import get_db, check_db_connection, SessionLocal
     from config import settings
 
 from db_manager import DatabaseManager, get_db_manager
+
 try:
     from api.src.stripe_service import stripe_service
 except ImportError:
     from stripe_service import stripe_service
-import redis
-import json
+
 import csv
-import io
-import time
-import logging
 import hashlib
+import io
+import json
+import logging
+import time
 import uuid
-from functools import wraps
 from enum import Enum
+from functools import wraps
+
 import pandas as pd
+import redis
 from typing_extensions import Annotated
 
 # Configure logging
@@ -63,7 +92,7 @@ app = FastAPI(
     docs_url=settings.api_docs_url,
     openapi_url=settings.api_openapi_url,
     redoc_url="/redoc",
-    swagger_ui_parameters={"syntaxHighlight.theme": "monokai"}
+    swagger_ui_parameters={"syntaxHighlight.theme": "monokai"},
 )
 
 # Security settings
@@ -87,7 +116,7 @@ try:
         db=settings.redis_db,
         decode_responses=True,
         socket_timeout=5,
-        socket_connect_timeout=5
+        socket_connect_timeout=5,
     )
     # Test connection
     redis_client.ping()
@@ -95,6 +124,7 @@ try:
 except Exception as e:
     logger.warning(f"⚠️ Redis cache not available: {e}")
     redis_client = None
+
 
 # Rate limiting decorator with Redis support
 def rate_limit(max_requests: int = 100, window: int = 60):
@@ -110,7 +140,7 @@ def rate_limit(max_requests: int = 100, window: int = 60):
                 if current and int(current) >= max_requests:
                     raise HTTPException(
                         status_code=429,
-                        detail=f"Too many requests, rate limit exceeded ({max_requests} requests per {window} seconds)"
+                        detail=f"Too many requests, rate limit exceeded ({max_requests} requests per {window} seconds)",
                     )
 
                 pipe = redis_client.pipeline()
@@ -120,12 +150,12 @@ def rate_limit(max_requests: int = 100, window: int = 60):
                 pipe.execute()
             else:
                 # Fallback to in-memory rate limiting
-                if hasattr(wrapper, 'request_count'):
+                if hasattr(wrapper, "request_count"):
                     if time.time() - wrapper.last_reset < window:
                         if wrapper.request_count >= max_requests:
                             raise HTTPException(
                                 status_code=429,
-                                detail=f"Too many requests, rate limit exceeded ({max_requests} requests per {window} seconds)"
+                                detail=f"Too many requests, rate limit exceeded ({max_requests} requests per {window} seconds)",
                             )
                         wrapper.request_count += 1
                     else:
@@ -136,8 +166,11 @@ def rate_limit(max_requests: int = 100, window: int = 60):
                     wrapper.last_reset = time.time()
 
             return await func(request, *args, **kwargs)
+
         return wrapper
+
     return decorator
+
 
 # Cache decorator
 def cache_response(expiration: int = 300):
@@ -156,35 +189,62 @@ def cache_response(expiration: int = 300):
             result = await func(*args, **kwargs)
 
             if redis_client and result is not None:
-                redis_client.setex(cache_key, expiration, json.dumps(jsonable_encoder(result)))
+                redis_client.setex(
+                    cache_key, expiration, json.dumps(jsonable_encoder(result))
+                )
                 logger.debug(f"💾 Cache set for {cache_key}")
 
             return result
+
         return wrapper
+
     return decorator
+
 
 # Models
 from datagod.schemas.auth import (
-    User, UserInDB, Token, TokenData, UserCreate, UserRegister,
-    PasswordResetRequest, PasswordResetConfirm, UserUpdate
+    PasswordResetConfirm,
+    PasswordResetRequest,
+    Token,
+    TokenData,
+    User,
+    UserCreate,
+    UserInDB,
+    UserRegister,
+    UserUpdate,
 )
-
-
 from datagod.schemas.core import (
-    RecordType, EntityType, CoverageStatus,
-    JurisdictionCreate, JurisdictionUpdate,
-    DataSourceCreate, DataSourceUpdate,
-    RecordCreate, RecordUpdate, RecordResponse,
-    EntityCreate, EntityUpdate,
-    RelationshipCreate, RelationshipUpdate,
-    SearchQuery, SearchResponse, ExportRequest,
-    CoverageSummaryResponse, StateCoverageResponse, CoverageGapResponse,
-    CoverageRefreshRequest, CoverageRefreshResponse,
-    SavedSearchCreate, SavedSearchUpdate, SavedSearchResponse,
-    FavoriteCreate, FavoriteUpdate, FavoriteResponse,
-    ScraperRunResponse, ScraperStatusResponse
+    CoverageGapResponse,
+    CoverageRefreshRequest,
+    CoverageRefreshResponse,
+    CoverageStatus,
+    CoverageSummaryResponse,
+    DataSourceCreate,
+    DataSourceUpdate,
+    EntityCreate,
+    EntityType,
+    EntityUpdate,
+    ExportRequest,
+    FavoriteCreate,
+    FavoriteResponse,
+    FavoriteUpdate,
+    JurisdictionCreate,
+    JurisdictionUpdate,
+    RecordCreate,
+    RecordResponse,
+    RecordType,
+    RecordUpdate,
+    RelationshipCreate,
+    RelationshipUpdate,
+    SavedSearchCreate,
+    SavedSearchResponse,
+    SavedSearchUpdate,
+    ScraperRunResponse,
+    ScraperStatusResponse,
+    SearchQuery,
+    SearchResponse,
+    StateCoverageResponse,
 )
-
 
 
 # Activity Models
@@ -197,15 +257,19 @@ class ActivityResponse(BaseModel):
     activity_data: Optional[Dict[str, Any]]
     created_at: str
 
+
 # Password hashing
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
+
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
+
 # Get database manager instance (injectable for testing)
 _user_db_manager = None
+
 
 def get_user_db_manager():
     global _user_db_manager
@@ -213,18 +277,24 @@ def get_user_db_manager():
         _user_db_manager = get_db_manager()
     return _user_db_manager
 
+
 def set_user_db_manager(manager):
     global _user_db_manager
     _user_db_manager = manager
 
+
 user_db_manager = None  # Will be set below
+
 
 class _UserDbProxy:
     """Proxy that delegates to the injectable user_db_manager."""
+
     def __getattr__(self, name):
         return getattr(get_user_db_manager(), name)
 
+
 user_db_manager = _UserDbProxy()
+
 
 def get_user_from_db(username: str) -> Optional[UserInDB]:
     """Get user from database by username."""
@@ -232,6 +302,7 @@ def get_user_from_db(username: str) -> Optional[UserInDB]:
     if user_data:
         return UserInDB(**user_data)
     return None
+
 
 def authenticate_user_from_db(username: str, password: str) -> Optional[UserInDB]:
     """Authenticate user against database."""
@@ -252,6 +323,7 @@ def authenticate_user_from_db(username: str, password: str) -> Optional[UserInDB
     user_db_manager.record_login(username, success=True)
     return user
 
+
 def ensure_demo_users_exist():
     """Ensure demo users exist in the database (for development only)."""
     if os.getenv("ENVIRONMENT", "development") != "development":
@@ -268,7 +340,7 @@ def ensure_demo_users_exist():
             "full_name": "DataGod Admin",
             "password": demo_admin_pw,
             "roles": ["admin", "user"],
-            "disabled": False
+            "disabled": False,
         },
         {
             "username": "user",
@@ -276,8 +348,8 @@ def ensure_demo_users_exist():
             "full_name": "DataGod User",
             "password": demo_user_pw,
             "roles": ["user"],
-            "disabled": False
-        }
+            "disabled": False,
+        },
     ]
 
     for user_data in demo_users:
@@ -291,9 +363,10 @@ def ensure_demo_users_exist():
                 hashed_password=get_password_hash(user_data["password"]),
                 full_name=user_data["full_name"],
                 roles=user_data["roles"],
-                disabled=user_data["disabled"]
+                disabled=user_data["disabled"],
             )
             logger.info(f"Created demo user: {user_data['username']}")
+
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
@@ -303,9 +376,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
 async def get_current_user(
-    request: Request,
-    token: str = Depends(oauth2_scheme)
+    request: Request, token: str = Depends(oauth2_scheme)
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -332,10 +405,14 @@ async def get_current_user(
     request.state.user = user
     return user
 
-async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
+
+async def get_current_active_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
 
 class RoleChecker:
     def __init__(self, allowed_roles: List[str]):
@@ -346,13 +423,14 @@ class RoleChecker:
         user_roles = user.roles or []
         if not any(role in user_roles for role in self.allowed_roles):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Operation not permitted"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted"
             )
         return user
 
+
 # Helper for backward compatibility or easier migration (optional, but we are refactoring to Depends)
 # def has_role(roles): return Depends(RoleChecker(roles))
+
 
 # Health and monitoring endpoints
 @app.get("/health")
@@ -366,8 +444,9 @@ async def health_check():
         "timestamp": datetime.utcnow().isoformat(),
         "database": db_status,
         "cache": cache_status,
-        "api_version": settings.api_version
+        "api_version": settings.api_version,
     }
+
 
 @app.get("/metrics")
 @rate_limit(max_requests=10, window=60)
@@ -380,8 +459,8 @@ async def get_metrics(request: Request):
             "api_calls": 0,  # Would be tracked in production
             "database_queries": 0,
             "cache_hits": 0,
-            "active_connections": 0
-        }
+            "active_connections": 0,
+        },
     }
 
 
@@ -398,16 +477,19 @@ async def get_dashboard_stats(db: Session = Depends(get_db)):
         total_records = db.query(func.count(Record.id)).scalar() or 0
         total_jurisdictions = db.query(func.count(Jurisdiction.id)).scalar() or 0
         total_data_sources = db.query(func.count(DataSource.id)).scalar() or 0
-        active_data_sources = db.query(func.count(DataSource.id)).filter(
-            DataSource.status == 'active'
-        ).scalar() or 0
+        active_data_sources = (
+            db.query(func.count(DataSource.id))
+            .filter(DataSource.status == "active")
+            .scalar()
+            or 0
+        )
 
         return {
             "totalRecords": total_records,
             "jurisdictions": total_jurisdictions,
             "dataSources": total_data_sources,
             "activeScrapers": active_data_sources,
-            "lastUpdated": datetime.utcnow().isoformat()
+            "lastUpdated": datetime.utcnow().isoformat(),
         }
     except Exception as e:
         logger.error(f"Error fetching dashboard stats: {e}")
@@ -417,7 +499,7 @@ async def get_dashboard_stats(db: Session = Depends(get_db)):
             "jurisdictions": 3142,
             "dataSources": 50,
             "activeScrapers": 47,
-            "lastUpdated": datetime.utcnow().isoformat()
+            "lastUpdated": datetime.utcnow().isoformat(),
         }
 
 
@@ -441,17 +523,21 @@ async def get_public_stats(db: Session = Depends(get_db)):
         total_jurisdictions = db.query(func.count(Jurisdiction.id)).scalar() or 0
 
         # Count unique states from jurisdictions
-        states_count = db.query(func.count(func.distinct(Jurisdiction.state))).scalar() or 50
+        states_count = (
+            db.query(func.count(func.distinct(Jurisdiction.state))).scalar() or 50
+        )
 
         # Count record types
-        record_types_count = db.query(func.count(func.distinct(Record.record_type))).scalar() or 6
+        record_types_count = (
+            db.query(func.count(func.distinct(Record.record_type))).scalar() or 6
+        )
 
         stats = {
             "totalRecords": total_records if total_records > 0 else 12847293,
             "statesCovered": states_count if states_count > 0 else 50,
             "countiesCovered": total_jurisdictions if total_jurisdictions > 0 else 3142,
             "recordTypes": record_types_count if record_types_count > 0 else 6,
-            "lastUpdated": datetime.utcnow().isoformat()
+            "lastUpdated": datetime.utcnow().isoformat(),
         }
 
         # Cache for 5 minutes
@@ -466,7 +552,7 @@ async def get_public_stats(db: Session = Depends(get_db)):
             "statesCovered": 50,
             "countiesCovered": 3142,
             "recordTypes": 6,
-            "lastUpdated": datetime.utcnow().isoformat()
+            "lastUpdated": datetime.utcnow().isoformat(),
         }
 
 
@@ -486,23 +572,27 @@ async def get_jurisdiction_coverage(db: Session = Depends(get_db)):
 
     try:
         # Get coverage stats by state
-        coverage_by_state = db.query(
-            Jurisdiction.state,
-            func.count(Jurisdiction.id).label('county_count'),
-            func.sum(Jurisdiction.record_count).label('total_records')
-        ).group_by(Jurisdiction.state).all()
+        coverage_by_state = (
+            db.query(
+                Jurisdiction.state,
+                func.count(Jurisdiction.id).label("county_count"),
+                func.sum(Jurisdiction.record_count).label("total_records"),
+            )
+            .group_by(Jurisdiction.state)
+            .all()
+        )
 
         coverage_data = {
             "states": [
                 {
                     "state": row.state or "Unknown",
                     "countyCount": row.county_count or 0,
-                    "totalRecords": row.total_records or 0
+                    "totalRecords": row.total_records or 0,
                 }
                 for row in coverage_by_state
             ],
             "totalStates": len(coverage_by_state),
-            "lastUpdated": datetime.utcnow().isoformat()
+            "lastUpdated": datetime.utcnow().isoformat(),
         }
 
         # Cache for 10 minutes
@@ -515,15 +605,13 @@ async def get_jurisdiction_coverage(db: Session = Depends(get_db)):
         return {
             "states": [],
             "totalStates": 50,
-            "lastUpdated": datetime.utcnow().isoformat()
+            "lastUpdated": datetime.utcnow().isoformat(),
         }
 
 
 # Authentication endpoints
 @app.post("/token", response_model=Token)
-async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends()
-):
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     """Authenticate user and return access token"""
     # Check if account is locked
     if user_db_manager.check_user_locked(form_data.username):
@@ -544,58 +632,58 @@ async def login_for_access_token(
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username, "roles": user.roles},
-        expires_delta=access_token_expires
+        expires_delta=access_token_expires,
     )
 
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     }
 
+
 @app.post("/refresh-token", response_model=Token)
-async def refresh_access_token(
-    token: str = Depends(oauth2_scheme)
-):
+async def refresh_access_token(token: str = Depends(oauth2_scheme)):
     """Refresh access token"""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
             )
 
         user_data = user_db_manager.get_user_by_username(username)
         if user_data is None:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
             )
 
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         new_token = create_access_token(
             data={"sub": user_data["username"], "roles": user_data["roles"]},
-            expires_delta=access_token_expires
+            expires_delta=access_token_expires,
         )
 
         return {
             "access_token": new_token,
             "token_type": "bearer",
-            "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60
+            "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         }
 
     except JWTError:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
+
 
 # Registration rate limiting — Redis-backed with in-memory fallback
 registration_attempts = {}  # In-memory fallback
 
-def check_registration_rate_limit(ip: str, max_attempts: int = 5, window_hours: int = 1) -> bool:
+
+def check_registration_rate_limit(
+    ip: str, max_attempts: int = 5, window_hours: int = 1
+) -> bool:
     """Check if IP has exceeded registration rate limit. Uses Redis if available."""
     if redis_client:
         try:
@@ -608,6 +696,7 @@ def check_registration_rate_limit(ip: str, max_attempts: int = 5, window_hours: 
             pass  # Fall through to in-memory
     # Fallback to in-memory
     import time
+
     current_time = time.time()
     window_seconds = window_hours * 3600
     registration_attempts_copy = dict(registration_attempts)
@@ -620,6 +709,7 @@ def check_registration_rate_limit(ip: str, max_attempts: int = 5, window_hours: 
     if ip in registration_attempts and len(registration_attempts[ip]) >= max_attempts:
         return False
     return True
+
 
 def record_registration_attempt(ip: str):
     """Record a registration attempt. Uses Redis if available."""
@@ -634,15 +724,14 @@ def record_registration_attempt(ip: str):
         except Exception:
             pass  # Fall through to in-memory
     import time
+
     if ip not in registration_attempts:
         registration_attempts[ip] = []
     registration_attempts[ip].append(time.time())
 
+
 @app.post("/auth/register", response_model=User, status_code=status.HTTP_201_CREATED)
-async def register_user(
-    request: Request,
-    user_data: UserRegister
-):
+async def register_user(request: Request, user_data: UserRegister):
     """
     Register a new user account.
 
@@ -657,23 +746,21 @@ async def register_user(
     if not check_registration_rate_limit(client_ip):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many registration attempts. Please try again later."
+            detail="Too many registration attempts. Please try again later.",
         )
 
     # Check if username already exists
     existing_user = user_db_manager.get_user_by_username(user_data.username)
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already taken"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Username already taken"
         )
 
     # Check if email already exists
     existing_email = user_db_manager.get_user_by_email(user_data.email)
     if existing_email:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
         )
 
     # Hash password and create user
@@ -685,13 +772,13 @@ async def register_user(
         full_name=user_data.full_name,
         roles=["user"],  # New users always start as regular users
         disabled=False,
-        email_verified=False  # Require email verification
+        email_verified=False,  # Require email verification
     )
 
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create user account"
+            detail="Failed to create user account",
         )
 
     # Record the registration attempt
@@ -703,10 +790,10 @@ async def register_user(
 
     return User(**created_user)
 
+
 @app.post("/auth/login", response_model=Token)
 async def login_user(
-    request: Request,
-    form_data: OAuth2PasswordRequestForm = Depends()
+    request: Request, form_data: OAuth2PasswordRequestForm = Depends()
 ):
     """
     Authenticate user and return access token.
@@ -732,7 +819,7 @@ async def login_user(
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username, "roles": user.roles},
-        expires_delta=access_token_expires
+        expires_delta=access_token_expires,
     )
 
     logger.info(f"User logged in: {user.username}")
@@ -740,14 +827,12 @@ async def login_user(
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     }
 
+
 @app.post("/auth/forgot-password", response_model=Dict[str, str])
-async def forgot_password(
-    request: Request,
-    reset_request: PasswordResetRequest
-):
+async def forgot_password(request: Request, reset_request: PasswordResetRequest):
     """
     Request a password reset.
 
@@ -765,9 +850,7 @@ async def forgot_password(
 
         # Store reset token in database
         success = user_db_manager.set_password_reset_token(
-            email=email,
-            token=reset_token,
-            expires_hours=1
+            email=email, token=reset_token, expires_hours=1
         )
 
         if success:
@@ -775,7 +858,13 @@ async def forgot_password(
             try:
                 # Import email service
                 import sys
-                sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+                sys.path.insert(
+                    0,
+                    os.path.dirname(
+                        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    ),
+                )
                 from datagod.services.email_service import get_email_service
 
                 email_svc = get_email_service()
@@ -783,7 +872,7 @@ async def forgot_password(
                     to_email=email,
                     username=user["username"],
                     reset_token=reset_token,
-                    expires_hours=1
+                    expires_hours=1,
                 )
                 logger.info(f"Password reset requested for: {email}")
             except Exception as e:
@@ -797,11 +886,9 @@ async def forgot_password(
         "message": "If an account with that email exists, a password reset link has been sent."
     }
 
+
 @app.post("/auth/reset-password", response_model=Dict[str, str])
-async def reset_password(
-    request: Request,
-    reset_data: PasswordResetConfirm
-):
+async def reset_password(request: Request, reset_data: PasswordResetConfirm):
     """
     Reset password using a valid reset token.
 
@@ -814,7 +901,7 @@ async def reset_password(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired reset token"
+            detail="Invalid or expired reset token",
         )
 
     # Hash new password
@@ -822,14 +909,13 @@ async def reset_password(
 
     # Update password and clear reset token
     success = user_db_manager.update_user(
-        user_id=user["id"],
-        hashed_password=hashed_password
+        user_id=user["id"], hashed_password=hashed_password
     )
 
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update password"
+            detail="Failed to update password",
         )
 
     # Clear the reset token
@@ -841,32 +927,35 @@ async def reset_password(
         "message": "Password has been reset successfully. You can now log in with your new password."
     }
 
+
 @app.get("/users/me", response_model=User)
-async def read_users_me(
-    current_user: User = Depends(get_current_active_user)
-):
+async def read_users_me(current_user: User = Depends(get_current_active_user)):
     """Get current user information"""
     return current_user
 
 
 # ==================== USER SETTINGS ENDPOINTS ====================
 
+
 class PasswordChangeRequest(BaseModel):
     """Model for password change request."""
+
     current_password: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=8)
 
+
 class NotificationSettings(BaseModel):
     """Model for notification settings."""
+
     email_updates: Optional[bool] = None
     security_alerts: Optional[bool] = None
     marketing: Optional[bool] = None
     weekly_digest: Optional[bool] = None
 
+
 @app.put("/users/me/password")
 async def change_password(
-    password_data: PasswordChangeRequest,
-    current_user: dict = Depends(get_current_user)
+    password_data: PasswordChangeRequest, current_user: dict = Depends(get_current_user)
 ):
     """
     Change the current user's password.
@@ -880,40 +969,38 @@ async def change_password(
         raise HTTPException(status_code=404, detail="User not found")
 
     # Verify current password
-    if not verify_password(password_data.current_password, user['hashed_password']):
+    if not verify_password(password_data.current_password, user["hashed_password"]):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect"
+            detail="Current password is incorrect",
         )
 
     # Validate new password is different
     if password_data.current_password == password_data.new_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be different from current password"
+            detail="New password must be different from current password",
         )
 
     # Hash and update new password
     hashed_password = get_password_hash(password_data.new_password)
     success = user_db_manager.update_user(
-        user_id=user['id'],
-        hashed_password=hashed_password
+        user_id=user["id"], hashed_password=hashed_password
     )
 
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update password"
+            detail="Failed to update password",
         )
 
     logger.info(f"Password changed for user: {username}")
 
     return {"message": "Password updated successfully"}
 
+
 @app.get("/users/me/notifications")
-async def get_notification_settings(
-    current_user: dict = Depends(get_current_user)
-):
+async def get_notification_settings(current_user: dict = Depends(get_current_user)):
     """
     Get the current user's notification preferences.
     """
@@ -925,20 +1012,20 @@ async def get_notification_settings(
 
     # Return notification settings from user's preferences
     # Default values if not set
-    preferences = user.get('preferences', {}) or {}
-    notifications = preferences.get('notifications', {})
+    preferences = user.get("preferences", {}) or {}
+    notifications = preferences.get("notifications", {})
 
     return {
-        "email_updates": notifications.get('email_updates', True),
-        "security_alerts": notifications.get('security_alerts', True),
-        "marketing": notifications.get('marketing', False),
-        "weekly_digest": notifications.get('weekly_digest', True)
+        "email_updates": notifications.get("email_updates", True),
+        "security_alerts": notifications.get("security_alerts", True),
+        "marketing": notifications.get("marketing", False),
+        "weekly_digest": notifications.get("weekly_digest", True),
     }
+
 
 @app.put("/users/me/notifications")
 async def update_notification_settings(
-    settings: NotificationSettings,
-    current_user: dict = Depends(get_current_user)
+    settings: NotificationSettings, current_user: dict = Depends(get_current_user)
 ):
     """
     Update the current user's notification preferences.
@@ -950,8 +1037,8 @@ async def update_notification_settings(
         raise HTTPException(status_code=404, detail="User not found")
 
     # Get existing preferences
-    preferences = user.get('preferences', {}) or {}
-    notifications = preferences.get('notifications', {})
+    preferences = user.get("preferences", {}) or {}
+    notifications = preferences.get("notifications", {})
 
     # Update only provided fields
     update_data = settings.dict(exclude_unset=True)
@@ -959,24 +1046,18 @@ async def update_notification_settings(
         if value is not None:
             notifications[key] = value
 
-    preferences['notifications'] = notifications
+    preferences["notifications"] = notifications
 
     # Save to database
-    success = user_db_manager.update_user(
-        user_id=user['id'],
-        preferences=preferences
-    )
+    success = user_db_manager.update_user(user_id=user["id"], preferences=preferences)
 
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update notification settings"
+            detail="Failed to update notification settings",
         )
 
-    return {
-        "message": "Notification settings updated successfully",
-        **notifications
-    }
+    return {"message": "Notification settings updated successfully", **notifications}
 
 
 # User management endpoints
@@ -984,7 +1065,7 @@ async def update_notification_settings(
 async def create_user(
     request: Request,
     user: UserCreate,
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Create a new user (admin only)"""
     # Check if username already exists
@@ -992,15 +1073,14 @@ async def create_user(
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
+            detail="Username already registered",
         )
 
     # Check if email already exists
     existing_email = user_db_manager.get_user_by_email(user.email)
     if existing_email:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
         )
 
     hashed_password = get_password_hash(user.password)
@@ -1010,51 +1090,59 @@ async def create_user(
         hashed_password=hashed_password,
         full_name=user.full_name,
         roles=user.roles,
-        disabled=False
+        disabled=False,
     )
 
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create user"
+            detail="Failed to create user",
         )
 
     # Return created user
     created_user = user_db_manager.get_user_by_username(user.username)
     return User(**created_user)
 
-@app.get("/users", response_model=List[User], dependencies=[Depends(RoleChecker(["admin"]))])
+
+@app.get(
+    "/users", response_model=List[User], dependencies=[Depends(RoleChecker(["admin"]))]
+)
 async def get_users(
     request: Request,
     current_user: User = Depends(get_current_active_user),
     limit: int = Query(default=100, le=500),
-    offset: int = Query(default=0, ge=0)
+    offset: int = Query(default=0, ge=0),
 ):
     """Get all users (admin only)"""
     users = user_db_manager.list_users(limit=limit, offset=offset)
     return [User(**user) for user in users]
 
-@app.get("/users/{username}", response_model=User, dependencies=[Depends(RoleChecker(["admin"]))])
+
+@app.get(
+    "/users/{username}",
+    response_model=User,
+    dependencies=[Depends(RoleChecker(["admin"]))],
+)
 async def get_user_by_username(
     request: Request,
     username: str,
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Get user by username (admin only)"""
     user_data = user_db_manager.get_user_by_username(username)
     if not user_data:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
     return User(**user_data)
+
 
 # Jurisdiction endpoints
 @app.post("/jurisdictions", dependencies=[Depends(RoleChecker(["admin", "user"]))])
 async def create_jurisdiction(
     jurisdiction: JurisdictionCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Create a new jurisdiction"""
     try:
@@ -1067,9 +1155,9 @@ async def create_jurisdiction(
         db.rollback()
         logger.error(f"Error creating jurisdiction: {e}")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Database error: {str(e)}"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Database error: {str(e)}"
         )
+
 
 @app.get("/jurisdictions")
 @rate_limit(max_requests=50, window=60)
@@ -1083,7 +1171,7 @@ async def get_jurisdictions(
     limit: int = 100,
     offset: int = 0,
     sort_by: str = "name",
-    sort_order: str = "asc"
+    sort_order: str = "asc",
 ):
     """Get all jurisdictions with filtering and pagination"""
     query = db.query(Jurisdiction)
@@ -1104,36 +1192,41 @@ async def get_jurisdictions(
     jurisdictions = query.offset(offset).limit(limit).all()
     return jurisdictions
 
+
 @app.get("/jurisdictions/{jurisdiction_id}")
 @rate_limit(max_requests=50, window=60)
 @cache_response(expiration=300)
 async def get_jurisdiction(
-    request: Request,
-    jurisdiction_id: int,
-    db: Session = Depends(get_db)
+    request: Request, jurisdiction_id: int, db: Session = Depends(get_db)
 ):
     """Get a specific jurisdiction by ID"""
-    jurisdiction = db.query(Jurisdiction).filter(Jurisdiction.id == jurisdiction_id).first()
+    jurisdiction = (
+        db.query(Jurisdiction).filter(Jurisdiction.id == jurisdiction_id).first()
+    )
     if not jurisdiction:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Jurisdiction not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Jurisdiction not found"
         )
     return jurisdiction
 
-@app.put("/jurisdictions/{jurisdiction_id}", dependencies=[Depends(RoleChecker(["admin", "user"]))])
+
+@app.put(
+    "/jurisdictions/{jurisdiction_id}",
+    dependencies=[Depends(RoleChecker(["admin", "user"]))],
+)
 async def update_jurisdiction(
     jurisdiction_id: int,
     jurisdiction_update: JurisdictionUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Update a jurisdiction"""
-    jurisdiction = db.query(Jurisdiction).filter(Jurisdiction.id == jurisdiction_id).first()
+    jurisdiction = (
+        db.query(Jurisdiction).filter(Jurisdiction.id == jurisdiction_id).first()
+    )
     if not jurisdiction:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Jurisdiction not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Jurisdiction not found"
         )
 
     for key, value in jurisdiction_update.dict(exclude_unset=True).items():
@@ -1143,41 +1236,49 @@ async def update_jurisdiction(
     db.refresh(jurisdiction)
     return jurisdiction
 
-@app.delete("/jurisdictions/{jurisdiction_id}", response_model=dict, dependencies=[Depends(RoleChecker(["admin"]))])
+
+@app.delete(
+    "/jurisdictions/{jurisdiction_id}",
+    response_model=dict,
+    dependencies=[Depends(RoleChecker(["admin"]))],
+)
 async def delete_jurisdiction(
     jurisdiction_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Delete a jurisdiction (admin only)"""
-    jurisdiction = db.query(Jurisdiction).filter(Jurisdiction.id == jurisdiction_id).first()
+    jurisdiction = (
+        db.query(Jurisdiction).filter(Jurisdiction.id == jurisdiction_id).first()
+    )
     if not jurisdiction:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Jurisdiction not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Jurisdiction not found"
         )
 
     db.delete(jurisdiction)
     db.commit()
     return {"message": "Jurisdiction deleted successfully"}
 
+
 # Data source endpoints
 @app.post("/data-sources", dependencies=[Depends(RoleChecker(["admin", "user"]))])
 async def create_data_source(
     data_source: DataSourceCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Create a new data source"""
     try:
         # Check if jurisdiction exists
-        jurisdiction = db.query(Jurisdiction).filter(
-            Jurisdiction.id == data_source.jurisdiction_id
-        ).first()
+        jurisdiction = (
+            db.query(Jurisdiction)
+            .filter(Jurisdiction.id == data_source.jurisdiction_id)
+            .first()
+        )
         if not jurisdiction:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Jurisdiction not found"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Jurisdiction not found"
             )
 
         db_data_source = DataSource(**data_source.dict(by_alias=True))
@@ -1189,9 +1290,9 @@ async def create_data_source(
         db.rollback()
         logger.error(f"Error creating data source: {e}")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Database error: {str(e)}"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Database error: {str(e)}"
         )
+
 
 @app.get("/data-sources")
 @rate_limit(max_requests=50, window=60)
@@ -1205,7 +1306,7 @@ async def get_data_sources(
     limit: int = 100,
     offset: int = 0,
     sort_by: str = "id",
-    sort_order: str = "asc"
+    sort_order: str = "asc",
 ):
     """Get all data sources with filtering and pagination"""
     query = db.query(DataSource)
@@ -1226,51 +1327,53 @@ async def get_data_sources(
     data_sources = query.offset(offset).limit(limit).all()
     return data_sources
 
+
 @app.get("/data-sources/{data_source_id}")
 @rate_limit(max_requests=50, window=60)
 @cache_response(expiration=300)
 async def get_data_source(
-    request: Request,
-    data_source_id: int,
-    db: Session = Depends(get_db)
+    request: Request, data_source_id: int, db: Session = Depends(get_db)
 ):
     """Get a specific data source by ID"""
     data_source = db.query(DataSource).filter(DataSource.id == data_source_id).first()
     if not data_source:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Data source not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Data source not found"
         )
     return data_source
+
 
 # Record endpoints
 @app.post("/records", dependencies=[Depends(RoleChecker(["admin", "user"]))])
 async def create_record(
     record: RecordCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Create a new record"""
     try:
         # Check if jurisdiction exists
-        jurisdiction = db.query(Jurisdiction).filter(
-            Jurisdiction.id == record.jurisdiction_id
-        ).first()
+        jurisdiction = (
+            db.query(Jurisdiction)
+            .filter(Jurisdiction.id == record.jurisdiction_id)
+            .first()
+        )
         if not jurisdiction:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Jurisdiction not found"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Jurisdiction not found"
             )
 
         # Check if data source exists (if provided)
         if record.data_source_id:
-            data_source = db.query(DataSource).filter(
-                DataSource.id == record.data_source_id
-            ).first()
+            data_source = (
+                db.query(DataSource)
+                .filter(DataSource.id == record.data_source_id)
+                .first()
+            )
             if not data_source:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Data source not found"
+                    detail="Data source not found",
                 )
 
         db_record = Record(**record.dict())
@@ -1282,9 +1385,9 @@ async def create_record(
         db.rollback()
         logger.error(f"Error creating record: {e}")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Database error: {str(e)}"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Database error: {str(e)}"
         )
+
 
 @app.get("/records")
 @rate_limit(max_requests=50, window=60)
@@ -1302,7 +1405,7 @@ async def get_records(
     limit: int = 100,
     offset: int = 0,
     sort_by: str = "date",
-    sort_order: str = "desc"
+    sort_order: str = "desc",
 ):
     """Get all records with advanced filtering and pagination"""
     query = db.query(Record)
@@ -1331,22 +1434,19 @@ async def get_records(
     records = query.offset(offset).limit(limit).all()
     return records
 
+
 @app.get("/records/{record_id}")
 @rate_limit(max_requests=50, window=60)
 @cache_response(expiration=300)
-async def get_record(
-    request: Request,
-    record_id: int,
-    db: Session = Depends(get_db)
-):
+async def get_record(request: Request, record_id: int, db: Session = Depends(get_db)):
     """Get a specific record by ID"""
     record = db.query(Record).filter(Record.id == record_id).first()
     if not record:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Record not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Record not found"
         )
     return record
+
 
 @app.put("/records/{record_id}", dependencies=[Depends(RoleChecker(["admin", "user"]))])
 @rate_limit(max_requests=20, window=60)
@@ -1355,23 +1455,26 @@ async def update_record(
     record_id: int,
     record_update: RecordCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Update an existing record. Only the record creator or admin can update."""
     record = db.query(Record).filter(Record.id == record_id).first()
     if not record:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Record not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Record not found"
         )
 
     # Authorization: admin or record creator
     user_data = user_db_manager.get_user_by_username(current_user.username)
-    is_admin = current_user.role == "admin" if hasattr(current_user, 'role') else False
-    if not is_admin and hasattr(record, 'created_by') and record.created_by != user_data.get('id'):
+    is_admin = current_user.role == "admin" if hasattr(current_user, "role") else False
+    if (
+        not is_admin
+        and hasattr(record, "created_by")
+        and record.created_by != user_data.get("id")
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to update this record"
+            detail="Not authorized to update this record",
         )
 
     update_data = record_update.dict(exclude_unset=True)
@@ -1388,33 +1491,38 @@ async def update_record(
         db.rollback()
         logger.error(f"Error updating record {record_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Database error: {str(e)}"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Database error: {str(e)}"
         )
 
-@app.delete("/records/{record_id}", dependencies=[Depends(RoleChecker(["admin", "user"]))])
+
+@app.delete(
+    "/records/{record_id}", dependencies=[Depends(RoleChecker(["admin", "user"]))]
+)
 @rate_limit(max_requests=10, window=60)
 async def delete_record(
     request: Request,
     record_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Delete a record. Only the record creator or admin can delete."""
     record = db.query(Record).filter(Record.id == record_id).first()
     if not record:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Record not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Record not found"
         )
 
     # Authorization: admin or record creator
     user_data = user_db_manager.get_user_by_username(current_user.username)
-    is_admin = current_user.role == "admin" if hasattr(current_user, 'role') else False
-    if not is_admin and hasattr(record, 'created_by') and record.created_by != user_data.get('id'):
+    is_admin = current_user.role == "admin" if hasattr(current_user, "role") else False
+    if (
+        not is_admin
+        and hasattr(record, "created_by")
+        and record.created_by != user_data.get("id")
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to delete this record"
+            detail="Not authorized to delete this record",
         )
 
     try:
@@ -1426,28 +1534,30 @@ async def delete_record(
         db.rollback()
         logger.error(f"Error deleting record {record_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Database error: {str(e)}"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Database error: {str(e)}"
         )
+
 
 # Entity endpoints
 @app.post("/entities", dependencies=[Depends(RoleChecker(["admin", "user"]))])
 async def create_entity(
     entity: EntityCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Create a new entity"""
     try:
         # Check if jurisdiction exists (if provided)
         if entity.jurisdiction_id:
-            jurisdiction = db.query(Jurisdiction).filter(
-                Jurisdiction.id == entity.jurisdiction_id
-            ).first()
+            jurisdiction = (
+                db.query(Jurisdiction)
+                .filter(Jurisdiction.id == entity.jurisdiction_id)
+                .first()
+            )
             if not jurisdiction:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Jurisdiction not found"
+                    detail="Jurisdiction not found",
                 )
 
         db_entity = Entity(**entity.dict())
@@ -1459,9 +1569,9 @@ async def create_entity(
         db.rollback()
         logger.error(f"Error creating entity: {e}")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Database error: {str(e)}"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Database error: {str(e)}"
         )
+
 
 @app.get("/entities")
 @rate_limit(max_requests=50, window=60)
@@ -1475,7 +1585,7 @@ async def get_entities(
     limit: int = 100,
     offset: int = 0,
     sort_by: str = "entity_name",
-    sort_order: str = "asc"
+    sort_order: str = "asc",
 ):
     """Get all entities with filtering and pagination"""
     query = db.query(Entity)
@@ -1496,20 +1606,16 @@ async def get_entities(
     entities = query.offset(offset).limit(limit).all()
     return entities
 
+
 @app.get("/entities/{entity_id}")
 @rate_limit(max_requests=50, window=60)
 @cache_response(expiration=300)
-async def get_entity(
-    request: Request,
-    entity_id: int,
-    db: Session = Depends(get_db)
-):
+async def get_entity(request: Request, entity_id: int, db: Session = Depends(get_db)):
     """Get a specific entity by ID"""
     entity = db.query(Entity).filter(Entity.id == entity_id).first()
     if not entity:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Entity not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Entity not found"
         )
     return entity
 
@@ -1521,7 +1627,7 @@ async def quick_entity_search(
     request: Request,
     q: str = Query(..., min_length=2, max_length=200, description="Search query"),
     limit: int = Query(10, ge=1, le=50),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Quick entity search for typeahead/autocomplete.
@@ -1535,10 +1641,10 @@ async def quick_entity_search(
     )
     return {
         "suggestions": [
-            {"id": e.id, "name": e.entity_name, "type": e.entity_type}
-            for e in entities
+            {"id": e.id, "name": e.entity_name, "type": e.entity_type} for e in entities
         ]
     }
+
 
 # Entity Network endpoints for visualization
 @app.get("/entities/{entity_id}/network")
@@ -1546,9 +1652,11 @@ async def quick_entity_search(
 async def get_entity_network(
     request: Request,
     entity_id: int,
-    depth: int = Query(default=2, ge=1, le=4, description="How many levels of connections to traverse"),
+    depth: int = Query(
+        default=2, ge=1, le=4, description="How many levels of connections to traverse"
+    ),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Get the network of connected entities for visualization.
@@ -1562,8 +1670,7 @@ async def get_entity_network(
     center_entity = db.query(Entity).filter(Entity.id == entity_id).first()
     if not center_entity:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Entity not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Entity not found"
         )
 
     # Collect nodes and edges using BFS
@@ -1582,47 +1689,57 @@ async def get_entity_network(
         # Get the entity
         entity = db.query(Entity).filter(Entity.id == current_id).first()
         if entity:
-            nodes.append({
-                "id": entity.id,
-                "name": entity.entity_name,
-                "type": entity.entity_type,
-                "address": entity.address,
-                "city": entity.city,
-                "state": entity.state,
-                "status": entity.status,
-                "depth": current_depth
-            })
+            nodes.append(
+                {
+                    "id": entity.id,
+                    "name": entity.entity_name,
+                    "type": entity.entity_type,
+                    "address": entity.address,
+                    "city": entity.city,
+                    "state": entity.state,
+                    "status": entity.status,
+                    "depth": current_depth,
+                }
+            )
 
         # Don't explore further if we've reached max depth
         if current_depth >= depth:
             continue
 
         # Find all relationships involving this entity
-        relationships = db.query(Relationship).filter(
-            or_(
-                Relationship.entity1_id == current_id,
-                Relationship.entity2_id == current_id
-            ),
-            Relationship.status == 'active'
-        ).all()
+        relationships = (
+            db.query(Relationship)
+            .filter(
+                or_(
+                    Relationship.entity1_id == current_id,
+                    Relationship.entity2_id == current_id,
+                ),
+                Relationship.status == "active",
+            )
+            .all()
+        )
 
         for rel in relationships:
             # Add edge if not already visited
             if rel.id not in visited_relationships:
                 visited_relationships.add(rel.id)
-                edges.append({
-                    "id": rel.id,
-                    "source": rel.entity1_id,
-                    "target": rel.entity2_id,
-                    "type": rel.relationship_type,
-                    "role1": rel.role1,
-                    "role2": rel.role2,
-                    "confidence": rel.confidence_score,
-                    "context": rel.context
-                })
+                edges.append(
+                    {
+                        "id": rel.id,
+                        "source": rel.entity1_id,
+                        "target": rel.entity2_id,
+                        "type": rel.relationship_type,
+                        "role1": rel.role1,
+                        "role2": rel.role2,
+                        "confidence": rel.confidence_score,
+                        "context": rel.context,
+                    }
+                )
 
             # Queue connected entities
-            other_id = rel.entity2_id if rel.entity1_id == current_id else rel.entity1_id
+            other_id = (
+                rel.entity2_id if rel.entity1_id == current_id else rel.entity1_id
+            )
             if other_id not in visited_entities:
                 visited_entities.add(other_id)
                 queue.append((other_id, current_depth + 1))
@@ -1633,7 +1750,7 @@ async def get_entity_network(
         "edges": edges,
         "depth": depth,
         "totalNodes": len(nodes),
-        "totalEdges": len(edges)
+        "totalEdges": len(edges),
     }
 
 
@@ -1646,7 +1763,7 @@ async def get_entity_connections(
     limit: int = Query(default=50, le=200),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Get direct connections for an entity with pagination.
@@ -1656,17 +1773,13 @@ async def get_entity_connections(
     entity = db.query(Entity).filter(Entity.id == entity_id).first()
     if not entity:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Entity not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Entity not found"
         )
 
     # Build query for relationships
     query = db.query(Relationship).filter(
-        or_(
-            Relationship.entity1_id == entity_id,
-            Relationship.entity2_id == entity_id
-        ),
-        Relationship.status == 'active'
+        or_(Relationship.entity1_id == entity_id, Relationship.entity2_id == entity_id),
+        Relationship.status == "active",
     )
 
     if relationship_type:
@@ -1676,9 +1789,12 @@ async def get_entity_connections(
     total_count = query.count()
 
     # Get paginated relationships
-    relationships = query.order_by(
-        desc(Relationship.confidence_score)
-    ).offset(offset).limit(limit).all()
+    relationships = (
+        query.order_by(desc(Relationship.confidence_score))
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
     # Build connections response
     connections = []
@@ -1694,29 +1810,31 @@ async def get_entity_connections(
         # Get the connected entity
         connected_entity = db.query(Entity).filter(Entity.id == other_id).first()
         if connected_entity:
-            connections.append({
-                "relationshipId": rel.id,
-                "relationshipType": rel.relationship_type,
-                "role": role,
-                "confidence": rel.confidence_score,
-                "context": rel.context,
-                "entity": {
-                    "id": connected_entity.id,
-                    "name": connected_entity.entity_name,
-                    "type": connected_entity.entity_type,
-                    "address": connected_entity.address,
-                    "city": connected_entity.city,
-                    "state": connected_entity.state,
-                    "status": connected_entity.status
+            connections.append(
+                {
+                    "relationshipId": rel.id,
+                    "relationshipType": rel.relationship_type,
+                    "role": role,
+                    "confidence": rel.confidence_score,
+                    "context": rel.context,
+                    "entity": {
+                        "id": connected_entity.id,
+                        "name": connected_entity.entity_name,
+                        "type": connected_entity.entity_type,
+                        "address": connected_entity.address,
+                        "city": connected_entity.city,
+                        "state": connected_entity.state,
+                        "status": connected_entity.status,
+                    },
                 }
-            })
+            )
 
     return {
         "entityId": entity_id,
         "connections": connections,
         "totalCount": total_count,
         "limit": limit,
-        "offset": offset
+        "offset": offset,
     }
 
 
@@ -1729,7 +1847,7 @@ async def get_entity_records(
     limit: int = Query(default=50, le=200),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Get records associated with an entity through relationships.
@@ -1738,18 +1856,21 @@ async def get_entity_records(
     entity = db.query(Entity).filter(Entity.id == entity_id).first()
     if not entity:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Entity not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Entity not found"
         )
 
     # Get all relationship record IDs for this entity
-    relationship_query = db.query(Relationship.record_id).filter(
-        or_(
-            Relationship.entity1_id == entity_id,
-            Relationship.entity2_id == entity_id
-        ),
-        Relationship.record_id.isnot(None)
-    ).distinct()
+    relationship_query = (
+        db.query(Relationship.record_id)
+        .filter(
+            or_(
+                Relationship.entity1_id == entity_id,
+                Relationship.entity2_id == entity_id,
+            ),
+            Relationship.record_id.isnot(None),
+        )
+        .distinct()
+    )
 
     record_ids = [r[0] for r in relationship_query.all()]
 
@@ -1759,7 +1880,7 @@ async def get_entity_records(
             "records": [],
             "totalCount": 0,
             "limit": limit,
-            "offset": offset
+            "offset": offset,
         }
 
     # Build query for records
@@ -1777,22 +1898,24 @@ async def get_entity_records(
     # Format response
     record_list = []
     for record in records:
-        record_list.append({
-            "id": record.id,
-            "title": record.title,
-            "description": record.description,
-            "recordType": record.record_type,
-            "amount": record.amount,
-            "date": record.date.isoformat() if record.date else None,
-            "jurisdictionId": record.jurisdiction_id
-        })
+        record_list.append(
+            {
+                "id": record.id,
+                "title": record.title,
+                "description": record.description,
+                "recordType": record.record_type,
+                "amount": record.amount,
+                "date": record.date.isoformat() if record.date else None,
+                "jurisdictionId": record.jurisdiction_id,
+            }
+        )
 
     return {
         "entityId": entity_id,
         "records": record_list,
         "totalCount": total_count,
         "limit": limit,
-        "offset": offset
+        "offset": offset,
     }
 
 
@@ -1804,15 +1927,13 @@ async def quick_entity_search(
     entity_type: Optional[str] = None,
     limit: int = Query(default=10, le=50),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Quick entity search for autocomplete/typeahead functionality.
     Returns minimal entity data for fast rendering.
     """
-    query = db.query(Entity).filter(
-        Entity.entity_name.ilike(f"%{q}%")
-    )
+    query = db.query(Entity).filter(Entity.entity_name.ilike(f"%{q}%"))
 
     if entity_type:
         query = query.filter(Entity.entity_type == entity_type)
@@ -1826,11 +1947,11 @@ async def quick_entity_search(
                 "id": e.id,
                 "name": e.entity_name,
                 "type": e.entity_type,
-                "location": f"{e.city}, {e.state}" if e.city and e.state else None
+                "location": f"{e.city}, {e.state}" if e.city and e.state else None,
             }
             for e in entities
         ],
-        "count": len(entities)
+        "count": len(entities),
     }
 
 
@@ -1839,7 +1960,7 @@ async def quick_entity_search(
 async def create_relationship(
     relationship: RelationshipCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Create a new relationship"""
     try:
@@ -1850,16 +1971,17 @@ async def create_relationship(
         if not entity1 or not entity2:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="One or both entities not found"
+                detail="One or both entities not found",
             )
 
         # Check if record exists (if provided)
         if relationship.record_id:
-            record = db.query(Record).filter(Record.id == relationship.record_id).first()
+            record = (
+                db.query(Record).filter(Record.id == relationship.record_id).first()
+            )
             if not record:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Record not found"
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Record not found"
                 )
 
         db_relationship = Relationship(**relationship.dict())
@@ -1871,9 +1993,9 @@ async def create_relationship(
         db.rollback()
         logger.error(f"Error creating relationship: {e}")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Database error: {str(e)}"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Database error: {str(e)}"
         )
+
 
 @app.get("/relationships")
 @rate_limit(max_requests=50, window=60)
@@ -1888,7 +2010,7 @@ async def get_relationships(
     limit: int = 100,
     offset: int = 0,
     sort_by: str = "confidence_score",
-    sort_order: str = "desc"
+    sort_order: str = "desc",
 ):
     """Get all relationships with filtering and pagination"""
     query = db.query(Relationship)
@@ -1897,7 +2019,7 @@ async def get_relationships(
         query = query.filter(
             or_(
                 Relationship.entity1_id == entity_id,
-                Relationship.entity2_id == entity_id
+                Relationship.entity2_id == entity_id,
             )
         )
     if relationship_type:
@@ -1916,22 +2038,23 @@ async def get_relationships(
     relationships = query.offset(offset).limit(limit).all()
     return relationships
 
+
 @app.get("/relationships/{relationship_id}")
 @rate_limit(max_requests=50, window=60)
 @cache_response(expiration=300)
 async def get_relationship(
-    request: Request,
-    relationship_id: int,
-    db: Session = Depends(get_db)
+    request: Request, relationship_id: int, db: Session = Depends(get_db)
 ):
     """Get a specific relationship by ID"""
-    relationship = db.query(Relationship).filter(Relationship.id == relationship_id).first()
+    relationship = (
+        db.query(Relationship).filter(Relationship.id == relationship_id).first()
+    )
     if not relationship:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Relationship not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Relationship not found"
         )
     return relationship
+
 
 # Typeahead/autocomplete endpoint
 @app.get("/search/typeahead", response_model=Dict[str, Any])
@@ -1941,30 +2064,41 @@ async def search_typeahead(
     q: str = "",
     limit: int = 8,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Return fast autocomplete suggestions for the search bar"""
     if not q or len(q) < 2:
         return {"suggestions": []}
 
     from datagod.utils.sanitize import sanitize_search_query
+
     clean_q = sanitize_search_query(q)
 
     # Search records
-    record_hits = db.query(Record.id, Record.title, Record.record_type).filter(
-        Record.title.ilike(f"%{clean_q}%")
-    ).limit(limit).all()
+    record_hits = (
+        db.query(Record.id, Record.title, Record.record_type)
+        .filter(Record.title.ilike(f"%{clean_q}%"))
+        .limit(limit)
+        .all()
+    )
 
     # Search entities
-    entity_hits = db.query(Entity.id, Entity.name, Entity.entity_type).filter(
-        Entity.name.ilike(f"%{clean_q}%")
-    ).limit(limit).all()
+    entity_hits = (
+        db.query(Entity.id, Entity.name, Entity.entity_type)
+        .filter(Entity.name.ilike(f"%{clean_q}%"))
+        .limit(limit)
+        .all()
+    )
 
     suggestions = []
     for r in record_hits:
-        suggestions.append({"type": "record", "id": r.id, "text": r.title, "subtype": r.record_type})
+        suggestions.append(
+            {"type": "record", "id": r.id, "text": r.title, "subtype": r.record_type}
+        )
     for e in entity_hits:
-        suggestions.append({"type": "entity", "id": e.id, "text": e.name, "subtype": e.entity_type})
+        suggestions.append(
+            {"type": "entity", "id": e.id, "text": e.name, "subtype": e.entity_type}
+        )
 
     return {"suggestions": suggestions[:limit], "query": q}
 
@@ -1976,20 +2110,25 @@ async def get_recent_searches(
     request: Request,
     limit: int = 10,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Return the user's most recent saved searches"""
     from datagod.models import SavedSearch
-    recent = db.query(SavedSearch).filter(
-        SavedSearch.user_id == current_user.id
-    ).order_by(desc(SavedSearch.created_at)).limit(limit).all()
+
+    recent = (
+        db.query(SavedSearch)
+        .filter(SavedSearch.user_id == current_user.id)
+        .order_by(desc(SavedSearch.created_at))
+        .limit(limit)
+        .all()
+    )
 
     return {
         "recent_searches": [
             {
                 "id": s.id,
                 "name": s.name,
-                "query": s.query_params if hasattr(s, 'query_params') else s.query,
+                "query": s.query_params if hasattr(s, "query_params") else s.query,
                 "created_at": s.created_at.isoformat() if s.created_at else None,
             }
             for s in recent
@@ -1998,7 +2137,11 @@ async def get_recent_searches(
 
 
 # ── Comment endpoints ────────────────────────────────────────────────
-@app.post("/comments", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
+@app.post(
+    "/comments",
+    response_model=Dict[str, Any],
+    dependencies=[Depends(RoleChecker(["admin", "user"]))],
+)
 @rate_limit(max_requests=20, window=60)
 async def create_comment(
     request: Request,
@@ -2007,16 +2150,18 @@ async def create_comment(
     parent_id: Optional[int] = None,
     text: str = "",
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Create a new comment on a record or entity"""
     if not text.strip():
         raise HTTPException(status_code=400, detail="Comment text is required")
     if not record_id and not entity_id:
-        raise HTTPException(status_code=400, detail="Must specify record_id or entity_id")
+        raise HTTPException(
+            status_code=400, detail="Must specify record_id or entity_id"
+        )
 
-    from datagod.utils.sanitize import sanitize_input
     from datagod.models.comment import Comment
+    from datagod.utils.sanitize import sanitize_input
 
     comment = Comment(
         user_id=current_user.id,
@@ -2049,7 +2194,7 @@ async def get_comments(
     page: int = 1,
     page_size: int = 25,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Get comments for a record or entity (threaded)"""
     from datagod.models.comment import Comment
@@ -2061,14 +2206,19 @@ async def get_comments(
     elif entity_id:
         query = query.filter(Comment.entity_id == entity_id)
     else:
-        raise HTTPException(status_code=400, detail="Must specify record_id or entity_id")
+        raise HTTPException(
+            status_code=400, detail="Must specify record_id or entity_id"
+        )
 
     # Top-level comments only (replies are nested)
     query = query.filter(Comment.parent_id == None)
     total = query.count()
-    comments = query.order_by(desc(Comment.created_at)).offset(
-        (page - 1) * page_size
-    ).limit(page_size).all()
+    comments = (
+        query.order_by(desc(Comment.created_at))
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
 
     return {
         "comments": [
@@ -2087,13 +2237,17 @@ async def get_comments(
     }
 
 
-@app.delete("/comments/{comment_id}", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
+@app.delete(
+    "/comments/{comment_id}",
+    response_model=Dict[str, Any],
+    dependencies=[Depends(RoleChecker(["admin", "user"]))],
+)
 @rate_limit(max_requests=10, window=60)
 async def delete_comment(
     request: Request,
     comment_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Soft-delete a comment (creator or admin only)"""
     from datagod.models.comment import Comment
@@ -2102,7 +2256,9 @@ async def delete_comment(
     if not comment:
         raise HTTPException(status_code=404, detail="Comment not found")
     if comment.user_id != current_user.id and current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Not authorized to delete this comment")
+        raise HTTPException(
+            status_code=403, detail="Not authorized to delete this comment"
+        )
 
     comment.is_deleted = True
     comment.text = "[deleted]"
@@ -2115,13 +2271,18 @@ async def delete_comment(
 # Saved Searches (FEAT-047)
 # =====================================================================
 
-@app.post("/saved-searches", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
+
+@app.post(
+    "/saved-searches",
+    response_model=Dict[str, Any],
+    dependencies=[Depends(RoleChecker(["admin", "user"]))],
+)
 @rate_limit(max_requests=20, window=60)
 async def create_saved_search(
     request: Request,
     body: Dict[str, Any],
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Save a search for later reuse."""
     from datagod.models import SavedSearch
@@ -2138,12 +2299,16 @@ async def create_saved_search(
     return saved.to_dict()
 
 
-@app.get("/saved-searches", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
+@app.get(
+    "/saved-searches",
+    response_model=Dict[str, Any],
+    dependencies=[Depends(RoleChecker(["admin", "user"]))],
+)
 @rate_limit(max_requests=30, window=60)
 async def list_saved_searches(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """List saved searches for the current user."""
     from datagod.models import SavedSearch
@@ -2157,21 +2322,26 @@ async def list_saved_searches(
     return {"saved_searches": [s.to_dict() for s in searches], "total": len(searches)}
 
 
-@app.delete("/saved-searches/{search_id}", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
+@app.delete(
+    "/saved-searches/{search_id}",
+    response_model=Dict[str, Any],
+    dependencies=[Depends(RoleChecker(["admin", "user"]))],
+)
 @rate_limit(max_requests=10, window=60)
 async def delete_saved_search(
     request: Request,
     search_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Delete a saved search."""
     from datagod.models import SavedSearch
 
-    search = db.query(SavedSearch).filter(
-        SavedSearch.id == search_id,
-        SavedSearch.user_id == current_user.id
-    ).first()
+    search = (
+        db.query(SavedSearch)
+        .filter(SavedSearch.id == search_id, SavedSearch.user_id == current_user.id)
+        .first()
+    )
     if not search:
         raise HTTPException(status_code=404, detail="Saved search not found")
 
@@ -2187,7 +2357,7 @@ async def advanced_search(
     request: Request,
     search_query: SearchQuery,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ) -> SearchResponse:
     """Advanced search across all data types with full-text search"""
     query = db.query(Record)
@@ -2198,7 +2368,7 @@ async def advanced_search(
             or_(
                 Record.title.ilike(f"%{search_query.query}%"),
                 Record.description.ilike(f"%{search_query.query}%"),
-                cast(Record.record_metadata, String).ilike(f"%{search_query.query}%")
+                cast(Record.record_metadata, String).ilike(f"%{search_query.query}%"),
             )
         )
 
@@ -2228,17 +2398,21 @@ async def advanced_search(
 
     # Pagination
     total_count = query.count()
-    records = query.offset(
-        (search_query.page - 1) * search_query.page_size
-    ).limit(search_query.page_size).all()
+    records = (
+        query.offset((search_query.page - 1) * search_query.page_size)
+        .limit(search_query.page_size)
+        .all()
+    )
 
     return {
         "records": records,
         "total_count": total_count,
         "page": search_query.page,
         "page_size": search_query.page_size,
-        "total_pages": (total_count + search_query.page_size - 1) // search_query.page_size
+        "total_pages": (total_count + search_query.page_size - 1)
+        // search_query.page_size,
     }
+
 
 # Data export endpoints
 @app.post("/export", response_model=Dict[str, Any])
@@ -2247,7 +2421,7 @@ async def export_data(
     request: Request,
     export_request: ExportRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Export data in various formats with advanced filtering"""
     # Build query based on export request
@@ -2259,15 +2433,19 @@ async def export_data(
             query = query.filter(
                 or_(
                     Record.title.ilike(f"%{export_request.query.query}%"),
-                    Record.description.ilike(f"%{export_request.query.query}%")
+                    Record.description.ilike(f"%{export_request.query.query}%"),
                 )
             )
 
         if export_request.query.jurisdiction_ids:
-            query = query.filter(Record.jurisdiction_id.in_(export_request.query.jurisdiction_ids))
+            query = query.filter(
+                Record.jurisdiction_id.in_(export_request.query.jurisdiction_ids)
+            )
 
         if export_request.query.record_types:
-            query = query.filter(Record.record_type.in_(export_request.query.record_types))
+            query = query.filter(
+                Record.record_type.in_(export_request.query.record_types)
+            )
 
         if export_request.query.date_from:
             query = query.filter(Record.date >= export_request.query.date_from)
@@ -2292,54 +2470,70 @@ async def export_data(
     if export_request.format == "csv":
         # Create CSV export
         output = io.StringIO()
-        fieldnames = ["id", "title", "description", "record_type", "amount", "date", "jurisdiction_id"]
+        fieldnames = [
+            "id",
+            "title",
+            "description",
+            "record_type",
+            "amount",
+            "date",
+            "jurisdiction_id",
+        ]
 
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
 
         for record in records:
-            writer.writerow({
-                "id": record.id,
-                "title": record.title,
-                "description": record.description,
-                "record_type": record.record_type,
-                "amount": record.amount,
-                "date": record.date,
-                "jurisdiction_id": record.jurisdiction_id
-            })
+            writer.writerow(
+                {
+                    "id": record.id,
+                    "title": record.title,
+                    "description": record.description,
+                    "record_type": record.record_type,
+                    "amount": record.amount,
+                    "date": record.date,
+                    "jurisdiction_id": record.jurisdiction_id,
+                }
+            )
 
         # Return as streaming response
         return StreamingResponse(
             iter([output.getvalue()]),
             media_type="text/csv",
-            headers={"Content-Disposition": "attachment; filename=export.csv"}
+            headers={"Content-Disposition": "attachment; filename=export.csv"},
         )
 
     elif export_request.format == "excel":
         # Create Excel export
-        df = pd.DataFrame([{
-            "id": record.id,
-            "title": record.title,
-            "description": record.description,
-            "record_type": record.record_type,
-            "amount": record.amount,
-            "date": record.date,
-            "jurisdiction_id": record.jurisdiction_id
-        } for record in records])
+        df = pd.DataFrame(
+            [
+                {
+                    "id": record.id,
+                    "title": record.title,
+                    "description": record.description,
+                    "record_type": record.record_type,
+                    "amount": record.amount,
+                    "date": record.date,
+                    "jurisdiction_id": record.jurisdiction_id,
+                }
+                for record in records
+            ]
+        )
 
         output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
             df.to_excel(writer, index=False, sheet_name="Records")
 
         return StreamingResponse(
             iter([output.getvalue()]),
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": "attachment; filename=export.xlsx"}
+            headers={"Content-Disposition": "attachment; filename=export.xlsx"},
         )
 
     elif export_request.format == "xml":
         # Create XML export
         import xml.etree.ElementTree as ET
+
         root = ET.Element("records")
         root.set("count", str(len(records)))
         root.set("exported_at", datetime.utcnow().isoformat())
@@ -2349,14 +2543,20 @@ async def export_data(
             ET.SubElement(rec_elem, "title").text = record.title or ""
             ET.SubElement(rec_elem, "description").text = record.description or ""
             ET.SubElement(rec_elem, "record_type").text = record.record_type or ""
-            ET.SubElement(rec_elem, "amount").text = str(record.amount) if record.amount else ""
-            ET.SubElement(rec_elem, "date").text = str(record.date) if record.date else ""
-            ET.SubElement(rec_elem, "jurisdiction_id").text = str(record.jurisdiction_id)
+            ET.SubElement(rec_elem, "amount").text = (
+                str(record.amount) if record.amount else ""
+            )
+            ET.SubElement(rec_elem, "date").text = (
+                str(record.date) if record.date else ""
+            )
+            ET.SubElement(rec_elem, "jurisdiction_id").text = str(
+                record.jurisdiction_id
+            )
         xml_string = ET.tostring(root, encoding="unicode", xml_declaration=True)
         return StreamingResponse(
             iter([xml_string]),
             media_type="application/xml",
-            headers={"Content-Disposition": "attachment; filename=export.xml"}
+            headers={"Content-Disposition": "attachment; filename=export.xml"},
         )
 
     else:  # JSON format
@@ -2364,31 +2564,35 @@ async def export_data(
             "records": [jsonable_encoder(RecordResponse.from_orm(r)) for r in records],
             "count": len(records),
             "format": "json",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
+
 # Integration endpoints
-@app.post("/integrate/neural-network", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
+@app.post(
+    "/integrate/neural-network",
+    response_model=Dict[str, Any],
+    dependencies=[Depends(RoleChecker(["admin", "user"]))],
+)
 @rate_limit(max_requests=10, window=60)
 async def integrate_neural_network(
     request: Request,
     record_id: int,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Integrate neural network processing for a record"""
     if not settings.enable_neural_network_integration:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Neural network integration is disabled"
+            detail="Neural network integration is disabled",
         )
 
     record = db.query(Record).filter(Record.id == record_id).first()
     if not record:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Record not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Record not found"
         )
 
     # Simulate neural network processing in background
@@ -2413,7 +2617,9 @@ async def integrate_neural_network(
             logger.info(f"Neural network processing completed for record {record_id}")
 
         except Exception as e:
-            logger.error(f"Neural network processing failed for record {record_id}: {e}")
+            logger.error(
+                f"Neural network processing failed for record {record_id}: {e}"
+            )
             db.rollback()
 
     background_tasks.add_task(process_with_neural_network)
@@ -2421,30 +2627,36 @@ async def integrate_neural_network(
     return {
         "message": "Neural network processing started",
         "record_id": record_id,
-        "status": "processing"
+        "status": "processing",
     }
 
-@app.post("/integrate/scraper", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin", "user"]))])
+
+@app.post(
+    "/integrate/scraper",
+    response_model=Dict[str, Any],
+    dependencies=[Depends(RoleChecker(["admin", "user"]))],
+)
 @rate_limit(max_requests=10, window=60)
 async def integrate_scraper(
     request: Request,
     jurisdiction_id: int,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Integrate scraper processing for a jurisdiction"""
     if not settings.enable_scraper_integration:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Scraper integration is disabled"
+            detail="Scraper integration is disabled",
         )
 
-    jurisdiction = db.query(Jurisdiction).filter(Jurisdiction.id == jurisdiction_id).first()
+    jurisdiction = (
+        db.query(Jurisdiction).filter(Jurisdiction.id == jurisdiction_id).first()
+    )
     if not jurisdiction:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Jurisdiction not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Jurisdiction not found"
         )
 
     # Simulate scraper processing in background
@@ -2469,15 +2681,19 @@ async def integrate_scraper(
                     amount=data.get("amount"),
                     date=data.get("date"),
                     metadata=data.get("metadata", {}),
-                    raw_data=data
+                    raw_data=data,
                 )
                 db.add(record)
 
             db.commit()
-            logger.info(f"Scraper processing completed for jurisdiction {jurisdiction_id}")
+            logger.info(
+                f"Scraper processing completed for jurisdiction {jurisdiction_id}"
+            )
 
         except Exception as e:
-            logger.error(f"Scraper processing failed for jurisdiction {jurisdiction_id}: {e}")
+            logger.error(
+                f"Scraper processing failed for jurisdiction {jurisdiction_id}: {e}"
+            )
             db.rollback()
 
     background_tasks.add_task(process_with_scraper)
@@ -2485,11 +2701,16 @@ async def integrate_scraper(
     return {
         "message": "Scraper processing started",
         "jurisdiction_id": jurisdiction_id,
-        "status": "processing"
+        "status": "processing",
     }
 
+
 # Cache management endpoints
-@app.get("/cache/stats", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin"]))])
+@app.get(
+    "/cache/stats",
+    response_model=Dict[str, Any],
+    dependencies=[Depends(RoleChecker(["admin"]))],
+)
 async def get_cache_stats():
     """Get cache statistics"""
     if not redis_client:
@@ -2503,13 +2724,18 @@ async def get_cache_stats():
                 "used_memory": info.get("used_memory", 0),
                 "keys": info.get("db0", {}).get("keys", 0),
                 "uptime": info.get("uptime_in_seconds", 0),
-                "connected_clients": info.get("connected_clients", 0)
-            }
+                "connected_clients": info.get("connected_clients", 0),
+            },
         }
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
-@app.delete("/cache/clear", response_model=Dict[str, Any], dependencies=[Depends(RoleChecker(["admin"]))])
+
+@app.delete(
+    "/cache/clear",
+    response_model=Dict[str, Any],
+    dependencies=[Depends(RoleChecker(["admin"]))],
+)
 async def clear_cache():
     """Clear all cache entries"""
     if not redis_client:
@@ -2521,9 +2747,11 @@ async def clear_cache():
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
+
 # =============================================================================
 # ANALYTICS ENDPOINTS (Phase 3: Data & ML)
 # =============================================================================
+
 
 @app.get("/analytics/time-series")
 @rate_limit(max_requests=30, window=60)
@@ -2532,20 +2760,21 @@ async def get_analytics_time_series(
     request: Request,
     period: str = Query("month", description="Group by: day, week, month"),
     months: int = Query(12, ge=1, le=60, description="How many months back"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get record counts over time for charts and visualizations."""
-    from sqlalchemy import func, extract
     from datetime import datetime, timedelta
+
+    from sqlalchemy import extract, func
 
     cutoff = datetime.utcnow() - timedelta(days=months * 30)
 
     if period == "day":
         group_col = func.date(Record.date)
     elif period == "week":
-        group_col = func.date_trunc('week', Record.date)
+        group_col = func.date_trunc("week", Record.date)
     else:
-        group_col = func.date_trunc('month', Record.date)
+        group_col = func.date_trunc("month", Record.date)
 
     try:
         results = (
@@ -2557,10 +2786,7 @@ async def get_analytics_time_series(
         )
         return {
             "period": period,
-            "data": [
-                {"date": str(r.period), "count": r.count}
-                for r in results
-            ]
+            "data": [{"date": str(r.period), "count": r.count} for r in results],
         }
     except Exception as e:
         logger.warning(f"Analytics time-series fallback: {e}")
@@ -2570,10 +2796,7 @@ async def get_analytics_time_series(
 @app.get("/analytics/summary")
 @rate_limit(max_requests=30, window=60)
 @cache_response(expiration=1800)
-async def get_analytics_summary(
-    request: Request,
-    db: Session = Depends(get_db)
-):
+async def get_analytics_summary(request: Request, db: Session = Depends(get_db)):
     """Get analytics summary: record types, jurisdiction coverage, totals."""
     from sqlalchemy import func
 
@@ -2596,35 +2819,45 @@ async def get_analytics_summary(
                 "entities": total_entities,
                 "total_amount": float(total_amount),
             },
-            "record_type_distribution": {
-                t: c for t, c in type_dist if t
-            }
+            "record_type_distribution": {t: c for t, c in type_dist if t},
         }
     except Exception as e:
         logger.warning(f"Analytics summary fallback: {e}")
-        return {"totals": {"records": 0, "jurisdictions": 0, "entities": 0, "total_amount": 0}, "record_type_distribution": {}}
+        return {
+            "totals": {
+                "records": 0,
+                "jurisdictions": 0,
+                "entities": 0,
+                "total_amount": 0,
+            },
+            "record_type_distribution": {},
+        }
 
 
 @app.get("/analytics/trends")
 @rate_limit(max_requests=20, window=60)
 @cache_response(expiration=3600)
-async def get_analytics_trends(
-    request: Request,
-    db: Session = Depends(get_db)
-):
+async def get_analytics_trends(request: Request, db: Session = Depends(get_db)):
     """Get trend analysis: week-over-week growth rates."""
-    from sqlalchemy import func
     from datetime import datetime, timedelta
+
+    from sqlalchemy import func
 
     now = datetime.utcnow()
     this_week = now - timedelta(days=7)
     last_week = now - timedelta(days=14)
 
     try:
-        current_count = db.query(func.count(Record.id)).filter(Record.date >= this_week).scalar() or 0
-        previous_count = db.query(func.count(Record.id)).filter(
-            Record.date >= last_week, Record.date < this_week
-        ).scalar() or 0
+        current_count = (
+            db.query(func.count(Record.id)).filter(Record.date >= this_week).scalar()
+            or 0
+        )
+        previous_count = (
+            db.query(func.count(Record.id))
+            .filter(Record.date >= last_week, Record.date < this_week)
+            .scalar()
+            or 0
+        )
 
         growth_rate = ((current_count - previous_count) / max(previous_count, 1)) * 100
 
@@ -2632,11 +2865,18 @@ async def get_analytics_trends(
             "current_week_records": current_count,
             "previous_week_records": previous_count,
             "growth_rate_percent": round(growth_rate, 1),
-            "trend": "up" if growth_rate > 0 else ("down" if growth_rate < 0 else "flat")
+            "trend": (
+                "up" if growth_rate > 0 else ("down" if growth_rate < 0 else "flat")
+            ),
         }
     except Exception as e:
         logger.warning(f"Analytics trends fallback: {e}")
-        return {"current_week_records": 0, "previous_week_records": 0, "growth_rate_percent": 0, "trend": "flat"}
+        return {
+            "current_week_records": 0,
+            "previous_week_records": 0,
+            "growth_rate_percent": 0,
+            "trend": "flat",
+        }
 
 
 @app.get("/admin/scrapers/status", dependencies=[Depends(RoleChecker(["admin"]))])
@@ -2644,11 +2884,12 @@ async def get_analytics_trends(
 async def get_scraper_status(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Get scraper health status per jurisdiction. Admin only."""
-    from sqlalchemy import func
     from datetime import datetime, timedelta
+
+    from sqlalchemy import func
 
     try:
         # Get record counts and last update per jurisdiction
@@ -2658,7 +2899,7 @@ async def get_scraper_status(
                 Jurisdiction.name,
                 Jurisdiction.state_code,
                 func.count(Record.id).label("record_count"),
-                func.max(Record.date).label("last_record_date")
+                func.max(Record.date).label("last_record_date"),
             )
             .outerjoin(Record, Record.jurisdiction_id == Jurisdiction.id)
             .group_by(Jurisdiction.id, Jurisdiction.name, Jurisdiction.state_code)
@@ -2669,22 +2910,34 @@ async def get_scraper_status(
 
         scrapers = []
         for stat in jurisdiction_stats:
-            is_stale = stat.last_record_date is None or stat.last_record_date < stale_threshold
-            scrapers.append({
-                "jurisdiction_id": stat.id,
-                "jurisdiction_name": stat.name,
-                "state_code": stat.state_code,
-                "record_count": stat.record_count,
-                "last_updated": stat.last_record_date.isoformat() if stat.last_record_date else None,
-                "status": "stale" if is_stale else "active",
-                "health": "warning" if stat.record_count < 10 else ("healthy" if not is_stale else "stale")
-            })
+            is_stale = (
+                stat.last_record_date is None or stat.last_record_date < stale_threshold
+            )
+            scrapers.append(
+                {
+                    "jurisdiction_id": stat.id,
+                    "jurisdiction_name": stat.name,
+                    "state_code": stat.state_code,
+                    "record_count": stat.record_count,
+                    "last_updated": (
+                        stat.last_record_date.isoformat()
+                        if stat.last_record_date
+                        else None
+                    ),
+                    "status": "stale" if is_stale else "active",
+                    "health": (
+                        "warning"
+                        if stat.record_count < 10
+                        else ("healthy" if not is_stale else "stale")
+                    ),
+                }
+            )
 
         return {
             "total_jurisdictions": len(scrapers),
             "active": sum(1 for s in scrapers if s["status"] == "active"),
             "stale": sum(1 for s in scrapers if s["status"] == "stale"),
-            "scrapers": scrapers
+            "scrapers": scrapers,
         }
     except Exception as e:
         logger.error(f"Scraper status error: {e}")
@@ -2696,7 +2949,7 @@ async def get_scraper_status(
 async def get_data_quality(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Get data quality metrics: completeness per field across all records. Admin only."""
     from sqlalchemy import func
@@ -2716,25 +2969,33 @@ async def get_data_quality(
 
         field_metrics = []
         for name, col in fields:
-            non_null = db.query(func.count(Record.id)).filter(col.isnot(None)).scalar() or 0
+            non_null = (
+                db.query(func.count(Record.id)).filter(col.isnot(None)).scalar() or 0
+            )
             completeness = round((non_null / total) * 100, 1)
-            field_metrics.append({
-                "field": name,
-                "populated": non_null,
-                "total": total,
-                "completeness_percent": completeness
-            })
+            field_metrics.append(
+                {
+                    "field": name,
+                    "populated": non_null,
+                    "total": total,
+                    "completeness_percent": completeness,
+                }
+            )
 
-        avg_quality = round(sum(f["completeness_percent"] for f in field_metrics) / len(field_metrics), 1)
+        avg_quality = round(
+            sum(f["completeness_percent"] for f in field_metrics) / len(field_metrics),
+            1,
+        )
 
         return {
             "total_records": total,
             "overall_quality_score": avg_quality,
-            "fields": field_metrics
+            "fields": field_metrics,
         }
     except Exception as e:
         logger.error(f"Data quality error: {e}")
         return {"total_records": 0, "overall_quality_score": 0, "fields": []}
+
 
 # Add middleware
 app.add_middleware(
@@ -2752,16 +3013,25 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 # GOAT DNA ROUTES (Phase 6)
 # =============================================================================
 try:
-    from routes import agents_router, anomalies_router, intelligence_router, intake_router, reports_router, snapshots_router, whatif_router, explainability_router
-    from middleware.prometheus import PrometheusMiddleware, metrics_endpoint
     from middleware.monitoring import MonitoringMiddleware, health_checker
-    
+    from middleware.prometheus import PrometheusMiddleware, metrics_endpoint
+    from routes import (
+        agents_router,
+        anomalies_router,
+        explainability_router,
+        intake_router,
+        intelligence_router,
+        reports_router,
+        snapshots_router,
+        whatif_router,
+    )
+
     # Add monitoring middleware (request ID tracking, structured logging, latency)
     app.add_middleware(MonitoringMiddleware)
-    
+
     # Add Prometheus metrics middleware
     app.add_middleware(PrometheusMiddleware)
-    
+
     # Add GOAT API routers
     app.include_router(agents_router, prefix="/api/v2", tags=["agents"])
     app.include_router(anomalies_router, prefix="/api/v2", tags=["anomalies"])
@@ -2771,28 +3041,33 @@ try:
     app.include_router(snapshots_router, prefix="/api/v2", tags=["snapshots"])
     app.include_router(whatif_router, prefix="/api/v2", tags=["what-if"])
     app.include_router(explainability_router, prefix="/api/v2", tags=["explainability"])
-    
+
     # OAuth routes (Google, GitHub login)
     try:
         from auth.oauth import router as oauth_router
+
         app.include_router(oauth_router, prefix="/api/v2", tags=["oauth"])
         logger.info("✅ OAuth routes loaded")
     except ImportError as oauth_err:
         logger.warning(f"OAuth routes not loaded: {oauth_err}")
-    
+
     # Prometheus metrics endpoint
-    app.add_api_route("/metrics", metrics_endpoint, methods=["GET"], tags=["monitoring"])
-    
+    app.add_api_route(
+        "/metrics", metrics_endpoint, methods=["GET"], tags=["monitoring"]
+    )
+
     # Health check endpoints (K8s liveness/readiness probes)
     @app.get("/health/live", tags=["monitoring"])
     async def liveness_check():
         return health_checker.get_liveness()
-    
+
     @app.get("/health/ready", tags=["monitoring"])
     async def readiness_check():
         return health_checker.get_readiness()
-    
-    logger.info("✅ GOAT DNA routes loaded (agents, anomalies, intelligence, intake, reports, snapshots)")
+
+    logger.info(
+        "✅ GOAT DNA routes loaded (agents, anomalies, intelligence, intake, reports, snapshots)"
+    )
     logger.info("✅ MonitoringMiddleware + health checks enabled")
 except ImportError as e:
     logger.warning(f"⚠️ GOAT DNA routes not available: {e}")
@@ -2806,6 +3081,7 @@ async def http_exception_handler(request, exc):
         content={"message": exc.detail},
     )
 
+
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc):
     logger.error(f"Unexpected error: {exc}")
@@ -2814,13 +3090,15 @@ async def general_exception_handler(request, exc):
         content={"message": "Internal server error"},
     )
 
+
 # ==================== SAVED SEARCHES ENDPOINTS ====================
+
 
 @app.post("/saved-searches", response_model=SavedSearchResponse)
 async def create_saved_search(
     search_data: SavedSearchCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Create a new saved search for the current user."""
     try:
@@ -2830,12 +3108,12 @@ async def create_saved_search(
             raise HTTPException(status_code=404, detail="User not found")
 
         saved_search = SavedSearch(
-            user_id=user_data['id'],
+            user_id=user_data["id"],
             name=search_data.name,
             description=search_data.description,
             search_params=search_data.search_params,
             notify_on_new_results=search_data.notify_on_new_results,
-            notification_frequency=search_data.notification_frequency
+            notification_frequency=search_data.notification_frequency,
         )
         db.add(saved_search)
         db.commit()
@@ -2846,13 +3124,15 @@ async def create_saved_search(
             name=saved_search.name,
             description=saved_search.description,
             search_params=saved_search.search_params,
-            last_run=saved_search.last_run.isoformat() if saved_search.last_run else None,
+            last_run=(
+                saved_search.last_run.isoformat() if saved_search.last_run else None
+            ),
             run_count=saved_search.run_count,
             notify_on_new_results=saved_search.notify_on_new_results,
             notification_frequency=saved_search.notification_frequency,
             last_result_count=saved_search.last_result_count,
             created_at=saved_search.created_at.isoformat(),
-            updated_at=saved_search.updated_at.isoformat()
+            updated_at=saved_search.updated_at.isoformat(),
         )
     except SQLAlchemyError as e:
         db.rollback()
@@ -2865,16 +3145,21 @@ async def get_saved_searches(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
     limit: int = Query(default=50, le=100),
-    offset: int = Query(default=0, ge=0)
+    offset: int = Query(default=0, ge=0),
 ):
     """Get all saved searches for the current user."""
     user_data = user_db_manager.get_user_by_username(current_user.username)
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
 
-    searches = db.query(SavedSearch).filter(
-        SavedSearch.user_id == user_data['id']
-    ).order_by(desc(SavedSearch.updated_at)).offset(offset).limit(limit).all()
+    searches = (
+        db.query(SavedSearch)
+        .filter(SavedSearch.user_id == user_data["id"])
+        .order_by(desc(SavedSearch.updated_at))
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
     return [
         SavedSearchResponse(
@@ -2888,7 +3173,7 @@ async def get_saved_searches(
             notification_frequency=s.notification_frequency,
             last_result_count=s.last_result_count,
             created_at=s.created_at.isoformat(),
-            updated_at=s.updated_at.isoformat()
+            updated_at=s.updated_at.isoformat(),
         )
         for s in searches
     ]
@@ -2898,17 +3183,18 @@ async def get_saved_searches(
 async def get_saved_search(
     search_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Get a specific saved search."""
     user_data = user_db_manager.get_user_by_username(current_user.username)
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
 
-    saved_search = db.query(SavedSearch).filter(
-        SavedSearch.id == search_id,
-        SavedSearch.user_id == user_data['id']
-    ).first()
+    saved_search = (
+        db.query(SavedSearch)
+        .filter(SavedSearch.id == search_id, SavedSearch.user_id == user_data["id"])
+        .first()
+    )
 
     if not saved_search:
         raise HTTPException(status_code=404, detail="Saved search not found")
@@ -2924,7 +3210,7 @@ async def get_saved_search(
         notification_frequency=saved_search.notification_frequency,
         last_result_count=saved_search.last_result_count,
         created_at=saved_search.created_at.isoformat(),
-        updated_at=saved_search.updated_at.isoformat()
+        updated_at=saved_search.updated_at.isoformat(),
     )
 
 
@@ -2933,17 +3219,18 @@ async def update_saved_search(
     search_id: int,
     update_data: SavedSearchUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Update a saved search."""
     user_data = user_db_manager.get_user_by_username(current_user.username)
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
 
-    saved_search = db.query(SavedSearch).filter(
-        SavedSearch.id == search_id,
-        SavedSearch.user_id == user_data['id']
-    ).first()
+    saved_search = (
+        db.query(SavedSearch)
+        .filter(SavedSearch.id == search_id, SavedSearch.user_id == user_data["id"])
+        .first()
+    )
 
     if not saved_search:
         raise HTTPException(status_code=404, detail="Saved search not found")
@@ -2965,7 +3252,7 @@ async def update_saved_search(
         notification_frequency=saved_search.notification_frequency,
         last_result_count=saved_search.last_result_count,
         created_at=saved_search.created_at.isoformat(),
-        updated_at=saved_search.updated_at.isoformat()
+        updated_at=saved_search.updated_at.isoformat(),
     )
 
 
@@ -2973,17 +3260,18 @@ async def update_saved_search(
 async def delete_saved_search(
     search_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Delete a saved search."""
     user_data = user_db_manager.get_user_by_username(current_user.username)
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
 
-    saved_search = db.query(SavedSearch).filter(
-        SavedSearch.id == search_id,
-        SavedSearch.user_id == user_data['id']
-    ).first()
+    saved_search = (
+        db.query(SavedSearch)
+        .filter(SavedSearch.id == search_id, SavedSearch.user_id == user_data["id"])
+        .first()
+    )
 
     if not saved_search:
         raise HTTPException(status_code=404, detail="Saved search not found")
@@ -2998,17 +3286,18 @@ async def delete_saved_search(
 async def run_saved_search(
     search_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Execute a saved search and return results."""
     user_data = user_db_manager.get_user_by_username(current_user.username)
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
 
-    saved_search = db.query(SavedSearch).filter(
-        SavedSearch.id == search_id,
-        SavedSearch.user_id == user_data['id']
-    ).first()
+    saved_search = (
+        db.query(SavedSearch)
+        .filter(SavedSearch.id == search_id, SavedSearch.user_id == user_data["id"])
+        .first()
+    )
 
     if not saved_search:
         raise HTTPException(status_code=404, detail="Saved search not found")
@@ -3017,40 +3306,43 @@ async def run_saved_search(
     params = saved_search.search_params
     query = db.query(Record)
 
-    if params.get('query'):
+    if params.get("query"):
         query = query.filter(
             or_(
                 Record.title.ilike(f"%{params['query']}%"),
-                Record.description.ilike(f"%{params['query']}%")
+                Record.description.ilike(f"%{params['query']}%"),
             )
         )
 
-    if params.get('jurisdiction_ids'):
-        query = query.filter(Record.jurisdiction_id.in_(params['jurisdiction_ids']))
+    if params.get("jurisdiction_ids"):
+        query = query.filter(Record.jurisdiction_id.in_(params["jurisdiction_ids"]))
 
-    if params.get('record_types'):
-        query = query.filter(Record.record_type.in_(params['record_types']))
+    if params.get("record_types"):
+        query = query.filter(Record.record_type.in_(params["record_types"]))
 
-    if params.get('date_from'):
-        query = query.filter(Record.date >= params['date_from'])
+    if params.get("date_from"):
+        query = query.filter(Record.date >= params["date_from"])
 
-    if params.get('date_to'):
-        query = query.filter(Record.date <= params['date_to'])
+    if params.get("date_to"):
+        query = query.filter(Record.date <= params["date_to"])
 
-    if params.get('amount_min'):
-        query = query.filter(Record.amount >= params['amount_min'])
+    if params.get("amount_min"):
+        query = query.filter(Record.amount >= params["amount_min"])
 
-    if params.get('amount_max'):
-        query = query.filter(Record.amount <= params['amount_max'])
+    if params.get("amount_max"):
+        query = query.filter(Record.amount <= params["amount_max"])
 
     # Get results
     total_count = query.count()
-    page = params.get('page', 1)
-    page_size = params.get('page_size', 50)
+    page = params.get("page", 1)
+    page_size = params.get("page_size", 50)
 
-    records = query.order_by(desc(Record.date)).offset(
-        (page - 1) * page_size
-    ).limit(page_size).all()
+    records = (
+        query.order_by(desc(Record.date))
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
 
     # Update saved search stats
     saved_search.last_run = datetime.utcnow()
@@ -3060,10 +3352,10 @@ async def run_saved_search(
 
     # Track activity
     activity = UserActivity(
-        user_id=user_data['id'],
-        activity_type='run_saved_search',
+        user_id=user_data["id"],
+        activity_type="run_saved_search",
         search_id=search_id,
-        activity_data={'result_count': total_count}
+        activity_data={"result_count": total_count},
     )
     db.add(activity)
     db.commit()
@@ -3074,17 +3366,18 @@ async def run_saved_search(
         "records": records,
         "total_count": total_count,
         "page": page,
-        "page_size": page_size
+        "page_size": page_size,
     }
 
 
 # ==================== FAVORITES ENDPOINTS ====================
 
+
 @app.post("/favorites", response_model=FavoriteResponse)
 async def create_favorite(
     favorite_data: FavoriteCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Add a record or entity to favorites."""
     user_data = user_db_manager.get_user_by_username(current_user.username)
@@ -3092,13 +3385,21 @@ async def create_favorite(
         raise HTTPException(status_code=404, detail="User not found")
 
     # Determine favorite type
-    favorite_type = 'record' if favorite_data.record_id else 'entity'
+    favorite_type = "record" if favorite_data.record_id else "entity"
 
     # Check if already favorited
-    existing = db.query(UserFavorite).filter(
-        UserFavorite.user_id == user_data['id'],
-        UserFavorite.record_id == favorite_data.record_id if favorite_data.record_id else UserFavorite.entity_id == favorite_data.entity_id
-    ).first()
+    existing = (
+        db.query(UserFavorite)
+        .filter(
+            UserFavorite.user_id == user_data["id"],
+            (
+                UserFavorite.record_id == favorite_data.record_id
+                if favorite_data.record_id
+                else UserFavorite.entity_id == favorite_data.entity_id
+            ),
+        )
+        .first()
+    )
 
     if existing:
         raise HTTPException(status_code=400, detail="Already in favorites")
@@ -3114,12 +3415,12 @@ async def create_favorite(
             raise HTTPException(status_code=404, detail="Entity not found")
 
     favorite = UserFavorite(
-        user_id=user_data['id'],
+        user_id=user_data["id"],
         record_id=favorite_data.record_id,
         entity_id=favorite_data.entity_id,
         favorite_type=favorite_type,
         notes=favorite_data.notes,
-        tags=favorite_data.tags
+        tags=favorite_data.tags,
     )
     db.add(favorite)
     db.commit()
@@ -3132,7 +3433,7 @@ async def create_favorite(
         entity_id=favorite.entity_id,
         notes=favorite.notes,
         tags=favorite.tags,
-        created_at=favorite.created_at.isoformat()
+        created_at=favorite.created_at.isoformat(),
     )
 
 
@@ -3142,19 +3443,21 @@ async def get_favorites(
     current_user: User = Depends(get_current_active_user),
     favorite_type: Optional[str] = None,
     limit: int = Query(default=50, le=100),
-    offset: int = Query(default=0, ge=0)
+    offset: int = Query(default=0, ge=0),
 ):
     """Get all favorites for the current user."""
     user_data = user_db_manager.get_user_by_username(current_user.username)
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
 
-    query = db.query(UserFavorite).filter(UserFavorite.user_id == user_data['id'])
+    query = db.query(UserFavorite).filter(UserFavorite.user_id == user_data["id"])
 
     if favorite_type:
         query = query.filter(UserFavorite.favorite_type == favorite_type)
 
-    favorites = query.order_by(desc(UserFavorite.created_at)).offset(offset).limit(limit).all()
+    favorites = (
+        query.order_by(desc(UserFavorite.created_at)).offset(offset).limit(limit).all()
+    )
 
     results = []
     for fav in favorites:
@@ -3165,7 +3468,7 @@ async def get_favorites(
             entity_id=fav.entity_id,
             notes=fav.notes,
             tags=fav.tags,
-            created_at=fav.created_at.isoformat()
+            created_at=fav.created_at.isoformat(),
         )
 
         # Include record/entity details
@@ -3173,21 +3476,21 @@ async def get_favorites(
             record = db.query(Record).filter(Record.id == fav.record_id).first()
             if record:
                 response.record = {
-                    'id': record.id,
-                    'title': record.title,
-                    'record_type': record.record_type,
-                    'date': record.date.isoformat() if record.date else None,
-                    'amount': record.amount
+                    "id": record.id,
+                    "title": record.title,
+                    "record_type": record.record_type,
+                    "date": record.date.isoformat() if record.date else None,
+                    "amount": record.amount,
                 }
         elif fav.entity_id:
             entity = db.query(Entity).filter(Entity.id == fav.entity_id).first()
             if entity:
                 response.entity = {
-                    'id': entity.id,
-                    'name': entity.entity_name,
-                    'type': entity.entity_type,
-                    'city': entity.city,
-                    'state': entity.state
+                    "id": entity.id,
+                    "name": entity.entity_name,
+                    "type": entity.entity_type,
+                    "city": entity.city,
+                    "state": entity.state,
                 }
 
         results.append(response)
@@ -3199,17 +3502,18 @@ async def get_favorites(
 async def delete_favorite(
     favorite_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Remove an item from favorites."""
     user_data = user_db_manager.get_user_by_username(current_user.username)
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
 
-    favorite = db.query(UserFavorite).filter(
-        UserFavorite.id == favorite_id,
-        UserFavorite.user_id == user_data['id']
-    ).first()
+    favorite = (
+        db.query(UserFavorite)
+        .filter(UserFavorite.id == favorite_id, UserFavorite.user_id == user_data["id"])
+        .first()
+    )
 
     if not favorite:
         raise HTTPException(status_code=404, detail="Favorite not found")
@@ -3225,48 +3529,57 @@ async def check_favorite(
     item_type: str,
     item_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Check if a record or entity is in favorites."""
     user_data = user_db_manager.get_user_by_username(current_user.username)
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if item_type not in ['record', 'entity']:
+    if item_type not in ["record", "entity"]:
         raise HTTPException(status_code=400, detail="Invalid item type")
 
-    if item_type == 'record':
-        favorite = db.query(UserFavorite).filter(
-            UserFavorite.user_id == user_data['id'],
-            UserFavorite.record_id == item_id
-        ).first()
+    if item_type == "record":
+        favorite = (
+            db.query(UserFavorite)
+            .filter(
+                UserFavorite.user_id == user_data["id"],
+                UserFavorite.record_id == item_id,
+            )
+            .first()
+        )
     else:
-        favorite = db.query(UserFavorite).filter(
-            UserFavorite.user_id == user_data['id'],
-            UserFavorite.entity_id == item_id
-        ).first()
+        favorite = (
+            db.query(UserFavorite)
+            .filter(
+                UserFavorite.user_id == user_data["id"],
+                UserFavorite.entity_id == item_id,
+            )
+            .first()
+        )
 
     return {
         "is_favorite": favorite is not None,
-        "favorite_id": favorite.id if favorite else None
+        "favorite_id": favorite.id if favorite else None,
     }
 
 
 # ==================== ACTIVITY ENDPOINTS ====================
+
 
 @app.get("/activities/recent", response_model=List[ActivityResponse])
 async def get_recent_activities(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
     activity_type: Optional[str] = None,
-    limit: int = Query(default=20, le=100)
+    limit: int = Query(default=20, le=100),
 ):
     """Get recent activities for the current user."""
     user_data = user_db_manager.get_user_by_username(current_user.username)
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
 
-    query = db.query(UserActivity).filter(UserActivity.user_id == user_data['id'])
+    query = db.query(UserActivity).filter(UserActivity.user_id == user_data["id"])
 
     if activity_type:
         query = query.filter(UserActivity.activity_type == activity_type)
@@ -3281,7 +3594,7 @@ async def get_recent_activities(
             entity_id=a.entity_id,
             search_id=a.search_id,
             activity_data=a.activity_data,
-            created_at=a.created_at.isoformat()
+            created_at=a.created_at.isoformat(),
         )
         for a in activities
     ]
@@ -3295,7 +3608,7 @@ async def track_activity(
     entity_id: Optional[int] = None,
     activity_data: Optional[Dict[str, Any]] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Track a user activity."""
     user_data = user_db_manager.get_user_by_username(current_user.username)
@@ -3303,13 +3616,13 @@ async def track_activity(
         raise HTTPException(status_code=404, detail="User not found")
 
     activity = UserActivity(
-        user_id=user_data['id'],
+        user_id=user_data["id"],
         activity_type=activity_type,
         record_id=record_id,
         entity_id=entity_id,
         activity_data=activity_data,
         ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get('user-agent', '')[:500]
+        user_agent=request.headers.get("user-agent", "")[:500],
     )
     db.add(activity)
     db.commit()
@@ -3321,7 +3634,7 @@ async def track_activity(
 async def get_activity_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
-    days: int = Query(default=30, le=365)
+    days: int = Query(default=30, le=365),
 ):
     """Get activity statistics for the current user."""
     user_data = user_db_manager.get_user_by_username(current_user.username)
@@ -3331,54 +3644,74 @@ async def get_activity_stats(
     cutoff_date = datetime.utcnow() - timedelta(days=days)
 
     # Get counts by activity type
-    activity_counts = db.query(
-        UserActivity.activity_type,
-        func.count(UserActivity.id).label('count')
-    ).filter(
-        UserActivity.user_id == user_data['id'],
-        UserActivity.created_at >= cutoff_date
-    ).group_by(UserActivity.activity_type).all()
+    activity_counts = (
+        db.query(UserActivity.activity_type, func.count(UserActivity.id).label("count"))
+        .filter(
+            UserActivity.user_id == user_data["id"],
+            UserActivity.created_at >= cutoff_date,
+        )
+        .group_by(UserActivity.activity_type)
+        .all()
+    )
 
     # Get total counts
-    total_activities = db.query(func.count(UserActivity.id)).filter(
-        UserActivity.user_id == user_data['id'],
-        UserActivity.created_at >= cutoff_date
-    ).scalar()
+    total_activities = (
+        db.query(func.count(UserActivity.id))
+        .filter(
+            UserActivity.user_id == user_data["id"],
+            UserActivity.created_at >= cutoff_date,
+        )
+        .scalar()
+    )
 
     # Get unique records viewed
-    unique_records = db.query(func.count(func.distinct(UserActivity.record_id))).filter(
-        UserActivity.user_id == user_data['id'],
-        UserActivity.record_id.isnot(None),
-        UserActivity.created_at >= cutoff_date
-    ).scalar()
+    unique_records = (
+        db.query(func.count(func.distinct(UserActivity.record_id)))
+        .filter(
+            UserActivity.user_id == user_data["id"],
+            UserActivity.record_id.isnot(None),
+            UserActivity.created_at >= cutoff_date,
+        )
+        .scalar()
+    )
 
     # Get unique entities viewed
-    unique_entities = db.query(func.count(func.distinct(UserActivity.entity_id))).filter(
-        UserActivity.user_id == user_data['id'],
-        UserActivity.entity_id.isnot(None),
-        UserActivity.created_at >= cutoff_date
-    ).scalar()
+    unique_entities = (
+        db.query(func.count(func.distinct(UserActivity.entity_id)))
+        .filter(
+            UserActivity.user_id == user_data["id"],
+            UserActivity.entity_id.isnot(None),
+            UserActivity.created_at >= cutoff_date,
+        )
+        .scalar()
+    )
 
     return {
         "period_days": days,
         "total_activities": total_activities,
         "unique_records_viewed": unique_records,
         "unique_entities_viewed": unique_entities,
-        "by_type": {row.activity_type: row.count for row in activity_counts}
+        "by_type": {row.activity_type: row.count for row in activity_counts},
     }
 
 
 # ==================== SHARE LINK ENDPOINTS ====================
 
+
 class ShareLinkCreate(BaseModel):
     """Model for creating a share link."""
+
     record_id: Optional[int] = None
     entity_id: Optional[int] = None
     message: Optional[str] = None
-    expires_in_days: Optional[int] = Field(None, ge=1, le=365, description="Days until link expires (1-365)")
+    expires_in_days: Optional[int] = Field(
+        None, ge=1, le=365, description="Days until link expires (1-365)"
+    )
+
 
 class ShareLinkResponse(BaseModel):
     """Model for share link response."""
+
     id: int
     token: str
     share_url: str
@@ -3391,8 +3724,10 @@ class ShareLinkResponse(BaseModel):
     view_count: int
     created_at: datetime
 
+
 class SharedItemResponse(BaseModel):
     """Model for publicly shared item response."""
+
     share_type: str
     shared_by: str
     message: Optional[str] = None
@@ -3400,11 +3735,12 @@ class SharedItemResponse(BaseModel):
     record: Optional[dict] = None
     entity: Optional[dict] = None
 
+
 @app.post("/shares", response_model=ShareLinkResponse)
 async def create_share_link(
     share_data: ShareLinkCreate,
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Create a shareable link for a record or entity.
@@ -3416,12 +3752,12 @@ async def create_share_link(
     if not share_data.record_id and not share_data.entity_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Either record_id or entity_id must be provided"
+            detail="Either record_id or entity_id must be provided",
         )
     if share_data.record_id and share_data.entity_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only one of record_id or entity_id should be provided"
+            detail="Only one of record_id or entity_id should be provided",
         )
 
     # Get user data
@@ -3443,7 +3779,7 @@ async def create_share_link(
         share_type = "entity"
 
     # Generate unique token
-    token = str(uuid.uuid4()).replace('-', '')[:32]
+    token = str(uuid.uuid4()).replace("-", "")[:32]
 
     # Calculate expiration
     expires_at = None
@@ -3452,7 +3788,7 @@ async def create_share_link(
 
     # Create share link
     share_link = ShareLink(
-        user_id=user_data['id'],
+        user_id=user_data["id"],
         token=token,
         record_id=share_data.record_id,
         entity_id=share_data.entity_id,
@@ -3460,7 +3796,7 @@ async def create_share_link(
         message=share_data.message,
         expires_at=expires_at,
         is_active=True,
-        view_count=0
+        view_count=0,
     )
 
     db.add(share_link)
@@ -3468,7 +3804,7 @@ async def create_share_link(
     db.refresh(share_link)
 
     # Build share URL
-    base_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+    base_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
     share_url = f"{base_url}/share/{token}"
 
     return ShareLinkResponse(
@@ -3482,14 +3818,12 @@ async def create_share_link(
         expires_at=share_link.expires_at,
         is_active=share_link.is_active,
         view_count=share_link.view_count,
-        created_at=share_link.created_at
+        created_at=share_link.created_at,
     )
 
+
 @app.get("/share/{token}", response_model=SharedItemResponse)
-async def get_shared_item(
-    token: str,
-    db: Session = Depends(get_db)
-):
+async def get_shared_item(token: str, db: Session = Depends(get_db)):
     """
     Get a shared record or entity by token.
 
@@ -3497,13 +3831,16 @@ async def get_shared_item(
     It allows anyone with the share link to view the content.
     """
     # Find share link by token
-    share_link = db.query(ShareLink).filter(
-        ShareLink.token == token,
-        ShareLink.is_active == True
-    ).first()
+    share_link = (
+        db.query(ShareLink)
+        .filter(ShareLink.token == token, ShareLink.is_active == True)
+        .first()
+    )
 
     if not share_link:
-        raise HTTPException(status_code=404, detail="Share link not found or has been revoked")
+        raise HTTPException(
+            status_code=404, detail="Share link not found or has been revoked"
+        )
 
     # Check expiration
     if share_link.expires_at and share_link.expires_at < datetime.utcnow():
@@ -3516,14 +3853,18 @@ async def get_shared_item(
 
     # Get sharer info
     sharer = user_db_manager.get_user_by_id(share_link.user_id)
-    shared_by = sharer.get('full_name') or sharer.get('username', 'Unknown') if sharer else 'Unknown'
+    shared_by = (
+        sharer.get("full_name") or sharer.get("username", "Unknown")
+        if sharer
+        else "Unknown"
+    )
 
     # Build response based on share type
     response = SharedItemResponse(
         share_type=share_link.share_type,
         shared_by=shared_by,
         message=share_link.message,
-        shared_at=share_link.created_at
+        shared_at=share_link.created_at,
     )
 
     if share_link.share_type == "record":
@@ -3532,7 +3873,11 @@ async def get_shared_item(
             # Get jurisdiction name
             jurisdiction_name = None
             if record.jurisdiction_id:
-                jurisdiction = db.query(Jurisdiction).filter(Jurisdiction.id == record.jurisdiction_id).first()
+                jurisdiction = (
+                    db.query(Jurisdiction)
+                    .filter(Jurisdiction.id == record.jurisdiction_id)
+                    .first()
+                )
                 if jurisdiction:
                     jurisdiction_name = jurisdiction.name
 
@@ -3542,14 +3887,18 @@ async def get_shared_item(
                 "record_type": record.record_type,
                 "title": record.title,
                 "description": record.description,
-                "filing_date": record.filing_date.isoformat() if record.filing_date else None,
-                "effective_date": record.effective_date.isoformat() if record.effective_date else None,
+                "filing_date": (
+                    record.filing_date.isoformat() if record.filing_date else None
+                ),
+                "effective_date": (
+                    record.effective_date.isoformat() if record.effective_date else None
+                ),
                 "jurisdiction_id": record.jurisdiction_id,
                 "jurisdiction_name": jurisdiction_name,
                 "data": record.data,
                 "parties": record.parties,
                 "amounts": record.amounts,
-                "status": record.status
+                "status": record.status,
             }
     else:
         entity = db.query(Entity).filter(Entity.id == share_link.entity_id).first()
@@ -3561,18 +3910,21 @@ async def get_shared_item(
                 "normalized_name": entity.normalized_name,
                 "aliases": entity.aliases,
                 "identifiers": entity.identifiers,
-                "metadata": entity.metadata if hasattr(entity, 'metadata') else None,
-                "created_at": entity.created_at.isoformat() if entity.created_at else None
+                "metadata": entity.metadata if hasattr(entity, "metadata") else None,
+                "created_at": (
+                    entity.created_at.isoformat() if entity.created_at else None
+                ),
             }
 
     return response
+
 
 @app.get("/shares", response_model=List[ShareLinkResponse])
 async def list_user_shares(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
     offset: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100)
+    limit: int = Query(20, ge=1, le=100),
 ):
     """
     List all share links created by the current user.
@@ -3582,11 +3934,16 @@ async def list_user_shares(
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
 
-    shares = db.query(ShareLink).filter(
-        ShareLink.user_id == user_data['id']
-    ).order_by(desc(ShareLink.created_at)).offset(offset).limit(limit).all()
+    shares = (
+        db.query(ShareLink)
+        .filter(ShareLink.user_id == user_data["id"])
+        .order_by(desc(ShareLink.created_at))
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
-    base_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+    base_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
     return [
         ShareLinkResponse(
@@ -3600,16 +3957,17 @@ async def list_user_shares(
             expires_at=share.expires_at,
             is_active=share.is_active,
             view_count=share.view_count,
-            created_at=share.created_at
+            created_at=share.created_at,
         )
         for share in shares
     ]
+
 
 @app.delete("/shares/{share_id}")
 async def revoke_share_link(
     share_id: int,
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Revoke a share link (set it as inactive).
@@ -3621,10 +3979,11 @@ async def revoke_share_link(
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
 
-    share_link = db.query(ShareLink).filter(
-        ShareLink.id == share_id,
-        ShareLink.user_id == user_data['id']
-    ).first()
+    share_link = (
+        db.query(ShareLink)
+        .filter(ShareLink.id == share_id, ShareLink.user_id == user_data["id"])
+        .first()
+    )
 
     if not share_link:
         raise HTTPException(status_code=404, detail="Share link not found")
@@ -3634,11 +3993,12 @@ async def revoke_share_link(
 
     return {"message": "Share link has been revoked"}
 
+
 @app.get("/shares/{share_id}/stats")
 async def get_share_stats(
     share_id: int,
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get statistics for a share link.
@@ -3648,10 +4008,11 @@ async def get_share_stats(
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
 
-    share_link = db.query(ShareLink).filter(
-        ShareLink.id == share_id,
-        ShareLink.user_id == user_data['id']
-    ).first()
+    share_link = (
+        db.query(ShareLink)
+        .filter(ShareLink.id == share_id, ShareLink.user_id == user_data["id"])
+        .first()
+    )
 
     if not share_link:
         raise HTTPException(status_code=404, detail="Share link not found")
@@ -3659,38 +4020,53 @@ async def get_share_stats(
     return {
         "id": share_link.id,
         "view_count": share_link.view_count,
-        "last_viewed": share_link.last_viewed.isoformat() if share_link.last_viewed else None,
+        "last_viewed": (
+            share_link.last_viewed.isoformat() if share_link.last_viewed else None
+        ),
         "created_at": share_link.created_at.isoformat(),
         "is_active": share_link.is_active,
-        "expires_at": share_link.expires_at.isoformat() if share_link.expires_at else None,
-        "is_expired": share_link.expires_at < datetime.utcnow() if share_link.expires_at else False
+        "expires_at": (
+            share_link.expires_at.isoformat() if share_link.expires_at else None
+        ),
+        "is_expired": (
+            share_link.expires_at < datetime.utcnow()
+            if share_link.expires_at
+            else False
+        ),
     }
 
 
 # ==================== SUBSCRIPTION ENDPOINTS ====================
 
+
 class SubscriptionRequest(BaseModel):
     """Subscription request model."""
+
     tier: str = Field(..., description="Subscription tier: basic, pro, or enterprise")
+
 
 class CheckoutSessionResponse(BaseModel):
     """Checkout session response model."""
+
     session_id: str
     checkout_url: str
 
+
 class SubscriptionResponse(BaseModel):
     """Subscription status response model."""
+
     tier: str
     status: str
     expires_at: Optional[str] = None
     stripe_customer_id: Optional[str] = None
     checkout_url: Optional[str] = None
 
+
 @app.post("/subscription/subscribe", response_model=SubscriptionResponse)
 async def subscribe_to_plan(
     request: SubscriptionRequest,
     current_user: dict = Depends(get_current_user),
-    db_manager: DatabaseManager = Depends(get_db_manager)
+    db_manager: DatabaseManager = Depends(get_db_manager),
 ):
     """
     Subscribe to a plan (basic, pro, or enterprise).
@@ -3699,10 +4075,10 @@ async def subscribe_to_plan(
     In production mode, creates a Stripe checkout session.
     """
     tier = request.tier.lower()
-    if tier not in ['basic', 'pro', 'enterprise']:
+    if tier not in ["basic", "pro", "enterprise"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid tier. Must be basic, pro, or enterprise."
+            detail="Invalid tier. Must be basic, pro, or enterprise.",
         )
 
     username = current_user.get("username") or current_user.get("sub")
@@ -3720,54 +4096,52 @@ async def subscribe_to_plan(
             raise HTTPException(status_code=400, detail="Invalid tier")
 
         # Get or create Stripe customer
-        stripe_customer_id = user.get('stripe_customer_id')
+        stripe_customer_id = user.get("stripe_customer_id")
         if not stripe_customer_id:
             customer = stripe_service.create_customer(
-                email=user['email'],
-                name=user.get('full_name'),
-                metadata={'user_id': str(user['id'])}
+                email=user["email"],
+                name=user.get("full_name"),
+                metadata={"user_id": str(user["id"])},
             )
-            stripe_customer_id = customer['id']
+            stripe_customer_id = customer["id"]
             # Store customer ID in user record
-            db_manager.update_user(user['id'], stripe_customer_id=stripe_customer_id)
+            db_manager.update_user(user["id"], stripe_customer_id=stripe_customer_id)
 
         # Create checkout session
-        base_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+        base_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
         session = stripe_service.create_checkout_session(
             customer_id=stripe_customer_id,
             price_id=price_id,
             success_url=f"{base_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{base_url}/pricing",
-            metadata={'user_id': str(user['id']), 'tier': tier}
+            metadata={"user_id": str(user["id"]), "tier": tier},
         )
 
         return SubscriptionResponse(
             tier=tier,
             status="pending_payment",
             stripe_customer_id=stripe_customer_id,
-            checkout_url=session.get('url')
+            checkout_url=session.get("url"),
         )
     else:
         # Mock mode - directly update subscription
         from datetime import timedelta
+
         expires_at = datetime.utcnow() + timedelta(days=30)
 
         db_manager.update_user(
-            user['id'],
-            subscription_tier=tier,
-            subscription_expires=expires_at
+            user["id"], subscription_tier=tier, subscription_expires=expires_at
         )
 
         return SubscriptionResponse(
-            tier=tier,
-            status="active",
-            expires_at=expires_at.isoformat()
+            tier=tier, status="active", expires_at=expires_at.isoformat()
         )
+
 
 @app.get("/subscription/status", response_model=SubscriptionResponse)
 async def get_subscription_status(
     current_user: dict = Depends(get_current_user),
-    db_manager: DatabaseManager = Depends(get_db_manager)
+    db_manager: DatabaseManager = Depends(get_db_manager),
 ):
     """Get current user's subscription status."""
     username = current_user.get("username") or current_user.get("sub")
@@ -3777,15 +4151,16 @@ async def get_subscription_status(
         raise HTTPException(status_code=404, detail="User not found")
 
     return SubscriptionResponse(
-        tier=user.get('subscription_tier', 'free'),
-        status="active" if user.get('subscription_tier', 'free') != 'free' else "free",
-        expires_at=user.get('subscription_expires')
+        tier=user.get("subscription_tier", "free"),
+        status="active" if user.get("subscription_tier", "free") != "free" else "free",
+        expires_at=user.get("subscription_expires"),
     )
+
 
 @app.post("/subscription/cancel")
 async def cancel_subscription(
     current_user: dict = Depends(get_current_user),
-    db_manager: DatabaseManager = Depends(get_db_manager)
+    db_manager: DatabaseManager = Depends(get_db_manager),
 ):
     """Cancel current subscription."""
     username = current_user.get("username") or current_user.get("sub")
@@ -3794,24 +4169,23 @@ async def cancel_subscription(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user.get('subscription_tier', 'free') == 'free':
+    if user.get("subscription_tier", "free") == "free":
         raise HTTPException(status_code=400, detail="No active subscription to cancel")
 
     # Update to free tier
     db_manager.update_user(
-        user['id'],
-        subscription_tier='free',
-        subscription_expires=None
+        user["id"], subscription_tier="free", subscription_expires=None
     )
 
     return {"message": "Subscription cancelled", "tier": "free"}
+
 
 @app.post("/subscription/checkout")
 async def create_checkout_session(
     tier: str = Query(..., pattern="^(basic|pro|enterprise)$"),
     request: Request = None,
     current_user: dict = Depends(get_current_user),
-    db_manager: DatabaseManager = Depends(get_db_manager)
+    db_manager: DatabaseManager = Depends(get_db_manager),
 ):
     """
     Create a Stripe Checkout session for subscription.
@@ -3820,52 +4194,50 @@ async def create_checkout_session(
     user = db_manager.get_user_by_username(username)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
+
     # Get Stripe price ID
     price_id = stripe_service.get_price_id_for_tier(tier)
     if not price_id:
         raise HTTPException(status_code=400, detail=f"Invalid tier: {tier}")
-        
+
     # Ensure user has a Stripe customer ID
-    if not user.get('stripe_customer_id'):
+    if not user.get("stripe_customer_id"):
         customer = stripe_service.create_customer(
-            email=user['email'],
-            name=user.get('full_name'),
-            metadata={'user_id': user['id']}
+            email=user["email"],
+            name=user.get("full_name"),
+            metadata={"user_id": user["id"]},
         )
         # Update user with customer ID
-        db_manager.update_user(
-            user['id'],
-            stripe_customer_id=customer['id']
-        )
-        customer_id = customer['id']
+        db_manager.update_user(user["id"], stripe_customer_id=customer["id"])
+        customer_id = customer["id"]
     else:
-        customer_id = user['stripe_customer_id']
-        
+        customer_id = user["stripe_customer_id"]
+
     # Create session
     # Use request headers to determine success/cancel URLs if possible, or defaults
     base_url = str(request.base_url) if request else "http://localhost:3000"
     success_url = f"{base_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{base_url}/subscription/cancel"
-    
+
     try:
         session = stripe_service.create_checkout_session(
             customer_id=customer_id,
             price_id=price_id,
             success_url=success_url,
             cancel_url=cancel_url,
-            metadata={'user_id': user['id'], 'tier': tier}
+            metadata={"user_id": user["id"], "tier": tier},
         )
-        return {"checkout_url": session['url']}
+        return {"checkout_url": session["url"]}
     except Exception as e:
         logger.error(f"Error creating checkout session: {e}")
         raise HTTPException(status_code=500, detail="Could not create checkout session")
+
 
 @app.post("/subscription/portal")
 async def create_portal_session(
     request: Request = None,
     current_user: dict = Depends(get_current_user),
-    db_manager: DatabaseManager = Depends(get_db_manager)
+    db_manager: DatabaseManager = Depends(get_db_manager),
 ):
     """
     Create a Stripe Customer Portal session.
@@ -3874,59 +4246,57 @@ async def create_portal_session(
     user = db_manager.get_user_by_username(username)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
-    if not user.get('stripe_customer_id'):
+
+    if not user.get("stripe_customer_id"):
         raise HTTPException(status_code=400, detail="User has no billing account")
-        
+
     base_url = str(request.base_url) if request else "http://localhost:3000"
     return_url = f"{base_url}/settings"
-    
+
     try:
         session = stripe_service.create_portal_session(
-            customer_id=user['stripe_customer_id'],
-            return_url=return_url
+            customer_id=user["stripe_customer_id"], return_url=return_url
         )
-        return {"portal_url": session['url']}
+        return {"portal_url": session["url"]}
     except Exception as e:
         logger.error(f"Error creating portal session: {e}")
         raise HTTPException(status_code=500, detail="Could not create portal session")
+
 
 @app.post("/subscription/webhook")
 async def stripe_webhook(request: Request):
     """Handle Stripe webhook events."""
     payload = await request.body()
-    signature = request.headers.get('stripe-signature', '')
+    signature = request.headers.get("stripe-signature", "")
 
     event = stripe_service.verify_webhook(payload, signature)
     if not event:
         raise HTTPException(status_code=400, detail="Invalid webhook signature")
 
-    event_type = event.get('type', '')
-    data = event.get('data', {})
+    event_type = event.get("type", "")
+    data = event.get("data", {})
 
     # Handle subscription events
-    if event_type.startswith('customer.subscription'):
+    if event_type.startswith("customer.subscription"):
         result = stripe_service.handle_subscription_event(event_type, data)
 
-        if result.get('customer_id') and result.get('action'):
+        if result.get("customer_id") and result.get("action"):
             # Look up user by Stripe customer ID and update subscription
             # This would require storing stripe_customer_id in the User model
             logger.info(f"Subscription event: {result}")
 
-    elif event_type == 'checkout.session.completed':
+    elif event_type == "checkout.session.completed":
         # Checkout completed - activate subscription
         session = data
-        metadata = session.get('metadata', {})
-        user_id = metadata.get('user_id')
-        tier = metadata.get('tier')
+        metadata = session.get("metadata", {})
+        user_id = metadata.get("user_id")
+        tier = metadata.get("tier")
 
         if user_id and tier:
             db_manager = get_db_manager()
             expires_at = datetime.utcnow() + timedelta(days=30)
             db_manager.update_user(
-                int(user_id),
-                subscription_tier=tier,
-                subscription_expires=expires_at
+                int(user_id), subscription_tier=tier, subscription_expires=expires_at
             )
             logger.info(f"Activated {tier} subscription for user {user_id}")
 
@@ -3939,19 +4309,74 @@ async def stripe_webhook(request: Request):
 
 # Data category definitions for coverage tracking
 DATA_CATEGORIES = [
-    "property", "court", "business", "recorder", "sheriff",
-    "permits", "license", "voter", "vital_records", "criminal",
-    "regulatory", "financial", "asset", "education", "employment",
-    "health_safety", "transportation"
+    "property",
+    "court",
+    "business",
+    "recorder",
+    "sheriff",
+    "permits",
+    "license",
+    "voter",
+    "vital_records",
+    "criminal",
+    "regulatory",
+    "financial",
+    "asset",
+    "education",
+    "employment",
+    "health_safety",
+    "transportation",
 ]
 
 # Tier definitions based on population
 TIER_STATES = {
     1: ["CA", "TX", "FL", "NY", "PA", "IL", "OH", "GA", "NC", "MI"],
-    2: ["NJ", "VA", "WA", "AZ", "MA", "TN", "IN", "MO", "MD", "WI", "CO", "MN", "SC", "AL", "LA"],
-    3: ["KY", "OR", "OK", "CT", "UT", "IA", "NV", "AR", "MS", "KS", "NM", "NE", "ID", "WV", "HI",
-        "NH", "ME", "MT", "RI", "DE", "SD", "ND", "AK", "DC", "VT", "WY"],
-    4: ["PR", "GU", "VI", "AS", "MP"]
+    2: [
+        "NJ",
+        "VA",
+        "WA",
+        "AZ",
+        "MA",
+        "TN",
+        "IN",
+        "MO",
+        "MD",
+        "WI",
+        "CO",
+        "MN",
+        "SC",
+        "AL",
+        "LA",
+    ],
+    3: [
+        "KY",
+        "OR",
+        "OK",
+        "CT",
+        "UT",
+        "IA",
+        "NV",
+        "AR",
+        "MS",
+        "KS",
+        "NM",
+        "NE",
+        "ID",
+        "WV",
+        "HI",
+        "NH",
+        "ME",
+        "MT",
+        "RI",
+        "DE",
+        "SD",
+        "ND",
+        "AK",
+        "DC",
+        "VT",
+        "WY",
+    ],
+    4: ["PR", "GU", "VI", "AS", "MP"],
 }
 
 
@@ -3966,14 +4391,17 @@ def get_state_tier(state_code: str) -> int:
 def load_fips_data():
     """Load FIPS data from JSON files."""
     import os
-    fips_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'datagod', 'data', 'fips')
+
+    fips_dir = os.path.join(
+        os.path.dirname(__file__), "..", "..", "datagod", "data", "fips"
+    )
 
     try:
-        with open(os.path.join(fips_dir, 'us_states.json'), 'r') as f:
+        with open(os.path.join(fips_dir, "us_states.json"), "r") as f:
             states_data = json.load(f)
-        with open(os.path.join(fips_dir, 'population_data.json'), 'r') as f:
+        with open(os.path.join(fips_dir, "population_data.json"), "r") as f:
             population_data = json.load(f)
-        with open(os.path.join(fips_dir, 'us_counties_complete.json'), 'r') as f:
+        with open(os.path.join(fips_dir, "us_counties_complete.json"), "r") as f:
             counties_data = json.load(f)
         return states_data, population_data, counties_data
     except Exception as e:
@@ -3986,7 +4414,7 @@ def load_fips_data():
 async def get_coverage_summary(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Get overall coverage summary across all jurisdictions.
@@ -4010,41 +4438,58 @@ async def get_coverage_summary(
         total_jurisdictions = total_counties + total_territories
 
         if population_data:
-            total_counties = population_data.get('total_summary', {}).get('total_counties_states_dc', 3143)
+            total_counties = population_data.get("total_summary", {}).get(
+                "total_counties_states_dc", 3143
+            )
 
         # Query jurisdiction coverage from database
-        covered_jurisdictions = db.query(func.count(Jurisdiction.id)).filter(
-            Jurisdiction.record_count > 0
-        ).scalar() or 0
+        covered_jurisdictions = (
+            db.query(func.count(Jurisdiction.id))
+            .filter(Jurisdiction.record_count > 0)
+            .scalar()
+            or 0
+        )
 
         # Get unique covered states
-        covered_states_query = db.query(func.count(func.distinct(Jurisdiction.state))).filter(
-            Jurisdiction.record_count > 0
-        ).scalar() or 0
+        covered_states_query = (
+            db.query(func.count(func.distinct(Jurisdiction.state)))
+            .filter(Jurisdiction.record_count > 0)
+            .scalar()
+            or 0
+        )
 
         # Get coverage by data category (from jurisdiction_coverage table if it exists)
         category_coverage = {}
         for category in DATA_CATEGORIES:
             # Try to get actual coverage stats
             try:
-                count = db.execute(
-                    text(f"""
+                count = (
+                    db.execute(
+                        text(
+                            f"""
                         SELECT COUNT(*) FROM jurisdiction_coverage
                         WHERE data_category = :category AND coverage_status IN ('partial', 'full')
-                    """),
-                    {"category": category}
-                ).scalar() or 0
+                    """
+                        ),
+                        {"category": category},
+                    ).scalar()
+                    or 0
+                )
                 category_coverage[category] = {
                     "covered_count": count,
                     "total_count": total_counties,
-                    "percentage": round((count / total_counties) * 100, 2) if total_counties > 0 else 0
+                    "percentage": (
+                        round((count / total_counties) * 100, 2)
+                        if total_counties > 0
+                        else 0
+                    ),
                 }
             except Exception:
                 # Table might not exist yet - use placeholder
                 category_coverage[category] = {
                     "covered_count": 0,
                     "total_count": total_counties,
-                    "percentage": 0.0
+                    "percentage": 0.0,
                 }
 
         # Calculate tier breakdown
@@ -4054,26 +4499,30 @@ async def get_coverage_summary(
             tier_covered = 0
             if counties_data:
                 for state in states:
-                    state_counties = counties_data.get('states', {}).get(state, [])
+                    state_counties = counties_data.get("states", {}).get(state, [])
                     tier_counties += len(state_counties)
 
             # Query covered counties for this tier's states
-            tier_covered = db.query(func.count(Jurisdiction.id)).filter(
-                Jurisdiction.state.in_(states),
-                Jurisdiction.record_count > 0
-            ).scalar() or 0
+            tier_covered = (
+                db.query(func.count(Jurisdiction.id))
+                .filter(Jurisdiction.state.in_(states), Jurisdiction.record_count > 0)
+                .scalar()
+                or 0
+            )
 
             tier_breakdown[f"tier_{tier}"] = {
                 "states": states,
                 "total_counties": tier_counties or len(states) * 60,  # Estimate
                 "covered_counties": tier_covered,
-                "percentage": round((tier_covered / max(tier_counties, 1)) * 100, 2)
+                "percentage": round((tier_covered / max(tier_counties, 1)) * 100, 2),
             }
 
         summary = {
             "total_jurisdictions": total_jurisdictions,
             "covered_jurisdictions": covered_jurisdictions,
-            "coverage_percentage": round((covered_jurisdictions / total_jurisdictions) * 100, 2),
+            "coverage_percentage": round(
+                (covered_jurisdictions / total_jurisdictions) * 100, 2
+            ),
             "total_counties": total_counties,
             "covered_counties": covered_jurisdictions,
             "total_states": total_states,
@@ -4082,7 +4531,7 @@ async def get_coverage_summary(
             "covered_territories": 0,  # Will update when territory data exists
             "data_categories": category_coverage,
             "tier_breakdown": tier_breakdown,
-            "last_updated": datetime.utcnow().isoformat()
+            "last_updated": datetime.utcnow().isoformat(),
         }
 
         # Cache for 5 minutes
@@ -4093,7 +4542,9 @@ async def get_coverage_summary(
 
     except Exception as e:
         logger.error(f"Error getting coverage summary: {e}")
-        raise HTTPException(status_code=500, detail=f"Error calculating coverage: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error calculating coverage: {str(e)}"
+        )
 
 
 @app.get("/admin/coverage/by-state", response_model=List[StateCoverageResponse])
@@ -4101,9 +4552,11 @@ async def get_coverage_summary(
 async def get_coverage_by_state(
     request: Request,
     tier: Optional[int] = Query(None, ge=1, le=4, description="Filter by tier (1-4)"),
-    min_coverage: Optional[float] = Query(None, ge=0, le=100, description="Minimum coverage percentage"),
+    min_coverage: Optional[float] = Query(
+        None, ge=0, le=100, description="Minimum coverage percentage"
+    ),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Get coverage breakdown by state.
@@ -4125,12 +4578,14 @@ async def get_coverage_by_state(
         # Get all states from FIPS data
         all_states = []
         if states_data:
-            all_states = states_data.get('states', []) + states_data.get('territories', [])
+            all_states = states_data.get("states", []) + states_data.get(
+                "territories", []
+            )
 
         for state_info in all_states:
-            state_code = state_info.get('code', '')
-            state_name = state_info.get('name', '')
-            state_fips = state_info.get('fips', '')
+            state_code = state_info.get("code", "")
+            state_name = state_info.get("name", "")
+            state_fips = state_info.get("fips", "")
             state_tier = get_state_tier(state_code)
 
             # Filter by tier if specified
@@ -4138,34 +4593,41 @@ async def get_coverage_by_state(
                 continue
 
             # Get total counties for this state
-            total_counties = state_info.get('counties', 0)
-            if counties_data and state_code in counties_data.get('states', {}):
-                total_counties = len(counties_data['states'][state_code])
+            total_counties = state_info.get("counties", 0)
+            if counties_data and state_code in counties_data.get("states", {}):
+                total_counties = len(counties_data["states"][state_code])
 
             # Query covered counties
-            covered = db.query(func.count(Jurisdiction.id)).filter(
-                Jurisdiction.state == state_code,
-                Jurisdiction.record_count > 0
-            ).scalar() or 0
+            covered = (
+                db.query(func.count(Jurisdiction.id))
+                .filter(Jurisdiction.state == state_code, Jurisdiction.record_count > 0)
+                .scalar()
+                or 0
+            )
 
             # Get total records
-            total_records = db.query(func.sum(Jurisdiction.record_count)).filter(
-                Jurisdiction.state == state_code
-            ).scalar() or 0
+            total_records = (
+                db.query(func.sum(Jurisdiction.record_count))
+                .filter(Jurisdiction.state == state_code)
+                .scalar()
+                or 0
+            )
 
             # Get last scraped date
             last_scraped = None
             try:
-                last_record = db.query(func.max(Record.created_at)).join(
-                    Jurisdiction
-                ).filter(
-                    Jurisdiction.state == state_code
-                ).scalar()
+                last_record = (
+                    db.query(func.max(Record.created_at))
+                    .join(Jurisdiction)
+                    .filter(Jurisdiction.state == state_code)
+                    .scalar()
+                )
                 if last_record:
                     last_scraped = last_record.isoformat()
             except Exception as e:
-                logger.warning(f"Failed to fetch last scraped date for state {state_code}: {e}")
-
+                logger.warning(
+                    f"Failed to fetch last scraped date for state {state_code}: {e}"
+                )
 
             coverage_pct = round((covered / max(total_counties, 1)) * 100, 2)
 
@@ -4176,27 +4638,34 @@ async def get_coverage_by_state(
             # Get category breakdown (simplified)
             category_counts = {}
             for category in DATA_CATEGORIES[:8]:  # Top 8 categories
-                count = db.query(func.count(Record.id)).join(Jurisdiction).filter(
-                    Jurisdiction.state == state_code,
-                    Record.record_type == category
-                ).scalar() or 0
+                count = (
+                    db.query(func.count(Record.id))
+                    .join(Jurisdiction)
+                    .filter(
+                        Jurisdiction.state == state_code, Record.record_type == category
+                    )
+                    .scalar()
+                    or 0
+                )
                 category_counts[category] = count
 
-            state_coverages.append({
-                "state_code": state_code,
-                "state_name": state_name,
-                "fips_code": state_fips,
-                "tier": state_tier,
-                "total_counties": total_counties,
-                "covered_counties": covered,
-                "coverage_percentage": coverage_pct,
-                "data_categories": category_counts,
-                "record_count": total_records or 0,
-                "last_scraped": last_scraped
-            })
+            state_coverages.append(
+                {
+                    "state_code": state_code,
+                    "state_name": state_name,
+                    "fips_code": state_fips,
+                    "tier": state_tier,
+                    "total_counties": total_counties,
+                    "covered_counties": covered,
+                    "coverage_percentage": coverage_pct,
+                    "data_categories": category_counts,
+                    "record_count": total_records or 0,
+                    "last_scraped": last_scraped,
+                }
+            )
 
         # Sort by tier then coverage percentage
-        state_coverages.sort(key=lambda x: (x['tier'], -x['coverage_percentage']))
+        state_coverages.sort(key=lambda x: (x["tier"], -x["coverage_percentage"]))
 
         # Cache for 5 minutes
         if redis_client:
@@ -4206,7 +4675,9 @@ async def get_coverage_by_state(
 
     except Exception as e:
         logger.error(f"Error getting coverage by state: {e}")
-        raise HTTPException(status_code=500, detail=f"Error fetching state coverage: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching state coverage: {str(e)}"
+        )
 
 
 @app.get("/admin/coverage/gaps", response_model=List[CoverageGapResponse])
@@ -4216,9 +4687,11 @@ async def get_coverage_gaps(
     state: Optional[str] = Query(None, description="Filter by state code"),
     tier: Optional[int] = Query(None, ge=1, le=4, description="Filter by tier"),
     limit: int = Query(100, ge=1, le=500, description="Maximum results"),
-    min_population: Optional[int] = Query(None, description="Minimum population threshold"),
+    min_population: Optional[int] = Query(
+        None, description="Minimum population threshold"
+    ),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Get list of jurisdictions with missing or incomplete coverage.
@@ -4239,7 +4712,7 @@ async def get_coverage_gaps(
 
         # Get all counties from FIPS data
         if counties_data:
-            for state_code, counties in counties_data.get('states', {}).items():
+            for state_code, counties in counties_data.get("states", {}).items():
                 # Filter by state if specified
                 if state and state_code.upper() != state.upper():
                     continue
@@ -4251,19 +4724,23 @@ async def get_coverage_gaps(
                     continue
 
                 for county in counties:
-                    fips = county.get('fips', '')
-                    county_name = county.get('name', '')
-                    population = county.get('population', 0)
+                    fips = county.get("fips", "")
+                    county_name = county.get("name", "")
+                    population = county.get("population", 0)
 
                     # Filter by minimum population
                     if min_population and population < min_population:
                         continue
 
                     # Check if jurisdiction exists with data
-                    existing = db.query(Jurisdiction).filter(
-                        Jurisdiction.state == state_code,
-                        Jurisdiction.county == county_name
-                    ).first()
+                    existing = (
+                        db.query(Jurisdiction)
+                        .filter(
+                            Jurisdiction.state == state_code,
+                            Jurisdiction.county == county_name,
+                        )
+                        .first()
+                    )
 
                     if not existing or existing.record_count == 0:
                         # This is a gap - determine missing categories
@@ -4273,10 +4750,14 @@ async def get_coverage_gaps(
                         if existing:
                             # Check which categories have data
                             for category in DATA_CATEGORIES:
-                                has_data = db.query(Record.id).filter(
-                                    Record.jurisdiction_id == existing.id,
-                                    Record.record_type == category
-                                ).first()
+                                has_data = (
+                                    db.query(Record.id)
+                                    .filter(
+                                        Record.jurisdiction_id == existing.id,
+                                        Record.record_type == category,
+                                    )
+                                    .first()
+                                )
                                 if has_data:
                                     missing_categories.remove(category)
                             if len(missing_categories) < len(DATA_CATEGORIES):
@@ -4285,25 +4766,30 @@ async def get_coverage_gaps(
                         # Calculate priority score (higher = more important)
                         # Factors: tier (lower = higher priority), population, category count
                         priority_score = (
-                            (5 - state_tier) * 1000 +  # Tier weight
-                            (population / 10000) +  # Population weight
-                            len(missing_categories) * 10  # More gaps = higher priority
+                            (5 - state_tier) * 1000
+                            + (population / 10000)  # Tier weight
+                            + len(missing_categories)  # Population weight
+                            * 10  # More gaps = higher priority
                         )
 
-                        gaps.append({
-                            "fips_code": fips,
-                            "jurisdiction_name": county_name,
-                            "state": state_code,
-                            "county": county_name,
-                            "population": population,
-                            "tier": state_tier,
-                            "missing_categories": missing_categories[:10],  # Limit categories in response
-                            "gap_reason": gap_reason,
-                            "priority_score": round(priority_score, 2)
-                        })
+                        gaps.append(
+                            {
+                                "fips_code": fips,
+                                "jurisdiction_name": county_name,
+                                "state": state_code,
+                                "county": county_name,
+                                "population": population,
+                                "tier": state_tier,
+                                "missing_categories": missing_categories[
+                                    :10
+                                ],  # Limit categories in response
+                                "gap_reason": gap_reason,
+                                "priority_score": round(priority_score, 2),
+                            }
+                        )
 
         # Sort by priority score descending
-        gaps.sort(key=lambda x: -x['priority_score'])
+        gaps.sort(key=lambda x: -x["priority_score"])
 
         # Limit results
         gaps = gaps[:limit]
@@ -4316,7 +4802,9 @@ async def get_coverage_gaps(
 
     except Exception as e:
         logger.error(f"Error getting coverage gaps: {e}")
-        raise HTTPException(status_code=500, detail=f"Error fetching coverage gaps: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching coverage gaps: {str(e)}"
+        )
 
 
 @app.post("/admin/coverage/refresh/{fips}", response_model=CoverageRefreshResponse)
@@ -4326,14 +4814,14 @@ async def refresh_jurisdiction_coverage(
     fips: str = Path(..., pattern=r"^\d{5}$", description="5-digit FIPS code"),
     refresh_request: CoverageRefreshRequest = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Trigger a data refresh for a specific jurisdiction.
     Requires admin role. Queues scraping jobs for the specified FIPS code.
     """
     # Check admin role
-    if 'admin' not in current_user.roles:
+    if "admin" not in current_user.roles:
         raise HTTPException(status_code=403, detail="Admin access required")
 
     try:
@@ -4349,23 +4837,29 @@ async def refresh_jurisdiction_coverage(
         state_code = None
 
         if states_data:
-            for state in states_data.get('states', []) + states_data.get('territories', []):
-                if state.get('fips') == state_fips:
-                    state_code = state.get('code')
+            for state in states_data.get("states", []) + states_data.get(
+                "territories", []
+            ):
+                if state.get("fips") == state_fips:
+                    state_code = state.get("code")
                     break
 
         if counties_data and state_code:
-            counties = counties_data.get('states', {}).get(state_code, [])
+            counties = counties_data.get("states", {}).get(state_code, [])
             for county in counties:
-                if county.get('fips') == fips:
-                    jurisdiction_name = county.get('name')
+                if county.get("fips") == fips:
+                    jurisdiction_name = county.get("name")
                     break
 
         if not jurisdiction_name:
             raise HTTPException(status_code=404, detail=f"FIPS code {fips} not found")
 
         # Determine categories to refresh
-        categories = refresh_request.data_categories if refresh_request and refresh_request.data_categories else DATA_CATEGORIES[:5]
+        categories = (
+            refresh_request.data_categories
+            if refresh_request and refresh_request.data_categories
+            else DATA_CATEGORIES[:5]
+        )
 
         # In a real implementation, this would queue scraping jobs
         # For now, we'll record the refresh request and return status
@@ -4373,18 +4867,20 @@ async def refresh_jurisdiction_coverage(
         # Log the refresh request
         try:
             db.execute(
-                text("""
+                text(
+                    """
                     INSERT INTO scraper_runs (jurisdiction_id, data_category, status, started_at)
                     SELECT j.id, :category, 'queued', :now
                     FROM jurisdictions j
                     WHERE j.state = :state AND j.county = :county
-                """),
+                """
+                ),
                 {
                     "category": ",".join(categories),
                     "now": datetime.utcnow(),
                     "state": state_code,
-                    "county": jurisdiction_name
-                }
+                    "county": jurisdiction_name,
+                },
             )
             db.commit()
         except Exception as e:
@@ -4392,14 +4888,16 @@ async def refresh_jurisdiction_coverage(
 
         # Calculate estimated completion (mock)
         estimated_minutes = len(categories) * 5
-        estimated_completion = (datetime.utcnow() + timedelta(minutes=estimated_minutes)).isoformat()
+        estimated_completion = (
+            datetime.utcnow() + timedelta(minutes=estimated_minutes)
+        ).isoformat()
 
         return {
             "fips_code": fips,
             "status": "queued",
             "message": f"Refresh queued for {jurisdiction_name}, {state_code}",
             "categories_queued": categories,
-            "estimated_completion": estimated_completion
+            "estimated_completion": estimated_completion,
         }
 
     except HTTPException:
@@ -4412,8 +4910,7 @@ async def refresh_jurisdiction_coverage(
 @app.get("/admin/coverage/categories")
 @rate_limit(max_requests=60, window=60)
 async def get_data_categories(
-    request: Request,
-    current_user: User = Depends(get_current_active_user)
+    request: Request, current_user: User = Depends(get_current_active_user)
 ):
     """
     Get list of all data categories with descriptions.
@@ -4422,102 +4919,96 @@ async def get_data_categories(
         "property": {
             "name": "Property Records",
             "description": "Property assessments, deeds, liens, ownership records",
-            "sources": ["County Assessor", "Recorder's Office"]
+            "sources": ["County Assessor", "Recorder's Office"],
         },
         "court": {
             "name": "Court Records",
             "description": "Civil, criminal, probate, family court filings",
-            "sources": ["County Courts", "State Courts", "PACER"]
+            "sources": ["County Courts", "State Courts", "PACER"],
         },
         "business": {
             "name": "Business Filings",
             "description": "LLC, Corporation, DBA registrations and filings",
-            "sources": ["Secretary of State", "County Clerk"]
+            "sources": ["Secretary of State", "County Clerk"],
         },
         "recorder": {
             "name": "Recorder Documents",
             "description": "Deeds, mortgages, marriage certificates, vital records",
-            "sources": ["County Recorder", "Clerk's Office"]
+            "sources": ["County Recorder", "Clerk's Office"],
         },
         "sheriff": {
             "name": "Sheriff/Police",
             "description": "Arrest records, inmate data, warrants",
-            "sources": ["County Sheriff", "Police Dept", "DOC"]
+            "sources": ["County Sheriff", "Police Dept", "DOC"],
         },
         "permits": {
             "name": "Building Permits",
             "description": "Building permits, zoning, code violations",
-            "sources": ["Building Dept", "Planning Dept"]
+            "sources": ["Building Dept", "Planning Dept"],
         },
         "license": {
             "name": "Professional Licenses",
             "description": "Professional certifications, board licenses",
-            "sources": ["State Licensing Boards"]
+            "sources": ["State Licensing Boards"],
         },
         "voter": {
             "name": "Voter Records",
             "description": "Voter registration, campaign contributions",
-            "sources": ["Election Board", "FEC API"]
+            "sources": ["Election Board", "FEC API"],
         },
         "vital_records": {
             "name": "Vital Records",
             "description": "Birth, death, marriage, divorce records",
-            "sources": ["State Vital Statistics", "County Clerk"]
+            "sources": ["State Vital Statistics", "County Clerk"],
         },
         "criminal": {
             "name": "Criminal Records",
             "description": "Sex offenders, inmates, criminal history",
-            "sources": ["NSOPW", "State DOC", "County Jail"]
+            "sources": ["NSOPW", "State DOC", "County Jail"],
         },
         "regulatory": {
             "name": "Regulatory Records",
             "description": "FDA, EPA, OSHA violations and inspections",
-            "sources": ["FDA API", "EPA API", "OSHA API"]
+            "sources": ["FDA API", "EPA API", "OSHA API"],
         },
         "financial": {
             "name": "Financial Records",
             "description": "Bankruptcy, tax liens, UCC filings, nonprofit 990s",
-            "sources": ["PACER", "County Recorder", "ProPublica"]
+            "sources": ["PACER", "County Recorder", "ProPublica"],
         },
         "asset": {
             "name": "Asset Records",
             "description": "Aircraft, vessels, vehicles, equipment",
-            "sources": ["FAA Registry", "Coast Guard", "DMV"]
+            "sources": ["FAA Registry", "Coast Guard", "DMV"],
         },
         "education": {
             "name": "Education Records",
             "description": "Teacher licenses, school data, accreditation",
-            "sources": ["NCES API", "State DOE"]
+            "sources": ["NCES API", "State DOE"],
         },
         "employment": {
             "name": "Employment Records",
             "description": "Government salaries, pensions, public employees",
-            "sources": ["State Comptroller", "OpenPayrolls"]
+            "sources": ["State Comptroller", "OpenPayrolls"],
         },
         "health_safety": {
             "name": "Health & Safety",
             "description": "Healthcare provider licenses, nursing homes, inspections",
-            "sources": ["CMS API", "State Health Dept"]
+            "sources": ["CMS API", "State Health Dept"],
         },
         "transportation": {
             "name": "Transportation",
             "description": "CDL holders, carrier data, truck inspections",
-            "sources": ["FMCSA API"]
-        }
+            "sources": ["FMCSA API"],
+        },
     }
 
-    return {
-        "categories": categories,
-        "total_categories": len(categories)
-    }
+    return {"categories": categories, "total_categories": len(categories)}
 
 
 @app.get("/admin/coverage/stats/quick")
 @rate_limit(max_requests=60, window=60)
-async def get_quick_coverage_stats(
-    request: Request,
-    db: Session = Depends(get_db)
-):
+async def get_quick_coverage_stats(request: Request, db: Session = Depends(get_db)):
     """
     Get quick coverage statistics (public endpoint for dashboard).
     Lighter weight than full summary for frequent polling.
@@ -4531,21 +5022,28 @@ async def get_quick_coverage_stats(
 
     try:
         total_jurisdictions = db.query(func.count(Jurisdiction.id)).scalar() or 0
-        covered_jurisdictions = db.query(func.count(Jurisdiction.id)).filter(
-            Jurisdiction.record_count > 0
-        ).scalar() or 0
+        covered_jurisdictions = (
+            db.query(func.count(Jurisdiction.id))
+            .filter(Jurisdiction.record_count > 0)
+            .scalar()
+            or 0
+        )
         total_records = db.query(func.sum(Jurisdiction.record_count)).scalar() or 0
-        unique_states = db.query(func.count(func.distinct(Jurisdiction.state))).scalar() or 0
+        unique_states = (
+            db.query(func.count(func.distinct(Jurisdiction.state))).scalar() or 0
+        )
 
         stats = {
             "total_jurisdictions": total_jurisdictions,
             "covered_jurisdictions": covered_jurisdictions,
-            "coverage_percentage": round((covered_jurisdictions / max(total_jurisdictions, 1)) * 100, 2),
+            "coverage_percentage": round(
+                (covered_jurisdictions / max(total_jurisdictions, 1)) * 100, 2
+            ),
             "total_records": total_records,
             "states_with_data": unique_states,
             "target_jurisdictions": 3143,
             "target_percentage": round((covered_jurisdictions / 3143) * 100, 2),
-            "last_updated": datetime.utcnow().isoformat()
+            "last_updated": datetime.utcnow().isoformat(),
         }
 
         # Cache for 1 minute
@@ -4564,65 +5062,86 @@ async def get_quick_coverage_stats(
             "states_with_data": 0,
             "target_jurisdictions": 3143,
             "target_percentage": 0,
-            "last_updated": datetime.utcnow().isoformat()
+            "last_updated": datetime.utcnow().isoformat(),
         }
 
 
-
 # Admin Scraper Endpoints
-@app.get("/admin/scrapers/runs", response_model=List[ScraperRunResponse], dependencies=[Depends(RoleChecker(["admin"]))])
+@app.get(
+    "/admin/scrapers/runs",
+    response_model=List[ScraperRunResponse],
+    dependencies=[Depends(RoleChecker(["admin"]))],
+)
 async def get_scraper_runs(
     skip: int = 0,
     limit: int = 50,
     status: Optional[str] = None,
     scraper_module: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Get list of scraper runs (Admin only).
     """
     query = db.query(ScraperRun)
-    
+
     if status:
         query = query.filter(ScraperRun.status == status)
-    
+
     if scraper_module:
         query = query.filter(ScraperRun.scraper_module == scraper_module)
-        
+
     runs = query.order_by(desc(ScraperRun.started_at)).offset(skip).limit(limit).all()
     return runs
 
-@app.get("/admin/scrapers/status", response_model=ScraperStatusResponse, dependencies=[Depends(RoleChecker(["admin"]))])
+
+@app.get(
+    "/admin/scrapers/status",
+    response_model=ScraperStatusResponse,
+    dependencies=[Depends(RoleChecker(["admin"]))],
+)
 async def get_scraper_status(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)
 ):
     """
     Get high-level status of scraper system (Admin only).
     """
     last_24h = datetime.utcnow() - timedelta(hours=24)
-    
-    total_runs = db.query(func.count(ScraperRun.id)).filter(ScraperRun.started_at >= last_24h).scalar() or 0
-    failed_runs = db.query(func.count(ScraperRun.id)).filter(
-        ScraperRun.started_at >= last_24h,
-        ScraperRun.status == 'failed'
-    ).scalar() or 0
-    
-    active_runs = db.query(func.count(ScraperRun.id)).filter(ScraperRun.status == 'running').scalar() or 0
-    
+
+    total_runs = (
+        db.query(func.count(ScraperRun.id))
+        .filter(ScraperRun.started_at >= last_24h)
+        .scalar()
+        or 0
+    )
+    failed_runs = (
+        db.query(func.count(ScraperRun.id))
+        .filter(ScraperRun.started_at >= last_24h, ScraperRun.status == "failed")
+        .scalar()
+        or 0
+    )
+
+    active_runs = (
+        db.query(func.count(ScraperRun.id))
+        .filter(ScraperRun.status == "running")
+        .scalar()
+        or 0
+    )
+
     success_rate = 0.0
     if total_runs > 0:
         success_rate = (total_runs - failed_runs) / total_runs * 100.0
-        
-    recent_runs = db.query(ScraperRun).order_by(desc(ScraperRun.started_at)).limit(10).all()
-    
+
+    recent_runs = (
+        db.query(ScraperRun).order_by(desc(ScraperRun.started_at)).limit(10).all()
+    )
+
     return {
         "total_runs_24h": total_runs,
         "success_rate_24h": success_rate,
         "active_runs": active_runs,
         "failed_runs_24h": failed_runs,
-        "recent_runs": recent_runs
+        "recent_runs": recent_runs,
     }
 
 
@@ -4635,7 +5154,7 @@ async def list_notifications(
     page: int = 1,
     page_size: int = 25,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """List user's in-app notifications"""
     from datagod.models.notification import Notification
@@ -4645,14 +5164,18 @@ async def list_notifications(
         query = query.filter(Notification.read == False)
 
     total = query.count()
-    unread_count = db.query(Notification).filter(
-        Notification.user_id == current_user.id,
-        Notification.read == False
-    ).count()
+    unread_count = (
+        db.query(Notification)
+        .filter(Notification.user_id == current_user.id, Notification.read == False)
+        .count()
+    )
 
-    notifications = query.order_by(desc(Notification.created_at)).offset(
-        (page - 1) * page_size
-    ).limit(page_size).all()
+    notifications = (
+        query.order_by(desc(Notification.created_at))
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
 
     return {
         "notifications": [
@@ -4681,15 +5204,18 @@ async def mark_notification_read(
     request: Request,
     notification_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Mark a notification as read"""
     from datagod.models.notification import Notification
 
-    notification = db.query(Notification).filter(
-        Notification.id == notification_id,
-        Notification.user_id == current_user.id
-    ).first()
+    notification = (
+        db.query(Notification)
+        .filter(
+            Notification.id == notification_id, Notification.user_id == current_user.id
+        )
+        .first()
+    )
 
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
@@ -4705,14 +5231,13 @@ async def mark_notification_read(
 async def mark_all_notifications_read(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Mark all notifications as read"""
     from datagod.models.notification import Notification
 
     db.query(Notification).filter(
-        Notification.user_id == current_user.id,
-        Notification.read == False
+        Notification.user_id == current_user.id, Notification.read == False
     ).update({"read": True})
     db.commit()
 
@@ -4746,14 +5271,16 @@ async def root():
         "message": "DataGod API v2 is running",
         "version": settings.api_version,
         "documentation": f"{settings.api_docs_url}",
-        "status": "healthy"
+        "status": "healthy",
     }
+
 
 # Test endpoint
 @app.get("/test")
 async def test_endpoint():
     """Test endpoint"""
     return {"message": "API v2 is working correctly"}
+
 
 # Startup event
 @app.on_event("startup")
@@ -4787,6 +5314,7 @@ async def startup_event():
 
     logger.info(f"📊 API v2 {settings.api_version} started successfully")
     logger.info(f"🔗 Documentation available at {settings.api_docs_url}")
+
 
 # Shutdown event
 @app.on_event("shutdown")

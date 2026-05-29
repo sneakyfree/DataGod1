@@ -9,26 +9,27 @@ Tests cover:
 - CoreLogicAPIClient implementation
 """
 
-import pytest
 import hashlib
 import hmac
 import time
 from datetime import date, datetime
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, PropertyMock, patch
+
+import pytest
 
 from datagod.scrapers.paid.corelogic_api import (
-    PropertyType,
-    TransactionType,
-    ForeclosureStatus,
-    PropertyCharacteristics,
-    TaxAssessment,
-    SaleTransaction,
-    MortgageRecord,
-    ForeclosureRecord,
     AVMResult,
-    PropertySearch,
     CoreLogicAPI,
     CoreLogicAPIClient,
+    ForeclosureRecord,
+    ForeclosureStatus,
+    MortgageRecord,
+    PropertyCharacteristics,
+    PropertySearch,
+    PropertyType,
+    SaleTransaction,
+    TaxAssessment,
+    TransactionType,
     create_corelogic_client,
 )
 
@@ -39,9 +40,16 @@ class TestPropertyTypeEnum:
     def test_all_property_types_exist(self):
         """Verify all expected property types are defined"""
         expected_types = [
-            'SINGLE_FAMILY', 'CONDO', 'TOWNHOUSE', 'MULTI_FAMILY',
-            'MOBILE_HOME', 'VACANT_LAND', 'COMMERCIAL', 'INDUSTRIAL',
-            'AGRICULTURAL', 'UNKNOWN'
+            "SINGLE_FAMILY",
+            "CONDO",
+            "TOWNHOUSE",
+            "MULTI_FAMILY",
+            "MOBILE_HOME",
+            "VACANT_LAND",
+            "COMMERCIAL",
+            "INDUSTRIAL",
+            "AGRICULTURAL",
+            "UNKNOWN",
         ]
         for prop_type in expected_types:
             assert hasattr(PropertyType, prop_type)
@@ -60,8 +68,14 @@ class TestTransactionTypeEnum:
     def test_all_transaction_types_exist(self):
         """Verify all expected transaction types are defined"""
         expected_types = [
-            'SALE', 'REFINANCE', 'FORECLOSURE', 'REO',
-            'SHORT_SALE', 'AUCTION', 'TRANSFER', 'UNKNOWN'
+            "SALE",
+            "REFINANCE",
+            "FORECLOSURE",
+            "REO",
+            "SHORT_SALE",
+            "AUCTION",
+            "TRANSFER",
+            "UNKNOWN",
         ]
         for trans_type in expected_types:
             assert hasattr(TransactionType, trans_type)
@@ -79,8 +93,13 @@ class TestForeclosureStatusEnum:
     def test_all_foreclosure_statuses_exist(self):
         """Verify all expected foreclosure statuses are defined"""
         expected_statuses = [
-            'PRE_FORECLOSURE', 'AUCTION_SCHEDULED', 'AUCTION_COMPLETED',
-            'BANK_OWNED', 'SOLD', 'CANCELLED', 'UNKNOWN'
+            "PRE_FORECLOSURE",
+            "AUCTION_SCHEDULED",
+            "AUCTION_COMPLETED",
+            "BANK_OWNED",
+            "SOLD",
+            "CANCELLED",
+            "UNKNOWN",
         ]
         for status in expected_statuses:
             assert hasattr(ForeclosureStatus, status)
@@ -103,7 +122,7 @@ class TestPropertyCharacteristics:
             state="TX",
             zip_code="77001",
             county="Harris",
-            apn="1234567890"
+            apn="1234567890",
         )
         assert prop.property_id == "P123456"
         assert prop.address == "123 Main St"
@@ -137,7 +156,7 @@ class TestPropertyCharacteristics:
             garage_spaces=2,
             fireplace=True,
             latitude=29.7604,
-            longitude=-95.3698
+            longitude=-95.3698,
         )
         assert prop.bedrooms == 4
         assert prop.bathrooms == 2.5
@@ -155,13 +174,13 @@ class TestPropertyCharacteristics:
             county="Harris",
             apn="1234567890",
             property_type=PropertyType.CONDO,
-            bedrooms=2
+            bedrooms=2,
         )
         result = prop.to_dict()
-        assert result['property_id'] == "P123456"
-        assert result['property_type'] == "CONDO"
-        assert result['bedrooms'] == 2
-        assert 'fetched_at' in result
+        assert result["property_id"] == "P123456"
+        assert result["property_type"] == "CONDO"
+        assert result["bedrooms"] == 2
+        assert "fetched_at" in result
 
 
 class TestTaxAssessment:
@@ -169,10 +188,7 @@ class TestTaxAssessment:
 
     def test_create_minimal_assessment(self):
         """Test creating tax assessment with required fields"""
-        assessment = TaxAssessment(
-            property_id="P123456",
-            tax_year=2024
-        )
+        assessment = TaxAssessment(property_id="P123456", tax_year=2024)
         assert assessment.property_id == "P123456"
         assert assessment.tax_year == 2024
         assert assessment.tax_delinquent is False
@@ -191,7 +207,7 @@ class TestTaxAssessment:
             tax_status="Current",
             tax_delinquent=False,
             exemption_homestead=True,
-            exemption_senior=False
+            exemption_senior=False,
         )
         assert assessment.assessed_value_total == 350000.0
         assert assessment.exemption_homestead is True
@@ -199,15 +215,12 @@ class TestTaxAssessment:
     def test_assessment_to_dict(self):
         """Test converting tax assessment to dictionary"""
         assessment = TaxAssessment(
-            property_id="P123456",
-            tax_year=2024,
-            tax_amount=7500.0,
-            tax_delinquent=True
+            property_id="P123456", tax_year=2024, tax_amount=7500.0, tax_delinquent=True
         )
         result = assessment.to_dict()
-        assert result['property_id'] == "P123456"
-        assert result['tax_year'] == 2024
-        assert result['tax_delinquent'] is True
+        assert result["property_id"] == "P123456"
+        assert result["tax_year"] == 2024
+        assert result["tax_delinquent"] is True
 
 
 class TestSaleTransaction:
@@ -215,10 +228,7 @@ class TestSaleTransaction:
 
     def test_create_minimal_transaction(self):
         """Test creating sale transaction with required fields"""
-        trans = SaleTransaction(
-            property_id="P123456",
-            transaction_id="T789"
-        )
+        trans = SaleTransaction(property_id="P123456", transaction_id="T789")
         assert trans.property_id == "P123456"
         assert trans.transaction_type == TransactionType.UNKNOWN
         assert trans.arms_length is True
@@ -239,7 +249,7 @@ class TestSaleTransaction:
             loan_amount=360000.0,
             lender_name="First National Bank",
             arms_length=True,
-            distressed_sale=False
+            distressed_sale=False,
         )
         assert trans.sale_price == 450000.0
         assert len(trans.buyer_names) == 2
@@ -251,12 +261,12 @@ class TestSaleTransaction:
             property_id="P123456",
             transaction_id="T789",
             sale_date=date(2024, 6, 15),
-            sale_price=450000.0
+            sale_price=450000.0,
         )
         result = trans.to_dict()
-        assert result['property_id'] == "P123456"
-        assert result['sale_date'] == "2024-06-15"
-        assert result['sale_price'] == 450000.0
+        assert result["property_id"] == "P123456"
+        assert result["sale_date"] == "2024-06-15"
+        assert result["sale_price"] == 450000.0
 
 
 class TestMortgageRecord:
@@ -265,9 +275,7 @@ class TestMortgageRecord:
     def test_create_minimal_mortgage(self):
         """Test creating mortgage record with required fields"""
         mortgage = MortgageRecord(
-            property_id="P123456",
-            mortgage_id="M789",
-            loan_amount=360000.0
+            property_id="P123456", mortgage_id="M789", loan_amount=360000.0
         )
         assert mortgage.loan_amount == 360000.0
         assert mortgage.lien_position == 1
@@ -286,7 +294,7 @@ class TestMortgageRecord:
             maturity_date=date(2054, 1, 15),
             borrower_names=["John Smith", "Jane Smith"],
             lender_name="First National Bank",
-            lien_position=1
+            lien_position=1,
         )
         assert mortgage.loan_type == "Conventional"
         assert mortgage.interest_rate == 6.5
@@ -298,11 +306,11 @@ class TestMortgageRecord:
             property_id="P123456",
             mortgage_id="M789",
             loan_amount=360000.0,
-            origination_date=date(2024, 1, 15)
+            origination_date=date(2024, 1, 15),
         )
         result = mortgage.to_dict()
-        assert result['loan_amount'] == 360000.0
-        assert result['origination_date'] == "2024-01-15"
+        assert result["loan_amount"] == 360000.0
+        assert result["origination_date"] == "2024-01-15"
 
 
 class TestForeclosureRecord:
@@ -310,10 +318,7 @@ class TestForeclosureRecord:
 
     def test_create_minimal_foreclosure(self):
         """Test creating foreclosure record with required fields"""
-        foreclosure = ForeclosureRecord(
-            property_id="P123456",
-            foreclosure_id="F789"
-        )
+        foreclosure = ForeclosureRecord(property_id="P123456", foreclosure_id="F789")
         assert foreclosure.status == ForeclosureStatus.UNKNOWN
 
     def test_create_full_foreclosure(self):
@@ -329,7 +334,7 @@ class TestForeclosureRecord:
             estimated_value=400000.0,
             borrower_names=["John Smith"],
             lender_name="First National Bank",
-            original_loan_amount=380000.0
+            original_loan_amount=380000.0,
         )
         assert foreclosure.status == ForeclosureStatus.PRE_FORECLOSURE
         assert foreclosure.default_amount == 15000.0
@@ -340,11 +345,11 @@ class TestForeclosureRecord:
             property_id="P123456",
             foreclosure_id="F789",
             status=ForeclosureStatus.AUCTION_SCHEDULED,
-            auction_date=date(2024, 6, 15)
+            auction_date=date(2024, 6, 15),
         )
         result = foreclosure.to_dict()
-        assert result['status'] == "auction_scheduled"
-        assert result['auction_date'] == "2024-06-15"
+        assert result["status"] == "auction_scheduled"
+        assert result["auction_date"] == "2024-06-15"
 
 
 class TestAVMResult:
@@ -355,7 +360,7 @@ class TestAVMResult:
         avm = AVMResult(
             property_id="P123456",
             valuation_date=date(2024, 6, 15),
-            estimated_value=450000.0
+            estimated_value=450000.0,
         )
         assert avm.estimated_value == 450000.0
         assert avm.comparable_count == 0
@@ -372,7 +377,7 @@ class TestAVMResult:
             forecast_standard_deviation=12500.0,
             comparable_count=5,
             comparable_properties=["P111", "P222", "P333", "P444", "P555"],
-            model_version="3.2.1"
+            model_version="3.2.1",
         )
         assert avm.value_low == 425000.0
         assert avm.confidence_score == 0.85
@@ -384,12 +389,12 @@ class TestAVMResult:
             property_id="P123456",
             valuation_date=date(2024, 6, 15),
             estimated_value=450000.0,
-            confidence_score=0.85
+            confidence_score=0.85,
         )
         result = avm.to_dict()
-        assert result['estimated_value'] == 450000.0
-        assert result['valuation_date'] == "2024-06-15"
-        assert result['confidence_score'] == 0.85
+        assert result["estimated_value"] == 450000.0
+        assert result["valuation_date"] == "2024-06-15"
+        assert result["confidence_score"] == 0.85
 
 
 class TestPropertySearch:
@@ -405,10 +410,7 @@ class TestPropertySearch:
     def test_create_address_search(self):
         """Test creating search by address"""
         search = PropertySearch(
-            address="123 Main St",
-            city="Houston",
-            state="TX",
-            zip_code="77001"
+            address="123 Main St", city="Houston", state="TX", zip_code="77001"
         )
         assert search.address == "123 Main St"
         assert search.city == "Houston"
@@ -424,7 +426,7 @@ class TestPropertySearch:
             max_sqft=4000.0,
             min_year_built=2000,
             min_value=300000.0,
-            limit=100
+            limit=100,
         )
         assert search.property_type == PropertyType.SINGLE_FAMILY
         assert search.min_bedrooms == 3
@@ -436,10 +438,7 @@ class TestCoreLogicAPISignature:
 
     def test_generate_signature(self):
         """Test HMAC signature generation"""
-        client = CoreLogicAPIClient(
-            api_key="test_key",
-            api_secret="test_secret"
-        )
+        client = CoreLogicAPIClient(api_key="test_key", api_secret="test_secret")
 
         timestamp = "1704067200000"  # Fixed timestamp for testing
         method = "GET"
@@ -447,9 +446,9 @@ class TestCoreLogicAPISignature:
 
         expected_message = f"{timestamp}{method}{path}"
         expected_signature = hmac.new(
-            "test_secret".encode('utf-8'),
-            expected_message.encode('utf-8'),
-            hashlib.sha256
+            "test_secret".encode("utf-8"),
+            expected_message.encode("utf-8"),
+            hashlib.sha256,
         ).hexdigest()
 
         actual_signature = client._generate_signature(timestamp, method, path)
@@ -457,10 +456,7 @@ class TestCoreLogicAPISignature:
 
     def test_generate_signature_with_body(self):
         """Test HMAC signature generation with request body"""
-        client = CoreLogicAPIClient(
-            api_key="test_key",
-            api_secret="test_secret"
-        )
+        client = CoreLogicAPIClient(api_key="test_key", api_secret="test_secret")
 
         timestamp = "1704067200000"
         method = "POST"
@@ -469,9 +465,9 @@ class TestCoreLogicAPISignature:
 
         expected_message = f"{timestamp}{method}{path}{body}"
         expected_signature = hmac.new(
-            "test_secret".encode('utf-8'),
-            expected_message.encode('utf-8'),
-            hashlib.sha256
+            "test_secret".encode("utf-8"),
+            expected_message.encode("utf-8"),
+            hashlib.sha256,
         ).hexdigest()
 
         actual_signature = client._generate_signature(timestamp, method, path, body)
@@ -483,103 +479,71 @@ class TestCoreLogicAPIClient:
 
     def test_initialization(self):
         """Test CoreLogicAPIClient initialization"""
-        client = CoreLogicAPIClient(
-            api_key="test_key",
-            api_secret="test_secret"
-        )
+        client = CoreLogicAPIClient(api_key="test_key", api_secret="test_secret")
         assert client.api_key == "test_key"
         assert client.api_secret == "test_secret"
 
     def test_initialization_with_config(self):
         """Test CoreLogicAPIClient initialization with config"""
-        config = {
-            'timeout': 60,
-            'retry_count': 3
-        }
+        config = {"timeout": 60, "retry_count": 3}
         client = CoreLogicAPIClient(
-            api_key="test_key",
-            api_secret="test_secret",
-            config=config
+            api_key="test_key", api_secret="test_secret", config=config
         )
-        assert client.config['timeout'] == 60
-        assert client.config['retry_count'] == 3
+        assert client.config["timeout"] == 60
+        assert client.config["retry_count"] == 3
 
     def test_get_headers(self):
         """Test authenticated headers generation"""
-        client = CoreLogicAPIClient(
-            api_key="test_key",
-            api_secret="test_secret"
-        )
+        client = CoreLogicAPIClient(api_key="test_key", api_secret="test_secret")
 
-        with patch('time.time', return_value=1704067200.0):
+        with patch("time.time", return_value=1704067200.0):
             headers = client._get_headers("GET", "/api/v1/properties")
 
-        assert headers['X-Api-Key'] == "test_key"
-        assert 'X-Timestamp' in headers
-        assert 'X-Signature' in headers
-        assert headers['Content-Type'] == 'application/json'
+        assert headers["X-Api-Key"] == "test_key"
+        assert "X-Timestamp" in headers
+        assert "X-Signature" in headers
+        assert headers["Content-Type"] == "application/json"
 
     def test_search_properties_returns_list(self):
         """Test search_properties method returns list"""
-        client = CoreLogicAPIClient(
-            api_key="test_key",
-            api_secret="test_secret"
-        )
+        client = CoreLogicAPIClient(api_key="test_key", api_secret="test_secret")
         search = PropertySearch(address="123 Main St")
         results = client.search_properties(search)
         assert isinstance(results, list)
 
     def test_get_property_details_returns_none(self):
         """Test get_property_details method returns None (placeholder)"""
-        client = CoreLogicAPIClient(
-            api_key="test_key",
-            api_secret="test_secret"
-        )
+        client = CoreLogicAPIClient(api_key="test_key", api_secret="test_secret")
         result = client.get_property_details("P123456")
         assert result is None
 
     def test_get_tax_history_returns_list(self):
         """Test get_tax_history method returns list"""
-        client = CoreLogicAPIClient(
-            api_key="test_key",
-            api_secret="test_secret"
-        )
+        client = CoreLogicAPIClient(api_key="test_key", api_secret="test_secret")
         results = client.get_tax_history("P123456")
         assert isinstance(results, list)
 
     def test_get_sales_history_returns_list(self):
         """Test get_sales_history method returns list"""
-        client = CoreLogicAPIClient(
-            api_key="test_key",
-            api_secret="test_secret"
-        )
+        client = CoreLogicAPIClient(api_key="test_key", api_secret="test_secret")
         results = client.get_sales_history("P123456")
         assert isinstance(results, list)
 
     def test_get_mortgage_history_returns_list(self):
         """Test get_mortgage_history method returns list"""
-        client = CoreLogicAPIClient(
-            api_key="test_key",
-            api_secret="test_secret"
-        )
+        client = CoreLogicAPIClient(api_key="test_key", api_secret="test_secret")
         results = client.get_mortgage_history("P123456")
         assert isinstance(results, list)
 
     def test_get_foreclosure_status_returns_none(self):
         """Test get_foreclosure_status method returns None (placeholder)"""
-        client = CoreLogicAPIClient(
-            api_key="test_key",
-            api_secret="test_secret"
-        )
+        client = CoreLogicAPIClient(api_key="test_key", api_secret="test_secret")
         result = client.get_foreclosure_status("P123456")
         assert result is None
 
     def test_get_avm_returns_none(self):
         """Test get_avm method returns None (placeholder)"""
-        client = CoreLogicAPIClient(
-            api_key="test_key",
-            api_secret="test_secret"
-        )
+        client = CoreLogicAPIClient(api_key="test_key", api_secret="test_secret")
         result = client.get_avm("P123456")
         assert result is None
 
@@ -589,22 +553,17 @@ class TestCreateCorelogicClientFunction:
 
     def test_create_client(self):
         """Test creating CoreLogic client via factory function"""
-        client = create_corelogic_client(
-            api_key="test_key",
-            api_secret="test_secret"
-        )
+        client = create_corelogic_client(api_key="test_key", api_secret="test_secret")
         assert isinstance(client, CoreLogicAPIClient)
         assert client.api_key == "test_key"
 
     def test_create_client_with_config(self):
         """Test creating CoreLogic client with config"""
-        config = {'timeout': 60}
+        config = {"timeout": 60}
         client = create_corelogic_client(
-            api_key="test_key",
-            api_secret="test_secret",
-            config=config
+            api_key="test_key", api_secret="test_secret", config=config
         )
-        assert client.config['timeout'] == 60
+        assert client.config["timeout"] == 60
 
 
 class TestCoreLogicImports:
@@ -613,26 +572,38 @@ class TestCoreLogicImports:
     def test_all_exports_available(self):
         """Test that all expected exports are available"""
         from datagod.scrapers.paid.corelogic_api import (
-            PropertyType,
-            TransactionType,
-            ForeclosureStatus,
-            PropertyCharacteristics,
-            TaxAssessment,
-            SaleTransaction,
-            MortgageRecord,
-            ForeclosureRecord,
             AVMResult,
-            PropertySearch,
             CoreLogicAPI,
             CoreLogicAPIClient,
-            create_corelogic_client
+            ForeclosureRecord,
+            ForeclosureStatus,
+            MortgageRecord,
+            PropertyCharacteristics,
+            PropertySearch,
+            PropertyType,
+            SaleTransaction,
+            TaxAssessment,
+            TransactionType,
+            create_corelogic_client,
         )
-        assert all([
-            PropertyType, TransactionType, ForeclosureStatus,
-            PropertyCharacteristics, TaxAssessment, SaleTransaction,
-            MortgageRecord, ForeclosureRecord, AVMResult, PropertySearch,
-            CoreLogicAPI, CoreLogicAPIClient, create_corelogic_client
-        ])
+
+        assert all(
+            [
+                PropertyType,
+                TransactionType,
+                ForeclosureStatus,
+                PropertyCharacteristics,
+                TaxAssessment,
+                SaleTransaction,
+                MortgageRecord,
+                ForeclosureRecord,
+                AVMResult,
+                PropertySearch,
+                CoreLogicAPI,
+                CoreLogicAPIClient,
+                create_corelogic_client,
+            ]
+        )
 
 
 class TestCoreLogicEdgeCases:
@@ -647,48 +618,40 @@ class TestCoreLogicEdgeCases:
             state="TX",
             zip_code="77001",
             county="Harris",
-            apn="1234567890"
+            apn="1234567890",
         )
         result = prop.to_dict()
-        assert result['latitude'] is None
-        assert result['longitude'] is None
+        assert result["latitude"] is None
+        assert result["longitude"] is None
 
     def test_transaction_with_empty_names(self):
         """Test transaction with empty buyer/seller names"""
-        trans = SaleTransaction(
-            property_id="P123456",
-            transaction_id="T789"
-        )
+        trans = SaleTransaction(property_id="P123456", transaction_id="T789")
         result = trans.to_dict()
-        assert result['buyer_names'] == []
-        assert result['seller_names'] == []
+        assert result["buyer_names"] == []
+        assert result["seller_names"] == []
 
     def test_mortgage_with_null_dates(self):
         """Test mortgage to_dict with null dates"""
         mortgage = MortgageRecord(
-            property_id="P123456",
-            mortgage_id="M789",
-            loan_amount=360000.0
+            property_id="P123456", mortgage_id="M789", loan_amount=360000.0
         )
         result = mortgage.to_dict()
-        assert result['origination_date'] is None
+        assert result["origination_date"] is None
 
     def test_foreclosure_with_null_dates(self):
         """Test foreclosure to_dict with null dates"""
-        foreclosure = ForeclosureRecord(
-            property_id="P123456",
-            foreclosure_id="F789"
-        )
+        foreclosure = ForeclosureRecord(property_id="P123456", foreclosure_id="F789")
         result = foreclosure.to_dict()
-        assert result['default_date'] is None
-        assert result['auction_date'] is None
+        assert result["default_date"] is None
+        assert result["auction_date"] is None
 
     def test_avm_with_empty_comparables(self):
         """Test AVM with empty comparable properties"""
         avm = AVMResult(
             property_id="P123456",
             valuation_date=date(2024, 6, 15),
-            estimated_value=450000.0
+            estimated_value=450000.0,
         )
         assert avm.comparable_properties == []
         assert avm.comparable_count == 0

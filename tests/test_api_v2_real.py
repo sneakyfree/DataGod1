@@ -3,19 +3,18 @@ Tests for api/src/api_v2.py that actually import and exercise the module
 These tests provide real coverage by testing components individually
 """
 
-import pytest
-import sys
-import os
-from unittest.mock import MagicMock, patch, AsyncMock
-from datetime import datetime, timedelta
 import importlib
+import os
 import re
+import sys
+from datetime import date, datetime, timedelta
+from enum import Enum
+from typing import Any, Dict, List, Optional
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from passlib.context import CryptContext
 from pydantic import BaseModel, Field, validator
-from typing import Optional, List, Dict, Any
-from datetime import date
-from enum import Enum
-
 
 # ====== Test the actual password functions from the module logic ======
 
@@ -54,6 +53,7 @@ class TestPasswordFunctions:
 
 # ====== Recreate and test the Pydantic models from api_v2.py ======
 
+
 class User(BaseModel):
     username: str
     email: str
@@ -87,70 +87,68 @@ class UserCreate(BaseModel):
 
 class UserRegister(BaseModel):
     """Model for public user registration with validation"""
+
     username: str = Field(
         ...,
         min_length=3,
         max_length=50,
-        pattern=r'^[a-zA-Z0-9_]+$',
-        description="Username must be 3-50 characters, alphanumeric and underscores only"
+        pattern=r"^[a-zA-Z0-9_]+$",
+        description="Username must be 3-50 characters, alphanumeric and underscores only",
     )
-    email: str = Field(
-        ...,
-        description="Valid email address"
-    )
+    email: str = Field(..., description="Valid email address")
     password: str = Field(
         ...,
         min_length=8,
         max_length=100,
-        description="Password must be at least 8 characters"
+        description="Password must be at least 8 characters",
     )
     full_name: Optional[str] = Field(
-        None,
-        max_length=255,
-        description="Optional full name"
+        None, max_length=255, description="Optional full name"
     )
 
-    @validator('email')
+    @validator("email")
     def validate_email(cls, v):
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         if not re.match(email_regex, v):
-            raise ValueError('Invalid email format')
+            raise ValueError("Invalid email format")
         return v.lower()
 
-    @validator('password')
+    @validator("password")
     def validate_password(cls, v):
         if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters')
+            raise ValueError("Password must be at least 8 characters")
         has_letter = any(c.isalpha() for c in v)
         has_digit = any(c.isdigit() for c in v)
         if not (has_letter and has_digit):
-            raise ValueError('Password must contain at least one letter and one number')
+            raise ValueError("Password must contain at least one letter and one number")
         return v
 
 
 class PasswordResetRequest(BaseModel):
     """Model for requesting password reset"""
+
     email: str = Field(..., description="Email address for password reset")
 
 
 class PasswordResetConfirm(BaseModel):
     """Model for confirming password reset"""
+
     token: str = Field(..., description="Password reset token")
     new_password: str = Field(
         ...,
         min_length=8,
         max_length=100,
-        description="New password (at least 8 characters)"
+        description="New password (at least 8 characters)",
     )
 
-    @validator('new_password')
+    @validator("new_password")
     def validate_password(cls, v):
         if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters')
+            raise ValueError("Password must be at least 8 characters")
         has_letter = any(c.isalpha() for c in v)
         has_digit = any(c.isdigit() for c in v)
         if not (has_letter and has_digit):
-            raise ValueError('Password must contain at least one letter and one number')
+            raise ValueError("Password must contain at least one letter and one number")
         return v
 
 
@@ -301,7 +299,7 @@ class TestUserModels:
             email="test@example.com",
             full_name="Test User",
             disabled=False,
-            roles=["user"]
+            roles=["user"],
         )
         assert user.username == "testuser"
         assert user.email == "test@example.com"
@@ -320,9 +318,7 @@ class TestUserModels:
     def test_user_in_db_model(self):
         """Test UserInDB model with hashed password"""
         user = UserInDB(
-            username="testuser",
-            email="test@example.com",
-            hashed_password="hashed123"
+            username="testuser", email="test@example.com", hashed_password="hashed123"
         )
         assert user.username == "testuser"
         assert user.hashed_password == "hashed123"
@@ -330,9 +326,7 @@ class TestUserModels:
     def test_user_create_model(self):
         """Test UserCreate model"""
         user = UserCreate(
-            username="newuser",
-            email="new@example.com",
-            password="password123"
+            username="newuser", email="new@example.com", password="password123"
         )
         assert user.username == "newuser"
         assert user.email == "new@example.com"
@@ -340,10 +334,7 @@ class TestUserModels:
 
     def test_user_update_model(self):
         """Test UserUpdate model"""
-        update = UserUpdate(
-            email="updated@example.com",
-            full_name="Updated Name"
-        )
+        update = UserUpdate(email="updated@example.com", full_name="Updated Name")
         assert update.email == "updated@example.com"
         assert update.full_name == "Updated Name"
 
@@ -360,9 +351,7 @@ class TestUserRegisterValidation:
     def test_valid_registration(self):
         """Test valid registration data"""
         user = UserRegister(
-            username="validuser",
-            email="valid@example.com",
-            password="Password123"
+            username="validuser", email="valid@example.com", password="Password123"
         )
         assert user.username == "validuser"
         assert user.email == "valid@example.com"
@@ -370,9 +359,7 @@ class TestUserRegisterValidation:
     def test_email_validation_valid(self):
         """Test email validation with valid email"""
         user = UserRegister(
-            username="testuser",
-            email="Test@Example.COM",
-            password="Password123"
+            username="testuser", email="Test@Example.COM", password="Password123"
         )
         assert user.email == "test@example.com"
 
@@ -380,71 +367,53 @@ class TestUserRegisterValidation:
         """Test email validation with invalid email"""
         with pytest.raises(ValueError):
             UserRegister(
-                username="testuser",
-                email="invalid-email",
-                password="Password123"
+                username="testuser", email="invalid-email", password="Password123"
             )
 
     def test_email_validation_no_domain(self):
         """Test email validation with no domain"""
         with pytest.raises(ValueError):
-            UserRegister(
-                username="testuser",
-                email="test@",
-                password="Password123"
-            )
+            UserRegister(username="testuser", email="test@", password="Password123")
 
     def test_email_validation_no_at(self):
         """Test email validation with no @ symbol"""
         with pytest.raises(ValueError):
             UserRegister(
-                username="testuser",
-                email="testexample.com",
-                password="Password123"
+                username="testuser", email="testexample.com", password="Password123"
             )
 
     def test_password_validation_short(self):
         """Test password validation - too short"""
         with pytest.raises(ValueError):
             UserRegister(
-                username="testuser",
-                email="test@example.com",
-                password="short"
+                username="testuser", email="test@example.com", password="short"
             )
 
     def test_password_validation_no_letter(self):
         """Test password validation - no letter"""
         with pytest.raises(ValueError):
             UserRegister(
-                username="testuser",
-                email="test@example.com",
-                password="12345678"
+                username="testuser", email="test@example.com", password="12345678"
             )
 
     def test_password_validation_no_digit(self):
         """Test password validation - no digit"""
         with pytest.raises(ValueError):
             UserRegister(
-                username="testuser",
-                email="test@example.com",
-                password="abcdefgh"
+                username="testuser", email="test@example.com", password="abcdefgh"
             )
 
     def test_username_with_underscore(self):
         """Test username with underscore is valid"""
         user = UserRegister(
-            username="test_user",
-            email="test@example.com",
-            password="Password123"
+            username="test_user", email="test@example.com", password="Password123"
         )
         assert user.username == "test_user"
 
     def test_full_name_optional(self):
         """Test full_name is optional"""
         user = UserRegister(
-            username="testuser",
-            email="test@example.com",
-            password="Password123"
+            username="testuser", email="test@example.com", password="Password123"
         )
         assert user.full_name is None
 
@@ -459,28 +428,19 @@ class TestPasswordResetModels:
 
     def test_password_reset_confirm_valid(self):
         """Test PasswordResetConfirm with valid data"""
-        confirm = PasswordResetConfirm(
-            token="abc123",
-            new_password="NewPassword123"
-        )
+        confirm = PasswordResetConfirm(token="abc123", new_password="NewPassword123")
         assert confirm.token == "abc123"
         assert confirm.new_password == "NewPassword123"
 
     def test_password_reset_confirm_invalid_password(self):
         """Test PasswordResetConfirm with invalid password"""
         with pytest.raises(ValueError):
-            PasswordResetConfirm(
-                token="abc123",
-                new_password="short"
-            )
+            PasswordResetConfirm(token="abc123", new_password="short")
 
     def test_password_reset_confirm_no_letter(self):
         """Test PasswordResetConfirm with password without letter"""
         with pytest.raises(ValueError):
-            PasswordResetConfirm(
-                token="abc123",
-                new_password="12345678"
-            )
+            PasswordResetConfirm(token="abc123", new_password="12345678")
 
 
 class TestTokenModels:
@@ -488,11 +448,7 @@ class TestTokenModels:
 
     def test_token_model(self):
         """Test Token model"""
-        token = Token(
-            access_token="abc123",
-            token_type="bearer",
-            expires_in=3600
-        )
+        token = Token(access_token="abc123", token_type="bearer", expires_in=3600)
         assert token.access_token == "abc123"
         assert token.token_type == "bearer"
         assert token.expires_in == 3600
@@ -516,10 +472,7 @@ class TestJurisdictionModels:
     def test_jurisdiction_create(self):
         """Test JurisdictionCreate model"""
         jurisdiction = JurisdictionCreate(
-            name="Test County",
-            state="TX",
-            county="Test",
-            jurisdiction_type="county"
+            name="Test County", state="TX", county="Test", jurisdiction_type="county"
         )
         assert jurisdiction.name == "Test County"
         assert jurisdiction.state == "TX"
@@ -532,17 +485,14 @@ class TestJurisdictionModels:
             county="Test",
             jurisdiction_type="county",
             population=50000,
-            metadata={"fips_code": "12345"}
+            metadata={"fips_code": "12345"},
         )
         assert jurisdiction.population == 50000
         assert jurisdiction.metadata["fips_code"] == "12345"
 
     def test_jurisdiction_update(self):
         """Test JurisdictionUpdate model"""
-        update = JurisdictionUpdate(
-            name="Updated County",
-            population=100000
-        )
+        update = JurisdictionUpdate(name="Updated County", population=100000)
         assert update.name == "Updated County"
         assert update.population == 100000
 
@@ -559,9 +509,7 @@ class TestDataSourceModels:
     def test_data_source_create(self):
         """Test DataSourceCreate model"""
         source = DataSourceCreate(
-            jurisdiction_id=1,
-            source_name="Test Source",
-            source_type="api"
+            jurisdiction_id=1, source_name="Test Source", source_type="api"
         )
         assert source.jurisdiction_id == 1
         assert source.source_name == "Test Source"
@@ -573,15 +521,13 @@ class TestDataSourceModels:
             jurisdiction_id=1,
             source_name="Test API",
             source_type="api",
-            url="https://api.example.com"
+            url="https://api.example.com",
         )
         assert source.url == "https://api.example.com"
 
     def test_data_source_update(self):
         """Test DataSourceUpdate model"""
-        update = DataSourceUpdate(
-            status="inactive"
-        )
+        update = DataSourceUpdate(status="inactive")
         assert update.status == "inactive"
 
 
@@ -591,9 +537,7 @@ class TestRecordModels:
     def test_record_create(self):
         """Test RecordCreate model"""
         record = RecordCreate(
-            jurisdiction_id=1,
-            record_type="mortgage",
-            title="Test Record"
+            jurisdiction_id=1, record_type="mortgage", title="Test Record"
         )
         assert record.jurisdiction_id == 1
         assert record.record_type == "mortgage"
@@ -609,17 +553,14 @@ class TestRecordModels:
             description="A test mortgage record",
             amount=250000.00,
             metadata={"property_type": "residential"},
-            raw_data={"original": "data"}
+            raw_data={"original": "data"},
         )
         assert record.amount == 250000.00
         assert record.description == "A test mortgage record"
 
     def test_record_update(self):
         """Test RecordUpdate model"""
-        update = RecordUpdate(
-            amount=100000.50,
-            description="Updated description"
-        )
+        update = RecordUpdate(amount=100000.50, description="Updated description")
         assert update.amount == 100000.50
         assert update.description == "Updated description"
 
@@ -629,10 +570,7 @@ class TestEntityModels:
 
     def test_entity_create(self):
         """Test EntityCreate model"""
-        entity = EntityCreate(
-            entity_name="Test Entity",
-            entity_type="person"
-        )
+        entity = EntityCreate(entity_name="Test Entity", entity_type="person")
         assert entity.entity_name == "Test Entity"
         assert entity.entity_type == "person"
 
@@ -641,15 +579,13 @@ class TestEntityModels:
         entity = EntityCreate(
             entity_name="Test Company",
             entity_type="company",
-            address="123 Main St, City, ST 12345"
+            address="123 Main St, City, ST 12345",
         )
         assert entity.address == "123 Main St, City, ST 12345"
 
     def test_entity_update(self):
         """Test EntityUpdate model"""
-        update = EntityUpdate(
-            address="123 Main St"
-        )
+        update = EntityUpdate(address="123 Main St")
         assert update.address == "123 Main St"
 
 
@@ -659,9 +595,7 @@ class TestRelationshipModels:
     def test_relationship_create(self):
         """Test RelationshipCreate model"""
         relationship = RelationshipCreate(
-            entity1_id=1,
-            entity2_id=2,
-            relationship_type="owner"
+            entity1_id=1, entity2_id=2, relationship_type="owner"
         )
         assert relationship.entity1_id == 1
         assert relationship.entity2_id == 2
@@ -675,16 +609,14 @@ class TestRelationshipModels:
             relationship_type="buyer",
             record_id=10,
             evidence="Deed recorded on 2024-01-15",
-            confidence_score=0.98
+            confidence_score=0.98,
         )
         assert relationship.confidence_score == 0.98
         assert relationship.evidence is not None
 
     def test_relationship_update(self):
         """Test RelationshipUpdate model"""
-        update = RelationshipUpdate(
-            confidence_score=0.95
-        )
+        update = RelationshipUpdate(confidence_score=0.95)
         assert update.confidence_score == 0.95
 
 
@@ -706,7 +638,7 @@ class TestSearchQuery:
             jurisdiction_ids=[1, 2, 3],
             record_types=["mortgage", "property"],
             amount_min=100000,
-            amount_max=500000
+            amount_max=500000,
         )
         assert query.query == "test search"
         assert query.jurisdiction_ids == [1, 2, 3]
@@ -714,10 +646,7 @@ class TestSearchQuery:
 
     def test_search_query_with_dates(self):
         """Test SearchQuery with date range"""
-        query = SearchQuery(
-            date_from=date(2024, 1, 1),
-            date_to=date(2024, 12, 31)
-        )
+        query = SearchQuery(date_from=date(2024, 1, 1), date_to=date(2024, 12, 31))
         assert query.date_from == date(2024, 1, 1)
         assert query.date_to == date(2024, 12, 31)
 
@@ -745,9 +674,7 @@ class TestExportRequest:
         """Test ExportRequest with query"""
         query = SearchQuery(query="test")
         request = ExportRequest(
-            format="csv",
-            query=query,
-            fields=["id", "title", "amount"]
+            format="csv", query=query, fields=["id", "title", "amount"]
         )
         assert request.format == "csv"
         assert request.fields == ["id", "title", "amount"]
@@ -835,24 +762,24 @@ class TestEmailValidation:
 
     def test_email_regex_valid(self):
         """Test email regex with valid emails"""
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         valid_emails = [
             "test@example.com",
             "user.name@domain.org",
             "user+tag@example.co.uk",
-            "test123@sub.domain.com"
+            "test123@sub.domain.com",
         ]
         for email in valid_emails:
             assert re.match(email_regex, email), f"{email} should be valid"
 
     def test_email_regex_invalid(self):
         """Test email regex with invalid emails"""
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         invalid_emails = [
             "not-an-email",
             "@nodomain.com",
             "no@domain",
-            "spaces in@email.com"
+            "spaces in@email.com",
         ]
         for email in invalid_emails:
             assert not re.match(email_regex, email), f"{email} should be invalid"

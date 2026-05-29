@@ -23,14 +23,16 @@ Individual foster parent records and child placements are confidential.
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 
 class AgencyType(Enum):
     """Types of child welfare agencies"""
+
     FOSTER_CARE_AGENCY = "foster_care_agency"
     ADOPTION_AGENCY = "adoption_agency"
     CHILD_PLACING_AGENCY = "child_placing_agency"
@@ -44,6 +46,7 @@ class AgencyType(Enum):
 
 class LicenseStatus(Enum):
     """License status for agencies"""
+
     LICENSED = "licensed"
     PROVISIONAL = "provisional"
     SUSPENDED = "suspended"
@@ -55,6 +58,7 @@ class LicenseStatus(Enum):
 
 class ServiceArea(Enum):
     """Service area coverage"""
+
     STATEWIDE = "statewide"
     REGIONAL = "regional"
     COUNTY = "county"
@@ -65,6 +69,7 @@ class ServiceArea(Enum):
 @dataclass
 class ChildWelfareAgency:
     """Child welfare agency information"""
+
     agency_id: str
     agency_name: str
     agency_type: AgencyType
@@ -103,8 +108,12 @@ class ChildWelfareAgency:
             "email": self.email,
             "website": self.website,
             "license_number": self.license_number,
-            "license_issue_date": self.license_issue_date.isoformat() if self.license_issue_date else None,
-            "license_expiration": self.license_expiration.isoformat() if self.license_expiration else None,
+            "license_issue_date": (
+                self.license_issue_date.isoformat() if self.license_issue_date else None
+            ),
+            "license_expiration": (
+                self.license_expiration.isoformat() if self.license_expiration else None
+            ),
             "services_offered": self.services_offered,
             "service_area": self.service_area.value,
             "counties_served": self.counties_served,
@@ -120,6 +129,7 @@ class ChildWelfareAgency:
 @dataclass
 class FosterCareStatistics:
     """State foster care statistics (aggregate public data)"""
+
     state: str
     fiscal_year: int
     children_in_care: int
@@ -161,6 +171,7 @@ class FosterCareStatistics:
 @dataclass
 class StateRequirements:
     """Foster care licensing requirements by state"""
+
     state: str
     minimum_age: int
     background_check_required: bool = True
@@ -540,8 +551,7 @@ class BaseFosterCareAPI:
         return results
 
     async def get_state_statistics(
-        self,
-        fiscal_year: Optional[int] = None
+        self, fiscal_year: Optional[int] = None
     ) -> Optional[FosterCareStatistics]:
         """
         Get foster care statistics for the state.
@@ -657,6 +667,7 @@ def get_foster_care_api(state: str) -> BaseFosterCareAPI:
 
 # Convenience functions
 
+
 def get_state_child_welfare_contact(state: str) -> Dict[str, str]:
     """Get contact information for state child welfare agency"""
     return STATE_CHILD_WELFARE_AGENCIES.get(state.upper(), {})
@@ -673,6 +684,7 @@ def search_foster_care_agencies(
     city: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Search for licensed foster care agencies"""
+
     async def _search():
         api = get_foster_care_api(state)
         async with api:
@@ -682,19 +694,21 @@ def search_foster_care_agencies(
                 city=city,
             )
             return [r.to_dict() for r in results]
+
     return asyncio.run(_search())
 
 
 def get_foster_care_statistics(
-    state: str,
-    fiscal_year: int = 2022
+    state: str, fiscal_year: int = 2022
 ) -> Optional[Dict[str, Any]]:
     """Get foster care statistics for a state"""
+
     async def _fetch():
         api = get_foster_care_api(state)
         async with api:
             stats = await api.get_state_statistics(fiscal_year)
             return stats.to_dict() if stats else None
+
     return asyncio.run(_fetch())
 
 
@@ -705,10 +719,9 @@ def get_licensing_requirements(state: str) -> Dict[str, Any]:
     return requirements.to_dict()
 
 
-def search_all_states_statistics(
-    fiscal_year: int = 2022
-) -> Dict[str, Dict[str, Any]]:
+def search_all_states_statistics(fiscal_year: int = 2022) -> Dict[str, Dict[str, Any]]:
     """Get foster care statistics for all states"""
+
     async def _fetch():
         results = {}
         for state in STATE_CHILD_WELFARE_AGENCIES.keys():
@@ -718,6 +731,7 @@ def search_all_states_statistics(
                 if stats:
                     results[state] = stats.to_dict()
         return results
+
     return asyncio.run(_fetch())
 
 

@@ -3,12 +3,13 @@ Tests for Reason Code Engine (Gap P2 – FCRA/ECOA Compliance)
 """
 
 import pytest
+
 from datagod.compliance.reason_codes import (
-    ReasonCodeEngine,
     ReasonCode,
+    ReasonCodeEngine,
     ReasonCodeResult,
-    ReasonCodeStandard,
     ReasonCodeSeverity,
+    ReasonCodeStandard,
 )
 
 
@@ -48,10 +49,10 @@ class TestReasonCodeEngine:
     def test_codes_have_required_fields(self):
         codes = self.engine.list_codes()
         for code in codes:
-            assert hasattr(code, 'code')
-            assert hasattr(code, 'standard')
-            assert hasattr(code, 'severity')
-            assert hasattr(code, 'description')
+            assert hasattr(code, "code")
+            assert hasattr(code, "standard")
+            assert hasattr(code, "severity")
+            assert hasattr(code, "description")
 
     def test_list_codes_by_standard(self):
         fcra = self.engine.list_codes(standard=ReasonCodeStandard.FCRA)
@@ -61,8 +62,16 @@ class TestReasonCodeEngine:
 
     def test_generate_codes_for_blockers(self):
         blockers = [
-            {"blocker_id": "tax_lien_1", "category": "lien", "description": "Outstanding tax lien"},
-            {"blocker_id": "title_defect_1", "category": "title", "description": "Title defect found"},
+            {
+                "blocker_id": "tax_lien_1",
+                "category": "lien",
+                "description": "Outstanding tax lien",
+            },
+            {
+                "blocker_id": "title_defect_1",
+                "category": "title",
+                "description": "Title defect found",
+            },
         ]
         result = self.engine.generate_codes(blockers)
         assert isinstance(result, ReasonCodeResult)
@@ -73,9 +82,15 @@ class TestReasonCodeEngine:
         assert len(result.codes) == 0
 
     def test_result_to_dict(self):
-        result = self.engine.generate_codes([
-            {"blocker_id": "test", "category": "compliance", "description": "test blocker"}
-        ])
+        result = self.engine.generate_codes(
+            [
+                {
+                    "blocker_id": "test",
+                    "category": "compliance",
+                    "description": "test blocker",
+                }
+            ]
+        )
         d = result.to_dict()
         assert "codes" in d
         assert "total_codes" in d

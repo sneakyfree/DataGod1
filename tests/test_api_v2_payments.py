@@ -14,12 +14,13 @@ This module tests:
 Coverage target: 100% of stripe_service.py
 """
 
-import pytest
+import json
 import os
 import sys
-import json
 from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Set test environment before imports
 os.environ["TESTING"] = "1"
@@ -28,22 +29,25 @@ os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ.pop("STRIPE_SECRET_KEY", None)
 
 # Add paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'api', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "api", "src"))
 
 
 def setup_module():
     """Ensure fresh stripe_service import (not a MagicMock from another test)."""
     import importlib
-    key = 'api.src.stripe_service'
+
+    key = "api.src.stripe_service"
     if key in sys.modules:
         mod = sys.modules[key]
         # If another test file replaced the module with a MagicMock, remove it
-        if not hasattr(mod, '__file__') or isinstance(mod, MagicMock):
+        if not hasattr(mod, "__file__") or isinstance(mod, MagicMock):
             del sys.modules[key]
             # Also remove any cached parent imports that reference the mock
             for k in list(sys.modules):
-                if k.startswith('api.src') and isinstance(sys.modules.get(k), MagicMock):
+                if k.startswith("api.src") and isinstance(
+                    sys.modules.get(k), MagicMock
+                ):
                     del sys.modules[k]
 
 
@@ -60,25 +64,26 @@ class TestStripeServiceInitialization:
     def test_mock_mode_when_no_key(self):
         """Test service runs in mock mode without STRIPE_SECRET_KEY."""
         # Ensure no key is set
-        original_key = os.environ.pop('STRIPE_SECRET_KEY', None)
+        original_key = os.environ.pop("STRIPE_SECRET_KEY", None)
 
         try:
             from api.src.stripe_service import StripeService
+
             service = StripeService()
 
             # Should be in mock mode
             assert service.stripe_available == False
         finally:
             if original_key:
-                os.environ['STRIPE_SECRET_KEY'] = original_key
+                os.environ["STRIPE_SECRET_KEY"] = original_key
 
     def test_price_ids_configuration(self):
         """Test STRIPE_PRICE_IDS are configured."""
         from api.src.stripe_service import STRIPE_PRICE_IDS
 
-        assert 'basic' in STRIPE_PRICE_IDS
-        assert 'pro' in STRIPE_PRICE_IDS
-        assert 'enterprise' in STRIPE_PRICE_IDS
+        assert "basic" in STRIPE_PRICE_IDS
+        assert "pro" in STRIPE_PRICE_IDS
+        assert "enterprise" in STRIPE_PRICE_IDS
 
 
 class TestStripeServiceCustomer:
@@ -90,15 +95,13 @@ class TestStripeServiceCustomer:
 
         service = StripeService()
         result = service.create_customer(
-            email="test@example.com",
-            name="Test User",
-            metadata={"user_id": "123"}
+            email="test@example.com", name="Test User", metadata={"user_id": "123"}
         )
 
-        assert 'id' in result
-        assert result['email'] == "test@example.com"
-        assert result['name'] == "Test User"
-        assert 'cus_mock_' in result['id']
+        assert "id" in result
+        assert result["email"] == "test@example.com"
+        assert result["name"] == "Test User"
+        assert "cus_mock_" in result["id"]
 
     def test_create_customer_without_name(self):
         """Test creating customer without optional name."""
@@ -107,9 +110,9 @@ class TestStripeServiceCustomer:
         service = StripeService()
         result = service.create_customer(email="test@example.com")
 
-        assert 'id' in result
-        assert result['email'] == "test@example.com"
-        assert result['name'] is None
+        assert "id" in result
+        assert result["email"] == "test@example.com"
+        assert result["name"] is None
 
     def test_create_customer_without_metadata(self):
         """Test creating customer without metadata."""
@@ -118,7 +121,7 @@ class TestStripeServiceCustomer:
         service = StripeService()
         result = service.create_customer(email="test@example.com")
 
-        assert result['metadata'] == {}
+        assert result["metadata"] == {}
 
 
 class TestStripeServiceCheckout:
@@ -133,14 +136,14 @@ class TestStripeServiceCheckout:
             customer_id="cus_mock_123",
             price_id="price_basic",
             success_url="https://example.com/success",
-            cancel_url="https://example.com/cancel"
+            cancel_url="https://example.com/cancel",
         )
 
-        assert 'id' in result
-        assert 'url' in result
-        assert 'cs_mock_' in result['id']
-        assert 'success' in result['url']
-        assert 'mock=true' in result['url']
+        assert "id" in result
+        assert "url" in result
+        assert "cs_mock_" in result["id"]
+        assert "success" in result["url"]
+        assert "mock=true" in result["url"]
 
     def test_create_checkout_session_with_metadata(self):
         """Test creating checkout session with metadata."""
@@ -152,10 +155,10 @@ class TestStripeServiceCheckout:
             price_id="price_basic",
             success_url="https://example.com/success",
             cancel_url="https://example.com/cancel",
-            metadata={"order_id": "order_123"}
+            metadata={"order_id": "order_123"},
         )
 
-        assert result['status'] == 'open'
+        assert result["status"] == "open"
 
 
 class TestStripeServicePortal:
@@ -167,12 +170,11 @@ class TestStripeServicePortal:
 
         service = StripeService()
         result = service.create_portal_session(
-            customer_id="cus_mock_123",
-            return_url="https://example.com/account"
+            customer_id="cus_mock_123", return_url="https://example.com/account"
         )
 
-        assert 'url' in result
-        assert 'portal=mock' in result['url']
+        assert "url" in result
+        assert "portal=mock" in result["url"]
 
 
 class TestStripeServiceSubscription:
@@ -217,16 +219,18 @@ class TestStripeServiceWebhook:
 
         service = StripeService()
 
-        payload = json.dumps({
-            "id": "evt_123",
-            "type": "customer.subscription.created",
-            "data": {"object": {"id": "sub_123"}}
-        }).encode()
+        payload = json.dumps(
+            {
+                "id": "evt_123",
+                "type": "customer.subscription.created",
+                "data": {"object": {"id": "sub_123"}},
+            }
+        ).encode()
 
         result = service.verify_webhook(payload, "sig_mock")
 
         assert result is not None
-        assert result['type'] == 'customer.subscription.created'
+        assert result["type"] == "customer.subscription.created"
 
     def test_verify_webhook_mock_mode_invalid_json(self):
         """Test verifying webhook in mock mode with invalid JSON."""
@@ -248,7 +252,7 @@ class TestStripeServiceTierMapping:
         from api.src.stripe_service import StripeService
 
         service = StripeService()
-        price_id = service.get_price_id_for_tier('basic')
+        price_id = service.get_price_id_for_tier("basic")
 
         assert price_id is not None
 
@@ -257,7 +261,7 @@ class TestStripeServiceTierMapping:
         from api.src.stripe_service import StripeService
 
         service = StripeService()
-        price_id = service.get_price_id_for_tier('pro')
+        price_id = service.get_price_id_for_tier("pro")
 
         assert price_id is not None
 
@@ -266,7 +270,7 @@ class TestStripeServiceTierMapping:
         from api.src.stripe_service import StripeService
 
         service = StripeService()
-        price_id = service.get_price_id_for_tier('enterprise')
+        price_id = service.get_price_id_for_tier("enterprise")
 
         assert price_id is not None
 
@@ -275,30 +279,30 @@ class TestStripeServiceTierMapping:
         from api.src.stripe_service import StripeService
 
         service = StripeService()
-        price_id = service.get_price_id_for_tier('invalid_tier')
+        price_id = service.get_price_id_for_tier("invalid_tier")
 
         assert price_id is None
 
     def test_get_tier_from_price(self):
         """Test internal _get_tier_from_price method."""
-        from api.src.stripe_service import StripeService, STRIPE_PRICE_IDS
+        from api.src.stripe_service import STRIPE_PRICE_IDS, StripeService
 
         service = StripeService()
 
         # Test with known price ID
-        basic_price = STRIPE_PRICE_IDS['basic']
+        basic_price = STRIPE_PRICE_IDS["basic"]
         tier = service._get_tier_from_price(basic_price)
-        assert tier == 'basic'
+        assert tier == "basic"
 
     def test_get_tier_from_unknown_price(self):
         """Test _get_tier_from_price with unknown price ID."""
         from api.src.stripe_service import StripeService
 
         service = StripeService()
-        tier = service._get_tier_from_price('price_unknown_xyz')
+        tier = service._get_tier_from_price("price_unknown_xyz")
 
         # Unknown price should return 'free'
-        assert tier == 'free'
+        assert tier == "free"
 
 
 class TestStripeServiceEventHandling:
@@ -306,50 +310,44 @@ class TestStripeServiceEventHandling:
 
     def test_handle_subscription_created(self):
         """Test handling subscription.created event."""
-        from api.src.stripe_service import StripeService, STRIPE_PRICE_IDS
+        from api.src.stripe_service import STRIPE_PRICE_IDS, StripeService
 
         service = StripeService()
 
         subscription_data = {
-            'id': 'sub_123',
-            'customer': 'cus_123',
-            'items': {
-                'data': [{'price': {'id': STRIPE_PRICE_IDS['basic']}}]
-            },
-            'current_period_end': int(datetime.now().timestamp()) + 86400
+            "id": "sub_123",
+            "customer": "cus_123",
+            "items": {"data": [{"price": {"id": STRIPE_PRICE_IDS["basic"]}}]},
+            "current_period_end": int(datetime.now().timestamp()) + 86400,
         }
 
         result = service.handle_subscription_event(
-            'customer.subscription.created',
-            subscription_data
+            "customer.subscription.created", subscription_data
         )
 
-        assert result['success'] is True
-        assert result['action'] == 'created'
-        assert result['subscription_id'] == 'sub_123'
-        assert result['customer_id'] == 'cus_123'
+        assert result["success"] is True
+        assert result["action"] == "created"
+        assert result["subscription_id"] == "sub_123"
+        assert result["customer_id"] == "cus_123"
 
     def test_handle_subscription_updated(self):
         """Test handling subscription.updated event."""
-        from api.src.stripe_service import StripeService, STRIPE_PRICE_IDS
+        from api.src.stripe_service import STRIPE_PRICE_IDS, StripeService
 
         service = StripeService()
 
         subscription_data = {
-            'id': 'sub_123',
-            'customer': 'cus_123',
-            'items': {
-                'data': [{'price': {'id': STRIPE_PRICE_IDS['pro']}}]
-            },
-            'current_period_end': int(datetime.now().timestamp()) + 86400
+            "id": "sub_123",
+            "customer": "cus_123",
+            "items": {"data": [{"price": {"id": STRIPE_PRICE_IDS["pro"]}}]},
+            "current_period_end": int(datetime.now().timestamp()) + 86400,
         }
 
         result = service.handle_subscription_event(
-            'customer.subscription.updated',
-            subscription_data
+            "customer.subscription.updated", subscription_data
         )
 
-        assert result['action'] == 'updated'
+        assert result["action"] == "updated"
 
     def test_handle_subscription_deleted(self):
         """Test handling subscription.deleted event."""
@@ -358,17 +356,16 @@ class TestStripeServiceEventHandling:
         service = StripeService()
 
         subscription_data = {
-            'id': 'sub_123',
-            'customer': 'cus_123',
+            "id": "sub_123",
+            "customer": "cus_123",
         }
 
         result = service.handle_subscription_event(
-            'customer.subscription.deleted',
-            subscription_data
+            "customer.subscription.deleted", subscription_data
         )
 
-        assert result['action'] == 'cancelled'
-        assert result['tier'] == 'free'
+        assert result["action"] == "cancelled"
+        assert result["tier"] == "free"
 
     def test_handle_payment_failed(self):
         """Test handling invoice.payment_failed event."""
@@ -377,16 +374,15 @@ class TestStripeServiceEventHandling:
         service = StripeService()
 
         subscription_data = {
-            'id': 'inv_123',
-            'customer': 'cus_123',
+            "id": "inv_123",
+            "customer": "cus_123",
         }
 
         result = service.handle_subscription_event(
-            'invoice.payment_failed',
-            subscription_data
+            "invoice.payment_failed", subscription_data
         )
 
-        assert result['action'] == 'payment_failed'
+        assert result["action"] == "payment_failed"
 
     def test_handle_payment_succeeded(self):
         """Test handling invoice.payment_succeeded event."""
@@ -395,17 +391,16 @@ class TestStripeServiceEventHandling:
         service = StripeService()
 
         subscription_data = {
-            'id': 'inv_123',
-            'customer': 'cus_123',
-            'current_period_end': int(datetime.now().timestamp()) + 86400
+            "id": "inv_123",
+            "customer": "cus_123",
+            "current_period_end": int(datetime.now().timestamp()) + 86400,
         }
 
         result = service.handle_subscription_event(
-            'invoice.payment_succeeded',
-            subscription_data
+            "invoice.payment_succeeded", subscription_data
         )
 
-        assert result['action'] == 'payment_succeeded'
+        assert result["action"] == "payment_succeeded"
 
     def test_handle_unknown_event(self):
         """Test handling unknown event type."""
@@ -414,12 +409,11 @@ class TestStripeServiceEventHandling:
         service = StripeService()
 
         result = service.handle_subscription_event(
-            'unknown.event.type',
-            {'id': 'obj_123'}
+            "unknown.event.type", {"id": "obj_123"}
         )
 
-        assert result['success'] is True
-        assert result['action'] is None
+        assert result["success"] is True
+        assert result["action"] is None
 
 
 class TestStripeServiceGlobalInstance:
@@ -433,7 +427,7 @@ class TestStripeServiceGlobalInstance:
 
     def test_global_instance_is_stripe_service(self):
         """Test global instance is StripeService type."""
-        from api.src.stripe_service import stripe_service, StripeService
+        from api.src.stripe_service import StripeService, stripe_service
 
         assert isinstance(stripe_service, StripeService)
 
@@ -443,30 +437,36 @@ class TestSubscriptionTierLogic:
 
     def test_tier_list(self):
         """Test subscription tier list."""
-        tiers = ['free', 'basic', 'pro', 'enterprise']
+        tiers = ["free", "basic", "pro", "enterprise"]
 
-        assert 'free' in tiers
-        assert 'enterprise' in tiers
+        assert "free" in tiers
+        assert "enterprise" in tiers
 
     def test_tier_hierarchy(self):
         """Test tier hierarchy ordering."""
-        tier_order = {'free': 0, 'basic': 1, 'pro': 2, 'enterprise': 3}
+        tier_order = {"free": 0, "basic": 1, "pro": 2, "enterprise": 3}
 
-        assert tier_order['free'] < tier_order['basic']
-        assert tier_order['basic'] < tier_order['pro']
-        assert tier_order['pro'] < tier_order['enterprise']
+        assert tier_order["free"] < tier_order["basic"]
+        assert tier_order["basic"] < tier_order["pro"]
+        assert tier_order["pro"] < tier_order["enterprise"]
 
     def test_tier_features(self):
         """Test tier feature mapping."""
         tier_features = {
-            'free': ['basic_search', 'view_records'],
-            'basic': ['basic_search', 'view_records', 'export_csv'],
-            'pro': ['basic_search', 'view_records', 'export_csv', 'api_access'],
-            'enterprise': ['basic_search', 'view_records', 'export_csv', 'api_access', 'unlimited']
+            "free": ["basic_search", "view_records"],
+            "basic": ["basic_search", "view_records", "export_csv"],
+            "pro": ["basic_search", "view_records", "export_csv", "api_access"],
+            "enterprise": [
+                "basic_search",
+                "view_records",
+                "export_csv",
+                "api_access",
+                "unlimited",
+            ],
         }
 
-        assert 'basic_search' in tier_features['free']
-        assert 'api_access' in tier_features['pro']
+        assert "basic_search" in tier_features["free"]
+        assert "api_access" in tier_features["pro"]
 
 
 class TestPriceIDConfiguration:
@@ -518,7 +518,7 @@ class TestMockModeConsistency:
         service = StripeService()
         result = service.create_customer(email="test@example.com")
 
-        assert result['id'].startswith('cus_mock_')
+        assert result["id"].startswith("cus_mock_")
 
     def test_mock_session_id_format(self):
         """Test mock checkout session ID format."""
@@ -529,10 +529,10 @@ class TestMockModeConsistency:
             customer_id="cus_mock_123",
             price_id="price_test",
             success_url="https://example.com/success",
-            cancel_url="https://example.com/cancel"
+            cancel_url="https://example.com/cancel",
         )
 
-        assert result['id'].startswith('cs_mock_')
+        assert result["id"].startswith("cs_mock_")
 
 
 class TestWebhookSecretHandling:
@@ -543,24 +543,24 @@ class TestWebhookSecretHandling:
         from api.src.stripe_service import StripeService
 
         # Set a test webhook secret
-        original = os.environ.get('STRIPE_WEBHOOK_SECRET')
-        os.environ['STRIPE_WEBHOOK_SECRET'] = 'whsec_test_123'
+        original = os.environ.get("STRIPE_WEBHOOK_SECRET")
+        os.environ["STRIPE_WEBHOOK_SECRET"] = "whsec_test_123"
 
         try:
             service = StripeService()
-            assert service.webhook_secret == 'whsec_test_123'
+            assert service.webhook_secret == "whsec_test_123"
         finally:
             if original:
-                os.environ['STRIPE_WEBHOOK_SECRET'] = original
+                os.environ["STRIPE_WEBHOOK_SECRET"] = original
             else:
-                os.environ.pop('STRIPE_WEBHOOK_SECRET', None)
+                os.environ.pop("STRIPE_WEBHOOK_SECRET", None)
 
     def test_empty_webhook_secret(self):
         """Test handling empty webhook secret."""
         from api.src.stripe_service import StripeService
 
-        os.environ.pop('STRIPE_WEBHOOK_SECRET', None)
+        os.environ.pop("STRIPE_WEBHOOK_SECRET", None)
 
         service = StripeService()
         # Should not raise, just use empty string
-        assert service.webhook_secret == '' or service.webhook_secret is not None
+        assert service.webhook_secret == "" or service.webhook_secret is not None

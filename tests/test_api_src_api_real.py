@@ -3,28 +3,28 @@ Tests for api/src/api.py that actually import and exercise the module
 These tests provide real coverage by importing the actual module
 """
 
-import pytest
-import sys
 import os
-from unittest.mock import MagicMock, patch, AsyncMock
+import sys
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 # Add the api/src directory to the path BEFORE api package
-api_src_path = os.path.join(os.path.dirname(__file__), '..', 'api', 'src')
+api_src_path = os.path.join(os.path.dirname(__file__), "..", "api", "src")
 sys.path.insert(0, api_src_path)
 
 # Now we need to import the module directly using importlib to avoid name collision
 import importlib.util
 
 spec = importlib.util.spec_from_file_location(
-    "api_module",
-    os.path.join(api_src_path, "api.py")
+    "api_module", os.path.join(api_src_path, "api.py")
 )
 api_module = importlib.util.module_from_spec(spec)
 
 # Mock the db import since it's a local import in api.py
-sys.modules['db'] = MagicMock()
-sys.modules['db'].get_db = MagicMock()
+sys.modules["db"] = MagicMock()
+sys.modules["db"].get_db = MagicMock()
 
 # Load the module
 spec.loader.exec_module(api_module)
@@ -70,7 +70,9 @@ class TestUserFunctions:
 
     def test_authenticate_user_user_not_exists(self):
         """Test authentication for non-existent user"""
-        user = api_module.authenticate_user(api_module.fake_users_db, "nonexistent", "password")
+        user = api_module.authenticate_user(
+            api_module.fake_users_db, "nonexistent", "password"
+        )
         assert user is False
 
     def test_authenticate_user_wrong_password(self):
@@ -109,8 +111,7 @@ class TestTokenFunctions:
     def test_create_access_token_with_expiry(self):
         """Test token creation with expiry"""
         token = api_module.create_access_token(
-            data={"sub": "testuser"},
-            expires_delta=timedelta(minutes=30)
+            data={"sub": "testuser"}, expires_delta=timedelta(minutes=30)
         )
         assert token is not None
         assert isinstance(token, str)
@@ -132,7 +133,7 @@ class TestModels:
             username="testuser",
             email="test@example.com",
             full_name="Test User",
-            disabled=False
+            disabled=False,
         )
         assert user.username == "testuser"
         assert user.email == "test@example.com"
@@ -149,9 +150,7 @@ class TestModels:
     def test_user_in_db_model(self):
         """Test UserInDB model with hashed password"""
         user = api_module.UserInDB(
-            username="testuser",
-            email="test@example.com",
-            hashed_password="hashed123"
+            username="testuser", email="test@example.com", hashed_password="hashed123"
         )
         assert user.username == "testuser"
         assert user.hashed_password == "hashed123"
@@ -184,15 +183,16 @@ class TestRateLimiting:
     @pytest.mark.asyncio
     async def test_rate_limit_first_request(self):
         """Test rate limit allows first request"""
+
         @api_module.rate_limit(max_requests=5, window=60)
         async def test_func():
             return "success"
 
         # Reset the wrapper's state if it exists
-        if hasattr(test_func, 'request_count'):
-            delattr(test_func, 'request_count')
-        if hasattr(test_func, 'last_reset'):
-            delattr(test_func, 'last_reset')
+        if hasattr(test_func, "request_count"):
+            delattr(test_func, "request_count")
+        if hasattr(test_func, "last_reset"):
+            delattr(test_func, "last_reset")
 
         result = await test_func()
         assert result == "success"
@@ -200,15 +200,16 @@ class TestRateLimiting:
     @pytest.mark.asyncio
     async def test_rate_limit_within_limit(self):
         """Test rate limit allows requests within limit"""
+
         @api_module.rate_limit(max_requests=5, window=60)
         async def test_func():
             return "success"
 
         # Reset the wrapper's state
-        if hasattr(test_func, 'request_count'):
-            delattr(test_func, 'request_count')
-        if hasattr(test_func, 'last_reset'):
-            delattr(test_func, 'last_reset')
+        if hasattr(test_func, "request_count"):
+            delattr(test_func, "request_count")
+        if hasattr(test_func, "last_reset"):
+            delattr(test_func, "last_reset")
 
         # Make multiple requests within limit
         for _ in range(3):
@@ -225,10 +226,10 @@ class TestRateLimiting:
             return "success"
 
         # Reset the wrapper's state
-        if hasattr(test_func, 'request_count'):
-            delattr(test_func, 'request_count')
-        if hasattr(test_func, 'last_reset'):
-            delattr(test_func, 'last_reset')
+        if hasattr(test_func, "request_count"):
+            delattr(test_func, "request_count")
+        if hasattr(test_func, "last_reset"):
+            delattr(test_func, "last_reset")
 
         # Make requests up to the limit
         await test_func()
@@ -259,7 +260,7 @@ class TestRedisClient:
         """Test redis_client attribute exists"""
         # redis_client can be None if Redis is not available
         # Just check the attribute exists
-        hasattr(api_module, 'redis_client')
+        hasattr(api_module, "redis_client")
 
 
 class TestFakeUsersDb:
@@ -504,6 +505,7 @@ class TestCacheEndpoints:
     async def test_get_cached_data_with_redis_hit(self):
         """Test cache endpoint with redis mock - cache hit"""
         import json
+
         mock_redis = MagicMock()
         mock_redis.get.return_value = json.dumps({"key": "value"})
         original_redis = api_module.redis_client
@@ -524,7 +526,9 @@ class TestCacheEndpoints:
         api_module.redis_client = mock_redis
 
         try:
-            result = await api_module.set_cached_data("test_key", {"data": "value"}, 3600)
+            result = await api_module.set_cached_data(
+                "test_key", {"data": "value"}, 3600
+            )
             assert result["status"] == "cached"
             mock_redis.setex.assert_called_once()
         finally:
@@ -550,7 +554,9 @@ class TestDatabaseEndpoints:
         """Test get single jurisdiction - found"""
         mock_db = MagicMock()
         mock_jurisdiction = MagicMock(id=1, name="Test Jurisdiction")
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_jurisdiction
+        mock_db.query.return_value.filter.return_value.first.return_value = (
+            mock_jurisdiction
+        )
 
         result = await api_module.get_jurisdiction(1, mock_db)
         assert result.id == 1
@@ -580,7 +586,9 @@ class TestDatabaseEndpoints:
     async def test_get_records(self):
         """Test get records endpoint"""
         mock_db = MagicMock()
-        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = []
+        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = (
+            []
+        )
 
         result = await api_module.get_records(mock_db, limit=100, offset=0)
         assert result == []
@@ -611,7 +619,9 @@ class TestDatabaseEndpoints:
     async def test_get_entities(self):
         """Test get entities endpoint"""
         mock_db = MagicMock()
-        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = []
+        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = (
+            []
+        )
 
         result = await api_module.get_entities(mock_db, limit=100, offset=0)
         assert result == []
@@ -642,7 +652,9 @@ class TestDatabaseEndpoints:
     async def test_get_relationships(self):
         """Test get relationships endpoint"""
         mock_db = MagicMock()
-        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = []
+        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = (
+            []
+        )
 
         result = await api_module.get_relationships(mock_db, limit=100, offset=0)
         assert result == []
@@ -652,7 +664,9 @@ class TestDatabaseEndpoints:
         """Test get single relationship - found"""
         mock_db = MagicMock()
         mock_relationship = MagicMock(id=1)
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_relationship
+        mock_db.query.return_value.filter.return_value.first.return_value = (
+            mock_relationship
+        )
 
         result = await api_module.get_relationship(1, mock_db)
         assert result.id == 1
@@ -689,7 +703,7 @@ class TestSearchEndpoint:
             "records": records,
             "count": records_query.count(),
             "offset": 0,
-            "limit": 100
+            "limit": 100,
         }
         assert result["count"] == 0
         assert result["records"] == []

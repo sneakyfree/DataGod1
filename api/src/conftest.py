@@ -5,9 +5,10 @@ This file provides proper test isolation for API tests when run
 as part of the full test suite.
 """
 
-import pytest
 import sys
 from pathlib import Path
+
+import pytest
 
 # Add api/src to path FIRST
 api_src_path = Path(__file__).parent
@@ -30,7 +31,7 @@ def pytest_collection_modifyitems(config, items):
     other_tests = []
 
     for item in items:
-        if 'api/src' in str(item.fspath):
+        if "api/src" in str(item.fspath):
             api_tests.append(item)
         else:
             other_tests.append(item)
@@ -40,17 +41,17 @@ def pytest_collection_modifyitems(config, items):
     if other_tests and api_tests:
         skip_marker = pytest.mark.skip(
             reason="Skipped in full suite due to test isolation issues. "
-                   "Run 'pytest api/src/test_api_v2.py' to test these independently."
+            "Run 'pytest api/src/test_api_v2.py' to test these independently."
         )
         problematic_tests = {
-            'test_jurisdiction_crud',
-            'test_data_source_crud',
-            'test_record_crud',
-            'test_entity_crud',
-            'test_relationship_crud',
-            'test_advanced_search',
-            'test_data_export',
-            'test_integration_endpoints',
+            "test_jurisdiction_crud",
+            "test_data_source_crud",
+            "test_record_crud",
+            "test_entity_crud",
+            "test_relationship_crud",
+            "test_advanced_search",
+            "test_data_export",
+            "test_integration_endpoints",
         }
         for item in api_tests:
             if item.name in problematic_tests:
@@ -71,13 +72,15 @@ def reset_api_test_state():
     test pollution when running the full test suite.
     """
     # Reset the global access_token in test_api_v2 if it was imported
-    if 'test_api_v2' in sys.modules:
-        test_module = sys.modules['test_api_v2']
-        if hasattr(test_module, 'access_token'):
+    if "test_api_v2" in sys.modules:
+        test_module = sys.modules["test_api_v2"]
+        if hasattr(test_module, "access_token"):
             test_module.access_token = None
 
         # Ensure mock_user_db is still set correctly
-        if hasattr(test_module, 'set_user_db_manager') and hasattr(test_module, 'mock_user_db'):
+        if hasattr(test_module, "set_user_db_manager") and hasattr(
+            test_module, "mock_user_db"
+        ):
             test_module.set_user_db_manager(test_module.mock_user_db)
 
     yield
@@ -99,8 +102,14 @@ def reset_database_tables():
     # Clean up database after each test
     try:
         # Import here to avoid issues with module loading
+        from datagod.models import (
+            DataSource,
+            Entity,
+            Jurisdiction,
+            Record,
+            Relationship,
+        )
         from db import SessionLocal, engine
-        from datagod.models import Jurisdiction, DataSource, Record, Entity, Relationship
 
         session = SessionLocal()
         try:
@@ -132,6 +141,7 @@ def api_client():
     with database initialization.
     """
     from test_api_v2 import client, main_app
+
     from db import init_db
 
     # Ensure database is initialized
@@ -147,12 +157,9 @@ def authenticated_headers():
 
     This fixture gets a fresh authentication token.
     """
-    from test_api_v2 import client, TEST_USER_CREDENTIALS
+    from test_api_v2 import TEST_USER_CREDENTIALS, client
 
-    response = client.post(
-        "/api/v2/token",
-        data=TEST_USER_CREDENTIALS
-    )
+    response = client.post("/api/v2/token", data=TEST_USER_CREDENTIALS)
 
     if response.status_code == 200:
         token = response.json()["access_token"]

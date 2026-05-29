@@ -8,21 +8,21 @@ Free Public Sources:
 - Public pension fund data
 """
 
-import logging
-
 import asyncio
-import aiohttp
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, List, Dict, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
 
-
 class AwardType(Enum):
     """Federal award types."""
+
     CONTRACT = "contract"
     GRANT = "grant"
     LOAN = "loan"
@@ -32,6 +32,7 @@ class AwardType(Enum):
 
 class EmployeeType(Enum):
     """Government employee types."""
+
     FEDERAL = "federal"
     STATE = "state"
     COUNTY = "county"
@@ -42,6 +43,7 @@ class EmployeeType(Enum):
 @dataclass
 class FederalAward:
     """Federal spending award (contract, grant, etc.)."""
+
     award_id: str
     generated_unique_id: Optional[str] = None
     award_type: Optional[str] = None
@@ -72,6 +74,7 @@ class FederalAward:
 @dataclass
 class GovernmentSalary:
     """Government employee salary record."""
+
     employee_name: str
     agency: str
     job_title: Optional[str] = None
@@ -93,6 +96,7 @@ class GovernmentSalary:
 @dataclass
 class PensionRecord:
     """Public pension record."""
+
     beneficiary_name: str
     pension_system: str
     employer: Optional[str] = None
@@ -107,6 +111,7 @@ class PensionRecord:
 @dataclass
 class FederalAgency:
     """Federal agency employment data."""
+
     agency_name: str
     agency_code: Optional[str] = None
     total_employees: int = 0
@@ -122,293 +127,267 @@ STATE_SALARY_DATABASES = {
     "AL": {
         "name": "Alabama Open Government",
         "url": "https://open.alabama.gov/",
-        "type": "state"
+        "type": "state",
     },
     "AK": {
         "name": "Alaska State Checkbook",
         "url": "https://checkbook.alaska.gov/",
-        "type": "state"
+        "type": "state",
     },
     "AZ": {
         "name": "Arizona Open Books",
         "url": "https://openbooks.az.gov/",
-        "type": "state"
+        "type": "state",
     },
     "AR": {
         "name": "Arkansas Transparency",
         "url": "https://www.ark.org/dfa/transparency/",
-        "type": "state"
+        "type": "state",
     },
     "CA": {
         "name": "California State Controller - Government Compensation",
         "url": "https://publicpay.ca.gov/",
         "type": "state",
-        "has_api": False
+        "has_api": False,
     },
     "CO": {
         "name": "Colorado PEAK",
         "url": "https://data.colorado.gov/",
-        "type": "state"
+        "type": "state",
     },
     "CT": {
         "name": "Connecticut Open Data",
         "url": "https://data.ct.gov/",
-        "type": "state"
+        "type": "state",
     },
     "DE": {
         "name": "Delaware Open Data",
         "url": "https://data.delaware.gov/",
-        "type": "state"
+        "type": "state",
     },
     "DC": {
         "name": "DC Open Data",
         "url": "https://opendata.dc.gov/",
-        "type": "district"
+        "type": "district",
     },
     "FL": {
         "name": "Florida Has a Right to Know",
         "url": "https://www.floridahasarighttoknow.com/",
-        "type": "state"
+        "type": "state",
     },
-    "GA": {
-        "name": "Open Georgia",
-        "url": "https://open.georgia.gov/",
-        "type": "state"
-    },
+    "GA": {"name": "Open Georgia", "url": "https://open.georgia.gov/", "type": "state"},
     "HI": {
         "name": "Hawaii Data Portal",
         "url": "https://data.hawaii.gov/",
-        "type": "state"
+        "type": "state",
     },
     "ID": {
         "name": "Idaho Transparent Idaho",
         "url": "https://transparent.idaho.gov/",
-        "type": "state"
+        "type": "state",
     },
     "IL": {
         "name": "Illinois Comptroller - Salaries",
         "url": "https://illinoiscomptroller.gov/financial-data/state-employee-salary-database/",
-        "type": "state"
+        "type": "state",
     },
     "IN": {
         "name": "Indiana Transparency Portal",
         "url": "https://www.in.gov/itp/",
-        "type": "state"
+        "type": "state",
     },
     "IA": {
         "name": "Iowa Data Portal",
         "url": "https://data.iowa.gov/",
-        "type": "state"
+        "type": "state",
     },
     "KS": {
         "name": "Kansas Open Gov",
         "url": "https://admin.ks.gov/offices/accounts-reports/open-gov",
-        "type": "state"
+        "type": "state",
     },
     "KY": {
         "name": "Kentucky OpenDoor",
         "url": "https://opendoor.ky.gov/",
-        "type": "state"
+        "type": "state",
     },
     "LA": {
         "name": "Louisiana Checkbook",
         "url": "https://checkbook.la.gov/",
-        "type": "state"
+        "type": "state",
     },
     "ME": {
         "name": "Maine Open Checkbook",
         "url": "https://www.maine.gov/dafs/bbm/opencheckbook/",
-        "type": "state"
+        "type": "state",
     },
     "MD": {
         "name": "Maryland Open Data",
         "url": "https://opendata.maryland.gov/",
-        "type": "state"
+        "type": "state",
     },
     "MA": {
         "name": "Massachusetts Open Checkbook",
         "url": "https://www.macomptroller.org/cthru/",
-        "type": "state"
+        "type": "state",
     },
     "MI": {
         "name": "Michigan Open Data",
         "url": "https://data.michigan.gov/",
-        "type": "state"
+        "type": "state",
     },
     "MN": {
         "name": "Minnesota Open Data",
         "url": "https://mn.gov/opendata/",
-        "type": "state"
+        "type": "state",
     },
     "MS": {
         "name": "Mississippi Transparency",
         "url": "https://www.transparency.ms.gov/",
-        "type": "state"
+        "type": "state",
     },
     "MO": {
         "name": "Missouri Accountability Portal",
         "url": "https://mapyourtaxes.mo.gov/",
-        "type": "state"
+        "type": "state",
     },
     "MT": {
         "name": "Montana Transparency",
         "url": "https://montanabudget.com/",
-        "type": "state"
+        "type": "state",
     },
     "NE": {
         "name": "Nebraska Open Data",
         "url": "https://statedata.nebraska.gov/",
-        "type": "state"
+        "type": "state",
     },
-    "NV": {
-        "name": "Nevada Open Gov",
-        "url": "https://open.nv.gov/",
-        "type": "state"
-    },
+    "NV": {"name": "Nevada Open Gov", "url": "https://open.nv.gov/", "type": "state"},
     "NH": {
         "name": "New Hampshire Transparency",
         "url": "https://www.nh.gov/transparentnh/",
-        "type": "state"
+        "type": "state",
     },
     "NJ": {
         "name": "New Jersey Data Miner",
         "url": "https://data.nj.gov/",
         "type": "state",
-        "has_api": True
+        "has_api": True,
     },
     "NM": {
         "name": "New Mexico Sunshine Portal",
         "url": "https://sunshineportalnm.com/",
-        "type": "state"
+        "type": "state",
     },
     "NY": {
         "name": "New York SeeThroughNY",
         "url": "https://www.seethroughny.net/",
-        "type": "state"
+        "type": "state",
     },
     "NC": {
         "name": "North Carolina Open Budget",
         "url": "https://www.osbm.nc.gov/budgetbook/",
-        "type": "state"
+        "type": "state",
     },
     "ND": {
         "name": "North Dakota Checkbook",
         "url": "https://www.nd.gov/omb/public/checkbook",
-        "type": "state"
+        "type": "state",
     },
     "OH": {
         "name": "Ohio Checkbook",
         "url": "https://checkbook.ohio.gov/",
-        "type": "state"
+        "type": "state",
     },
     "OK": {
         "name": "Oklahoma Open Books",
         "url": "https://openbooks.ok.gov/",
-        "type": "state"
+        "type": "state",
     },
     "OR": {
         "name": "Oregon Transparency",
         "url": "https://www.oregon.gov/transparency/",
-        "type": "state"
+        "type": "state",
     },
     "PA": {
         "name": "Pennsylvania Open Data",
         "url": "https://data.pa.gov/",
         "type": "state",
-        "has_api": True
+        "has_api": True,
     },
     "RI": {
         "name": "Rhode Island Open Gov",
         "url": "https://opengov.ri.gov/",
-        "type": "state"
+        "type": "state",
     },
     "SC": {
         "name": "South Carolina Fiscal Transparency",
         "url": "https://www.cg.sc.gov/public-info/fiscal-transparency",
-        "type": "state"
+        "type": "state",
     },
     "SD": {
         "name": "South Dakota Open.SD",
         "url": "https://open.sd.gov/",
-        "type": "state"
+        "type": "state",
     },
     "TN": {
         "name": "Tennessee OpenRecords",
         "url": "https://www.tn.gov/transparenttn.html",
-        "type": "state"
+        "type": "state",
     },
     "TX": {
         "name": "Texas Comptroller - State Salaries",
         "url": "https://comptroller.texas.gov/transparency/open-data/",
         "type": "state",
-        "has_api": True
+        "has_api": True,
     },
     "UT": {
         "name": "Utah Transparent",
         "url": "https://transparent.utah.gov/",
-        "type": "state"
+        "type": "state",
     },
     "VT": {
         "name": "Vermont Transparency",
         "url": "https://spotlight.vermont.gov/",
-        "type": "state"
+        "type": "state",
     },
     "VA": {
         "name": "Virginia Data Point",
         "url": "https://www.datapoint.apa.virginia.gov/",
-        "type": "state"
+        "type": "state",
     },
     "WA": {
         "name": "Washington Fiscal Information",
         "url": "https://fiscal.wa.gov/",
-        "type": "state"
+        "type": "state",
     },
     "WV": {
         "name": "West Virginia Transparency",
         "url": "https://transparency.wv.gov/",
-        "type": "state"
+        "type": "state",
     },
     "WI": {
         "name": "Wisconsin OpenBook",
         "url": "https://openbook.wi.gov/",
-        "type": "state"
+        "type": "state",
     },
-    "WY": {
-        "name": "Wyoming WyOpen",
-        "url": "https://wyopen.wyo.gov/",
-        "type": "state"
-    }
+    "WY": {"name": "Wyoming WyOpen", "url": "https://wyopen.wyo.gov/", "type": "state"},
 }
 
 # State pension fund databases
 STATE_PENSION_DATABASES = {
     "CA": {
         "calpers": "https://www.calpers.ca.gov/",
-        "calstrs": "https://www.calstrs.com/"
+        "calstrs": "https://www.calstrs.com/",
     },
-    "TX": {
-        "trs": "https://www.trs.texas.gov/",
-        "ers": "https://ers.texas.gov/"
-    },
+    "TX": {"trs": "https://www.trs.texas.gov/", "ers": "https://ers.texas.gov/"},
     "NY": {
         "nyslrs": "https://www.osc.state.ny.us/retirement/",
-        "nycers": "https://www.nycers.org/"
+        "nycers": "https://www.nycers.org/",
     },
-    "FL": {
-        "frs": "https://www.myfrs.com/"
-    },
-    "IL": {
-        "surs": "https://surs.org/",
-        "trs": "https://www.trsil.org/"
-    },
-    "PA": {
-        "psers": "https://www.psers.pa.gov/",
-        "sers": "https://www.sers.pa.gov/"
-    },
-    "OH": {
-        "opers": "https://www.opers.org/",
-        "strs": "https://www.strsoh.org/"
-    }
+    "FL": {"frs": "https://www.myfrs.com/"},
+    "IL": {"surs": "https://surs.org/", "trs": "https://www.trsil.org/"},
+    "PA": {"psers": "https://www.psers.pa.gov/", "sers": "https://www.sers.pa.gov/"},
+    "OH": {"opers": "https://www.opers.org/", "strs": "https://www.strsoh.org/"},
 }
 
 
@@ -430,7 +409,7 @@ class EmploymentRecordsScraper:
     def __init__(
         self,
         session: Optional[aiohttp.ClientSession] = None,
-        sam_api_key: Optional[str] = None
+        sam_api_key: Optional[str] = None,
     ):
         """
         Initialize the employment records scraper.
@@ -473,7 +452,7 @@ class EmploymentRecordsScraper:
         min_amount: Optional[float] = None,
         max_amount: Optional[float] = None,
         limit: int = 25,
-        page: int = 1
+        page: int = 1,
     ) -> List[FederalAward]:
         """
         Search federal spending awards using USAspending.gov API.
@@ -496,17 +475,23 @@ class EmploymentRecordsScraper:
             if recipient_name:
                 filters["recipient_search_text"] = [recipient_name]
             if recipient_state:
-                filters["recipient_locations"] = [{"country": "USA", "state": recipient_state.upper()}]
+                filters["recipient_locations"] = [
+                    {"country": "USA", "state": recipient_state.upper()}
+                ]
             if awarding_agency:
-                filters["agencies"] = [{"type": "awarding", "tier": "toptier", "name": awarding_agency}]
+                filters["agencies"] = [
+                    {"type": "awarding", "tier": "toptier", "name": awarding_agency}
+                ]
             if award_type:
                 award_type_map = {
                     "contract": ["A", "B", "C", "D"],
                     "grant": ["02", "03", "04", "05"],
                     "loan": ["07", "08"],
-                    "direct_payment": ["06", "10"]
+                    "direct_payment": ["06", "10"],
                 }
-                filters["award_type_codes"] = award_type_map.get(award_type, [award_type])
+                filters["award_type_codes"] = award_type_map.get(
+                    award_type, [award_type]
+                )
             if naics_code:
                 filters["naics_codes"] = [naics_code]
             if start_date or end_date:
@@ -517,24 +502,35 @@ class EmploymentRecordsScraper:
                     time_period["end_date"] = end_date
                 filters["time_period"] = [time_period]
             if min_amount is not None or max_amount is not None:
-                filters["award_amounts"] = [{
-                    "lower_bound": min_amount or 0,
-                    "upper_bound": max_amount or 999999999999
-                }]
+                filters["award_amounts"] = [
+                    {
+                        "lower_bound": min_amount or 0,
+                        "upper_bound": max_amount or 999999999999,
+                    }
+                ]
 
             payload = {
                 "filters": filters,
                 "fields": [
-                    "Award ID", "Recipient Name", "Start Date", "End Date",
-                    "Award Amount", "Awarding Agency", "Awarding Sub Agency",
-                    "Contract Award Type", "recipient_id", "Place of Performance City",
-                    "Place of Performance State Code", "NAICS Code", "Description",
-                    "generated_unique_award_id"
+                    "Award ID",
+                    "Recipient Name",
+                    "Start Date",
+                    "End Date",
+                    "Award Amount",
+                    "Awarding Agency",
+                    "Awarding Sub Agency",
+                    "Contract Award Type",
+                    "recipient_id",
+                    "Place of Performance City",
+                    "Place of Performance State Code",
+                    "NAICS Code",
+                    "Description",
+                    "generated_unique_award_id",
                 ],
                 "page": page,
                 "limit": limit,
                 "sort": "Award Amount",
-                "order": "desc"
+                "order": "desc",
             }
 
             async with self.session.post(url, json=payload) as response:
@@ -545,17 +541,25 @@ class EmploymentRecordsScraper:
                         try:
                             award = FederalAward(
                                 award_id=str(item.get("Award ID", "")),
-                                generated_unique_id=item.get("generated_unique_award_id"),
+                                generated_unique_id=item.get(
+                                    "generated_unique_award_id"
+                                ),
                                 award_type=item.get("Contract Award Type"),
                                 award_description=item.get("Description"),
                                 recipient_name=item.get("Recipient Name"),
                                 awarding_agency=item.get("Awarding Agency"),
                                 awarding_sub_agency=item.get("Awarding Sub Agency"),
-                                total_obligation=float(item.get("Award Amount", 0) or 0),
+                                total_obligation=float(
+                                    item.get("Award Amount", 0) or 0
+                                ),
                                 naics_code=item.get("NAICS Code"),
-                                place_of_performance_city=item.get("Place of Performance City"),
-                                place_of_performance_state=item.get("Place of Performance State Code"),
-                                raw_data=item
+                                place_of_performance_city=item.get(
+                                    "Place of Performance City"
+                                ),
+                                place_of_performance_state=item.get(
+                                    "Place of Performance State Code"
+                                ),
+                                raw_data=item,
                             )
 
                             # Parse dates
@@ -582,10 +586,11 @@ class EmploymentRecordsScraper:
         except aiohttp.ClientError as e:
             logger.error(f"USAspending API error in search_federal_awards: {e}")
 
-
         return results
 
-    async def get_recipient_profile(self, recipient_id: str) -> Optional[Dict[str, Any]]:
+    async def get_recipient_profile(
+        self, recipient_id: str
+    ) -> Optional[Dict[str, Any]]:
         """Get detailed recipient profile from USAspending."""
         await self._ensure_session()
 
@@ -599,13 +604,10 @@ class EmploymentRecordsScraper:
         except aiohttp.ClientError as e:
             logger.error(f"USAspending API error in get_recipient_profile: {e}")
 
-
         return None
 
     async def search_agencies(
-        self,
-        keyword: Optional[str] = None,
-        limit: int = 50
+        self, keyword: Optional[str] = None, limit: int = 50
     ) -> List[FederalAgency]:
         """Search federal agencies using USAspending."""
         await self._ensure_session()
@@ -620,14 +622,18 @@ class EmploymentRecordsScraper:
                     data = await response.json()
 
                     for item in data.get("results", [])[:limit]:
-                        if keyword and keyword.lower() not in item.get("agency_name", "").lower():
+                        if (
+                            keyword
+                            and keyword.lower()
+                            not in item.get("agency_name", "").lower()
+                        ):
                             continue
 
                         try:
                             agency = FederalAgency(
                                 agency_name=item.get("agency_name", ""),
                                 agency_code=item.get("toptier_code"),
-                                raw_data=item
+                                raw_data=item,
                             )
                             results.append(agency)
                         except (KeyError, ValueError):
@@ -636,13 +642,10 @@ class EmploymentRecordsScraper:
         except aiohttp.ClientError as e:
             logger.error(f"USAspending API error in search_agencies: {e}")
 
-
         return results
 
     async def get_agency_spending(
-        self,
-        agency_code: str,
-        fiscal_year: Optional[int] = None
+        self, agency_code: str, fiscal_year: Optional[int] = None
     ) -> Optional[Dict[str, Any]]:
         """Get agency spending summary."""
         await self._ensure_session()
@@ -657,7 +660,6 @@ class EmploymentRecordsScraper:
 
         except aiohttp.ClientError as e:
             logger.error(f"USAspending API error in get_agency_spending: {e}")
-
 
         return None
 
@@ -691,7 +693,7 @@ class EmploymentRecordsScraper:
         return {
             "employment_cube": "https://www.opm.gov/policy-data-oversight/data-analysis-documentation/fedscope/employment-trends/",
             "data_definitions": "https://www.opm.gov/policy-data-oversight/data-analysis-documentation/fedscope/definitions/",
-            "quarterly_data": "https://www.opm.gov/policy-data-oversight/data-analysis-documentation/federal-employment-reports/"
+            "quarterly_data": "https://www.opm.gov/policy-data-oversight/data-analysis-documentation/federal-employment-reports/",
         }
 
     def get_federal_pay_tables(self) -> Dict[str, str]:
@@ -699,7 +701,7 @@ class EmploymentRecordsScraper:
         return {
             "gs_pay_tables": "https://www.opm.gov/policy-data-oversight/pay-leave/salaries-wages/",
             "locality_pay": "https://www.opm.gov/policy-data-oversight/pay-leave/salaries-wages/2024/general-schedule/",
-            "ses_pay": "https://www.opm.gov/policy-data-oversight/pay-leave/salaries-wages/2024/executive-senior-level/"
+            "ses_pay": "https://www.opm.gov/policy-data-oversight/pay-leave/salaries-wages/2024/executive-senior-level/",
         }
 
     # ==================== Helper Methods ====================
@@ -713,7 +715,7 @@ class EmploymentRecordsScraper:
             "open_gov": "https://open.usa.gov/",
             "fpds": "https://www.fpds.gov/",
             "sam_gov": "https://sam.gov/",
-            "grants_gov": "https://www.grants.gov/"
+            "grants_gov": "https://www.grants.gov/",
         }
 
 
@@ -722,31 +724,31 @@ def search_federal_awards_sync(
     keywords: Optional[str] = None,
     recipient_name: Optional[str] = None,
     recipient_state: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> List[FederalAward]:
     """Synchronous wrapper for federal award search."""
+
     async def _search():
         async with EmploymentRecordsScraper() as scraper:
             return await scraper.search_federal_awards(
                 keywords=keywords,
                 recipient_name=recipient_name,
                 recipient_state=recipient_state,
-                **kwargs
+                **kwargs,
             )
+
     return asyncio.run(_search())
 
 
 def search_federal_agencies_sync(
-    keyword: Optional[str] = None,
-    **kwargs
+    keyword: Optional[str] = None, **kwargs
 ) -> List[FederalAgency]:
     """Synchronous wrapper for federal agency search."""
+
     async def _search():
         async with EmploymentRecordsScraper() as scraper:
-            return await scraper.search_agencies(
-                keyword=keyword,
-                **kwargs
-            )
+            return await scraper.search_agencies(keyword=keyword, **kwargs)
+
     return asyncio.run(_search())
 
 

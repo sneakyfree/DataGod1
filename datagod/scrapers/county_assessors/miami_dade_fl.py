@@ -24,20 +24,21 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 from .base import (
-    CountyAssessorBase,
-    PropertyType,
-    PropertyClass,
-    ExemptionType,
-    PropertyAssessment,
-    PropertyCharacteristics,
-    TaxAssessment,
-    OwnershipRecord,
-    SaleRecord,
     AssessorSearchCriteria,
     AssessorSearchResult,
+    CountyAssessorBase,
+    ExemptionType,
+    OwnershipRecord,
+    PropertyAssessment,
+    PropertyCharacteristics,
+    PropertyClass,
+    PropertyType,
+    SaleRecord,
+    TaxAssessment,
 )
 
 logger = logging.getLogger(__name__)
@@ -180,10 +181,11 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> AssessorSearchResult:
         """Search for properties by address."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}search"
@@ -214,7 +216,9 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
 
         # Parse results
         properties = []
-        results = json_response.get("properties", json_response.get("results", json_response.get("Parcel", [])))
+        results = json_response.get(
+            "properties", json_response.get("results", json_response.get("Parcel", []))
+        )
 
         if isinstance(results, dict):
             results = [results]
@@ -228,23 +232,20 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
 
         return AssessorSearchResult(
             properties=properties,
-            total_count=json_response.get("totalCount", json_response.get("RecordCount", len(properties))),
+            total_count=json_response.get(
+                "totalCount", json_response.get("RecordCount", len(properties))
+            ),
             page_number=1,
             page_size=max_results,
             has_more=json_response.get("hasMore", False),
             search_criteria=AssessorSearchCriteria(
-                street_address=street_address,
-                city=city,
-                zip_code=zip_code
+                street_address=street_address, city=city, zip_code=zip_code
             ),
             search_time_ms=search_time,
             source_system=self.SYSTEM_NAME,
         )
 
-    async def search_by_parcel_id(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def search_by_parcel_id(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """Search for a property by folio number."""
         formatted_folio = self._format_folio(parcel_id)
 
@@ -255,12 +256,11 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
         return await self.get_property_detail(formatted_folio)
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> AssessorSearchResult:
         """Search for properties by owner name."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}search"
@@ -285,7 +285,9 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
             )
 
         properties = []
-        results = json_response.get("properties", json_response.get("results", json_response.get("Parcel", [])))
+        results = json_response.get(
+            "properties", json_response.get("results", json_response.get("Parcel", []))
+        )
 
         if isinstance(results, dict):
             results = [results]
@@ -299,7 +301,9 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
 
         return AssessorSearchResult(
             properties=properties,
-            total_count=json_response.get("totalCount", json_response.get("RecordCount", len(properties))),
+            total_count=json_response.get(
+                "totalCount", json_response.get("RecordCount", len(properties))
+            ),
             page_number=1,
             page_size=max_results,
             has_more=json_response.get("hasMore", False),
@@ -308,10 +312,7 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
             source_system=self.SYSTEM_NAME,
         )
 
-    async def get_property_detail(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def get_property_detail(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """Get detailed property information."""
         formatted_folio = self._format_folio(parcel_id)
 
@@ -330,7 +331,9 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
 
         return self._parse_property_detail(json_response, formatted_folio)
 
-    def _parse_search_result(self, item: Dict[str, Any]) -> Optional[PropertyAssessment]:
+    def _parse_search_result(
+        self, item: Dict[str, Any]
+    ) -> Optional[PropertyAssessment]:
         """Parse a search result item."""
         folio = item.get("folio", item.get("FolioNumber", item.get("FOLIO", "")))
         if not folio:
@@ -340,26 +343,43 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
 
         return PropertyAssessment(
             parcel_id=formatted_folio,
-            property_address=item.get("situsAddress", item.get("SitusAddress", item.get("address", ""))),
+            property_address=item.get(
+                "situsAddress", item.get("SitusAddress", item.get("address", ""))
+            ),
             city=item.get("situsCity", item.get("Municipality", item.get("city", ""))),
             state=self.STATE,
             zip_code=item.get("situsZip", item.get("SitusZip", item.get("zip", ""))),
             county=self.COUNTY_NAME,
-            property_type=self._parse_property_type(item.get("useCode", item.get("DORCode", ""))),
-            assessed_value=self._parse_decimal(str(item.get("assessedValue", item.get("AssessedValue", item.get("JustValue", ""))))),
-            market_value=self._parse_decimal(str(item.get("marketValue", item.get("JustValue", "")))),
-            current_owner=OwnershipRecord(
-                owner_name=item.get("ownerName", item.get("Owner1", item.get("owner", ""))),
-            ) if item.get("ownerName") or item.get("Owner1") or item.get("owner") else None,
+            property_type=self._parse_property_type(
+                item.get("useCode", item.get("DORCode", ""))
+            ),
+            assessed_value=self._parse_decimal(
+                str(
+                    item.get(
+                        "assessedValue",
+                        item.get("AssessedValue", item.get("JustValue", "")),
+                    )
+                )
+            ),
+            market_value=self._parse_decimal(
+                str(item.get("marketValue", item.get("JustValue", "")))
+            ),
+            current_owner=(
+                OwnershipRecord(
+                    owner_name=item.get(
+                        "ownerName", item.get("Owner1", item.get("owner", ""))
+                    ),
+                )
+                if item.get("ownerName") or item.get("Owner1") or item.get("owner")
+                else None
+            ),
             source_url=f"{self.PROPERTY_SEARCH}#/folio/{formatted_folio.replace('-', '')}",
             source_system=self.SYSTEM_NAME,
             raw_data=item,
         )
 
     def _parse_property_detail(
-        self,
-        data: Dict[str, Any],
-        folio: str
+        self, data: Dict[str, Any], folio: str
     ) -> PropertyAssessment:
         """Parse detailed property data."""
         # Handle nested structure from Miami-Dade API
@@ -373,27 +393,67 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
 
         # Parse characteristics
         characteristics = PropertyCharacteristics(
-            year_built=self._parse_int(str(building_info.get("YearBuilt", building_info.get("yearBuilt", "")))),
-            effective_year_built=self._parse_int(str(building_info.get("EffectiveYearBuilt", building_info.get("actualYearBuilt", "")))),
-            building_sqft=self._parse_int(str(building_info.get("GrossArea", building_info.get("totalSqft", "")))),
-            living_sqft=self._parse_int(str(building_info.get("LivingArea", building_info.get("livingArea", "")))),
-            bedrooms=self._parse_int(str(building_info.get("Bedrooms", building_info.get("bedrooms", "")))),
-            bathrooms=self._parse_float(str(building_info.get("Bathrooms", building_info.get("bathrooms", "")))),
+            year_built=self._parse_int(
+                str(building_info.get("YearBuilt", building_info.get("yearBuilt", "")))
+            ),
+            effective_year_built=self._parse_int(
+                str(
+                    building_info.get(
+                        "EffectiveYearBuilt", building_info.get("actualYearBuilt", "")
+                    )
+                )
+            ),
+            building_sqft=self._parse_int(
+                str(building_info.get("GrossArea", building_info.get("totalSqft", "")))
+            ),
+            living_sqft=self._parse_int(
+                str(
+                    building_info.get("LivingArea", building_info.get("livingArea", ""))
+                )
+            ),
+            bedrooms=self._parse_int(
+                str(building_info.get("Bedrooms", building_info.get("bedrooms", "")))
+            ),
+            bathrooms=self._parse_float(
+                str(building_info.get("Bathrooms", building_info.get("bathrooms", "")))
+            ),
             full_baths=self._parse_int(str(building_info.get("FullBaths", ""))),
             half_baths=self._parse_int(str(building_info.get("HalfBaths", ""))),
-            stories=self._parse_float(str(building_info.get("Stories", building_info.get("floors", "")))),
-            units=self._parse_int(str(building_info.get("Units", building_info.get("numberOfUnits", "")))),
+            stories=self._parse_float(
+                str(building_info.get("Stories", building_info.get("floors", "")))
+            ),
+            units=self._parse_int(
+                str(building_info.get("Units", building_info.get("numberOfUnits", "")))
+            ),
             garage_type=building_info.get("GarageType", building_info.get("parking")),
-            garage_spaces=self._parse_int(str(building_info.get("GarageSpaces", building_info.get("parkingSpaces", "")))),
-            lot_sqft=self._parse_int(str(land_info.get("LandSqFt", land_info.get("sqft", "")))),
-            lot_acres=self._parse_float(str(land_info.get("Acres", land_info.get("acres", "")))),
-            construction_type=building_info.get("ConstructionType", building_info.get("construction")),
-            exterior_wall=building_info.get("ExteriorWall", building_info.get("exterior")),
+            garage_spaces=self._parse_int(
+                str(
+                    building_info.get(
+                        "GarageSpaces", building_info.get("parkingSpaces", "")
+                    )
+                )
+            ),
+            lot_sqft=self._parse_int(
+                str(land_info.get("LandSqFt", land_info.get("sqft", "")))
+            ),
+            lot_acres=self._parse_float(
+                str(land_info.get("Acres", land_info.get("acres", "")))
+            ),
+            construction_type=building_info.get(
+                "ConstructionType", building_info.get("construction")
+            ),
+            exterior_wall=building_info.get(
+                "ExteriorWall", building_info.get("exterior")
+            ),
             roof_type=building_info.get("RoofType", building_info.get("roof")),
-            foundation_type=building_info.get("Foundation", building_info.get("foundation")),
-            central_air=building_info.get("AC") == "Y" or "CENTRAL" in str(building_info.get("Cooling", "")).upper(),
+            foundation_type=building_info.get(
+                "Foundation", building_info.get("foundation")
+            ),
+            central_air=building_info.get("AC") == "Y"
+            or "CENTRAL" in str(building_info.get("Cooling", "")).upper(),
             heating_type=building_info.get("Heating", building_info.get("heat")),
-            pool=building_info.get("Pool") == "Y" or building_info.get("hasPool", False),
+            pool=building_info.get("Pool") == "Y"
+            or building_info.get("hasPool", False),
             fireplace_count=self._parse_int(str(building_info.get("Fireplaces", ""))),
             raw_characteristics=building_info,
         )
@@ -409,42 +469,99 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
         for assessment in value_history:
             tax_assessment = TaxAssessment(
                 tax_year=assessment.get("TaxYear", assessment.get("year", 0)),
-                assessed_value_land=self._parse_decimal(str(assessment.get("LandValue", assessment.get("landValue", "")))),
-                assessed_value_improvements=self._parse_decimal(str(assessment.get("BuildingValue", assessment.get("buildingValue", "")))),
-                assessed_value_total=self._parse_decimal(str(assessment.get("AssessedValue", assessment.get("assessedValue", "")))),
-                market_value_total=self._parse_decimal(str(assessment.get("JustValue", assessment.get("justValue", "")))),
-                taxable_value=self._parse_decimal(str(assessment.get("TaxableValue", assessment.get("taxableValue", "")))),
+                assessed_value_land=self._parse_decimal(
+                    str(assessment.get("LandValue", assessment.get("landValue", "")))
+                ),
+                assessed_value_improvements=self._parse_decimal(
+                    str(
+                        assessment.get(
+                            "BuildingValue", assessment.get("buildingValue", "")
+                        )
+                    )
+                ),
+                assessed_value_total=self._parse_decimal(
+                    str(
+                        assessment.get(
+                            "AssessedValue", assessment.get("assessedValue", "")
+                        )
+                    )
+                ),
+                market_value_total=self._parse_decimal(
+                    str(assessment.get("JustValue", assessment.get("justValue", "")))
+                ),
+                taxable_value=self._parse_decimal(
+                    str(
+                        assessment.get(
+                            "TaxableValue", assessment.get("taxableValue", "")
+                        )
+                    )
+                ),
             )
             assessment_history.append(tax_assessment)
 
         # Parse sales history
         sales_history = []
-        for sale in data.get("SalesHistory", data.get("Sales", data.get("salesHistory", []))):
+        for sale in data.get(
+            "SalesHistory", data.get("Sales", data.get("salesHistory", []))
+        ):
             sale_record = SaleRecord(
-                sale_date=self._parse_date(sale.get("SaleDate", sale.get("DateOfSale", sale.get("saleDate", "")))) or date.today(),
-                sale_price=self._parse_decimal(str(sale.get("SalePrice", sale.get("Price", sale.get("salePrice", ""))))) or Decimal(0),
+                sale_date=self._parse_date(
+                    sale.get(
+                        "SaleDate", sale.get("DateOfSale", sale.get("saleDate", ""))
+                    )
+                )
+                or date.today(),
+                sale_price=self._parse_decimal(
+                    str(
+                        sale.get(
+                            "SalePrice", sale.get("Price", sale.get("salePrice", ""))
+                        )
+                    )
+                )
+                or Decimal(0),
                 buyer_name=sale.get("Grantee", sale.get("buyer")),
                 seller_name=sale.get("Grantor", sale.get("seller")),
-                document_number=sale.get("ORBook", "") + "/" + sale.get("ORPage", "") if sale.get("ORBook") else sale.get("docNumber"),
-                document_type=sale.get("DeedType", sale.get("InstrumentType", sale.get("deedType"))),
+                document_number=(
+                    sale.get("ORBook", "") + "/" + sale.get("ORPage", "")
+                    if sale.get("ORBook")
+                    else sale.get("docNumber")
+                ),
+                document_type=sale.get(
+                    "DeedType", sale.get("InstrumentType", sale.get("deedType"))
+                ),
                 qualified_sale=sale.get("QualifiedSale", sale.get("Qualified")) == "Y",
             )
             sales_history.append(sale_record)
 
         # Parse ownership
-        owner1 = property_info.get("Owner1", property_info.get("ownerName", data.get("Owner1", "")))
+        owner1 = property_info.get(
+            "Owner1", property_info.get("ownerName", data.get("Owner1", ""))
+        )
         owner2 = property_info.get("Owner2", data.get("Owner2", ""))
         owner_name = f"{owner1} / {owner2}" if owner2 else owner1
 
         mailing = data.get("MailingAddress", data.get("Mailing", {}))
 
-        current_owner = OwnershipRecord(
-            owner_name=owner_name,
-            mailing_address=mailing.get("Address", mailing.get("address", property_info.get("MailingAddress"))),
-            mailing_city=mailing.get("City", mailing.get("city", property_info.get("MailingCity"))),
-            mailing_state=mailing.get("State", mailing.get("state", property_info.get("MailingState"))),
-            mailing_zip=mailing.get("Zip", mailing.get("zip", property_info.get("MailingZip"))),
-        ) if owner_name else None
+        current_owner = (
+            OwnershipRecord(
+                owner_name=owner_name,
+                mailing_address=mailing.get(
+                    "Address",
+                    mailing.get("address", property_info.get("MailingAddress")),
+                ),
+                mailing_city=mailing.get(
+                    "City", mailing.get("city", property_info.get("MailingCity"))
+                ),
+                mailing_state=mailing.get(
+                    "State", mailing.get("state", property_info.get("MailingState"))
+                ),
+                mailing_zip=mailing.get(
+                    "Zip", mailing.get("zip", property_info.get("MailingZip"))
+                ),
+            )
+            if owner_name
+            else None
+        )
 
         # Parse exemptions - Florida has many exemption types
         exemptions = []
@@ -456,7 +573,11 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
             exemption_data = [exemption_data]
 
         for exemption in exemption_data:
-            exemption_type = str(exemption.get("type", exemption.get("ExemptionType", exemption.get("Code", "")))).upper()
+            exemption_type = str(
+                exemption.get(
+                    "type", exemption.get("ExemptionType", exemption.get("Code", ""))
+                )
+            ).upper()
 
             if "HOMESTEAD" in exemption_type or exemption_type == "HX":
                 exemptions.append(ExemptionType.HOMESTEAD)
@@ -476,7 +597,11 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
                 exemptions.append(ExemptionType.CHARITABLE)
             elif "RELIGIOUS" in exemption_type or "CHURCH" in exemption_type:
                 exemptions.append(ExemptionType.RELIGIOUS)
-            elif "GOVERNMENT" in exemption_type or "COUNTY" in exemption_type or "STATE" in exemption_type:
+            elif (
+                "GOVERNMENT" in exemption_type
+                or "COUNTY" in exemption_type
+                or "STATE" in exemption_type
+            ):
                 exemptions.append(ExemptionType.GOVERNMENT)
 
         # Get current assessment
@@ -484,30 +609,53 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
 
         # Get DOR use code and description
         use_code = property_info.get("DORCode", property_info.get("UseCode", ""))
-        use_description = self.USE_CODES.get(use_code, property_info.get("UseDescription", ""))
+        use_description = self.USE_CODES.get(
+            use_code, property_info.get("UseDescription", "")
+        )
 
         # Build property URL
         folio_clean = folio.replace("-", "")
 
         return PropertyAssessment(
             parcel_id=folio,
-            property_address=property_info.get("SitusAddress", property_info.get("situsAddress", data.get("SitusAddress", ""))),
-            city=property_info.get("Municipality", property_info.get("city", self._get_municipality(folio))),
+            property_address=property_info.get(
+                "SitusAddress",
+                property_info.get("situsAddress", data.get("SitusAddress", "")),
+            ),
+            city=property_info.get(
+                "Municipality", property_info.get("city", self._get_municipality(folio))
+            ),
             state=self.STATE,
             zip_code=property_info.get("SitusZip", property_info.get("zip", "")),
             county=self.COUNTY_NAME,
-            legal_description=property_info.get("LegalDescription", property_info.get("legal")),
-            subdivision=property_info.get("Subdivision", property_info.get("subdivision")),
+            legal_description=property_info.get(
+                "LegalDescription", property_info.get("legal")
+            ),
+            subdivision=property_info.get(
+                "Subdivision", property_info.get("subdivision")
+            ),
             property_type=self._parse_property_type(use_code),
             property_class=self._parse_property_class(use_code),
             property_use=use_description,
             zoning=property_info.get("Zoning", property_info.get("zoning")),
-            assessed_value=current_assessment.assessed_value_total if current_assessment else None,
-            market_value=current_assessment.market_value_total if current_assessment else None,
-            land_value=current_assessment.assessed_value_land if current_assessment else None,
-            improvement_value=current_assessment.assessed_value_improvements if current_assessment else None,
+            assessed_value=(
+                current_assessment.assessed_value_total if current_assessment else None
+            ),
+            market_value=(
+                current_assessment.market_value_total if current_assessment else None
+            ),
+            land_value=(
+                current_assessment.assessed_value_land if current_assessment else None
+            ),
+            improvement_value=(
+                current_assessment.assessed_value_improvements
+                if current_assessment
+                else None
+            ),
             tax_year=current_assessment.tax_year if current_assessment else None,
-            taxable_value=current_assessment.taxable_value if current_assessment else None,
+            taxable_value=(
+                current_assessment.taxable_value if current_assessment else None
+            ),
             characteristics=characteristics,
             assessment_history=assessment_history,
             current_owner=current_owner,
@@ -515,9 +663,23 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
             sales_history=sales_history,
             last_sale_date=sales_history[0].sale_date if sales_history else None,
             last_sale_price=sales_history[0].sale_price if sales_history else None,
-            latitude=self._parse_float(str(property_info.get("Latitude", property_info.get("lat", data.get("Latitude", ""))))),
-            longitude=self._parse_float(str(property_info.get("Longitude", property_info.get("lng", data.get("Longitude", ""))))),
-            neighborhood=property_info.get("Neighborhood", property_info.get("neighborhood")),
+            latitude=self._parse_float(
+                str(
+                    property_info.get(
+                        "Latitude", property_info.get("lat", data.get("Latitude", ""))
+                    )
+                )
+            ),
+            longitude=self._parse_float(
+                str(
+                    property_info.get(
+                        "Longitude", property_info.get("lng", data.get("Longitude", ""))
+                    )
+                )
+            ),
+            neighborhood=property_info.get(
+                "Neighborhood", property_info.get("neighborhood")
+            ),
             source_url=f"{self.PROPERTY_SEARCH}#/folio/{folio_clean}",
             source_system=self.SYSTEM_NAME,
             raw_data=data,
@@ -585,6 +747,7 @@ class MiamiDadeCountyAssessor(CountyAssessorBase):
 
 # Convenience functions
 
+
 def search_miami_dade_address(address: str, **kwargs) -> AssessorSearchResult:
     """Search Miami-Dade County properties by address."""
     assessor = MiamiDadeCountyAssessor()
@@ -592,6 +755,7 @@ def search_miami_dade_address(address: str, **kwargs) -> AssessorSearchResult:
     async def _search():
         async with assessor:
             return await assessor.search_by_address(address, **kwargs)
+
     return asyncio.run(_search())
 
 
@@ -602,6 +766,7 @@ def search_miami_dade_owner(owner_name: str, **kwargs) -> AssessorSearchResult:
     async def _search():
         async with assessor:
             return await assessor.search_by_owner(owner_name, **kwargs)
+
     return asyncio.run(_search())
 
 
@@ -612,4 +777,5 @@ def get_miami_dade_property(folio: str) -> Optional[PropertyAssessment]:
     async def _get():
         async with assessor:
             return await assessor.get_property_detail(folio)
+
     return asyncio.run(_get())

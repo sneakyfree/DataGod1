@@ -22,6 +22,7 @@ from datetime import date, datetime, time
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
+
 import aiohttp
 from bs4 import BeautifulSoup
 
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 class InmateStatus(Enum):
     """Current status of an inmate."""
+
     IN_CUSTODY = "in_custody"
     RELEASED = "released"
     TRANSFERRED = "transferred"
@@ -46,6 +48,7 @@ class InmateStatus(Enum):
 
 class ChargeType(Enum):
     """Type of criminal charge."""
+
     FELONY = "felony"
     MISDEMEANOR = "misdemeanor"
     INFRACTION = "infraction"
@@ -59,6 +62,7 @@ class ChargeType(Enum):
 
 class ChargeSeverity(Enum):
     """Severity/class of charge."""
+
     # Felony classes
     CAPITAL = "capital"
     FELONY_1 = "felony_1"
@@ -80,6 +84,7 @@ class ChargeSeverity(Enum):
 
 class BondType(Enum):
     """Type of bond/bail."""
+
     CASH = "cash"
     SURETY = "surety"
     PROPERTY = "property"
@@ -95,6 +100,7 @@ class BondType(Enum):
 
 class ReleaseType(Enum):
     """Type of release from custody."""
+
     BOND = "bond"
     CASH_BAIL = "cash_bail"
     TIME_SERVED = "time_served"
@@ -113,6 +119,7 @@ class ReleaseType(Enum):
 @dataclass
 class InmateCharge:
     """Individual charge against an inmate."""
+
     charge_description: str
     charge_code: Optional[str] = None
     charge_type: Optional[ChargeType] = None
@@ -135,6 +142,7 @@ class InmateCharge:
 @dataclass
 class BondInformation:
     """Bond/bail information for an inmate."""
+
     bond_amount: Optional[Decimal] = None
     bond_type: Optional[BondType] = None
     bond_status: Optional[str] = None
@@ -150,6 +158,7 @@ class BondInformation:
 @dataclass
 class VisitationInfo:
     """Visitation schedule and rules for an inmate."""
+
     visitation_allowed: bool = True
     visitation_days: List[str] = field(default_factory=list)
     visitation_hours: Optional[str] = None
@@ -165,6 +174,7 @@ class VisitationInfo:
 @dataclass
 class BookingRecord:
     """Booking/intake record for an inmate."""
+
     booking_number: str
     booking_date: datetime
     booking_facility: Optional[str] = None
@@ -181,6 +191,7 @@ class BookingRecord:
 @dataclass
 class InmateRecord:
     """Complete inmate record with all available information."""
+
     # Identifiers
     inmate_id: str
     booking_number: Optional[str] = None
@@ -262,7 +273,9 @@ class InmateRecord:
     @property
     def felony_count(self) -> int:
         """Count number of felony charges."""
-        return sum(1 for c in self.charges if c.is_felony or c.charge_type == ChargeType.FELONY)
+        return sum(
+            1 for c in self.charges if c.is_felony or c.charge_type == ChargeType.FELONY
+        )
 
     @property
     def total_charges(self) -> int:
@@ -273,6 +286,7 @@ class InmateRecord:
 @dataclass
 class ArrestRecord:
     """Public arrest record (may not result in incarceration)."""
+
     arrest_id: str
     arrest_date: date
     arrest_time: Optional[time] = None
@@ -300,6 +314,7 @@ class ArrestRecord:
 @dataclass
 class WarrantRecord:
     """Active warrant record."""
+
     warrant_number: str
     warrant_type: str = ""  # Arrest, Bench, Capias, etc.
     warrant_date: Optional[date] = None
@@ -325,6 +340,7 @@ class WarrantRecord:
 @dataclass
 class InmateSearchCriteria:
     """Search criteria for inmate lookup."""
+
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     middle_name: Optional[str] = None
@@ -344,6 +360,7 @@ class InmateSearchCriteria:
 @dataclass
 class InmateSearchResult:
     """Result from an inmate search operation."""
+
     inmates: List[InmateRecord]
     total_count: int = 0
     page_number: int = 1
@@ -399,6 +416,7 @@ class SheriffInmateBase(ABC):
     async def _rate_limit(self):
         """Enforce rate limiting between requests."""
         import time
+
         now = time.time()
         elapsed = now - self._last_request_time
         if elapsed < self.REQUEST_DELAY:
@@ -420,11 +438,13 @@ class SheriffInmateBase(ABC):
             except aiohttp.ClientError as e:
                 if attempt == self.MAX_RETRIES - 1:
                     raise
-                await asyncio.sleep(2 ** attempt)
+                await asyncio.sleep(2**attempt)
 
         return ""
 
-    async def _fetch_json(self, url: str, params: Optional[Dict] = None) -> Dict[str, Any]:
+    async def _fetch_json(
+        self, url: str, params: Optional[Dict] = None
+    ) -> Dict[str, Any]:
         """Fetch JSON content from a URL."""
         await self._rate_limit()
 
@@ -439,7 +459,7 @@ class SheriffInmateBase(ABC):
             except aiohttp.ClientError as e:
                 if attempt == self.MAX_RETRIES - 1:
                     raise
-                await asyncio.sleep(2 ** attempt)
+                await asyncio.sleep(2**attempt)
 
         return {}
 
@@ -458,7 +478,7 @@ class SheriffInmateBase(ABC):
             except aiohttp.ClientError as e:
                 if attempt == self.MAX_RETRIES - 1:
                     raise
-                await asyncio.sleep(2 ** attempt)
+                await asyncio.sleep(2**attempt)
 
         return ""
 
@@ -615,7 +635,12 @@ class SheriffInmateBase(ABC):
             return BondType.SURETY
         elif "PROPERTY" in upper:
             return BondType.PROPERTY
-        elif "PR" in upper or "PERSONAL" in upper or "ROR" in upper or "RECOGNIZANCE" in upper:
+        elif (
+            "PR" in upper
+            or "PERSONAL" in upper
+            or "ROR" in upper
+            or "RECOGNIZANCE" in upper
+        ):
             return BondType.PERSONAL_RECOGNIZANCE
         elif "SIGNATURE" in upper:
             return BondType.SIGNATURE
@@ -664,13 +689,27 @@ class SheriffInmateBase(ABC):
             return False
 
         violent_keywords = [
-            "MURDER", "HOMICIDE", "MANSLAUGHTER",
-            "ASSAULT", "BATTERY", "ROBBERY",
-            "RAPE", "SEXUAL ASSAULT", "KIDNAP",
-            "ARSON", "CARJACK", "WEAPON",
-            "FIREARM", "SHOOTING", "STAB",
-            "DOMESTIC VIOLENCE", "DV", "AGGRAVATED",
-            "ARMED", "DEADLY", "VIOLENT",
+            "MURDER",
+            "HOMICIDE",
+            "MANSLAUGHTER",
+            "ASSAULT",
+            "BATTERY",
+            "ROBBERY",
+            "RAPE",
+            "SEXUAL ASSAULT",
+            "KIDNAP",
+            "ARSON",
+            "CARJACK",
+            "WEAPON",
+            "FIREARM",
+            "SHOOTING",
+            "STAB",
+            "DOMESTIC VIOLENCE",
+            "DV",
+            "AGGRAVATED",
+            "ARMED",
+            "DEADLY",
+            "VIOLENT",
         ]
 
         upper = charge_desc.upper()
@@ -685,30 +724,23 @@ class SheriffInmateBase(ABC):
         first_name: Optional[str] = None,
         date_of_birth: Optional[date] = None,
         include_released: bool = False,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> InmateSearchResult:
         """Search for inmates by name and other criteria."""
         pass
 
     @abstractmethod
-    async def get_inmate_detail(
-        self,
-        inmate_id: str
-    ) -> Optional[InmateRecord]:
+    async def get_inmate_detail(self, inmate_id: str) -> Optional[InmateRecord]:
         """Get detailed information for a specific inmate."""
         pass
 
     async def search_by_booking_number(
-        self,
-        booking_number: str
+        self, booking_number: str
     ) -> Optional[InmateRecord]:
         """Search for an inmate by booking number."""
         # Default implementation - override if direct lookup available
         results = await self.search_inmates(
-            last_name="",
-            first_name="",
-            include_released=True,
-            max_results=1
+            last_name="", first_name="", include_released=True, max_results=1
         )
         # Try to find matching booking
         for inmate in results.inmates:
@@ -717,23 +749,18 @@ class SheriffInmateBase(ABC):
         return None
 
     async def get_current_inmates(
-        self,
-        facility: Optional[str] = None,
-        max_results: int = 500
+        self, facility: Optional[str] = None, max_results: int = 500
     ) -> InmateSearchResult:
         """Get list of current inmates (jail roster)."""
         # Default implementation returns empty - override for systems with roster
         return InmateSearchResult(
             inmates=[],
             total_count=0,
-            warnings=["Jail roster not available for this jurisdiction"]
+            warnings=["Jail roster not available for this jurisdiction"],
         )
 
     async def search_warrants(
-        self,
-        last_name: str,
-        first_name: Optional[str] = None,
-        max_results: int = 100
+        self, last_name: str, first_name: Optional[str] = None, max_results: int = 100
     ) -> List[WarrantRecord]:
         """Search for active warrants by name."""
         # Default returns empty - override for systems with warrant search
@@ -745,7 +772,7 @@ class SheriffInmateBase(ABC):
         first_name: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> List[ArrestRecord]:
         """Search for arrest records by name and date range."""
         # Default returns empty - override for systems with arrest log

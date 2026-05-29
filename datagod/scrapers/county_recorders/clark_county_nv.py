@@ -32,12 +32,12 @@ from bs4 import BeautifulSoup
 
 from .base import (
     CountyRecorderBase,
-    DocumentType,
+    DocumentParty,
     DocumentStatus,
+    DocumentType,
+    LegalDescription,
     PartyRole,
     RecordedDocument,
-    DocumentParty,
-    LegalDescription,
     SearchCriteria,
     SearchResult,
 )
@@ -179,7 +179,7 @@ class ClarkCountyRecorder(CountyRecorderBase):
 
     def _format_apn(self, apn: str) -> str:
         """Format APN to Clark County standard format: XXX-XX-XXX-XXX."""
-        digits = re.sub(r'[^0-9]', '', apn)
+        digits = re.sub(r"[^0-9]", "", apn)
         if len(digits) >= 11:
             return f"{digits[:3]}-{digits[3:5]}-{digits[5:8]}-{digits[8:11]}"
         return apn
@@ -192,10 +192,11 @@ class ClarkCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for documents by party name."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -224,7 +225,9 @@ class ClarkCountyRecorder(CountyRecorderBase):
                 page_number=1,
                 page_size=max_results,
                 has_more=False,
-                search_criteria=SearchCriteria(last_name=last_name, first_name=first_name),
+                search_criteria=SearchCriteria(
+                    last_name=last_name, first_name=first_name
+                ),
                 warnings=[str(e)],
             )
 
@@ -248,8 +251,7 @@ class ClarkCountyRecorder(CountyRecorderBase):
         )
 
     async def search_by_document_number(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """Search for a specific document by document/instrument number."""
         try:
@@ -263,15 +265,12 @@ class ClarkCountyRecorder(CountyRecorderBase):
         return None
 
     async def search_by_book_instrument(
-        self,
-        book: str,
-        instrument: str
+        self, book: str, instrument: str
     ) -> Optional[RecordedDocument]:
         """Search for a document by book and instrument number."""
         try:
             json_response = await self._fetch_json(
-                self.DETAIL_URL,
-                params={"book": book, "instrument": instrument}
+                self.DETAIL_URL, params={"book": book, "instrument": instrument}
             )
             if json_response.get("document"):
                 return self._parse_document_detail(json_response["document"])
@@ -285,10 +284,11 @@ class ClarkCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for documents by APN (Assessor's Parcel Number)."""
         import time
+
         start_time = time.time()
 
         formatted_apn = self._format_apn(parcel_number)
@@ -346,10 +346,11 @@ class ClarkCountyRecorder(CountyRecorderBase):
         zip_code: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for documents by property address."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -401,14 +402,12 @@ class ClarkCountyRecorder(CountyRecorderBase):
         )
 
     async def get_document_detail(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """Get full document details by document number."""
         try:
             json_response = await self._fetch_json(
-                f"{self.DETAIL_URL}/{document_number}",
-                params={"include": "all"}
+                f"{self.DETAIL_URL}/{document_number}", params={"include": "all"}
             )
             if json_response.get("document"):
                 return self._parse_document_detail(json_response["document"])
@@ -416,7 +415,9 @@ class ClarkCountyRecorder(CountyRecorderBase):
             logger.error(f"Clark County document detail failed: {e}")
         return None
 
-    def _parse_document_result(self, data: Dict[str, Any]) -> Optional[RecordedDocument]:
+    def _parse_document_result(
+        self, data: Dict[str, Any]
+    ) -> Optional[RecordedDocument]:
         """Parse a search result into RecordedDocument."""
         doc_number = data.get("documentNumber", data.get("instrumentNumber", ""))
         if not doc_number:
@@ -430,34 +431,40 @@ class ClarkCountyRecorder(CountyRecorderBase):
             name = grantor if isinstance(grantor, str) else grantor.get("name", "")
             if name:
                 grantors.append(self._normalize_name(name))
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTOR,
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTOR,
+                    )
+                )
 
         for grantee in data.get("grantees", []):
             name = grantee if isinstance(grantee, str) else grantee.get("name", "")
             if name:
                 grantees.append(self._normalize_name(name))
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTEE,
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTEE,
+                    )
+                )
 
         legal_descriptions = []
         for legal in data.get("legalDescriptions", []):
             if isinstance(legal, str):
                 legal_descriptions.append(LegalDescription(full_description=legal))
             elif isinstance(legal, dict):
-                legal_descriptions.append(LegalDescription(
-                    full_description=legal.get("description", ""),
-                    apn=legal.get("apn"),
-                    lot=legal.get("lot"),
-                    block=legal.get("block"),
-                    subdivision=legal.get("subdivision"),
-                    tract=legal.get("tract"),
-                    unit=legal.get("unit"),
-                ))
+                legal_descriptions.append(
+                    LegalDescription(
+                        full_description=legal.get("description", ""),
+                        apn=legal.get("apn"),
+                        lot=legal.get("lot"),
+                        block=legal.get("block"),
+                        subdivision=legal.get("subdivision"),
+                        tract=legal.get("tract"),
+                        unit=legal.get("unit"),
+                    )
+                )
 
         parcels = data.get("parcels", data.get("apns", []))
         if isinstance(parcels, str):
@@ -479,7 +486,9 @@ class ClarkCountyRecorder(CountyRecorderBase):
             grantees=grantees,
             legal_descriptions=legal_descriptions,
             parcels=parcels,
-            consideration=self._parse_float(data.get("consideration", data.get("saleAmount"))),
+            consideration=self._parse_float(
+                data.get("consideration", data.get("saleAmount"))
+            ),
             transfer_tax=transfer_tax,
             county=self.COUNTY_NAME,
             state=self.STATE_ABBREV,
@@ -507,7 +516,9 @@ class ClarkCountyRecorder(CountyRecorderBase):
         # Property addresses
         addresses = data.get("propertyAddresses", [])
         if addresses:
-            doc.property_addresses = addresses if isinstance(addresses, list) else [addresses]
+            doc.property_addresses = (
+                addresses if isinstance(addresses, list) else [addresses]
+            )
 
         # Related documents / references
         for ref in data.get("references", []):
@@ -541,48 +552,54 @@ class ClarkCountyRecorder(CountyRecorderBase):
 
 # Synchronous convenience functions
 
+
 def search_clark_county_by_name(
-    last_name: str,
-    first_name: Optional[str] = None,
-    max_results: int = 100
+    last_name: str, first_name: Optional[str] = None, max_results: int = 100
 ) -> SearchResult:
     """Search Clark County recorded documents by name."""
+
     async def _search():
         async with ClarkCountyRecorder() as recorder:
             return await recorder.search_by_name(
                 last_name, first_name=first_name, max_results=max_results
             )
+
     return asyncio.run(_search())
 
 
 def search_clark_county_by_parcel(
-    parcel_number: str,
-    max_results: int = 100
+    parcel_number: str, max_results: int = 100
 ) -> SearchResult:
     """Search Clark County recorded documents by APN."""
+
     async def _search():
         async with ClarkCountyRecorder() as recorder:
-            return await recorder.search_by_parcel(parcel_number, max_results=max_results)
+            return await recorder.search_by_parcel(
+                parcel_number, max_results=max_results
+            )
+
     return asyncio.run(_search())
 
 
 def search_clark_county_by_address(
-    address: str,
-    city: Optional[str] = None,
-    max_results: int = 100
+    address: str, city: Optional[str] = None, max_results: int = 100
 ) -> SearchResult:
     """Search Clark County recorded documents by address."""
+
     async def _search():
         async with ClarkCountyRecorder() as recorder:
             return await recorder.search_by_address(
                 address, city=city, max_results=max_results
             )
+
     return asyncio.run(_search())
 
 
 def get_clark_county_document(document_number: str) -> Optional[RecordedDocument]:
     """Get a specific Clark County recorded document."""
+
     async def _get():
         async with ClarkCountyRecorder() as recorder:
             return await recorder.get_document_detail(document_number)
+
     return asyncio.run(_get())

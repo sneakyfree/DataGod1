@@ -16,21 +16,22 @@ This module tests:
 Coverage target: 100% of datagod/scrapers/api_integration.py (161 lines)
 """
 
-import pytest
+import json
 import os
 import sys
-import json
 import time
-from datetime import datetime
-from unittest.mock import patch, MagicMock, Mock
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 # Set test environment before imports
 os.environ["TESTING"] = "1"
 
 # Add paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 class TestAPIIntegrationConfig:
@@ -38,6 +39,7 @@ class TestAPIIntegrationConfig:
 
     def test_config_creation_minimal(self):
         """Test config creation with minimal parameters."""
+
         @dataclass
         class APIIntegrationConfig:
             name: str
@@ -50,8 +52,7 @@ class TestAPIIntegrationConfig:
             retry_delay: int = 5
 
         config = APIIntegrationConfig(
-            name="test_api",
-            base_url="https://api.example.com"
+            name="test_api", base_url="https://api.example.com"
         )
 
         assert config.name == "test_api"
@@ -61,6 +62,7 @@ class TestAPIIntegrationConfig:
 
     def test_config_creation_full(self):
         """Test config creation with all parameters."""
+
         @dataclass
         class APIIntegrationConfig:
             name: str
@@ -80,7 +82,7 @@ class TestAPIIntegrationConfig:
             rate_limit_period=120,
             timeout=60,
             retry_count=5,
-            retry_delay=10
+            retry_delay=10,
         )
 
         assert config.api_key == "secret_key_123"
@@ -92,6 +94,7 @@ class TestAPIIntegrationConfig:
 
     def test_config_defaults(self):
         """Test config default values."""
+
         @dataclass
         class APIIntegrationConfig:
             name: str
@@ -104,8 +107,7 @@ class TestAPIIntegrationConfig:
             retry_delay: int = 5
 
         config = APIIntegrationConfig(
-            name="default_test",
-            base_url="https://api.test.com"
+            name="default_test", base_url="https://api.test.com"
         )
 
         assert config.rate_limit == 10
@@ -121,19 +123,20 @@ class TestBaseAPIIntegrationInit:
     def test_session_creation(self):
         """Test session is created."""
         import requests
+
         session = requests.Session()
         assert session is not None
 
     def test_headers_configuration(self):
         """Test headers are configured correctly."""
         headers = {
-            'User-Agent': 'DataGod API Integration System',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            "User-Agent": "DataGod API Integration System",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
         }
 
-        assert headers['User-Agent'] == 'DataGod API Integration System'
-        assert headers['Accept'] == 'application/json'
+        assert headers["User-Agent"] == "DataGod API Integration System"
+        assert headers["Accept"] == "application/json"
 
     def test_authorization_header_with_api_key(self):
         """Test authorization header is set with API key."""
@@ -141,9 +144,9 @@ class TestBaseAPIIntegrationInit:
         headers = {}
 
         if api_key:
-            headers['Authorization'] = f'Bearer {api_key}'
+            headers["Authorization"] = f"Bearer {api_key}"
 
-        assert headers['Authorization'] == 'Bearer secret_key_123'
+        assert headers["Authorization"] == "Bearer secret_key_123"
 
     def test_authorization_header_without_api_key(self):
         """Test authorization header is not set without API key."""
@@ -151,9 +154,9 @@ class TestBaseAPIIntegrationInit:
         headers = {}
 
         if api_key:
-            headers['Authorization'] = f'Bearer {api_key}'
+            headers["Authorization"] = f"Bearer {api_key}"
 
-        assert 'Authorization' not in headers
+        assert "Authorization" not in headers
 
     def test_initial_state(self):
         """Test initial state values."""
@@ -351,6 +354,7 @@ class TestSessionClose:
     def test_session_close(self):
         """Test session close method."""
         import requests
+
         session = requests.Session()
 
         # Session should be closeable
@@ -366,10 +370,10 @@ class TestAPIIntegrationManager:
     def test_manager_initialization(self):
         """Test manager initialization."""
         integrations = {}
-        base_dir = 'datagod/scrapers/data'
+        base_dir = "datagod/scrapers/data"
 
         assert integrations == {}
-        assert base_dir == 'datagod/scrapers/data'
+        assert base_dir == "datagod/scrapers/data"
 
     def test_add_integration(self):
         """Test adding integration."""
@@ -436,7 +440,7 @@ class TestSaveIntegrationData:
     def test_filename_generation(self):
         """Test filename generation."""
         integration_name = "test_api"
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{integration_name}_data_{timestamp}.json"
 
         assert filename.startswith("test_api_data_")
@@ -444,18 +448,15 @@ class TestSaveIntegrationData:
 
     def test_filepath_construction(self):
         """Test filepath construction."""
-        base_dir = 'datagod/scrapers/data'
-        filename = 'test_api_data_20240101_120000.json'
+        base_dir = "datagod/scrapers/data"
+        filename = "test_api_data_20240101_120000.json"
         filepath = os.path.join(base_dir, filename)
 
-        assert 'datagod/scrapers/data' in filepath
+        assert "datagod/scrapers/data" in filepath
 
     def test_data_serialization(self):
         """Test data serialization to JSON."""
-        data = [
-            {"id": 1, "name": "Test 1"},
-            {"id": 2, "name": "Test 2"}
-        ]
+        data = [{"id": 1, "name": "Test 1"}, {"id": 2, "name": "Test 2"}]
 
         json_str = json.dumps(data, indent=2)
 
@@ -470,48 +471,48 @@ class TestMockAPIIntegration:
         """Test getting mock records."""
         mock_records = [
             {
-                'id': f'mock_{i}',
-                'title': f'Mock Record {i}',
-                'description': f'This is a mock record {i}',
-                'amount': 1000.0 + i * 100,
-                'date': '2023-01-01',
-                'url': f'https://example.com/record/{i}'
+                "id": f"mock_{i}",
+                "title": f"Mock Record {i}",
+                "description": f"This is a mock record {i}",
+                "amount": 1000.0 + i * 100,
+                "date": "2023-01-01",
+                "url": f"https://example.com/record/{i}",
             }
             for i in range(1, 11)
         ]
 
         assert len(mock_records) == 10
-        assert mock_records[0]['id'] == 'mock_1'
-        assert mock_records[0]['amount'] == 1100.0
+        assert mock_records[0]["id"] == "mock_1"
+        assert mock_records[0]["amount"] == 1100.0
 
     def test_normalize_mock_record(self):
         """Test normalizing mock record."""
         record = {
-            'id': 'mock_1',
-            'title': 'Mock Record 1',
-            'description': 'This is a mock record',
-            'amount': 1000.0,
-            'date': '2023-01-01',
-            'url': 'https://example.com/record/1'
+            "id": "mock_1",
+            "title": "Mock Record 1",
+            "description": "This is a mock record",
+            "amount": 1000.0,
+            "date": "2023-01-01",
+            "url": "https://example.com/record/1",
         }
 
         normalized = {
-            'source': 'mock_api',
-            'source_id': record['id'],
-            'title': record['title'],
-            'description': record['description'],
-            'amount': record['amount'],
-            'date': record['date'],
-            'url': record['url'],
-            'jurisdiction': 'Mock County, XX',
-            'data_type': 'property',
-            'raw_data': record,
-            'collected_at': datetime.now().isoformat()
+            "source": "mock_api",
+            "source_id": record["id"],
+            "title": record["title"],
+            "description": record["description"],
+            "amount": record["amount"],
+            "date": record["date"],
+            "url": record["url"],
+            "jurisdiction": "Mock County, XX",
+            "data_type": "property",
+            "raw_data": record,
+            "collected_at": datetime.now().isoformat(),
         }
 
-        assert normalized['source'] == 'mock_api'
-        assert normalized['source_id'] == 'mock_1'
-        assert normalized['jurisdiction'] == 'Mock County, XX'
+        assert normalized["source"] == "mock_api"
+        assert normalized["source_id"] == "mock_1"
+        assert normalized["jurisdiction"] == "Mock County, XX"
 
 
 class TestCaliforniaPropertyAPI:
@@ -521,67 +522,67 @@ class TestCaliforniaPropertyAPI:
         """Test getting California property records."""
         mock_records = [
             {
-                'id': f'ca_property_{i}',
-                'county': 'Los Angeles',
-                'address': f'123 Main St, Los Angeles, CA {90001 + i}',
-                'owner': f'John Doe {i}',
-                'assessed_value': 500000 + i * 10000,
-                'last_sale_date': '2022-06-15',
-                'last_sale_amount': 600000 + i * 12000,
-                'property_type': 'Single Family Residence',
-                'bedrooms': 3,
-                'bathrooms': 2,
-                'square_feet': 1800 + i * 50,
-                'year_built': 1990 + i
+                "id": f"ca_property_{i}",
+                "county": "Los Angeles",
+                "address": f"123 Main St, Los Angeles, CA {90001 + i}",
+                "owner": f"John Doe {i}",
+                "assessed_value": 500000 + i * 10000,
+                "last_sale_date": "2022-06-15",
+                "last_sale_amount": 600000 + i * 12000,
+                "property_type": "Single Family Residence",
+                "bedrooms": 3,
+                "bathrooms": 2,
+                "square_feet": 1800 + i * 50,
+                "year_built": 1990 + i,
             }
             for i in range(1, 6)
         ]
 
         assert len(mock_records) == 5
-        assert mock_records[0]['county'] == 'Los Angeles'
-        assert mock_records[0]['property_type'] == 'Single Family Residence'
+        assert mock_records[0]["county"] == "Los Angeles"
+        assert mock_records[0]["property_type"] == "Single Family Residence"
 
     def test_normalize_california_record(self):
         """Test normalizing California property record."""
         record = {
-            'id': 'ca_property_1',
-            'county': 'Los Angeles',
-            'address': '123 Main St, Los Angeles, CA 90001',
-            'owner': 'John Doe',
-            'assessed_value': 500000,
-            'last_sale_date': '2022-06-15',
-            'property_type': 'Single Family Residence',
-            'bedrooms': 3,
-            'bathrooms': 2,
-            'square_feet': 1800,
-            'year_built': 1990
+            "id": "ca_property_1",
+            "county": "Los Angeles",
+            "address": "123 Main St, Los Angeles, CA 90001",
+            "owner": "John Doe",
+            "assessed_value": 500000,
+            "last_sale_date": "2022-06-15",
+            "property_type": "Single Family Residence",
+            "bedrooms": 3,
+            "bathrooms": 2,
+            "square_feet": 1800,
+            "year_built": 1990,
         }
 
         normalized = {
-            'source': 'california_property_api',
-            'source_id': record['id'],
-            'title': f"Property at {record['address']}",
-            'description': f"Property owned by {record['owner']} in {record['county']} County",
-            'amount': record['assessed_value'],
-            'date': record['last_sale_date'],
-            'url': f"https://california.propertyapi.gov/records/{record['id']}",
-            'jurisdiction': f"{record['county']} County, CA",
-            'data_type': 'property',
-            'raw_data': record,
-            'collected_at': datetime.now().isoformat(),
-            'additional_data': {
-                'owner': record['owner'],
-                'property_type': record['property_type'],
-                'bedrooms': record['bedrooms'],
-                'bathrooms': record['bathrooms'],
-                'square_feet': record['square_feet'],
-                'year_built': record['year_built']
-            }
+            "source": "california_property_api",
+            "source_id": record["id"],
+            "title": f"Property at {record['address']}",
+            "description": f"Property owned by {record['owner']} in {record['county']} County",
+            "amount": record["assessed_value"],
+            "date": record["last_sale_date"],
+            "url": f"https://california.propertyapi.gov/records/{record['id']}",
+            "jurisdiction": f"{record['county']} County, CA",
+            "data_type": "property",
+            "raw_data": record,
+            "collected_at": datetime.now().isoformat(),
+            "additional_data": {
+                "owner": record["owner"],
+                "property_type": record["property_type"],
+                "bedrooms": record["bedrooms"],
+                "bathrooms": record["bathrooms"],
+                "square_feet": record["square_feet"],
+                "year_built": record["year_built"],
+            },
         }
 
-        assert normalized['source'] == 'california_property_api'
-        assert normalized['jurisdiction'] == 'Los Angeles County, CA'
-        assert normalized['additional_data']['bedrooms'] == 3
+        assert normalized["source"] == "california_property_api"
+        assert normalized["jurisdiction"] == "Los Angeles County, CA"
+        assert normalized["additional_data"]["bedrooms"] == 3
 
 
 class TestTexasPropertyAPI:
@@ -591,66 +592,66 @@ class TestTexasPropertyAPI:
         """Test getting Texas property records."""
         mock_records = [
             {
-                'id': f'tx_property_{i}',
-                'county': 'Harris',
-                'address': f'456 Oak Ave, Houston, TX {77001 + i}',
-                'owner': f'Jane Smith {i}',
-                'appraised_value': 350000 + i * 8000,
-                'last_sale_date': '2021-03-10',
-                'last_sale_amount': 400000 + i * 10000,
-                'property_type': 'Single Family Residence',
-                'bedrooms': 4,
-                'bathrooms': 3,
-                'square_feet': 2200 + i * 75,
-                'year_built': 2005 + i
+                "id": f"tx_property_{i}",
+                "county": "Harris",
+                "address": f"456 Oak Ave, Houston, TX {77001 + i}",
+                "owner": f"Jane Smith {i}",
+                "appraised_value": 350000 + i * 8000,
+                "last_sale_date": "2021-03-10",
+                "last_sale_amount": 400000 + i * 10000,
+                "property_type": "Single Family Residence",
+                "bedrooms": 4,
+                "bathrooms": 3,
+                "square_feet": 2200 + i * 75,
+                "year_built": 2005 + i,
             }
             for i in range(1, 6)
         ]
 
         assert len(mock_records) == 5
-        assert mock_records[0]['county'] == 'Harris'
-        assert mock_records[0]['bedrooms'] == 4
+        assert mock_records[0]["county"] == "Harris"
+        assert mock_records[0]["bedrooms"] == 4
 
     def test_normalize_texas_record(self):
         """Test normalizing Texas property record."""
         record = {
-            'id': 'tx_property_1',
-            'county': 'Harris',
-            'address': '456 Oak Ave, Houston, TX 77001',
-            'owner': 'Jane Smith',
-            'appraised_value': 350000,
-            'last_sale_date': '2021-03-10',
-            'property_type': 'Single Family Residence',
-            'bedrooms': 4,
-            'bathrooms': 3,
-            'square_feet': 2200,
-            'year_built': 2005
+            "id": "tx_property_1",
+            "county": "Harris",
+            "address": "456 Oak Ave, Houston, TX 77001",
+            "owner": "Jane Smith",
+            "appraised_value": 350000,
+            "last_sale_date": "2021-03-10",
+            "property_type": "Single Family Residence",
+            "bedrooms": 4,
+            "bathrooms": 3,
+            "square_feet": 2200,
+            "year_built": 2005,
         }
 
         normalized = {
-            'source': 'texas_property_api',
-            'source_id': record['id'],
-            'title': f"Property at {record['address']}",
-            'description': f"Property owned by {record['owner']} in {record['county']} County",
-            'amount': record['appraised_value'],
-            'date': record['last_sale_date'],
-            'url': f"https://texas.propertyapi.gov/records/{record['id']}",
-            'jurisdiction': f"{record['county']} County, TX",
-            'data_type': 'property',
-            'raw_data': record,
-            'collected_at': datetime.now().isoformat(),
-            'additional_data': {
-                'owner': record['owner'],
-                'property_type': record['property_type'],
-                'bedrooms': record['bedrooms'],
-                'bathrooms': record['bathrooms'],
-                'square_feet': record['square_feet'],
-                'year_built': record['year_built']
-            }
+            "source": "texas_property_api",
+            "source_id": record["id"],
+            "title": f"Property at {record['address']}",
+            "description": f"Property owned by {record['owner']} in {record['county']} County",
+            "amount": record["appraised_value"],
+            "date": record["last_sale_date"],
+            "url": f"https://texas.propertyapi.gov/records/{record['id']}",
+            "jurisdiction": f"{record['county']} County, TX",
+            "data_type": "property",
+            "raw_data": record,
+            "collected_at": datetime.now().isoformat(),
+            "additional_data": {
+                "owner": record["owner"],
+                "property_type": record["property_type"],
+                "bedrooms": record["bedrooms"],
+                "bathrooms": record["bathrooms"],
+                "square_feet": record["square_feet"],
+                "year_built": record["year_built"],
+            },
         }
 
-        assert normalized['source'] == 'texas_property_api'
-        assert normalized['jurisdiction'] == 'Harris County, TX'
+        assert normalized["source"] == "texas_property_api"
+        assert normalized["jurisdiction"] == "Harris County, TX"
 
 
 class TestFloridaPropertyAPI:
@@ -660,66 +661,66 @@ class TestFloridaPropertyAPI:
         """Test getting Florida property records."""
         mock_records = [
             {
-                'id': f'fl_property_{i}',
-                'county': 'Miami-Dade',
-                'address': f'789 Palm St, Miami, FL {33101 + i}',
-                'owner': f'Robert Johnson {i}',
-                'assessed_value': 450000 + i * 9000,
-                'last_sale_date': '2020-11-05',
-                'last_sale_amount': 500000 + i * 11000,
-                'property_type': 'Condominium',
-                'bedrooms': 2,
-                'bathrooms': 2,
-                'square_feet': 1500 + i * 40,
-                'year_built': 2010 + i
+                "id": f"fl_property_{i}",
+                "county": "Miami-Dade",
+                "address": f"789 Palm St, Miami, FL {33101 + i}",
+                "owner": f"Robert Johnson {i}",
+                "assessed_value": 450000 + i * 9000,
+                "last_sale_date": "2020-11-05",
+                "last_sale_amount": 500000 + i * 11000,
+                "property_type": "Condominium",
+                "bedrooms": 2,
+                "bathrooms": 2,
+                "square_feet": 1500 + i * 40,
+                "year_built": 2010 + i,
             }
             for i in range(1, 6)
         ]
 
         assert len(mock_records) == 5
-        assert mock_records[0]['county'] == 'Miami-Dade'
-        assert mock_records[0]['property_type'] == 'Condominium'
+        assert mock_records[0]["county"] == "Miami-Dade"
+        assert mock_records[0]["property_type"] == "Condominium"
 
     def test_normalize_florida_record(self):
         """Test normalizing Florida property record."""
         record = {
-            'id': 'fl_property_1',
-            'county': 'Miami-Dade',
-            'address': '789 Palm St, Miami, FL 33101',
-            'owner': 'Robert Johnson',
-            'assessed_value': 450000,
-            'last_sale_date': '2020-11-05',
-            'property_type': 'Condominium',
-            'bedrooms': 2,
-            'bathrooms': 2,
-            'square_feet': 1500,
-            'year_built': 2010
+            "id": "fl_property_1",
+            "county": "Miami-Dade",
+            "address": "789 Palm St, Miami, FL 33101",
+            "owner": "Robert Johnson",
+            "assessed_value": 450000,
+            "last_sale_date": "2020-11-05",
+            "property_type": "Condominium",
+            "bedrooms": 2,
+            "bathrooms": 2,
+            "square_feet": 1500,
+            "year_built": 2010,
         }
 
         normalized = {
-            'source': 'florida_property_api',
-            'source_id': record['id'],
-            'title': f"Property at {record['address']}",
-            'description': f"Property owned by {record['owner']} in {record['county']} County",
-            'amount': record['assessed_value'],
-            'date': record['last_sale_date'],
-            'url': f"https://florida.propertyapi.gov/records/{record['id']}",
-            'jurisdiction': f"{record['county']} County, FL",
-            'data_type': 'property',
-            'raw_data': record,
-            'collected_at': datetime.now().isoformat(),
-            'additional_data': {
-                'owner': record['owner'],
-                'property_type': record['property_type'],
-                'bedrooms': record['bedrooms'],
-                'bathrooms': record['bathrooms'],
-                'square_feet': record['square_feet'],
-                'year_built': record['year_built']
-            }
+            "source": "florida_property_api",
+            "source_id": record["id"],
+            "title": f"Property at {record['address']}",
+            "description": f"Property owned by {record['owner']} in {record['county']} County",
+            "amount": record["assessed_value"],
+            "date": record["last_sale_date"],
+            "url": f"https://florida.propertyapi.gov/records/{record['id']}",
+            "jurisdiction": f"{record['county']} County, FL",
+            "data_type": "property",
+            "raw_data": record,
+            "collected_at": datetime.now().isoformat(),
+            "additional_data": {
+                "owner": record["owner"],
+                "property_type": record["property_type"],
+                "bedrooms": record["bedrooms"],
+                "bathrooms": record["bathrooms"],
+                "square_feet": record["square_feet"],
+                "year_built": record["year_built"],
+            },
         }
 
-        assert normalized['source'] == 'florida_property_api'
-        assert normalized['jurisdiction'] == 'Miami-Dade County, FL'
+        assert normalized["source"] == "florida_property_api"
+        assert normalized["jurisdiction"] == "Miami-Dade County, FL"
 
 
 class TestMainFunction:
@@ -732,6 +733,7 @@ class TestMainFunction:
 
     def test_config_creation_mock(self):
         """Test mock config creation."""
+
         @dataclass
         class APIIntegrationConfig:
             name: str
@@ -744,7 +746,7 @@ class TestMainFunction:
             name="mock_api",
             base_url="https://api.mockapi.example.com/v1",
             rate_limit=10,
-            rate_limit_period=60
+            rate_limit_period=60,
         )
 
         assert mock_config.name == "mock_api"
@@ -752,6 +754,7 @@ class TestMainFunction:
 
     def test_config_creation_california(self):
         """Test California config creation."""
+
         @dataclass
         class APIIntegrationConfig:
             name: str
@@ -763,7 +766,7 @@ class TestMainFunction:
             name="california_property_api",
             base_url="https://api.california.gov/property/v1",
             rate_limit=20,
-            rate_limit_period=60
+            rate_limit_period=60,
         )
 
         assert ca_config.name == "california_property_api"
@@ -771,6 +774,7 @@ class TestMainFunction:
 
     def test_config_creation_texas(self):
         """Test Texas config creation."""
+
         @dataclass
         class APIIntegrationConfig:
             name: str
@@ -782,7 +786,7 @@ class TestMainFunction:
             name="texas_property_api",
             base_url="https://api.texas.gov/property/v1",
             rate_limit=15,
-            rate_limit_period=60
+            rate_limit_period=60,
         )
 
         assert tx_config.name == "texas_property_api"
@@ -790,6 +794,7 @@ class TestMainFunction:
 
     def test_config_creation_florida(self):
         """Test Florida config creation."""
+
         @dataclass
         class APIIntegrationConfig:
             name: str
@@ -801,7 +806,7 @@ class TestMainFunction:
             name="florida_property_api",
             base_url="https://api.florida.gov/property/v1",
             rate_limit=18,
-            rate_limit_period=60
+            rate_limit_period=60,
         )
 
         assert fl_config.name == "florida_property_api"
@@ -813,7 +818,7 @@ class TestMainFunction:
             "mock_api": {},
             "california_property_api": {},
             "texas_property_api": {},
-            "florida_property_api": {}
+            "florida_property_api": {},
         }
 
         names = list(integrations.keys())
@@ -861,13 +866,14 @@ class TestLogging:
     def test_logging_level(self):
         """Test logging level configuration."""
         import logging
+
         level = logging.INFO
 
         assert level == 20  # INFO level value
 
     def test_logging_format(self):
         """Test logging format string."""
-        log_format = '%(asctime)s - %(levelname)s - %(message)s'
+        log_format = "%(asctime)s - %(levelname)s - %(message)s"
 
         assert "asctime" in log_format
         assert "levelname" in log_format
@@ -879,11 +885,11 @@ class TestDirectoryCreation:
 
     def test_makedirs_pattern(self):
         """Test os.makedirs pattern."""
-        base_dir = 'test_data_dir'
+        base_dir = "test_data_dir"
 
         # os.makedirs with exist_ok=True should not raise error
         # Just testing the pattern
-        assert base_dir == 'test_data_dir'
+        assert base_dir == "test_data_dir"
 
 
 class TestRetryAfterHeader:
@@ -891,10 +897,10 @@ class TestRetryAfterHeader:
 
     def test_retry_after_from_header(self):
         """Test getting Retry-After from header."""
-        headers = {'Retry-After': '60'}
+        headers = {"Retry-After": "60"}
         default_delay = 5
 
-        retry_after = int(headers.get('Retry-After', default_delay))
+        retry_after = int(headers.get("Retry-After", default_delay))
 
         assert retry_after == 60
 
@@ -903,6 +909,6 @@ class TestRetryAfterHeader:
         headers = {}
         default_delay = 5
 
-        retry_after = int(headers.get('Retry-After', default_delay))
+        retry_after = int(headers.get("Retry-After", default_delay))
 
         assert retry_after == 5

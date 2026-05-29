@@ -16,14 +16,16 @@ This module focuses on state and local campaign finance.
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 
 class ContributionType(Enum):
     """Types of campaign contributions"""
+
     MONETARY = "monetary"
     IN_KIND = "in_kind"
     LOAN = "loan"
@@ -38,6 +40,7 @@ class ContributionType(Enum):
 
 class DonorType(Enum):
     """Types of donors"""
+
     INDIVIDUAL = "individual"
     CORPORATION = "corporation"
     LLC = "llc"
@@ -53,6 +56,7 @@ class DonorType(Enum):
 
 class OfficeLevel(Enum):
     """Level of office sought"""
+
     GOVERNOR = "governor"
     LT_GOVERNOR = "lieutenant_governor"
     ATTORNEY_GENERAL = "attorney_general"
@@ -74,6 +78,7 @@ class OfficeLevel(Enum):
 
 class ElectionCycle(Enum):
     """Election cycle type"""
+
     PRIMARY = "primary"
     GENERAL = "general"
     SPECIAL = "special"
@@ -84,6 +89,7 @@ class ElectionCycle(Enum):
 @dataclass
 class CampaignContribution:
     """Campaign contribution record"""
+
     contribution_id: str
     state: str
     amount: float
@@ -122,7 +128,9 @@ class CampaignContribution:
             "recipient_committee": self.recipient_committee,
             "office_sought": self.office_sought.value if self.office_sought else None,
             "district": self.district,
-            "election_cycle": self.election_cycle.value if self.election_cycle else None,
+            "election_cycle": (
+                self.election_cycle.value if self.election_cycle else None
+            ),
             "election_year": self.election_year,
             "donor_address": self.donor_address,
             "donor_city": self.donor_city,
@@ -141,6 +149,7 @@ class CampaignContribution:
 @dataclass
 class Candidate:
     """State/local candidate information"""
+
     candidate_id: str
     name: str
     state: str
@@ -182,6 +191,7 @@ class Candidate:
 @dataclass
 class Committee:
     """Political committee information"""
+
     committee_id: str
     committee_name: str
     state: str
@@ -206,8 +216,12 @@ class Committee:
             "committee_type": self.committee_type,
             "treasurer_name": self.treasurer_name,
             "treasurer_address": self.treasurer_address,
-            "registration_date": self.registration_date.isoformat() if self.registration_date else None,
-            "termination_date": self.termination_date.isoformat() if self.termination_date else None,
+            "registration_date": (
+                self.registration_date.isoformat() if self.registration_date else None
+            ),
+            "termination_date": (
+                self.termination_date.isoformat() if self.termination_date else None
+            ),
             "status": self.status,
             "affiliated_candidate": self.affiliated_candidate,
             "party_affiliation": self.party_affiliation,
@@ -221,6 +235,7 @@ class Committee:
 @dataclass
 class DonorSummary:
     """Aggregate summary of a donor's contributions"""
+
     donor_name: str
     donor_type: DonorType
     state: str
@@ -241,8 +256,12 @@ class DonorSummary:
             "state": self.state,
             "total_contributions": self.total_contributions,
             "contribution_count": self.contribution_count,
-            "first_contribution": self.first_contribution.isoformat() if self.first_contribution else None,
-            "last_contribution": self.last_contribution.isoformat() if self.last_contribution else None,
+            "first_contribution": (
+                self.first_contribution.isoformat() if self.first_contribution else None
+            ),
+            "last_contribution": (
+                self.last_contribution.isoformat() if self.last_contribution else None
+            ),
             "average_contribution": self.average_contribution,
             "recipients": self.recipients,
             "parties_supported": self.parties_supported,
@@ -691,10 +710,7 @@ class BaseStateCampaignFinanceAPI:
         results.append(sample)
         return results
 
-    async def get_donor_summary(
-        self,
-        donor_name: str
-    ) -> Optional[DonorSummary]:
+    async def get_donor_summary(self, donor_name: str) -> Optional[DonorSummary]:
         """Get aggregate summary of a donor's contributions"""
         if not self.session:
             raise RuntimeError("Session not initialized. Use async context manager.")
@@ -785,6 +801,7 @@ def get_campaign_finance_api(state: str) -> BaseStateCampaignFinanceAPI:
 
 # Convenience functions
 
+
 def get_state_campaign_database(state: str) -> Dict[str, str]:
     """Get state campaign finance database information"""
     return STATE_CAMPAIGN_FINANCE.get(state.upper(), {})
@@ -799,6 +816,7 @@ def search_state_contributions(
     election_year: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """Search for state campaign contributions"""
+
     async def _search():
         api = get_campaign_finance_api(state)
         async with api:
@@ -810,6 +828,7 @@ def search_state_contributions(
                 election_year=election_year,
             )
             return [r.to_dict() for r in results]
+
     return asyncio.run(_search())
 
 
@@ -821,6 +840,7 @@ def search_state_candidates(
     election_year: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """Search for state candidates"""
+
     async def _search():
         api = get_campaign_finance_api(state)
         async with api:
@@ -832,19 +852,19 @@ def search_state_candidates(
                 election_year=election_year,
             )
             return [r.to_dict() for r in results]
+
     return asyncio.run(_search())
 
 
-def get_donor_history(
-    state: str,
-    donor_name: str
-) -> Optional[Dict[str, Any]]:
+def get_donor_history(state: str, donor_name: str) -> Optional[Dict[str, Any]]:
     """Get aggregate donor contribution history"""
+
     async def _fetch():
         api = get_campaign_finance_api(state)
         async with api:
             result = await api.get_donor_summary(donor_name)
             return result.to_dict() if result else None
+
     return asyncio.run(_fetch())
 
 
@@ -853,6 +873,7 @@ def search_all_states_contributions(
     min_amount: Optional[float] = None,
 ) -> Dict[str, List[Dict[str, Any]]]:
     """Search for contributions across all states"""
+
     async def _search():
         results = {}
         for state in STATE_CAMPAIGN_FINANCE.keys():
@@ -865,6 +886,7 @@ def search_all_states_contributions(
                 if state_results:
                     results[state] = [r.to_dict() for r in state_results]
         return results
+
     return asyncio.run(_search())
 
 

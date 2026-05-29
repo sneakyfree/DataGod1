@@ -8,21 +8,21 @@ Free Public Sources:
 - Hospital Compare, Nursing Home Compare
 """
 
-import logging
-
 import asyncio
-import aiohttp
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, List, Dict, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
 
-
 class ProviderType(Enum):
     """Healthcare provider types."""
+
     PHYSICIAN = "physician"
     NURSE = "nurse"
     PHARMACIST = "pharmacist"
@@ -37,6 +37,7 @@ class ProviderType(Enum):
 
 class LicenseStatus(Enum):
     """License status types."""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
     EXPIRED = "expired"
@@ -47,6 +48,7 @@ class LicenseStatus(Enum):
 
 class StarRating(Enum):
     """CMS star rating levels."""
+
     ONE_STAR = 1
     TWO_STARS = 2
     THREE_STARS = 3
@@ -57,6 +59,7 @@ class StarRating(Enum):
 @dataclass
 class HealthcareProvider:
     """Healthcare provider record."""
+
     npi: str  # National Provider Identifier
     name: str
     first_name: Optional[str] = None
@@ -80,6 +83,7 @@ class HealthcareProvider:
 @dataclass
 class NursingHome:
     """Nursing home facility record."""
+
     provider_number: str
     name: str
     address: Optional[str] = None
@@ -108,6 +112,7 @@ class NursingHome:
 @dataclass
 class Hospital:
     """Hospital facility record."""
+
     provider_id: str
     name: str
     address: Optional[str] = None
@@ -135,6 +140,7 @@ class Hospital:
 @dataclass
 class ExcludedProvider:
     """HHS OIG excluded provider record (LEIE)."""
+
     npi: Optional[str] = None
     upin: Optional[str] = None
     first_name: Optional[str] = None
@@ -158,6 +164,7 @@ class ExcludedProvider:
 @dataclass
 class HomeHealthAgency:
     """Home health agency record."""
+
     provider_number: str
     name: str
     address: Optional[str] = None
@@ -182,187 +189,136 @@ STATE_HEALTH_LICENSE_URLS = {
     "AL": {
         "medical": "https://www.albme.gov/verification/",
         "nursing": "https://www.abn.alabama.gov/verification/",
-        "pharmacy": "https://www.albop.com/"
+        "pharmacy": "https://www.albop.com/",
     },
     "AK": {
         "medical": "https://www.commerce.alaska.gov/cbp/Main/",
-        "nursing": "https://www.commerce.alaska.gov/cbp/Main/"
+        "nursing": "https://www.commerce.alaska.gov/cbp/Main/",
     },
     "AZ": {
         "medical": "https://azbomprod.azmd.gov/GLSPublic/",
         "nursing": "https://www.azbn.gov/verification-of-licensure",
-        "pharmacy": "https://pharmacy.az.gov/"
+        "pharmacy": "https://pharmacy.az.gov/",
     },
     "AR": {
         "medical": "https://www.armedicalboard.org/",
-        "nursing": "https://www.arsbn.org/"
+        "nursing": "https://www.arsbn.org/",
     },
     "CA": {
         "medical": "https://www.mbc.ca.gov/breeze/",
         "nursing": "https://www.rn.ca.gov/verification.shtml",
-        "pharmacy": "https://www.pharmacy.ca.gov/"
+        "pharmacy": "https://www.pharmacy.ca.gov/",
     },
-    "CO": {
-        "all": "https://apps.colorado.gov/dora/licensing/lookup/licenselookup.aspx"
-    },
-    "CT": {
-        "all": "https://www.elicense.ct.gov/Lookup/LicenseLookup.aspx"
-    },
-    "DE": {
-        "all": "https://delpros.delaware.gov/OH_Verification/"
-    },
-    "DC": {
-        "all": "https://doh.dc.gov/service/professional-licensing-verification"
-    },
+    "CO": {"all": "https://apps.colorado.gov/dora/licensing/lookup/licenselookup.aspx"},
+    "CT": {"all": "https://www.elicense.ct.gov/Lookup/LicenseLookup.aspx"},
+    "DE": {"all": "https://delpros.delaware.gov/OH_Verification/"},
+    "DC": {"all": "https://doh.dc.gov/service/professional-licensing-verification"},
     "FL": {
         "medical": "https://appsmqa.doh.state.fl.us/MQASearchServices/",
         "nursing": "https://appsmqa.doh.state.fl.us/MQASearchServices/",
-        "pharmacy": "https://appsmqa.doh.state.fl.us/MQASearchServices/"
+        "pharmacy": "https://appsmqa.doh.state.fl.us/MQASearchServices/",
     },
     "GA": {
         "medical": "https://gcmb.mylicense.com/verification/",
-        "nursing": "https://sos.ga.gov/PLB/verify.php"
+        "nursing": "https://sos.ga.gov/PLB/verify.php",
     },
-    "HI": {
-        "all": "https://pvl.ehawaii.gov/pvlsearch/"
-    },
+    "HI": {"all": "https://pvl.ehawaii.gov/pvlsearch/"},
     "ID": {
         "medical": "https://isecure.bom.idaho.gov/IBOMPortal/",
-        "nursing": "https://ibn.idaho.gov/"
+        "nursing": "https://ibn.idaho.gov/",
     },
-    "IL": {
-        "all": "https://online-dfpr.micropact.com/lookup/licenselookup.aspx"
-    },
-    "IN": {
-        "all": "https://mylicense.in.gov/EVerification/"
-    },
+    "IL": {"all": "https://online-dfpr.micropact.com/lookup/licenselookup.aspx"},
+    "IN": {"all": "https://mylicense.in.gov/EVerification/"},
     "IA": {
         "medical": "https://medicalboard.iowa.gov/",
-        "nursing": "https://nursing.iowa.gov/"
+        "nursing": "https://nursing.iowa.gov/",
     },
     "KS": {
         "medical": "https://www.ksbha.org/public_searchable_database.shtml",
-        "nursing": "https://www.ksbn.org/"
+        "nursing": "https://www.ksbn.org/",
     },
     "KY": {
         "medical": "https://web1.ky.gov/GenSearch/",
-        "nursing": "https://kbn.ky.gov/"
+        "nursing": "https://kbn.ky.gov/",
     },
     "LA": {
         "medical": "https://www.lsbme.la.gov/content/verification",
-        "nursing": "https://www.lsbn.state.la.us/"
+        "nursing": "https://www.lsbn.state.la.us/",
     },
-    "ME": {
-        "all": "https://www.pfr.maine.gov/ALMSOnline/"
-    },
+    "ME": {"all": "https://www.pfr.maine.gov/ALMSOnline/"},
     "MD": {
         "medical": "https://www.mbp.state.md.us/bpqapp/",
-        "nursing": "https://mbon.maryland.gov/"
+        "nursing": "https://mbon.maryland.gov/",
     },
-    "MA": {
-        "all": "https://checkalicense.mass.gov/"
-    },
-    "MI": {
-        "all": "https://www.michigan.gov/lara/bureau-list/bpl/health/verify"
-    },
+    "MA": {"all": "https://checkalicense.mass.gov/"},
+    "MI": {"all": "https://www.michigan.gov/lara/bureau-list/bpl/health/verify"},
     "MN": {
         "medical": "https://www.bmp.state.mn.us/",
-        "nursing": "https://www.nursingboard.state.mn.us/"
+        "nursing": "https://www.nursingboard.state.mn.us/",
     },
     "MS": {
         "medical": "https://www.msbml.ms.gov/",
-        "nursing": "https://www.msbn.ms.gov/"
+        "nursing": "https://www.msbn.ms.gov/",
     },
-    "MO": {
-        "all": "https://pr.mo.gov/licensee-search.asp"
-    },
-    "MT": {
-        "all": "https://ebiz.mt.gov/pol/"
-    },
-    "NE": {
-        "all": "https://www.nebraska.gov/LISSearch/search.cgi"
-    },
+    "MO": {"all": "https://pr.mo.gov/licensee-search.asp"},
+    "MT": {"all": "https://ebiz.mt.gov/pol/"},
+    "NE": {"all": "https://www.nebraska.gov/LISSearch/search.cgi"},
     "NV": {
         "medical": "https://medboard.nv.gov/",
-        "nursing": "https://nevadanursingboard.org/"
+        "nursing": "https://nevadanursingboard.org/",
     },
-    "NH": {
-        "all": "https://nhlicenses.nh.gov/"
-    },
-    "NJ": {
-        "all": "https://newjersey.mylicense.com/verification/"
-    },
+    "NH": {"all": "https://nhlicenses.nh.gov/"},
+    "NJ": {"all": "https://newjersey.mylicense.com/verification/"},
     "NM": {
         "medical": "https://www.nmmb.state.nm.us/",
-        "nursing": "https://www.bon.state.nm.us/"
+        "nursing": "https://www.bon.state.nm.us/",
     },
-    "NY": {
-        "all": "https://www.op.nysed.gov/verification-search"
-    },
+    "NY": {"all": "https://www.op.nysed.gov/verification-search"},
     "NC": {
         "medical": "https://www.ncmedboard.org/",
-        "nursing": "https://www.ncbon.com/"
+        "nursing": "https://www.ncbon.com/",
     },
-    "ND": {
-        "medical": "https://www.ndbomex.com/",
-        "nursing": "https://www.ndbon.org/"
-    },
+    "ND": {"medical": "https://www.ndbomex.com/", "nursing": "https://www.ndbon.org/"},
     "OH": {
         "medical": "https://elicense.ohio.gov/oh_verifylicense",
-        "nursing": "https://elicense.ohio.gov/oh_verifylicense"
+        "nursing": "https://elicense.ohio.gov/oh_verifylicense",
     },
     "OK": {
         "medical": "https://www.okmedicalboard.org/",
-        "nursing": "https://nursing.ok.gov/"
+        "nursing": "https://nursing.ok.gov/",
     },
     "OR": {
         "medical": "https://www.oregon.gov/omb/",
-        "nursing": "https://www.oregon.gov/osbn/"
+        "nursing": "https://www.oregon.gov/osbn/",
     },
-    "PA": {
-        "all": "https://www.pals.pa.gov/"
-    },
-    "RI": {
-        "all": "https://health.ri.gov/licenses/"
-    },
+    "PA": {"all": "https://www.pals.pa.gov/"},
+    "RI": {"all": "https://health.ri.gov/licenses/"},
     "SC": {
         "medical": "https://llr.sc.gov/med/",
-        "nursing": "https://llr.sc.gov/nurse/"
+        "nursing": "https://llr.sc.gov/nurse/",
     },
     "SD": {
         "medical": "https://www.sdbmoe.gov/",
-        "nursing": "https://doh.sd.gov/boards/nursing/"
+        "nursing": "https://doh.sd.gov/boards/nursing/",
     },
-    "TN": {
-        "all": "https://apps.health.tn.gov/licensure/default.aspx"
-    },
+    "TN": {"all": "https://apps.health.tn.gov/licensure/default.aspx"},
     "TX": {
         "medical": "https://www.tmb.state.tx.us/",
-        "nursing": "https://www.bon.texas.gov/"
+        "nursing": "https://www.bon.texas.gov/",
     },
-    "UT": {
-        "all": "https://dopl.utah.gov/verify.html"
-    },
-    "VT": {
-        "all": "https://alis.vermont.gov/ALISLicenseSearch/"
-    },
-    "VA": {
-        "all": "https://dhp.virginiainteractive.org/"
-    },
-    "WA": {
-        "all": "https://fortress.wa.gov/doh/providercredentialsearch/"
-    },
+    "UT": {"all": "https://dopl.utah.gov/verify.html"},
+    "VT": {"all": "https://alis.vermont.gov/ALISLicenseSearch/"},
+    "VA": {"all": "https://dhp.virginiainteractive.org/"},
+    "WA": {"all": "https://fortress.wa.gov/doh/providercredentialsearch/"},
     "WV": {
         "medical": "https://www.wvbom.wv.gov/",
-        "nursing": "https://www.wvrnboard.wv.gov/"
+        "nursing": "https://www.wvrnboard.wv.gov/",
     },
-    "WI": {
-        "all": "https://licensesearch.wi.gov/"
-    },
+    "WI": {"all": "https://licensesearch.wi.gov/"},
     "WY": {
         "medical": "https://wyomedboard.wyo.gov/",
-        "nursing": "https://wsbn.wyo.gov/"
-    }
+        "nursing": "https://wsbn.wyo.gov/",
+    },
 }
 
 
@@ -388,7 +344,7 @@ class HealthSafetyRecordsScraper:
         "hospitals": "https://data.cms.gov/provider-data/dataset/xubh-q36u",
         "home_health": "https://data.cms.gov/provider-data/dataset/6jpm-sxkc",
         "hospice": "https://data.cms.gov/provider-data/dataset/252m-zfp9",
-        "physicians": "https://data.cms.gov/provider-data/dataset/mj5m-pzi6"
+        "physicians": "https://data.cms.gov/provider-data/dataset/mj5m-pzi6",
     }
 
     def __init__(self, session: Optional[aiohttp.ClientSession] = None):
@@ -423,7 +379,7 @@ class HealthSafetyRecordsScraper:
         state: Optional[str] = None,
         zip_code: Optional[str] = None,
         specialty: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[HealthcareProvider]:
         """
         Search healthcare providers in NPPES NPI Registry.
@@ -467,21 +423,30 @@ class HealthSafetyRecordsScraper:
 
                             # Get primary address
                             primary_addr = next(
-                                (a for a in addresses if a.get("address_purpose") == "LOCATION"),
-                                addresses[0] if addresses else {}
+                                (
+                                    a
+                                    for a in addresses
+                                    if a.get("address_purpose") == "LOCATION"
+                                ),
+                                addresses[0] if addresses else {},
                             )
 
                             # Get primary taxonomy/specialty
                             primary_tax = next(
                                 (t for t in taxonomies if t.get("primary")),
-                                taxonomies[0] if taxonomies else {}
+                                taxonomies[0] if taxonomies else {},
                             )
 
-                            entity_type = "Individual" if item.get("enumeration_type") == "NPI-1" else "Organization"
+                            entity_type = (
+                                "Individual"
+                                if item.get("enumeration_type") == "NPI-1"
+                                else "Organization"
+                            )
 
                             provider = HealthcareProvider(
                                 npi=str(item.get("number", "")),
-                                name=basic.get("name") or f"{basic.get('first_name', '')} {basic.get('last_name', '')}".strip(),
+                                name=basic.get("name")
+                                or f"{basic.get('first_name', '')} {basic.get('last_name', '')}".strip(),
                                 first_name=basic.get("first_name"),
                                 last_name=basic.get("last_name"),
                                 credential=basic.get("credential"),
@@ -495,7 +460,7 @@ class HealthSafetyRecordsScraper:
                                 gender=basic.get("gender"),
                                 sole_proprietor=basic.get("sole_proprietor") == "YES",
                                 entity_type=entity_type,
-                                raw_data=item
+                                raw_data=item,
                             )
 
                             # Parse dates
@@ -522,7 +487,6 @@ class HealthSafetyRecordsScraper:
         except aiohttp.ClientError as e:
             logger.error(f"NPPES API error in search_providers_npi: {e}")
 
-
         return results
 
     async def get_provider_by_npi(self, npi: str) -> Optional[HealthcareProvider]:
@@ -539,7 +503,7 @@ class HealthSafetyRecordsScraper:
         state: Optional[str] = None,
         zip_code: Optional[str] = None,
         min_rating: Optional[int] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[NursingHome]:
         """
         Search nursing homes using CMS Nursing Home Compare data.
@@ -556,17 +520,34 @@ class HealthSafetyRecordsScraper:
 
             conditions = []
             if state:
-                conditions.append({"resource": "t", "property": "state", "value": state.upper(), "operator": "="})
+                conditions.append(
+                    {
+                        "resource": "t",
+                        "property": "state",
+                        "value": state.upper(),
+                        "operator": "=",
+                    }
+                )
             if city:
-                conditions.append({"resource": "t", "property": "city", "value": city.upper(), "operator": "="})
+                conditions.append(
+                    {
+                        "resource": "t",
+                        "property": "city",
+                        "value": city.upper(),
+                        "operator": "=",
+                    }
+                )
             if min_rating:
-                conditions.append({"resource": "t", "property": "overall_rating", "value": str(min_rating), "operator": ">="})
+                conditions.append(
+                    {
+                        "resource": "t",
+                        "property": "overall_rating",
+                        "value": str(min_rating),
+                        "operator": ">=",
+                    }
+                )
 
-            payload = {
-                "limit": limit,
-                "offset": 0,
-                "count": True
-            }
+            payload = {"limit": limit, "offset": 0, "count": True}
 
             if conditions:
                 payload["conditions"] = conditions
@@ -576,12 +557,18 @@ class HealthSafetyRecordsScraper:
                     data = await response.json()
 
                     for item in data.get("results", []):
-                        if name and name.lower() not in item.get("provider_name", "").lower():
+                        if (
+                            name
+                            and name.lower()
+                            not in item.get("provider_name", "").lower()
+                        ):
                             continue
 
                         try:
                             nursing_home = NursingHome(
-                                provider_number=str(item.get("federal_provider_number", "")),
+                                provider_number=str(
+                                    item.get("federal_provider_number", "")
+                                ),
                                 name=item.get("provider_name", ""),
                                 address=item.get("provider_address"),
                                 city=item.get("city"),
@@ -590,15 +577,36 @@ class HealthSafetyRecordsScraper:
                                 phone=item.get("provider_phone_number"),
                                 county=item.get("provider_county_name"),
                                 ownership_type=item.get("ownership_type"),
-                                certified_beds=int(item.get("number_of_certified_beds", 0) or 0),
-                                total_residents=int(item.get("average_number_of_residents_per_day", 0) or 0),
-                                overall_rating=int(item.get("overall_rating", 0) or 0) if item.get("overall_rating") else None,
-                                health_inspection_rating=int(item.get("health_inspection_rating", 0) or 0) if item.get("health_inspection_rating") else None,
-                                staffing_rating=int(item.get("staffing_rating", 0) or 0) if item.get("staffing_rating") else None,
-                                quality_rating=int(item.get("qm_rating", 0) or 0) if item.get("qm_rating") else None,
+                                certified_beds=int(
+                                    item.get("number_of_certified_beds", 0) or 0
+                                ),
+                                total_residents=int(
+                                    item.get("average_number_of_residents_per_day", 0)
+                                    or 0
+                                ),
+                                overall_rating=(
+                                    int(item.get("overall_rating", 0) or 0)
+                                    if item.get("overall_rating")
+                                    else None
+                                ),
+                                health_inspection_rating=(
+                                    int(item.get("health_inspection_rating", 0) or 0)
+                                    if item.get("health_inspection_rating")
+                                    else None
+                                ),
+                                staffing_rating=(
+                                    int(item.get("staffing_rating", 0) or 0)
+                                    if item.get("staffing_rating")
+                                    else None
+                                ),
+                                quality_rating=(
+                                    int(item.get("qm_rating", 0) or 0)
+                                    if item.get("qm_rating")
+                                    else None
+                                ),
                                 abuse_icon=item.get("abuse_icon") == "Y",
                                 special_focus=item.get("special_focus_facility") == "Y",
-                                raw_data=item
+                                raw_data=item,
                             )
                             results.append(nursing_home)
                         except (KeyError, ValueError, TypeError):
@@ -606,7 +614,6 @@ class HealthSafetyRecordsScraper:
 
         except aiohttp.ClientError as e:
             logger.error(f"CMS Data API error in search_nursing_homes: {e}")
-
 
         return results
 
@@ -617,7 +624,7 @@ class HealthSafetyRecordsScraper:
         state: Optional[str] = None,
         hospital_type: Optional[str] = None,
         min_rating: Optional[int] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[Hospital]:
         """
         Search hospitals using CMS Hospital Compare data.
@@ -633,15 +640,25 @@ class HealthSafetyRecordsScraper:
 
             conditions = []
             if state:
-                conditions.append({"resource": "t", "property": "state", "value": state.upper(), "operator": "="})
+                conditions.append(
+                    {
+                        "resource": "t",
+                        "property": "state",
+                        "value": state.upper(),
+                        "operator": "=",
+                    }
+                )
             if city:
-                conditions.append({"resource": "t", "property": "city", "value": city.upper(), "operator": "="})
+                conditions.append(
+                    {
+                        "resource": "t",
+                        "property": "city",
+                        "value": city.upper(),
+                        "operator": "=",
+                    }
+                )
 
-            payload = {
-                "limit": limit,
-                "offset": 0,
-                "count": True
-            }
+            payload = {"limit": limit, "offset": 0, "count": True}
 
             if conditions:
                 payload["conditions"] = conditions
@@ -651,11 +668,22 @@ class HealthSafetyRecordsScraper:
                     data = await response.json()
 
                     for item in data.get("results", []):
-                        if name and name.lower() not in item.get("facility_name", "").lower():
+                        if (
+                            name
+                            and name.lower()
+                            not in item.get("facility_name", "").lower()
+                        ):
                             continue
-                        if hospital_type and hospital_type.lower() not in item.get("hospital_type", "").lower():
+                        if (
+                            hospital_type
+                            and hospital_type.lower()
+                            not in item.get("hospital_type", "").lower()
+                        ):
                             continue
-                        if min_rating and (int(item.get("hospital_overall_rating", 0) or 0) < min_rating):
+                        if min_rating and (
+                            int(item.get("hospital_overall_rating", 0) or 0)
+                            < min_rating
+                        ):
                             continue
 
                         try:
@@ -670,16 +698,35 @@ class HealthSafetyRecordsScraper:
                                 county=item.get("county_name"),
                                 hospital_type=item.get("hospital_type"),
                                 ownership=item.get("hospital_ownership"),
-                                emergency_services=item.get("emergency_services") == "Yes",
-                                overall_rating=int(item.get("hospital_overall_rating", 0) or 0) if item.get("hospital_overall_rating") else None,
-                                mortality_rating=item.get("mortality_national_comparison"),
-                                safety_rating=item.get("safety_of_care_national_comparison"),
-                                readmission_rating=item.get("readmission_national_comparison"),
-                                patient_experience_rating=item.get("patient_experience_national_comparison"),
-                                effectiveness_rating=item.get("effectiveness_of_care_national_comparison"),
-                                timeliness_rating=item.get("timeliness_of_care_national_comparison"),
-                                efficient_imaging=item.get("efficient_use_of_medical_imaging_national_comparison"),
-                                raw_data=item
+                                emergency_services=item.get("emergency_services")
+                                == "Yes",
+                                overall_rating=(
+                                    int(item.get("hospital_overall_rating", 0) or 0)
+                                    if item.get("hospital_overall_rating")
+                                    else None
+                                ),
+                                mortality_rating=item.get(
+                                    "mortality_national_comparison"
+                                ),
+                                safety_rating=item.get(
+                                    "safety_of_care_national_comparison"
+                                ),
+                                readmission_rating=item.get(
+                                    "readmission_national_comparison"
+                                ),
+                                patient_experience_rating=item.get(
+                                    "patient_experience_national_comparison"
+                                ),
+                                effectiveness_rating=item.get(
+                                    "effectiveness_of_care_national_comparison"
+                                ),
+                                timeliness_rating=item.get(
+                                    "timeliness_of_care_national_comparison"
+                                ),
+                                efficient_imaging=item.get(
+                                    "efficient_use_of_medical_imaging_national_comparison"
+                                ),
+                                raw_data=item,
                             )
                             results.append(hospital)
                         except (KeyError, ValueError, TypeError):
@@ -687,7 +734,6 @@ class HealthSafetyRecordsScraper:
 
         except aiohttp.ClientError as e:
             logger.error(f"CMS Data API error in search_hospitals: {e}")
-
 
         return results
 
@@ -711,7 +757,7 @@ class HealthSafetyRecordsScraper:
             "nursing_home_compare": "https://www.medicare.gov/care-compare/",
             "physician_compare": "https://www.medicare.gov/care-compare/",
             "leie_exclusions": "https://oig.hhs.gov/exclusions/",
-            "nppes_registry": "https://npiregistry.cms.hhs.gov/"
+            "nppes_registry": "https://npiregistry.cms.hhs.gov/",
         }
 
     def get_data_download_urls(self) -> Dict[str, str]:
@@ -722,7 +768,7 @@ class HealthSafetyRecordsScraper:
             "physician_data": "https://data.cms.gov/provider-data/dataset/mj5m-pzi6",
             "home_health_data": "https://data.cms.gov/provider-data/dataset/6jpm-sxkc",
             "hospice_data": "https://data.cms.gov/provider-data/dataset/252m-zfp9",
-            "leie_exclusions": "https://oig.hhs.gov/exclusions/exclusions_list.asp"
+            "leie_exclusions": "https://oig.hhs.gov/exclusions/exclusions_list.asp",
         }
 
 
@@ -731,49 +777,40 @@ def search_providers_sync(
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
     state: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> List[HealthcareProvider]:
     """Synchronous wrapper for provider search."""
+
     async def _search():
         async with HealthSafetyRecordsScraper() as scraper:
             return await scraper.search_providers_npi(
-                first_name=first_name,
-                last_name=last_name,
-                state=state,
-                **kwargs
+                first_name=first_name, last_name=last_name, state=state, **kwargs
             )
+
     return asyncio.run(_search())
 
 
 def search_nursing_homes_sync(
-    name: Optional[str] = None,
-    state: Optional[str] = None,
-    **kwargs
+    name: Optional[str] = None, state: Optional[str] = None, **kwargs
 ) -> List[NursingHome]:
     """Synchronous wrapper for nursing home search."""
+
     async def _search():
         async with HealthSafetyRecordsScraper() as scraper:
-            return await scraper.search_nursing_homes(
-                name=name,
-                state=state,
-                **kwargs
-            )
+            return await scraper.search_nursing_homes(name=name, state=state, **kwargs)
+
     return asyncio.run(_search())
 
 
 def search_hospitals_sync(
-    name: Optional[str] = None,
-    state: Optional[str] = None,
-    **kwargs
+    name: Optional[str] = None, state: Optional[str] = None, **kwargs
 ) -> List[Hospital]:
     """Synchronous wrapper for hospital search."""
+
     async def _search():
         async with HealthSafetyRecordsScraper() as scraper:
-            return await scraper.search_hospitals(
-                name=name,
-                state=state,
-                **kwargs
-            )
+            return await scraper.search_hospitals(name=name, state=state, **kwargs)
+
     return asyncio.run(_search())
 
 

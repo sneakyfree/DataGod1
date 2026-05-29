@@ -3,8 +3,9 @@ Tests for SQLAlchemy ORM models
 Uses the models from datagod.models (the __init__.py definitions)
 """
 
+from datetime import date, datetime
+
 import pytest
-from datetime import datetime, date
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -19,6 +20,7 @@ class TestJurisdictionModel:
     def engine(self):
         """Create test database engine"""
         from datagod.models import Base
+
         engine = create_engine(TEST_DATABASE_URL)
         Base.metadata.create_all(engine)
         return engine
@@ -42,7 +44,7 @@ class TestJurisdictionModel:
             type="county",
             api_available=False,
             scraper_needed=True,
-            description="Los Angeles County, California"
+            description="Los Angeles County, California",
         )
 
         session.add(jurisdiction)
@@ -57,10 +59,7 @@ class TestJurisdictionModel:
         """Test jurisdiction string representation"""
         from datagod.models import Jurisdiction
 
-        jurisdiction = Jurisdiction(
-            name="Harris County",
-            state="TX"
-        )
+        jurisdiction = Jurisdiction(name="Harris County", state="TX")
 
         assert "Harris County" in repr(jurisdiction)
         assert "TX" in repr(jurisdiction)
@@ -69,10 +68,7 @@ class TestJurisdictionModel:
         """Test jurisdiction timestamps are set"""
         from datagod.models import Jurisdiction
 
-        jurisdiction = Jurisdiction(
-            name="Test County",
-            state="NY"
-        )
+        jurisdiction = Jurisdiction(name="Test County", state="NY")
 
         session.add(jurisdiction)
         session.commit()
@@ -82,8 +78,9 @@ class TestJurisdictionModel:
 
     def test_jurisdiction_unique_name(self, session):
         """Test jurisdiction name uniqueness"""
-        from datagod.models import Jurisdiction
         from sqlalchemy.exc import IntegrityError
+
+        from datagod.models import Jurisdiction
 
         j1 = Jurisdiction(name="Unique County", state="CA")
         session.add(j1)
@@ -103,6 +100,7 @@ class TestDataSourceModel:
     def engine(self):
         """Create test database engine"""
         from datagod.models import Base
+
         engine = create_engine(TEST_DATABASE_URL)
         Base.metadata.create_all(engine)
         return engine
@@ -135,7 +133,7 @@ class TestDataSourceModel:
             source_type="api",
             api_endpoint="https://api.example.com/records",
             status="active",
-            description="Test data source"
+            description="Test data source",
         )
 
         session.add(data_source)
@@ -152,7 +150,7 @@ class TestDataSourceModel:
         data_source = DataSource(
             jurisdiction_id=jurisdiction.id,
             source_name="County Records API",
-            source_type="api"
+            source_type="api",
         )
 
         repr_str = repr(data_source)
@@ -165,7 +163,7 @@ class TestDataSourceModel:
         data_source = DataSource(
             jurisdiction_id=jurisdiction.id,
             source_name="Related Source",
-            source_type="scraper"
+            source_type="scraper",
         )
 
         session.add(data_source)
@@ -182,6 +180,7 @@ class TestRecordModel:
     def engine(self):
         """Create test database engine"""
         from datagod.models import Base
+
         engine = create_engine(TEST_DATABASE_URL)
         Base.metadata.create_all(engine)
         return engine
@@ -212,7 +211,7 @@ class TestRecordModel:
         data_source = DataSource(
             jurisdiction_id=jurisdiction.id,
             source_name="Test Source",
-            source_type="api"
+            source_type="api",
         )
         session.add(data_source)
         session.commit()
@@ -230,7 +229,7 @@ class TestRecordModel:
             amount=250000.00,
             date=datetime(2024, 1, 15),
             record_type="mortgage",
-            status="active"
+            status="active",
         )
 
         session.add(record)
@@ -249,7 +248,7 @@ class TestRecordModel:
             data_source_id=data_source.id,
             title="Property Deed",
             record_type="deed",
-            amount=500000.00
+            amount=500000.00,
         )
 
         repr_str = repr(record)
@@ -264,7 +263,7 @@ class TestRecordModel:
             data_source_id=data_source.id,
             title="Record with JSON",
             record_type="mortgage",
-            raw_data={"borrower": "John Doe", "lender": "Test Bank"}
+            raw_data={"borrower": "John Doe", "lender": "Test Bank"},
         )
 
         session.add(record)
@@ -282,7 +281,7 @@ class TestRecordModel:
             jurisdiction_id=jurisdiction.id,
             data_source_id=data_source.id,
             title="Related Record",
-            record_type="deed"
+            record_type="deed",
         )
 
         session.add(record)
@@ -300,6 +299,7 @@ class TestEntityModel:
     def engine(self):
         """Create test database engine"""
         from datagod.models import Base
+
         engine = create_engine(TEST_DATABASE_URL)
         Base.metadata.create_all(engine)
         return engine
@@ -322,7 +322,7 @@ class TestEntityModel:
             address="123 Main St",
             city="Anytown",
             state="CA",
-            zip_code="90210"
+            zip_code="90210",
         )
 
         session.add(entity)
@@ -336,10 +336,7 @@ class TestEntityModel:
         """Test entity string representation"""
         from datagod.models import Entity
 
-        entity = Entity(
-            entity_name="Acme Corporation",
-            entity_type="company"
-        )
+        entity = Entity(entity_name="Acme Corporation", entity_type="company")
 
         repr_str = repr(entity)
         assert "Acme Corporation" in repr_str or entity is not None
@@ -352,6 +349,7 @@ class TestRelationshipModel:
     def engine(self):
         """Create test database engine"""
         from datagod.models import Base
+
         engine = create_engine(TEST_DATABASE_URL)
         Base.metadata.create_all(engine)
         return engine
@@ -394,7 +392,7 @@ class TestRelationshipModel:
         data_source = DataSource(
             jurisdiction_id=jurisdiction.id,
             source_name="Relationship Test Source",
-            source_type="api"
+            source_type="api",
         )
         session.add(data_source)
         session.commit()
@@ -409,7 +407,7 @@ class TestRelationshipModel:
             jurisdiction_id=jurisdiction.id,
             data_source_id=data_source.id,
             title="Test Record",
-            record_type="deed"
+            record_type="deed",
         )
         session.add(record)
         session.commit()
@@ -428,7 +426,7 @@ class TestRelationshipModel:
             relationship_type="owner",
             role1="seller",
             role2="buyer",
-            confidence_score=0.95
+            confidence_score=0.95,
         )
 
         session.add(relationship)
@@ -448,7 +446,7 @@ class TestRelationshipModel:
             entity1_id=entity1.id,
             entity2_id=entity2.id,
             record_id=record.id,
-            relationship_type="partner"
+            relationship_type="partner",
         )
 
         # Just verify repr doesn't raise an error
@@ -463,6 +461,7 @@ class TestUserModel:
     def engine(self):
         """Create test database engine"""
         from datagod.models import Base
+
         engine = create_engine(TEST_DATABASE_URL)
         Base.metadata.create_all(engine)
         return engine
@@ -483,7 +482,7 @@ class TestUserModel:
             username="testuser",
             email="test@example.com",
             hashed_password="hashed_password_here",
-            full_name="Test User"
+            full_name="Test User",
         )
 
         session.add(user)
@@ -498,9 +497,7 @@ class TestUserModel:
         from datagod.models import User
 
         user = User(
-            username="johndoe",
-            email="john@example.com",
-            hashed_password="hashed"
+            username="johndoe", email="john@example.com", hashed_password="hashed"
         )
 
         assert "johndoe" in repr(user)
@@ -512,7 +509,7 @@ class TestUserModel:
         user = User(
             username="defaultuser",
             email="default@example.com",
-            hashed_password="hashed"
+            hashed_password="hashed",
         )
 
         session.add(user)
@@ -523,8 +520,9 @@ class TestUserModel:
 
     def test_user_unique_username(self, session):
         """Test user username uniqueness"""
-        from datagod.models import User
         from sqlalchemy.exc import IntegrityError
+
+        from datagod.models import User
 
         u1 = User(username="unique", email="u1@example.com", hashed_password="h1")
         session.add(u1)
@@ -538,8 +536,9 @@ class TestUserModel:
 
     def test_user_unique_email(self, session):
         """Test user email uniqueness"""
-        from datagod.models import User
         from sqlalchemy.exc import IntegrityError
+
+        from datagod.models import User
 
         # Rollback any previous transaction
         session.rollback()

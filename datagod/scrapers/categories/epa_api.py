@@ -18,18 +18,20 @@ Rate Limit: No formal limit, but reasonable use expected
 """
 
 import asyncio
-import aiohttp
-from dataclasses import dataclass, field
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List, Dict, Any
 import logging
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
 
 class EPADatabase(Enum):
     """EPA Envirofacts databases"""
+
     # Facility Registration System
     FRS = "FRS_FACILITY_SITE"
     FRS_PROGRAM = "FRS_PROGRAM_FACILITY"
@@ -59,6 +61,7 @@ class EPADatabase(Enum):
 
 class ViolationType(Enum):
     """EPA violation types"""
+
     CAA = "Clean Air Act"
     CWA = "Clean Water Act"
     RCRA = "Resource Conservation and Recovery Act"
@@ -70,6 +73,7 @@ class ViolationType(Enum):
 
 class ComplianceStatus(Enum):
     """EPA facility compliance status"""
+
     IN_COMPLIANCE = "In Compliance"
     IN_VIOLATION = "In Violation"
     SIGNIFICANT_VIOLATION = "Significant Violation"
@@ -78,6 +82,7 @@ class ComplianceStatus(Enum):
 
 class FacilityType(Enum):
     """EPA regulated facility types"""
+
     MAJOR = "Major"
     MINOR = "Minor"
     SYNTHETIC_MINOR = "Synthetic Minor"
@@ -89,6 +94,7 @@ class FacilityType(Enum):
 @dataclass
 class EPAFacility:
     """EPA-regulated facility"""
+
     registry_id: str
     facility_name: str
     street_address: Optional[str] = None
@@ -107,6 +113,7 @@ class EPAFacility:
 @dataclass
 class EPAViolation:
     """EPA compliance violation"""
+
     violation_id: str
     facility_id: str
     facility_name: Optional[str] = None
@@ -123,6 +130,7 @@ class EPAViolation:
 @dataclass
 class EPAEnforcement:
     """EPA enforcement action"""
+
     enforcement_id: str
     facility_id: str
     facility_name: Optional[str] = None
@@ -140,6 +148,7 @@ class EPAEnforcement:
 @dataclass
 class TRIRelease:
     """Toxic Release Inventory release record"""
+
     tri_facility_id: str
     facility_name: str
     chemical_name: str
@@ -163,6 +172,7 @@ class TRIRelease:
 @dataclass
 class SuperfundSite:
     """Superfund/NPL site"""
+
     site_id: str
     site_name: str
     epa_id: Optional[str] = None
@@ -184,6 +194,7 @@ class SuperfundSite:
 @dataclass
 class AirQualityData:
     """Air quality monitoring data"""
+
     site_id: str
     parameter: str
     year: int
@@ -203,6 +214,7 @@ class AirQualityData:
 @dataclass
 class WaterSystem:
     """Public water system from SDWIS"""
+
     pwsid: str
     system_name: str
     primacy_agency: Optional[str] = None
@@ -255,7 +267,7 @@ class EPAApiClient:
         table: EPADatabase,
         filters: Optional[Dict[str, str]] = None,
         rows: int = 100,
-        output_format: str = "JSON"
+        output_format: str = "JSON",
     ) -> List[Dict[str, Any]]:
         """
         Make request to Envirofacts API
@@ -295,9 +307,7 @@ class EPAApiClient:
             return []
 
     async def _echo_request(
-        self,
-        endpoint: str,
-        params: Optional[Dict[str, Any]] = None
+        self, endpoint: str, params: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Make request to ECHO API
@@ -349,7 +359,7 @@ class EPAApiClient:
         zip_code: Optional[str] = None,
         facility_name: Optional[str] = None,
         program: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[EPAFacility]:
         """
         Search EPA-regulated facilities
@@ -380,26 +390,32 @@ class EPAApiClient:
             filters["PRIMARY_NAME"] = facility_name.upper()
 
         results = await self._envirofacts_request(
-            EPADatabase.FRS,
-            filters=filters,
-            rows=limit
+            EPADatabase.FRS, filters=filters, rows=limit
         )
 
         facilities = []
         for row in results:
-            facilities.append(EPAFacility(
-                registry_id=row.get("REGISTRY_ID", ""),
-                facility_name=row.get("PRIMARY_NAME", ""),
-                street_address=row.get("LOCATION_ADDRESS"),
-                city=row.get("CITY_NAME"),
-                state=row.get("STATE_CODE"),
-                zip_code=row.get("POSTAL_CODE"),
-                county=row.get("COUNTY_NAME"),
-                latitude=float(row["LATITUDE83"]) if row.get("LATITUDE83") else None,
-                longitude=float(row["LONGITUDE83"]) if row.get("LONGITUDE83") else None,
-                naics_codes=[row.get("NAICS_CODE")] if row.get("NAICS_CODE") else [],
-                sic_codes=[row.get("SIC_CODE")] if row.get("SIC_CODE") else []
-            ))
+            facilities.append(
+                EPAFacility(
+                    registry_id=row.get("REGISTRY_ID", ""),
+                    facility_name=row.get("PRIMARY_NAME", ""),
+                    street_address=row.get("LOCATION_ADDRESS"),
+                    city=row.get("CITY_NAME"),
+                    state=row.get("STATE_CODE"),
+                    zip_code=row.get("POSTAL_CODE"),
+                    county=row.get("COUNTY_NAME"),
+                    latitude=(
+                        float(row["LATITUDE83"]) if row.get("LATITUDE83") else None
+                    ),
+                    longitude=(
+                        float(row["LONGITUDE83"]) if row.get("LONGITUDE83") else None
+                    ),
+                    naics_codes=(
+                        [row.get("NAICS_CODE")] if row.get("NAICS_CODE") else []
+                    ),
+                    sic_codes=[row.get("SIC_CODE")] if row.get("SIC_CODE") else [],
+                )
+            )
 
         return facilities
 
@@ -411,7 +427,7 @@ class EPAApiClient:
         facility_name: Optional[str] = None,
         in_violation: Optional[bool] = None,
         program: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[EPAFacility]:
         """
         Search facilities using ECHO API (more detailed compliance info)
@@ -428,10 +444,7 @@ class EPAApiClient:
         Returns:
             List of EPA facilities with compliance status
         """
-        params = {
-            "p_act": "Y",  # Active facilities only
-            "p_limit": limit
-        }
+        params = {"p_act": "Y", "p_limit": limit}  # Active facilities only
 
         if state:
             params["p_st"] = state.upper()
@@ -465,25 +478,31 @@ class EPAApiClient:
                 elif "C" in qnc:
                     compliance_status = ComplianceStatus.IN_COMPLIANCE
 
-            facilities.append(EPAFacility(
-                registry_id=row.get("RegistryId", ""),
-                facility_name=row.get("FacName", ""),
-                street_address=row.get("FacStreet"),
-                city=row.get("FacCity"),
-                state=row.get("FacState"),
-                zip_code=row.get("FacZip"),
-                county=row.get("FacCounty"),
-                latitude=float(row["FacLat"]) if row.get("FacLat") else None,
-                longitude=float(row["FacLong"]) if row.get("FacLong") else None,
-                programs=[p for p in [
-                    "CAA" if row.get("AirFlag") == "Y" else None,
-                    "CWA" if row.get("CwaFlag") == "Y" else None,
-                    "RCRA" if row.get("RcraFlag") == "Y" else None,
-                    "SDWA" if row.get("SdwisFlag") == "Y" else None,
-                    "TRI" if row.get("TriFlag") == "Y" else None
-                ] if p],
-                compliance_status=compliance_status
-            ))
+            facilities.append(
+                EPAFacility(
+                    registry_id=row.get("RegistryId", ""),
+                    facility_name=row.get("FacName", ""),
+                    street_address=row.get("FacStreet"),
+                    city=row.get("FacCity"),
+                    state=row.get("FacState"),
+                    zip_code=row.get("FacZip"),
+                    county=row.get("FacCounty"),
+                    latitude=float(row["FacLat"]) if row.get("FacLat") else None,
+                    longitude=float(row["FacLong"]) if row.get("FacLong") else None,
+                    programs=[
+                        p
+                        for p in [
+                            "CAA" if row.get("AirFlag") == "Y" else None,
+                            "CWA" if row.get("CwaFlag") == "Y" else None,
+                            "RCRA" if row.get("RcraFlag") == "Y" else None,
+                            "SDWA" if row.get("SdwisFlag") == "Y" else None,
+                            "TRI" if row.get("TriFlag") == "Y" else None,
+                        ]
+                        if p
+                    ],
+                    compliance_status=compliance_status,
+                )
+            )
 
         return facilities
 
@@ -496,7 +515,7 @@ class EPAApiClient:
         program: Optional[str] = None,
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[EPAViolation]:
         """
         Search EPA violations using ECHO
@@ -512,9 +531,7 @@ class EPAApiClient:
         Returns:
             List of violations
         """
-        params = {
-            "p_limit": limit
-        }
+        params = {"p_limit": limit}
 
         if state:
             params["p_st"] = state.upper()
@@ -539,8 +556,7 @@ class EPAApiClient:
             return []
 
         detail_response = await self._echo_request(
-            "echo_rest_services.get_download",
-            {"qid": qid, "p_viol": "Y"}
+            "echo_rest_services.get_download", {"qid": qid, "p_viol": "Y"}
         )
 
         violations = []
@@ -552,19 +568,23 @@ class EPAApiClient:
                     violation_type = vt
                     break
 
-            violations.append(EPAViolation(
-                violation_id=row.get("ViolationId", ""),
-                facility_id=row.get("RegistryId", ""),
-                facility_name=row.get("FacilityName"),
-                program=row.get("Program"),
-                violation_type=violation_type,
-                violation_date=self._parse_date(row.get("ViolationDate")),
-                compliance_achieved_date=self._parse_date(row.get("ComplianceAchievedDate")),
-                description=row.get("ViolationDescription"),
-                severity=row.get("Severity"),
-                state=row.get("State"),
-                city=row.get("City")
-            ))
+            violations.append(
+                EPAViolation(
+                    violation_id=row.get("ViolationId", ""),
+                    facility_id=row.get("RegistryId", ""),
+                    facility_name=row.get("FacilityName"),
+                    program=row.get("Program"),
+                    violation_type=violation_type,
+                    violation_date=self._parse_date(row.get("ViolationDate")),
+                    compliance_achieved_date=self._parse_date(
+                        row.get("ComplianceAchievedDate")
+                    ),
+                    description=row.get("ViolationDescription"),
+                    severity=row.get("Severity"),
+                    state=row.get("State"),
+                    city=row.get("City"),
+                )
+            )
 
         return violations
 
@@ -577,7 +597,7 @@ class EPAApiClient:
         min_penalty: Optional[float] = None,
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[EPAEnforcement]:
         """
         Search EPA enforcement actions
@@ -593,9 +613,7 @@ class EPAApiClient:
         Returns:
             List of enforcement actions
         """
-        params = {
-            "p_limit": limit
-        }
+        params = {"p_limit": limit}
 
         if state:
             params["p_st"] = state.upper()
@@ -612,24 +630,36 @@ class EPAApiClient:
         if date_to:
             params["p_enfd_end"] = date_to.strftime("%m/%d/%Y")
 
-        response = await self._echo_request("echo_rest_services.get_case_report", params)
+        response = await self._echo_request(
+            "echo_rest_services.get_case_report", params
+        )
 
         enforcements = []
         for row in response.get("Results", {}).get("CaseReport", []):
-            enforcements.append(EPAEnforcement(
-                enforcement_id=row.get("CaseNumber", ""),
-                facility_id=row.get("RegistryId", ""),
-                facility_name=row.get("FacilityName"),
-                action_type=row.get("EnforcementType"),
-                action_date=self._parse_date(row.get("EnforcementDate")),
-                lead_agency=row.get("LeadAgency"),
-                settlement_date=self._parse_date(row.get("SettlementDate")),
-                penalty_amount=float(row["PenaltyAmount"]) if row.get("PenaltyAmount") else None,
-                sep_amount=float(row["SEPAmt"]) if row.get("SEPAmt") else None,
-                compliance_action_cost=float(row["CompActionCost"]) if row.get("CompActionCost") else None,
-                program=row.get("PrimaryLaw"),
-                state=row.get("State")
-            ))
+            enforcements.append(
+                EPAEnforcement(
+                    enforcement_id=row.get("CaseNumber", ""),
+                    facility_id=row.get("RegistryId", ""),
+                    facility_name=row.get("FacilityName"),
+                    action_type=row.get("EnforcementType"),
+                    action_date=self._parse_date(row.get("EnforcementDate")),
+                    lead_agency=row.get("LeadAgency"),
+                    settlement_date=self._parse_date(row.get("SettlementDate")),
+                    penalty_amount=(
+                        float(row["PenaltyAmount"])
+                        if row.get("PenaltyAmount")
+                        else None
+                    ),
+                    sep_amount=float(row["SEPAmt"]) if row.get("SEPAmt") else None,
+                    compliance_action_cost=(
+                        float(row["CompActionCost"])
+                        if row.get("CompActionCost")
+                        else None
+                    ),
+                    program=row.get("PrimaryLaw"),
+                    state=row.get("State"),
+                )
+            )
 
         return enforcements
 
@@ -641,7 +671,7 @@ class EPAApiClient:
         facility_name: Optional[str] = None,
         chemical: Optional[str] = None,
         year: Optional[int] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[TRIRelease]:
         """
         Search Toxic Release Inventory data
@@ -671,33 +701,45 @@ class EPAApiClient:
             filters["REPORTING_YEAR"] = str(year)
 
         results = await self._envirofacts_request(
-            EPADatabase.TRI,
-            filters=filters,
-            rows=limit
+            EPADatabase.TRI, filters=filters, rows=limit
         )
 
         releases = []
         for row in results:
-            releases.append(TRIRelease(
-                tri_facility_id=row.get("TRI_FACILITY_ID", ""),
-                facility_name=row.get("FACILITY_NAME", ""),
-                chemical_name=row.get("CHEM_NAME", ""),
-                cas_number=row.get("CAS_CHEM_NAME"),
-                year=int(row.get("REPORTING_YEAR", 0)),
-                fugitive_air=float(row["FUGITIVE_AIR"]) if row.get("FUGITIVE_AIR") else None,
-                stack_air=float(row["STACK_AIR"]) if row.get("STACK_AIR") else None,
-                water=float(row["WATER"]) if row.get("WATER") else None,
-                underground_injection=float(row["UNINJ_I"]) if row.get("UNINJ_I") else None,
-                landfill=float(row["LANDFILLS"]) if row.get("LANDFILLS") else None,
-                total_releases=float(row["TOTAL_RELEASES"]) if row.get("TOTAL_RELEASES") else None,
-                total_transfers=float(row["TOTAL_TRANSFERS"]) if row.get("TOTAL_TRANSFERS") else None,
-                state=row.get("ST"),
-                city=row.get("CITY"),
-                county=row.get("COUNTY"),
-                latitude=float(row["LATITUDE"]) if row.get("LATITUDE") else None,
-                longitude=float(row["LONGITUDE"]) if row.get("LONGITUDE") else None,
-                industry_sector=row.get("INDUSTRY_SECTOR")
-            ))
+            releases.append(
+                TRIRelease(
+                    tri_facility_id=row.get("TRI_FACILITY_ID", ""),
+                    facility_name=row.get("FACILITY_NAME", ""),
+                    chemical_name=row.get("CHEM_NAME", ""),
+                    cas_number=row.get("CAS_CHEM_NAME"),
+                    year=int(row.get("REPORTING_YEAR", 0)),
+                    fugitive_air=(
+                        float(row["FUGITIVE_AIR"]) if row.get("FUGITIVE_AIR") else None
+                    ),
+                    stack_air=float(row["STACK_AIR"]) if row.get("STACK_AIR") else None,
+                    water=float(row["WATER"]) if row.get("WATER") else None,
+                    underground_injection=(
+                        float(row["UNINJ_I"]) if row.get("UNINJ_I") else None
+                    ),
+                    landfill=float(row["LANDFILLS"]) if row.get("LANDFILLS") else None,
+                    total_releases=(
+                        float(row["TOTAL_RELEASES"])
+                        if row.get("TOTAL_RELEASES")
+                        else None
+                    ),
+                    total_transfers=(
+                        float(row["TOTAL_TRANSFERS"])
+                        if row.get("TOTAL_TRANSFERS")
+                        else None
+                    ),
+                    state=row.get("ST"),
+                    city=row.get("CITY"),
+                    county=row.get("COUNTY"),
+                    latitude=float(row["LATITUDE"]) if row.get("LATITUDE") else None,
+                    longitude=float(row["LONGITUDE"]) if row.get("LONGITUDE") else None,
+                    industry_sector=row.get("INDUSTRY_SECTOR"),
+                )
+            )
 
         return releases
 
@@ -709,7 +751,7 @@ class EPAApiClient:
         city: Optional[str] = None,
         site_name: Optional[str] = None,
         npl_status: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[SuperfundSite]:
         """
         Search Superfund/NPL sites
@@ -739,30 +781,30 @@ class EPAApiClient:
             filters["NPL_STATUS"] = npl_status.upper()
 
         results = await self._envirofacts_request(
-            EPADatabase.SEMS,
-            filters=filters,
-            rows=limit
+            EPADatabase.SEMS, filters=filters, rows=limit
         )
 
         sites = []
         for row in results:
-            sites.append(SuperfundSite(
-                site_id=row.get("SEMS_ID", ""),
-                site_name=row.get("SITE_NAME", ""),
-                epa_id=row.get("EPA_ID"),
-                npl_status=row.get("NPL_STATUS"),
-                street_address=row.get("STREET_ADDRESS"),
-                city=row.get("CITY_NAME"),
-                state=row.get("STATE_CODE"),
-                zip_code=row.get("ZIP_CODE"),
-                county=row.get("COUNTY_NAME"),
-                latitude=float(row["LATITUDE"]) if row.get("LATITUDE") else None,
-                longitude=float(row["LONGITUDE"]) if row.get("LONGITUDE") else None,
-                federal_facility=row.get("FEDERAL_FAC_FLAG") == "Y",
-                listing_date=self._parse_date(row.get("NPL_LISTING_DATE")),
-                construction_completion_date=self._parse_date(row.get("CC_DATE")),
-                deletion_date=self._parse_date(row.get("DELETION_DATE"))
-            ))
+            sites.append(
+                SuperfundSite(
+                    site_id=row.get("SEMS_ID", ""),
+                    site_name=row.get("SITE_NAME", ""),
+                    epa_id=row.get("EPA_ID"),
+                    npl_status=row.get("NPL_STATUS"),
+                    street_address=row.get("STREET_ADDRESS"),
+                    city=row.get("CITY_NAME"),
+                    state=row.get("STATE_CODE"),
+                    zip_code=row.get("ZIP_CODE"),
+                    county=row.get("COUNTY_NAME"),
+                    latitude=float(row["LATITUDE"]) if row.get("LATITUDE") else None,
+                    longitude=float(row["LONGITUDE"]) if row.get("LONGITUDE") else None,
+                    federal_facility=row.get("FEDERAL_FAC_FLAG") == "Y",
+                    listing_date=self._parse_date(row.get("NPL_LISTING_DATE")),
+                    construction_completion_date=self._parse_date(row.get("CC_DATE")),
+                    deletion_date=self._parse_date(row.get("DELETION_DATE")),
+                )
+            )
 
         return sites
 
@@ -774,7 +816,7 @@ class EPAApiClient:
         city: Optional[str] = None,
         system_name: Optional[str] = None,
         min_population: Optional[int] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[WaterSystem]:
         """
         Search public water systems (SDWIS)
@@ -801,9 +843,7 @@ class EPAApiClient:
             filters["PWS_NAME"] = system_name.upper()
 
         results = await self._envirofacts_request(
-            EPADatabase.SDWIS,
-            filters=filters,
-            rows=limit
+            EPADatabase.SDWIS, filters=filters, rows=limit
         )
 
         systems = []
@@ -812,19 +852,25 @@ class EPAApiClient:
             if min_population and (not pop or int(pop) < min_population):
                 continue
 
-            systems.append(WaterSystem(
-                pwsid=row.get("PWSID", ""),
-                system_name=row.get("PWS_NAME", ""),
-                primacy_agency=row.get("PRIMACY_AGENCY_CODE"),
-                primary_source=row.get("PRIMARY_SOURCE_CODE"),
-                population_served=int(pop) if pop else None,
-                service_connections=int(row["SERVICE_CONNECTIONS_COUNT"]) if row.get("SERVICE_CONNECTIONS_COUNT") else None,
-                owner_type=row.get("OWNER_TYPE_CODE"),
-                state=row.get("STATE_CODE"),
-                city=row.get("CITIES_SERVED"),
-                zip_code=row.get("ZIP_CODE"),
-                activity_status=row.get("PWS_ACTIVITY_CODE")
-            ))
+            systems.append(
+                WaterSystem(
+                    pwsid=row.get("PWSID", ""),
+                    system_name=row.get("PWS_NAME", ""),
+                    primacy_agency=row.get("PRIMACY_AGENCY_CODE"),
+                    primary_source=row.get("PRIMARY_SOURCE_CODE"),
+                    population_served=int(pop) if pop else None,
+                    service_connections=(
+                        int(row["SERVICE_CONNECTIONS_COUNT"])
+                        if row.get("SERVICE_CONNECTIONS_COUNT")
+                        else None
+                    ),
+                    owner_type=row.get("OWNER_TYPE_CODE"),
+                    state=row.get("STATE_CODE"),
+                    city=row.get("CITIES_SERVED"),
+                    zip_code=row.get("ZIP_CODE"),
+                    activity_status=row.get("PWS_ACTIVITY_CODE"),
+                )
+            )
 
         return systems
 
@@ -836,7 +882,7 @@ class EPAApiClient:
         county: Optional[str] = None,
         parameter: Optional[str] = None,
         year: Optional[int] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[AirQualityData]:
         """
         Search air quality monitoring data
@@ -866,50 +912,69 @@ class EPAApiClient:
             filters["SAMPLE_YEAR"] = str(year)
 
         results = await self._envirofacts_request(
-            EPADatabase.AQS_ANNUAL,
-            filters=filters,
-            rows=limit
+            EPADatabase.AQS_ANNUAL, filters=filters, rows=limit
         )
 
         air_data = []
         for row in results:
-            air_data.append(AirQualityData(
-                site_id=row.get("AQS_SITE_ID", ""),
-                parameter=row.get("PARAMETER_NAME", ""),
-                year=int(row.get("SAMPLE_YEAR", 0)),
-                arithmetic_mean=float(row["ARITHMETIC_MEAN"]) if row.get("ARITHMETIC_MEAN") else None,
-                first_max_value=float(row["FIRST_MAX_VALUE"]) if row.get("FIRST_MAX_VALUE") else None,
-                second_max_value=float(row["SECOND_MAX_VALUE"]) if row.get("SECOND_MAX_VALUE") else None,
-                third_max_value=float(row["THIRD_MAX_VALUE"]) if row.get("THIRD_MAX_VALUE") else None,
-                observations=int(row["OBSERVATION_COUNT"]) if row.get("OBSERVATION_COUNT") else None,
-                aqi=int(row["AQI"]) if row.get("AQI") else None,
-                state=row.get("STATE_CODE"),
-                county=row.get("COUNTY_NAME"),
-                city=row.get("CITY_NAME"),
-                latitude=float(row["LATITUDE"]) if row.get("LATITUDE") else None,
-                longitude=float(row["LONGITUDE"]) if row.get("LONGITUDE") else None
-            ))
+            air_data.append(
+                AirQualityData(
+                    site_id=row.get("AQS_SITE_ID", ""),
+                    parameter=row.get("PARAMETER_NAME", ""),
+                    year=int(row.get("SAMPLE_YEAR", 0)),
+                    arithmetic_mean=(
+                        float(row["ARITHMETIC_MEAN"])
+                        if row.get("ARITHMETIC_MEAN")
+                        else None
+                    ),
+                    first_max_value=(
+                        float(row["FIRST_MAX_VALUE"])
+                        if row.get("FIRST_MAX_VALUE")
+                        else None
+                    ),
+                    second_max_value=(
+                        float(row["SECOND_MAX_VALUE"])
+                        if row.get("SECOND_MAX_VALUE")
+                        else None
+                    ),
+                    third_max_value=(
+                        float(row["THIRD_MAX_VALUE"])
+                        if row.get("THIRD_MAX_VALUE")
+                        else None
+                    ),
+                    observations=(
+                        int(row["OBSERVATION_COUNT"])
+                        if row.get("OBSERVATION_COUNT")
+                        else None
+                    ),
+                    aqi=int(row["AQI"]) if row.get("AQI") else None,
+                    state=row.get("STATE_CODE"),
+                    county=row.get("COUNTY_NAME"),
+                    city=row.get("CITY_NAME"),
+                    latitude=float(row["LATITUDE"]) if row.get("LATITUDE") else None,
+                    longitude=float(row["LONGITUDE"]) if row.get("LONGITUDE") else None,
+                )
+            )
 
         return air_data
 
 
 # Convenience functions for synchronous usage
 
+
 def search_facilities_sync(
     state: Optional[str] = None,
     city: Optional[str] = None,
     facility_name: Optional[str] = None,
-    limit: int = 100
+    limit: int = 100,
 ) -> List[EPAFacility]:
     """Synchronous wrapper for facility search"""
+
     async def _search():
         client = EPAApiClient()
         try:
             return await client.search_facilities(
-                state=state,
-                city=city,
-                facility_name=facility_name,
-                limit=limit
+                state=state, city=city, facility_name=facility_name, limit=limit
             )
         finally:
             await client.close()
@@ -918,18 +983,15 @@ def search_facilities_sync(
 
 
 def search_violations_sync(
-    state: Optional[str] = None,
-    facility_name: Optional[str] = None,
-    limit: int = 100
+    state: Optional[str] = None, facility_name: Optional[str] = None, limit: int = 100
 ) -> List[EPAViolation]:
     """Synchronous wrapper for violation search"""
+
     async def _search():
         client = EPAApiClient()
         try:
             return await client.search_violations(
-                state=state,
-                facility_name=facility_name,
-                limit=limit
+                state=state, facility_name=facility_name, limit=limit
             )
         finally:
             await client.close()
@@ -938,18 +1000,15 @@ def search_violations_sync(
 
 
 def search_superfund_sites_sync(
-    state: Optional[str] = None,
-    city: Optional[str] = None,
-    limit: int = 100
+    state: Optional[str] = None, city: Optional[str] = None, limit: int = 100
 ) -> List[SuperfundSite]:
     """Synchronous wrapper for Superfund site search"""
+
     async def _search():
         client = EPAApiClient()
         try:
             return await client.search_superfund_sites(
-                state=state,
-                city=city,
-                limit=limit
+                state=state, city=city, limit=limit
             )
         finally:
             await client.close()
@@ -973,7 +1032,9 @@ if __name__ == "__main__":
             print("\nSearching TRI releases in TX...")
             releases = await client.search_tri_releases(state="TX", year=2022, limit=5)
             for rel in releases:
-                print(f"  {rel.facility_name}: {rel.chemical_name} - {rel.total_releases} lbs")
+                print(
+                    f"  {rel.facility_name}: {rel.chemical_name} - {rel.total_releases} lbs"
+                )
 
             # Search Superfund sites
             print("\nSearching Superfund sites in NJ...")
@@ -983,7 +1044,9 @@ if __name__ == "__main__":
 
             # Search water systems
             print("\nSearching water systems in FL...")
-            systems = await client.search_water_systems(state="FL", min_population=10000, limit=5)
+            systems = await client.search_water_systems(
+                state="FL", min_population=10000, limit=5
+            )
             for sys in systems:
                 print(f"  {sys.system_name}: Pop {sys.population_served}")
 

@@ -8,10 +8,11 @@ Run with:
 Web UI available at: http://localhost:8089
 """
 
-from locust import HttpUser, task, between, events
 import json
-import random
 import logging
+import random
+
+from locust import HttpUser, between, events, task
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +34,9 @@ class DataGodUser(HttpUser):
             data={
                 "username": "demo@example.com",
                 "password": "demopassword123",
-                "grant_type": "password"
+                "grant_type": "password",
             },
-            headers={"Content-Type": "application/x-www-form-urlencoded"}
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
 
         if response.status_code == 200:
@@ -64,8 +65,7 @@ class DataGodUser(HttpUser):
         limit = random.choice([10, 25, 50])
 
         self.client.get(
-            f"/api/v2/records?page={page}&limit={limit}",
-            headers=self.auth_headers
+            f"/api/v2/records?page={page}&limit={limit}", headers=self.auth_headers
         )
 
     @task(4)
@@ -79,39 +79,27 @@ class DataGodUser(HttpUser):
             "foreclosure",
             "Harris County",
             "Los Angeles",
-            "New York"
+            "New York",
         ]
         query = random.choice(queries)
 
-        self.client.get(
-            f"/api/v2/search?q={query}&limit=20",
-            headers=self.auth_headers
-        )
+        self.client.get(f"/api/v2/search?q={query}&limit=20", headers=self.auth_headers)
 
     @task(2)
     def get_jurisdictions(self):
         """Fetch jurisdictions list."""
-        self.client.get(
-            "/api/v2/jurisdictions?limit=50",
-            headers=self.auth_headers
-        )
+        self.client.get("/api/v2/jurisdictions?limit=50", headers=self.auth_headers)
 
     @task(1)
     def get_dashboard_stats(self):
         """Fetch dashboard statistics."""
-        self.client.get(
-            "/api/v2/stats",
-            headers=self.auth_headers
-        )
+        self.client.get("/api/v2/stats", headers=self.auth_headers)
 
     @task(1)
     def get_user_profile(self):
         """Fetch current user profile."""
         if self.token:
-            self.client.get(
-                "/api/v2/users/me",
-                headers=self.auth_headers
-            )
+            self.client.get("/api/v2/users/me", headers=self.auth_headers)
 
 
 class AnonymousUser(HttpUser):
@@ -137,9 +125,9 @@ class AnonymousUser(HttpUser):
             data={
                 "username": f"user{random.randint(1, 1000)}@example.com",
                 "password": "testpassword",
-                "grant_type": "password"
+                "grant_type": "password",
             },
-            headers={"Content-Type": "application/x-www-form-urlencoded"}
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
 
 
@@ -157,9 +145,9 @@ class AdminUser(HttpUser):
             data={
                 "username": "admin@example.com",
                 "password": "adminpassword123",
-                "grant_type": "password"
+                "grant_type": "password",
             },
-            headers={"Content-Type": "application/x-www-form-urlencoded"}
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
 
         if response.status_code == 200:
@@ -175,18 +163,12 @@ class AdminUser(HttpUser):
     @task(2)
     def list_users(self):
         """List all users (admin only)."""
-        self.client.get(
-            "/api/v2/users",
-            headers=self.auth_headers
-        )
+        self.client.get("/api/v2/users", headers=self.auth_headers)
 
     @task(1)
     def get_system_stats(self):
         """Get system statistics."""
-        self.client.get(
-            "/api/v2/stats",
-            headers=self.auth_headers
-        )
+        self.client.get("/api/v2/stats", headers=self.auth_headers)
 
 
 # Event hooks for custom metrics

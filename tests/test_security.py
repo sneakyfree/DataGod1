@@ -2,14 +2,11 @@
 Tests for Security utilities — coverage for security/__init__.py (31% → 70%+)
 """
 
-import pytest
 import time
-from datagod.security import (
-    RateLimitConfig,
-    RateLimiter,
-    InputSanitizer,
-    PIIRedactor,
-)
+
+import pytest
+
+from datagod.security import InputSanitizer, PIIRedactor, RateLimitConfig, RateLimiter
 
 
 class TestRateLimitConfig:
@@ -27,7 +24,9 @@ class TestRateLimitConfig:
 
 class TestRateLimiter:
     def setup_method(self):
-        self.limiter = RateLimiter(RateLimitConfig(requests_per_minute=5, burst_limit=3))
+        self.limiter = RateLimiter(
+            RateLimitConfig(requests_per_minute=5, burst_limit=3)
+        )
 
     def test_first_request_allowed(self):
         result = self.limiter.check("user-1")
@@ -173,18 +172,13 @@ class TestPIIRedactor:
             "name": "John Doe",
             "ssn": "123-45-6789",
             "email": "john@example.com",
-            "notes": "Customer number is one two three"
+            "notes": "Customer number is one two three",
         }
         result = self.redactor.redact_dict(data)
         assert isinstance(result, dict)
 
     def test_redact_dict_recursive(self):
-        data = {
-            "person": {
-                "name": "John",
-                "contact": "john@example.com"
-            }
-        }
+        data = {"person": {"name": "John", "contact": "john@example.com"}}
         result = self.redactor.redact_dict(data, recursive=True)
         assert isinstance(result, dict)
 

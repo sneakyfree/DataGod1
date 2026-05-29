@@ -25,16 +25,17 @@ import os
 import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
-from typing import Optional, List, Dict, Any
-from urllib.parse import urlencode, quote_plus
+from typing import Any, Dict, List, Optional
+from urllib.parse import quote_plus, urlencode
 
 logger = logging.getLogger(__name__)
 
 # Try to import aiohttp for async requests
 try:
     import aiohttp
+
     AIOHTTP_AVAILABLE = True
 except ImportError:
     AIOHTTP_AVAILABLE = False
@@ -43,6 +44,7 @@ except ImportError:
 
 class VoterStatus(Enum):
     """Voter registration status"""
+
     ACTIVE = "Active"
     INACTIVE = "Inactive"
     PENDING = "Pending"
@@ -54,6 +56,7 @@ class VoterStatus(Enum):
 
 class PartyRegistration(Enum):
     """Party registration"""
+
     DEMOCRATIC = "Democratic"
     REPUBLICAN = "Republican"
     LIBERTARIAN = "Libertarian"
@@ -68,6 +71,7 @@ class PartyRegistration(Enum):
 
 class ElectionType(Enum):
     """Election types"""
+
     GENERAL = "General"
     PRIMARY = "Primary"
     RUNOFF = "Runoff"
@@ -80,6 +84,7 @@ class ElectionType(Enum):
 
 class VoterFileAccess(Enum):
     """State voter file access levels"""
+
     PUBLIC = "Public"
     REGISTERED_VOTERS = "Registered Voters Only"
     CANDIDATES_PARTIES = "Candidates/Parties Only"
@@ -90,6 +95,7 @@ class VoterFileAccess(Enum):
 
 class ContributionType(Enum):
     """Types of campaign contributions"""
+
     INDIVIDUAL = "Individual"
     PAC = "Political Action Committee"
     PARTY = "Party Committee"
@@ -103,6 +109,7 @@ class ContributionType(Enum):
 @dataclass
 class VoterRegistration:
     """Voter registration record"""
+
     voter_id: str
     name: str
     first_name: Optional[str] = None
@@ -128,34 +135,39 @@ class VoterRegistration:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'voter_id': self.voter_id,
-            'name': self.name,
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-            'middle_name': self.middle_name,
-            'date_of_birth': self.date_of_birth.isoformat() if self.date_of_birth else None,
-            'registration_date': self.registration_date.isoformat() if self.registration_date else None,
-            'status': self.status.value,
-            'party': self.party.value,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'zip_code': self.zip_code,
-            'county': self.county,
-            'precinct': self.precinct,
-            'congressional_district': self.congressional_district,
-            'state_senate_district': self.state_senate_district,
-            'state_house_district': self.state_house_district,
-            'voting_history': self.voting_history,
-            'source_url': self.source_url,
-            'lookup_url': self.lookup_url,
-            'fetched_at': self.fetched_at.isoformat()
+            "voter_id": self.voter_id,
+            "name": self.name,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "middle_name": self.middle_name,
+            "date_of_birth": (
+                self.date_of_birth.isoformat() if self.date_of_birth else None
+            ),
+            "registration_date": (
+                self.registration_date.isoformat() if self.registration_date else None
+            ),
+            "status": self.status.value,
+            "party": self.party.value,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "zip_code": self.zip_code,
+            "county": self.county,
+            "precinct": self.precinct,
+            "congressional_district": self.congressional_district,
+            "state_senate_district": self.state_senate_district,
+            "state_house_district": self.state_house_district,
+            "voting_history": self.voting_history,
+            "source_url": self.source_url,
+            "lookup_url": self.lookup_url,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class CampaignContribution:
     """Campaign contribution record"""
+
     contributor_name: str
     amount: float
     contribution_date: Optional[date] = None
@@ -178,31 +190,34 @@ class CampaignContribution:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'contributor_name': self.contributor_name,
-            'amount': self.amount,
-            'contribution_date': self.contribution_date.isoformat() if self.contribution_date else None,
-            'recipient_name': self.recipient_name,
-            'recipient_id': self.recipient_id,
-            'recipient_type': self.recipient_type,
-            'election_cycle': self.election_cycle,
-            'contributor_employer': self.contributor_employer,
-            'contributor_occupation': self.contributor_occupation,
-            'contributor_city': self.contributor_city,
-            'contributor_state': self.contributor_state,
-            'contributor_zip': self.contributor_zip,
-            'receipt_type': self.receipt_type,
-            'contribution_type': self.contribution_type.value,
-            'transaction_id': self.transaction_id,
-            'filing_id': self.filing_id,
-            'source': self.source,
-            'source_url': self.source_url,
-            'fetched_at': self.fetched_at.isoformat()
+            "contributor_name": self.contributor_name,
+            "amount": self.amount,
+            "contribution_date": (
+                self.contribution_date.isoformat() if self.contribution_date else None
+            ),
+            "recipient_name": self.recipient_name,
+            "recipient_id": self.recipient_id,
+            "recipient_type": self.recipient_type,
+            "election_cycle": self.election_cycle,
+            "contributor_employer": self.contributor_employer,
+            "contributor_occupation": self.contributor_occupation,
+            "contributor_city": self.contributor_city,
+            "contributor_state": self.contributor_state,
+            "contributor_zip": self.contributor_zip,
+            "receipt_type": self.receipt_type,
+            "contribution_type": self.contribution_type.value,
+            "transaction_id": self.transaction_id,
+            "filing_id": self.filing_id,
+            "source": self.source,
+            "source_url": self.source_url,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class Candidate:
     """Candidate information"""
+
     name: str
     candidate_id: Optional[str] = None
     party: PartyRegistration = PartyRegistration.UNKNOWN
@@ -218,24 +233,25 @@ class Candidate:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'name': self.name,
-            'candidate_id': self.candidate_id,
-            'party': self.party.value,
-            'office': self.office,
-            'state': self.state,
-            'district': self.district,
-            'election_year': self.election_year,
-            'incumbent': self.incumbent,
-            'total_receipts': self.total_receipts,
-            'total_disbursements': self.total_disbursements,
-            'cash_on_hand': self.cash_on_hand,
-            'source_url': self.source_url
+            "name": self.name,
+            "candidate_id": self.candidate_id,
+            "party": self.party.value,
+            "office": self.office,
+            "state": self.state,
+            "district": self.district,
+            "election_year": self.election_year,
+            "incumbent": self.incumbent,
+            "total_receipts": self.total_receipts,
+            "total_disbursements": self.total_disbursements,
+            "cash_on_hand": self.cash_on_hand,
+            "source_url": self.source_url,
         }
 
 
 @dataclass
 class Committee:
     """Political committee/PAC information"""
+
     name: str
     committee_id: str
     committee_type: Optional[str] = None
@@ -252,25 +268,28 @@ class Committee:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'name': self.name,
-            'committee_id': self.committee_id,
-            'committee_type': self.committee_type,
-            'designation': self.designation,
-            'party': self.party,
-            'state': self.state,
-            'treasurer_name': self.treasurer_name,
-            'total_receipts': self.total_receipts,
-            'total_disbursements': self.total_disbursements,
-            'cash_on_hand': self.cash_on_hand,
-            'filing_frequency': self.filing_frequency,
-            'first_file_date': self.first_file_date.isoformat() if self.first_file_date else None,
-            'source_url': self.source_url
+            "name": self.name,
+            "committee_id": self.committee_id,
+            "committee_type": self.committee_type,
+            "designation": self.designation,
+            "party": self.party,
+            "state": self.state,
+            "treasurer_name": self.treasurer_name,
+            "total_receipts": self.total_receipts,
+            "total_disbursements": self.total_disbursements,
+            "cash_on_hand": self.cash_on_hand,
+            "filing_frequency": self.filing_frequency,
+            "first_file_date": (
+                self.first_file_date.isoformat() if self.first_file_date else None
+            ),
+            "source_url": self.source_url,
         }
 
 
 @dataclass
 class ElectionResult:
     """Election result record"""
+
     election_date: date
     election_type: ElectionType = ElectionType.GENERAL
     office: Optional[str] = None
@@ -287,25 +306,26 @@ class ElectionResult:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'election_date': self.election_date.isoformat(),
-            'election_type': self.election_type.value,
-            'office': self.office,
-            'jurisdiction': self.jurisdiction,
-            'state': self.state,
-            'county': self.county,
-            'candidates': self.candidates,
-            'total_votes': self.total_votes,
-            'winner': self.winner,
-            'registered_voters': self.registered_voters,
-            'turnout_percentage': self.turnout_percentage,
-            'source_url': self.source_url,
-            'fetched_at': self.fetched_at.isoformat()
+            "election_date": self.election_date.isoformat(),
+            "election_type": self.election_type.value,
+            "office": self.office,
+            "jurisdiction": self.jurisdiction,
+            "state": self.state,
+            "county": self.county,
+            "candidates": self.candidates,
+            "total_votes": self.total_votes,
+            "winner": self.winner,
+            "registered_voters": self.registered_voters,
+            "turnout_percentage": self.turnout_percentage,
+            "source_url": self.source_url,
+            "fetched_at": self.fetched_at.isoformat(),
         }
 
 
 @dataclass
 class StateVoterAccess:
     """State voter file access information"""
+
     state: str
     state_name: str
     access_level: VoterFileAccess
@@ -318,15 +338,15 @@ class StateVoterAccess:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'state': self.state,
-            'state_name': self.state_name,
-            'access_level': self.access_level.value,
-            'registration_lookup_url': self.registration_lookup_url,
-            'election_results_url': self.election_results_url,
-            'voter_file_cost': self.voter_file_cost,
-            'eligible_requesters': self.eligible_requesters,
-            'data_available': self.data_available,
-            'notes': self.notes
+            "state": self.state,
+            "state_name": self.state_name,
+            "access_level": self.access_level.value,
+            "registration_lookup_url": self.registration_lookup_url,
+            "election_results_url": self.election_results_url,
+            "voter_file_cost": self.voter_file_cost,
+            "eligible_requesters": self.eligible_requesters,
+            "data_available": self.data_available,
+            "notes": self.notes,
         }
 
 
@@ -335,19 +355,57 @@ class StateVoterAccess:
 # =============================================================================
 
 STATE_NAMES = {
-    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
-    "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware",
-    "FL": "Florida", "GA": "Georgia", "HI": "Hawaii", "ID": "Idaho",
-    "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas",
-    "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
-    "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi",
-    "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada",
-    "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York",
-    "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma",
-    "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
-    "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah",
-    "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia",
-    "WI": "Wisconsin", "WY": "Wyoming", "DC": "District of Columbia"
+    "AL": "Alabama",
+    "AK": "Alaska",
+    "AZ": "Arizona",
+    "AR": "Arkansas",
+    "CA": "California",
+    "CO": "Colorado",
+    "CT": "Connecticut",
+    "DE": "Delaware",
+    "FL": "Florida",
+    "GA": "Georgia",
+    "HI": "Hawaii",
+    "ID": "Idaho",
+    "IL": "Illinois",
+    "IN": "Indiana",
+    "IA": "Iowa",
+    "KS": "Kansas",
+    "KY": "Kentucky",
+    "LA": "Louisiana",
+    "ME": "Maine",
+    "MD": "Maryland",
+    "MA": "Massachusetts",
+    "MI": "Michigan",
+    "MN": "Minnesota",
+    "MS": "Mississippi",
+    "MO": "Missouri",
+    "MT": "Montana",
+    "NE": "Nebraska",
+    "NV": "Nevada",
+    "NH": "New Hampshire",
+    "NJ": "New Jersey",
+    "NM": "New Mexico",
+    "NY": "New York",
+    "NC": "North Carolina",
+    "ND": "North Dakota",
+    "OH": "Ohio",
+    "OK": "Oklahoma",
+    "OR": "Oregon",
+    "PA": "Pennsylvania",
+    "RI": "Rhode Island",
+    "SC": "South Carolina",
+    "SD": "South Dakota",
+    "TN": "Tennessee",
+    "TX": "Texas",
+    "UT": "Utah",
+    "VT": "Vermont",
+    "VA": "Virginia",
+    "WA": "Washington",
+    "WV": "West Virginia",
+    "WI": "Wisconsin",
+    "WY": "Wyoming",
+    "DC": "District of Columbia",
 }
 
 STATE_VOTER_LOOKUP: Dict[str, str] = {
@@ -401,7 +459,7 @@ STATE_VOTER_LOOKUP: Dict[str, str] = {
     "WV": "https://apps.sos.wv.gov/Elections/voter/amiregisteredtovote",
     "WI": "https://myvote.wi.gov/en-us/RegisterToVote",
     "WY": "https://soswy.state.wy.us/Elections/Docs/WYCountyClerks.pdf",
-    "DC": "https://www.dcboe.org/Voters/Register-To-Vote/Check-Voter-Registration-Status"
+    "DC": "https://www.dcboe.org/Voters/Register-To-Vote/Check-Voter-Registration-Status",
 }
 
 STATE_ELECTION_RESULTS: Dict[str, str] = {
@@ -455,38 +513,123 @@ STATE_ELECTION_RESULTS: Dict[str, str] = {
     "WV": "https://apps.sos.wv.gov/Elections/results/",
     "WI": "https://elections.wi.gov/elections-voting/results",
     "WY": "https://sos.wyo.gov/Elections/Results.aspx",
-    "DC": "https://dcboe.org/election-results"
+    "DC": "https://dcboe.org/election-results",
 }
 
 VOTER_FILE_ACCESS_POLICIES: Dict[str, Dict[str, Any]] = {
-    "AK": {"access": VoterFileAccess.PUBLIC, "cost": "Free online", "notes": "Full voter file available"},
-    "AR": {"access": VoterFileAccess.PUBLIC, "cost": "$0.01/name", "notes": "Available to public"},
-    "CO": {"access": VoterFileAccess.PUBLIC, "cost": "Varies by county", "notes": "Monthly updates available"},
-    "CT": {"access": VoterFileAccess.PUBLIC, "cost": "Free for first copy", "notes": "Available to anyone"},
-    "DE": {"access": VoterFileAccess.RESTRICTED, "cost": "N/A", "notes": "Restricted to candidates/parties"},
-    "FL": {"access": VoterFileAccess.PUBLIC, "cost": "$0.01/name", "notes": "Highly accessible"},
-    "GA": {"access": VoterFileAccess.CANDIDATES_PARTIES, "cost": "$250+", "notes": "Restricted requesters"},
-    "MI": {"access": VoterFileAccess.PUBLIC, "cost": "Varies", "notes": "Available for purchase"},
-    "NC": {"access": VoterFileAccess.PUBLIC, "cost": "Free online", "notes": "Full voter file free"},
-    "NV": {"access": VoterFileAccess.PUBLIC, "cost": "Free CD", "notes": "Available to public"},
-    "OH": {"access": VoterFileAccess.PUBLIC, "cost": "Free for viewing", "notes": "Copies cost extra"},
-    "OK": {"access": VoterFileAccess.PUBLIC, "cost": "$50", "notes": "Statewide file available"},
-    "OR": {"access": VoterFileAccess.PUBLIC, "cost": "Varies", "notes": "Available to public"},
+    "AK": {
+        "access": VoterFileAccess.PUBLIC,
+        "cost": "Free online",
+        "notes": "Full voter file available",
+    },
+    "AR": {
+        "access": VoterFileAccess.PUBLIC,
+        "cost": "$0.01/name",
+        "notes": "Available to public",
+    },
+    "CO": {
+        "access": VoterFileAccess.PUBLIC,
+        "cost": "Varies by county",
+        "notes": "Monthly updates available",
+    },
+    "CT": {
+        "access": VoterFileAccess.PUBLIC,
+        "cost": "Free for first copy",
+        "notes": "Available to anyone",
+    },
+    "DE": {
+        "access": VoterFileAccess.RESTRICTED,
+        "cost": "N/A",
+        "notes": "Restricted to candidates/parties",
+    },
+    "FL": {
+        "access": VoterFileAccess.PUBLIC,
+        "cost": "$0.01/name",
+        "notes": "Highly accessible",
+    },
+    "GA": {
+        "access": VoterFileAccess.CANDIDATES_PARTIES,
+        "cost": "$250+",
+        "notes": "Restricted requesters",
+    },
+    "MI": {
+        "access": VoterFileAccess.PUBLIC,
+        "cost": "Varies",
+        "notes": "Available for purchase",
+    },
+    "NC": {
+        "access": VoterFileAccess.PUBLIC,
+        "cost": "Free online",
+        "notes": "Full voter file free",
+    },
+    "NV": {
+        "access": VoterFileAccess.PUBLIC,
+        "cost": "Free CD",
+        "notes": "Available to public",
+    },
+    "OH": {
+        "access": VoterFileAccess.PUBLIC,
+        "cost": "Free for viewing",
+        "notes": "Copies cost extra",
+    },
+    "OK": {
+        "access": VoterFileAccess.PUBLIC,
+        "cost": "$50",
+        "notes": "Statewide file available",
+    },
+    "OR": {
+        "access": VoterFileAccess.PUBLIC,
+        "cost": "Varies",
+        "notes": "Available to public",
+    },
     "RI": {"access": VoterFileAccess.PUBLIC, "cost": "Free", "notes": "Open access"},
-    "TX": {"access": VoterFileAccess.CANDIDATES_PARTIES, "cost": "Varies", "notes": "Restricted access"},
-    "UT": {"access": VoterFileAccess.PUBLIC, "cost": "$1,050", "notes": "Statewide file"},
-    "WI": {"access": VoterFileAccess.PUBLIC, "cost": "$12,500 statewide", "notes": "Expensive but public"},
-    "WA": {"access": VoterFileAccess.RESTRICTED, "cost": "N/A", "notes": "Restricted use"},
-    "CA": {"access": VoterFileAccess.FEE_REQUIRED, "cost": "Varies by county", "notes": "County-level files"},
-    "NY": {"access": VoterFileAccess.RESTRICTED, "cost": "N/A", "notes": "Party committee access only"},
-    "PA": {"access": VoterFileAccess.FEE_REQUIRED, "cost": "$20-500", "notes": "Available for purchase"},
-    "IL": {"access": VoterFileAccess.FEE_REQUIRED, "cost": "Varies", "notes": "County-level files"},
+    "TX": {
+        "access": VoterFileAccess.CANDIDATES_PARTIES,
+        "cost": "Varies",
+        "notes": "Restricted access",
+    },
+    "UT": {
+        "access": VoterFileAccess.PUBLIC,
+        "cost": "$1,050",
+        "notes": "Statewide file",
+    },
+    "WI": {
+        "access": VoterFileAccess.PUBLIC,
+        "cost": "$12,500 statewide",
+        "notes": "Expensive but public",
+    },
+    "WA": {
+        "access": VoterFileAccess.RESTRICTED,
+        "cost": "N/A",
+        "notes": "Restricted use",
+    },
+    "CA": {
+        "access": VoterFileAccess.FEE_REQUIRED,
+        "cost": "Varies by county",
+        "notes": "County-level files",
+    },
+    "NY": {
+        "access": VoterFileAccess.RESTRICTED,
+        "cost": "N/A",
+        "notes": "Party committee access only",
+    },
+    "PA": {
+        "access": VoterFileAccess.FEE_REQUIRED,
+        "cost": "$20-500",
+        "notes": "Available for purchase",
+    },
+    "IL": {
+        "access": VoterFileAccess.FEE_REQUIRED,
+        "cost": "Varies",
+        "notes": "County-level files",
+    },
 }
 
 
 # =============================================================================
 # Voter Records API (Main Implementation)
 # =============================================================================
+
 
 class VoterRecordsAPI:
     """
@@ -503,9 +646,13 @@ class VoterRecordsAPI:
 
     # FEC API endpoint
     FEC_API_URL = "https://api.open.fec.gov/v1"
-    FEC_API_KEY = os.environ.get("FEC_API_KEY", "DEMO_KEY")  # Get free key at api.data.gov
+    FEC_API_KEY = os.environ.get(
+        "FEC_API_KEY", "DEMO_KEY"
+    )  # Get free key at api.data.gov
 
-    def __init__(self, fec_api_key: str = None, config: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self, fec_api_key: str = None, config: Optional[Dict[str, Any]] = None
+    ):
         """
         Initialize Voter Records API.
 
@@ -529,8 +676,8 @@ class VoterRecordsAPI:
                 timeout=timeout,
                 headers={
                     "User-Agent": "DataGod/1.0 (Public Records Research)",
-                    "Accept": "application/json"
-                }
+                    "Accept": "application/json",
+                },
             )
         return self._session
 
@@ -557,7 +704,9 @@ class VoterRecordsAPI:
         formats = ["%Y-%m-%d", "%m/%d/%Y", "%Y-%m-%dT%H:%M:%S", "%Y%m%d"]
         for fmt in formats:
             try:
-                return datetime.strptime(date_str[:10], fmt[:min(len(fmt), len(date_str)+3)]).date()
+                return datetime.strptime(
+                    date_str[:10], fmt[: min(len(fmt), len(date_str) + 3)]
+                ).date()
             except ValueError:
                 continue
         return None
@@ -635,16 +784,15 @@ class VoterRecordsAPI:
             voter_file_cost=policy.get("cost"),
             eligible_requesters=policy.get("eligible"),
             notes=policy.get("notes"),
-            data_available=policy.get("data_available", [
-                "name", "address", "party", "voting_history"
-            ])
+            data_available=policy.get(
+                "data_available", ["name", "address", "party", "voting_history"]
+            ),
         )
 
     def get_all_state_voter_info(self) -> Dict[str, StateVoterAccess]:
         """Get voter access information for all states."""
         return {
-            state: self.get_state_voter_access(state)
-            for state in STATE_NAMES.keys()
+            state: self.get_state_voter_access(state) for state in STATE_NAMES.keys()
         }
 
     # =========================================================================
@@ -665,7 +813,7 @@ class VoterRecordsAPI:
         min_date: date = None,
         max_date: date = None,
         election_cycle: str = "",
-        limit: int = 100
+        limit: int = 100,
     ) -> List[CampaignContribution]:
         """
         Search FEC individual contributions database.
@@ -701,7 +849,7 @@ class VoterRecordsAPI:
         params = {
             "api_key": self.fec_api_key,
             "per_page": min(limit, 100),
-            "sort": "-contribution_receipt_date"
+            "sort": "-contribution_receipt_date",
         }
 
         if contributor_name:
@@ -756,7 +904,9 @@ class VoterRecordsAPI:
             logger.error(f"FEC API search error: {e}")
             return results
 
-    def _parse_fec_contribution(self, data: Dict[str, Any]) -> Optional[CampaignContribution]:
+    def _parse_fec_contribution(
+        self, data: Dict[str, Any]
+    ) -> Optional[CampaignContribution]:
         """Parse FEC API contribution record."""
         try:
             amount = data.get("contribution_receipt_amount", 0)
@@ -766,8 +916,14 @@ class VoterRecordsAPI:
             return CampaignContribution(
                 contributor_name=data.get("contributor_name", "Unknown"),
                 amount=float(amount),
-                contribution_date=self._parse_date(data.get("contribution_receipt_date")),
-                recipient_name=data.get("committee", {}).get("name") if data.get("committee") else data.get("committee_id"),
+                contribution_date=self._parse_date(
+                    data.get("contribution_receipt_date")
+                ),
+                recipient_name=(
+                    data.get("committee", {}).get("name")
+                    if data.get("committee")
+                    else data.get("committee_id")
+                ),
                 recipient_id=data.get("committee_id"),
                 recipient_type=data.get("entity_type_desc"),
                 election_cycle=str(data.get("two_year_transaction_period", "")),
@@ -778,9 +934,13 @@ class VoterRecordsAPI:
                 contributor_zip=data.get("contributor_zip"),
                 receipt_type=data.get("receipt_type_full"),
                 transaction_id=data.get("transaction_id"),
-                filing_id=str(data.get("file_number", "")) if data.get("file_number") else None,
+                filing_id=(
+                    str(data.get("file_number", ""))
+                    if data.get("file_number")
+                    else None
+                ),
                 source="FEC",
-                source_url=f"https://www.fec.gov/data/receipts/individual-contributions/?contributor_name={quote_plus(data.get('contributor_name', ''))}"
+                source_url=f"https://www.fec.gov/data/receipts/individual-contributions/?contributor_name={quote_plus(data.get('contributor_name', ''))}",
             )
         except Exception as e:
             logger.error(f"Error parsing FEC contribution: {e}")
@@ -795,7 +955,7 @@ class VoterRecordsAPI:
         district: str = "",
         election_year: int = None,
         incumbent: bool = None,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[Candidate]:
         """
         Search FEC candidate database.
@@ -821,7 +981,7 @@ class VoterRecordsAPI:
         params = {
             "api_key": self.fec_api_key,
             "per_page": min(limit, 100),
-            "sort": "-election_year"
+            "sort": "-election_year",
         }
 
         if name:
@@ -882,7 +1042,7 @@ class VoterRecordsAPI:
                 total_receipts=data.get("total_receipts"),
                 total_disbursements=data.get("total_disbursements"),
                 cash_on_hand=data.get("cash_on_hand_end_period"),
-                source_url=f"https://www.fec.gov/data/candidate/{data.get('candidate_id', '')}/"
+                source_url=f"https://www.fec.gov/data/candidate/{data.get('candidate_id', '')}/",
             )
         except Exception as e:
             logger.error(f"Error parsing FEC candidate: {e}")
@@ -896,7 +1056,7 @@ class VoterRecordsAPI:
         committee_type: str = "",
         party: str = "",
         min_receipts: float = None,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[Committee]:
         """
         Search FEC political committees/PACs.
@@ -918,10 +1078,7 @@ class VoterRecordsAPI:
 
         await self._rate_limit(1.0)
 
-        params = {
-            "api_key": self.fec_api_key,
-            "per_page": min(limit, 100)
-        }
+        params = {"api_key": self.fec_api_key, "per_page": min(limit, 100)}
 
         if name:
             params["q"] = name
@@ -977,7 +1134,7 @@ class VoterRecordsAPI:
                 cash_on_hand=data.get("last_cash_on_hand_end_period"),
                 filing_frequency=data.get("filing_frequency"),
                 first_file_date=self._parse_date(data.get("first_file_date")),
-                source_url=f"https://www.fec.gov/data/committee/{data.get('committee_id', '')}/"
+                source_url=f"https://www.fec.gov/data/committee/{data.get('committee_id', '')}/",
             )
         except Exception as e:
             logger.error(f"Error parsing FEC committee: {e}")
@@ -989,7 +1146,7 @@ class VoterRecordsAPI:
         election_year: int = None,
         office: str = "",
         state: str = "",
-        limit: int = 50
+        limit: int = 50,
     ) -> List[Dict[str, Any]]:
         """
         Get candidate financial totals.
@@ -1012,7 +1169,7 @@ class VoterRecordsAPI:
         params = {
             "api_key": self.fec_api_key,
             "per_page": min(limit, 100),
-            "sort": "-receipts"
+            "sort": "-receipts",
         }
 
         if candidate_id:
@@ -1045,10 +1202,7 @@ class VoterRecordsAPI:
     # =========================================================================
 
     def get_voter_registration_guidance(
-        self,
-        state: str,
-        first_name: str = "",
-        last_name: str = ""
+        self, state: str, first_name: str = "", last_name: str = ""
     ) -> VoterRegistration:
         """
         Get voter registration lookup guidance for a state.
@@ -1068,7 +1222,11 @@ class VoterRecordsAPI:
         lookup_url = STATE_VOTER_LOOKUP.get(state)
         state_name = STATE_NAMES.get(state, state)
 
-        name = f"{first_name} {last_name}".strip() if first_name or last_name else "Lookup Required"
+        name = (
+            f"{first_name} {last_name}".strip()
+            if first_name or last_name
+            else "Lookup Required"
+        )
 
         return VoterRegistration(
             voter_id="LOOKUP_REQUIRED",
@@ -1078,7 +1236,7 @@ class VoterRecordsAPI:
             state=state,
             status=VoterStatus.UNKNOWN,
             lookup_url=lookup_url,
-            source_url=lookup_url
+            source_url=lookup_url,
         )
 
     # =========================================================================
@@ -1104,29 +1262,36 @@ class VoterRecordsAPI:
             "state_name": state_name,
             "voter_lookup_url": STATE_VOTER_LOOKUP.get(state),
             "election_results_url": STATE_ELECTION_RESULTS.get(state),
-            "voter_file_access": policy.get("access", VoterFileAccess.RESTRICTED).value if isinstance(policy.get("access"), VoterFileAccess) else "Restricted",
+            "voter_file_access": (
+                policy.get("access", VoterFileAccess.RESTRICTED).value
+                if isinstance(policy.get("access"), VoterFileAccess)
+                else "Restricted"
+            ),
             "voter_file_cost": policy.get("cost"),
             "voter_file_notes": policy.get("notes"),
             "fec_state_contributions": f"https://www.fec.gov/data/receipts/?contributor_state={state}",
             "fec_state_candidates": f"https://www.fec.gov/data/candidates/?state={state}",
             "fec_state_committees": f"https://www.fec.gov/data/committees/?state={state}",
-            "opensecrets_state": f"https://www.opensecrets.org/states/summary.php?state={state}"
+            "opensecrets_state": f"https://www.opensecrets.org/states/summary.php?state={state}",
         }
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get API usage statistics."""
         return {
             "request_count": self.request_count,
-            "last_request_time": self.last_request_time.isoformat() if self.last_request_time else None,
+            "last_request_time": (
+                self.last_request_time.isoformat() if self.last_request_time else None
+            ),
             "states_configured": len(STATE_VOTER_LOOKUP),
             "fec_api_key_set": self.fec_api_key != "DEMO_KEY",
-            "supported_sources": ["FEC", "State Portals", "OpenSecrets"]
+            "supported_sources": ["FEC", "State Portals", "OpenSecrets"],
         }
 
 
 # =============================================================================
 # Synchronous Wrappers
 # =============================================================================
+
 
 def get_voter_lookup_url(state: str) -> Optional[str]:
     """Get state voter registration lookup URL."""
@@ -1158,7 +1323,7 @@ def search_fec_contributions(
     min_amount: float = None,
     max_amount: float = None,
     election_cycle: str = "",
-    limit: int = 100
+    limit: int = 100,
 ) -> List[CampaignContribution]:
     """
     Search FEC contributions synchronously.
@@ -1184,7 +1349,7 @@ def search_fec_contributions(
                 min_amount=min_amount,
                 max_amount=max_amount,
                 election_cycle=election_cycle,
-                limit=limit
+                limit=limit,
             )
         finally:
             await api.close()
@@ -1207,7 +1372,7 @@ def search_fec_candidates(
     party: str = "",
     office: str = "",
     election_year: int = None,
-    limit: int = 50
+    limit: int = 50,
 ) -> List[Candidate]:
     """
     Search FEC candidates synchronously.
@@ -1233,7 +1398,7 @@ def search_fec_candidates(
                 party=party,
                 office=office,
                 election_year=election_year,
-                limit=limit
+                limit=limit,
             )
         finally:
             await api.close()
@@ -1251,10 +1416,7 @@ def search_fec_candidates(
 
 
 def search_fec_committees(
-    name: str = "",
-    state: str = "",
-    committee_type: str = "",
-    limit: int = 50
+    name: str = "", state: str = "", committee_type: str = "", limit: int = 50
 ) -> List[Committee]:
     """
     Search FEC committees/PACs synchronously.
@@ -1273,10 +1435,7 @@ def search_fec_committees(
     async def _search():
         try:
             return await api.search_committees(
-                name=name,
-                state=state,
-                committee_type=committee_type,
-                limit=limit
+                name=name, state=state, committee_type=committee_type, limit=limit
             )
         finally:
             await api.close()
@@ -1297,6 +1456,7 @@ def search_fec_committees(
 # Legacy Class (for backward compatibility)
 # =============================================================================
 
+
 class VoterRecordsScraper:
     """
     Legacy scraper class for backward compatibility.
@@ -1306,7 +1466,10 @@ class VoterRecordsScraper:
 
     STATE_VOTER_LOOKUP = STATE_VOTER_LOOKUP
     STATE_ELECTION_RESULTS = STATE_ELECTION_RESULTS
-    VOTER_FILE_ACCESS = {k: v.get("access", VoterFileAccess.RESTRICTED) for k, v in VOTER_FILE_ACCESS_POLICIES.items()}
+    VOTER_FILE_ACCESS = {
+        k: v.get("access", VoterFileAccess.RESTRICTED)
+        for k, v in VOTER_FILE_ACCESS_POLICIES.items()
+    }
 
     def __init__(self):
         """Initialize voter records scraper"""
@@ -1336,7 +1499,7 @@ class VoterRecordsScraper:
         last_name: str,
         date_of_birth: Optional[date] = None,
         county: Optional[str] = None,
-        zip_code: Optional[str] = None
+        zip_code: Optional[str] = None,
     ) -> Optional[VoterRegistration]:
         return self._api.get_voter_registration_guidance(state, first_name, last_name)
 
@@ -1348,7 +1511,7 @@ class VoterRecordsScraper:
         min_amount: Optional[float] = None,
         max_amount: Optional[float] = None,
         cycle: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[CampaignContribution]:
         return await self._api.search_contributions(
             contributor_name=contributor_name or "",
@@ -1357,7 +1520,7 @@ class VoterRecordsScraper:
             min_amount=min_amount,
             max_amount=max_amount,
             election_cycle=cycle or "",
-            limit=limit
+            limit=limit,
         )
 
     async def get_election_results(
@@ -1365,19 +1528,21 @@ class VoterRecordsScraper:
         state: str,
         election_date: Optional[date] = None,
         office: Optional[str] = None,
-        county: Optional[str] = None
+        county: Optional[str] = None,
     ) -> List[ElectionResult]:
         # Election results require scraping state portals
         # Return guidance instead
         url = self._api.get_election_results_url(state)
         if url and election_date:
-            return [ElectionResult(
-                election_date=election_date,
-                state=state,
-                county=county,
-                office=office,
-                source_url=url
-            )]
+            return [
+                ElectionResult(
+                    election_date=election_date,
+                    state=state,
+                    county=county,
+                    office=office,
+                    source_url=url,
+                )
+            ]
         return []
 
     def get_all_state_resources(self, state: str) -> Dict[str, Any]:
@@ -1385,10 +1550,7 @@ class VoterRecordsScraper:
 
 
 def check_registration_sync(
-    state: str,
-    first_name: str,
-    last_name: str,
-    date_of_birth: Optional[date] = None
+    state: str, first_name: str, last_name: str, date_of_birth: Optional[date] = None
 ) -> Optional[VoterRegistration]:
     """Synchronous voter registration check - returns guidance."""
     api = VoterRecordsAPI()

@@ -2,29 +2,24 @@
 Tests for services/entity_linker.py and services/deduplication_service.py — 0% coverage boost
 """
 
-import pytest
 from datetime import datetime
 
-from datagod.services.entity_linker import (
-    EntityType,
-    Entity,
-    EntityMatch,
-    EntityLinker,
-)
+import pytest
 
 from datagod.services.deduplication_service import (
-    MergeStrategy,
-    DuplicateGroup,
-    MergeResult,
-    NameStandardizer,
     AddressNormalizer,
     DeduplicationService,
+    DuplicateGroup,
+    MergeResult,
+    MergeStrategy,
+    NameStandardizer,
 )
-
+from datagod.services.entity_linker import Entity, EntityLinker, EntityMatch, EntityType
 
 # ============================================================
 # Entity Linker Tests
 # ============================================================
+
 
 class TestEntityType:
     def test_values(self):
@@ -37,18 +32,14 @@ class TestEntityType:
 class TestEntity:
     def test_create(self):
         entity = Entity(
-            entity_id="e1",
-            entity_type=EntityType.PERSON,
-            primary_name="John Smith"
+            entity_id="e1", entity_type=EntityType.PERSON, primary_name="John Smith"
         )
         assert entity.entity_id == "e1"
         assert entity.primary_name == "John Smith"
 
     def test_to_dict(self):
         entity = Entity(
-            entity_id="e1",
-            entity_type=EntityType.COMPANY,
-            primary_name="Acme LLC"
+            entity_id="e1", entity_type=EntityType.COMPANY, primary_name="Acme LLC"
         )
         d = entity.to_dict()
         assert isinstance(d, dict)
@@ -69,24 +60,19 @@ class TestEntityLinker:
 
     def test_link_person_with_details(self):
         matched, potentials = self.linker.link_person(
-            name="Jane Doe",
-            dob="1990-01-15",
-            address="123 Main St"
+            name="Jane Doe", dob="1990-01-15", address="123 Main St"
         )
         assert isinstance(potentials, list)
 
     def test_link_company(self):
         matched, potentials = self.linker.link_company(
-            name="Acme Corporation",
-            ein="12-3456789",
-            state="NY"
+            name="Acme Corporation", ein="12-3456789", state="NY"
         )
         assert isinstance(potentials, list)
 
     def test_link_property(self):
         matched, potentials = self.linker.link_property(
-            address="123 Main Street, New York, NY 10001",
-            parcel_id="ABC-123-456"
+            address="123 Main Street, New York, NY 10001", parcel_id="ABC-123-456"
         )
         assert isinstance(potentials, list)
 
@@ -136,6 +122,7 @@ class TestEntityLinker:
 # Deduplication Service Tests
 # ============================================================
 
+
 class TestMergeStrategy:
     def test_values(self):
         assert MergeStrategy.KEEP_NEWEST.value == "keep_newest"
@@ -152,7 +139,7 @@ class TestDuplicateGroup:
             records=[{"id": "r1"}, {"id": "r2"}],
             confidence=0.95,
             match_fields=["name", "address"],
-            recommended_strategy=MergeStrategy.KEEP_NEWEST
+            recommended_strategy=MergeStrategy.KEEP_NEWEST,
         )
         assert group.group_id == "g1"
         assert len(group.records) == 2
@@ -164,7 +151,7 @@ class TestDuplicateGroup:
             records=[{"id": "r1"}],
             confidence=0.9,
             match_fields=["name"],
-            recommended_strategy=MergeStrategy.MERGE
+            recommended_strategy=MergeStrategy.MERGE,
         )
         d = group.to_dict()
         assert isinstance(d, dict)
@@ -207,10 +194,7 @@ class TestAddressNormalizer:
 
     def test_normalize_with_city_state(self):
         result = AddressNormalizer.normalize(
-            "456 North Oak Avenue",
-            city="Springfield",
-            state="IL",
-            zip_code="62701"
+            "456 North Oak Avenue", city="Springfield", state="IL", zip_code="62701"
         )
         assert isinstance(result, dict)
 
@@ -268,7 +252,6 @@ class TestDeduplicationService:
 
     def test_custom_thresholds(self):
         service = DeduplicationService(
-            duplicate_threshold=0.95,
-            possible_threshold=0.80
+            duplicate_threshold=0.95, possible_threshold=0.80
         )
         assert service is not None

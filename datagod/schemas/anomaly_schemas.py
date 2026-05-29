@@ -5,13 +5,15 @@ Request/response models for the anomaly detection API.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class AnomalySeverity(str, Enum):
     """Severity levels for anomalies."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -20,6 +22,7 @@ class AnomalySeverity(str, Enum):
 
 class AnomalyType(str, Enum):
     """Types of anomalies."""
+
     OUTLIER = "outlier"
     PATTERN_DEVIATION = "pattern_deviation"
     DUPLICATE = "duplicate"
@@ -33,8 +36,10 @@ class AnomalyType(str, Enum):
 
 # Response Models
 
+
 class AnomalyResponse(BaseModel):
     """Single anomaly response."""
+
     id: str
     anomaly_type: AnomalyType
     severity: AnomalySeverity
@@ -56,6 +61,7 @@ class AnomalyResponse(BaseModel):
 
 class AnomalyListResponse(BaseModel):
     """List of anomalies response."""
+
     anomalies: List[AnomalyResponse]
     total: int
     unresolved_count: int
@@ -65,6 +71,7 @@ class AnomalyListResponse(BaseModel):
 
 class AnomalyRuleResponse(BaseModel):
     """Anomaly rule response."""
+
     id: str
     name: str
     description: str
@@ -82,6 +89,7 @@ class AnomalyRuleResponse(BaseModel):
 
 class AnomalyRuleListResponse(BaseModel):
     """List of rules response."""
+
     rules: List[AnomalyRuleResponse]
     total: int
     enabled_count: int
@@ -89,6 +97,7 @@ class AnomalyRuleListResponse(BaseModel):
 
 class AnomalyStatsResponse(BaseModel):
     """Anomaly statistics response."""
+
     total_detected: int
     unresolved_count: int
     resolved_count: int
@@ -101,6 +110,7 @@ class AnomalyStatsResponse(BaseModel):
 
 class DetectionResultResponse(BaseModel):
     """Result of running detection."""
+
     success: bool
     message: str
     anomalies_detected: int
@@ -110,8 +120,10 @@ class DetectionResultResponse(BaseModel):
 
 # Request Models
 
+
 class DetectAnomaliesRequest(BaseModel):
     """Request to run anomaly detection."""
+
     data_source: Optional[str] = None
     jurisdiction_id: Optional[int] = None
     record_type: Optional[str] = None
@@ -125,11 +137,14 @@ class DetectAnomaliesRequest(BaseModel):
 
 class AnomalyRuleCreate(BaseModel):
     """Create a new anomaly rule."""
+
     name: str = Field(..., min_length=1, max_length=200)
     description: str = Field("", max_length=1000)
     rule_type: str = Field(..., pattern="^(threshold|pattern|comparison)$")
     field: str = Field(..., min_length=1)
-    condition: str = Field(..., pattern="^(gt|lt|gte|lte|eq|ne|contains|not_contains|regex)$")
+    condition: str = Field(
+        ..., pattern="^(gt|lt|gte|lte|eq|ne|contains|not_contains|regex)$"
+    )
     value: Any
     severity: AnomalySeverity = AnomalySeverity.MEDIUM
     enabled: bool = True
@@ -137,6 +152,7 @@ class AnomalyRuleCreate(BaseModel):
 
 class AnomalyRuleUpdate(BaseModel):
     """Update an anomaly rule."""
+
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
     field: Optional[str] = None
@@ -148,12 +164,14 @@ class AnomalyRuleUpdate(BaseModel):
 
 class ResolveAnomalyRequest(BaseModel):
     """Resolve an anomaly."""
+
     false_positive: bool = False
     notes: Optional[str] = None
 
 
 class AnomalyConfigUpdate(BaseModel):
     """Update detection configuration."""
+
     z_score_threshold: Optional[float] = Field(None, ge=1.0, le=10.0)
     iqr_multiplier: Optional[float] = Field(None, ge=1.0, le=5.0)
     min_data_points: Optional[int] = Field(None, ge=5, le=100)
@@ -166,6 +184,7 @@ class AnomalyConfigUpdate(BaseModel):
 
 class AnomalyConfigResponse(BaseModel):
     """Current detection configuration."""
+
     z_score_threshold: float
     iqr_multiplier: float
     min_data_points: int

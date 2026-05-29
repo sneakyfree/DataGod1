@@ -32,12 +32,12 @@ from bs4 import BeautifulSoup
 
 from .base import (
     CountyRecorderBase,
-    DocumentType,
+    DocumentParty,
     DocumentStatus,
+    DocumentType,
+    LegalDescription,
     PartyRole,
     RecordedDocument,
-    DocumentParty,
-    LegalDescription,
     SearchCriteria,
     SearchResult,
 )
@@ -190,10 +190,14 @@ class CookCountyRecorder(CountyRecorderBase):
         soup = self._parse_html(html)
 
         # Find the results table
-        results_table = soup.find("table", {"class": "results"}) or soup.find("table", {"id": "searchResults"})
+        results_table = soup.find("table", {"class": "results"}) or soup.find(
+            "table", {"id": "searchResults"}
+        )
         if not results_table:
             # Try alternative selectors
-            results_table = soup.find("table", class_=lambda x: x and "result" in x.lower())
+            results_table = soup.find(
+                "table", class_=lambda x: x and "result" in x.lower()
+            )
 
         if not results_table:
             logger.debug("No results table found in HTML")
@@ -250,22 +254,26 @@ class CookCountyRecorder(CountyRecorderBase):
                     name = name.strip()
                     if name:
                         grantors.append(self._normalize_name(name))
-                        parties.append(DocumentParty(
-                            name=self._normalize_name(name),
-                            role=PartyRole.GRANTOR,
-                            raw_name=name
-                        ))
+                        parties.append(
+                            DocumentParty(
+                                name=self._normalize_name(name),
+                                role=PartyRole.GRANTOR,
+                                raw_name=name,
+                            )
+                        )
 
             if grantee_text:
                 for name in grantee_text.split(";"):
                     name = name.strip()
                     if name:
                         grantees.append(self._normalize_name(name))
-                        parties.append(DocumentParty(
-                            name=self._normalize_name(name),
-                            role=PartyRole.GRANTEE,
-                            raw_name=name
-                        ))
+                        parties.append(
+                            DocumentParty(
+                                name=self._normalize_name(name),
+                                role=PartyRole.GRANTEE,
+                                raw_name=name,
+                            )
+                        )
 
             # Parse legal descriptions
             legal_descriptions = []
@@ -274,11 +282,11 @@ class CookCountyRecorder(CountyRecorderBase):
                 pin = self._parse_pin(pin_text)
                 if pin:
                     parcels.append(pin)
-                    legal_descriptions.append(LegalDescription(
-                        full_description=f"PIN: {pin}",
-                        parcel_number=pin,
-                        apn=pin
-                    ))
+                    legal_descriptions.append(
+                        LegalDescription(
+                            full_description=f"PIN: {pin}", parcel_number=pin, apn=pin
+                        )
+                    )
 
             return RecordedDocument(
                 document_number=doc_number,
@@ -300,7 +308,7 @@ class CookCountyRecorder(CountyRecorderBase):
                     "grantor_raw": grantor_text,
                     "grantee_raw": grantee_text,
                     "pin_raw": pin_text,
-                }
+                },
             )
 
         except Exception as e:
@@ -315,7 +323,7 @@ class CookCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search Cook County records by party name.
@@ -333,6 +341,7 @@ class CookCountyRecorder(CountyRecorderBase):
             SearchResult with matching documents
         """
         import time
+
         start_time = time.time()
 
         if not self._search_token:
@@ -374,11 +383,7 @@ class CookCountyRecorder(CountyRecorderBase):
             params["pageSize"] = min(50, max_results - len(all_documents))
 
             try:
-                status, html = await self._fetch(
-                    search_url,
-                    method="POST",
-                    data=params
-                )
+                status, html = await self._fetch(search_url, method="POST", data=params)
 
                 if status != 200:
                     logger.warning(f"Search returned HTTP {status}")
@@ -391,7 +396,9 @@ class CookCountyRecorder(CountyRecorderBase):
                 else:
                     # Filter by document types if specified
                     if document_types:
-                        documents = [d for d in documents if d.document_type in document_types]
+                        documents = [
+                            d for d in documents if d.document_type in document_types
+                        ]
 
                     all_documents.extend(documents)
                     page += 1
@@ -418,15 +425,14 @@ class CookCountyRecorder(CountyRecorderBase):
                 party_type=party_type,
                 start_date=start_date,
                 end_date=end_date,
-                document_types=document_types or []
+                document_types=document_types or [],
             ),
             search_time_ms=elapsed_ms,
-            source_system=self.SYSTEM_NAME
+            source_system=self.SYSTEM_NAME,
         )
 
     async def search_by_document_number(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """
         Search for a specific document by its recording number.
@@ -451,11 +457,7 @@ class CookCountyRecorder(CountyRecorderBase):
         search_url = f"{self.SEARCH_URL}/document"
 
         try:
-            status, html = await self._fetch(
-                search_url,
-                method="POST",
-                data=params
-            )
+            status, html = await self._fetch(search_url, method="POST", data=params)
 
             if status != 200:
                 logger.warning(f"Document search returned HTTP {status}")
@@ -479,7 +481,7 @@ class CookCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search Cook County records by PIN (Property Index Number).
@@ -495,6 +497,7 @@ class CookCountyRecorder(CountyRecorderBase):
             SearchResult with matching documents
         """
         import time
+
         start_time = time.time()
 
         if not self._search_token:
@@ -512,7 +515,7 @@ class CookCountyRecorder(CountyRecorderBase):
                 search_criteria=SearchCriteria(parcel_number=parcel_number),
                 search_time_ms=0,
                 source_system=self.SYSTEM_NAME,
-                warnings=["Invalid PIN format"]
+                warnings=["Invalid PIN format"],
             )
 
         params = {
@@ -539,11 +542,7 @@ class CookCountyRecorder(CountyRecorderBase):
             params["pageSize"] = min(50, max_results - len(all_documents))
 
             try:
-                status, html = await self._fetch(
-                    search_url,
-                    method="POST",
-                    data=params
-                )
+                status, html = await self._fetch(search_url, method="POST", data=params)
 
                 if status != 200:
                     logger.warning(f"PIN search returned HTTP {status}")
@@ -555,7 +554,9 @@ class CookCountyRecorder(CountyRecorderBase):
                     has_more = False
                 else:
                     if document_types:
-                        documents = [d for d in documents if d.document_type in document_types]
+                        documents = [
+                            d for d in documents if d.document_type in document_types
+                        ]
 
                     all_documents.extend(documents)
                     page += 1
@@ -579,10 +580,10 @@ class CookCountyRecorder(CountyRecorderBase):
                 parcel_number=pin,
                 start_date=start_date,
                 end_date=end_date,
-                document_types=document_types or []
+                document_types=document_types or [],
             ),
             search_time_ms=elapsed_ms,
-            source_system=self.SYSTEM_NAME
+            source_system=self.SYSTEM_NAME,
         )
 
     async def search_by_address(
@@ -592,7 +593,7 @@ class CookCountyRecorder(CountyRecorderBase):
         zip_code: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search Cook County records by property address.
@@ -613,6 +614,7 @@ class CookCountyRecorder(CountyRecorderBase):
             SearchResult with matching documents
         """
         import time
+
         start_time = time.time()
 
         if not self._search_token:
@@ -641,11 +643,7 @@ class CookCountyRecorder(CountyRecorderBase):
         search_url = f"{self.SEARCH_URL}/address"
 
         try:
-            status, html = await self._fetch(
-                search_url,
-                method="POST",
-                data=params
-            )
+            status, html = await self._fetch(search_url, method="POST", data=params)
 
             if status != 200:
                 logger.warning(f"Address search returned HTTP {status}")
@@ -658,7 +656,7 @@ class CookCountyRecorder(CountyRecorderBase):
                     search_criteria=SearchCriteria(property_address=address),
                     search_time_ms=int((time.time() - start_time) * 1000),
                     source_system=self.SYSTEM_NAME,
-                    warnings=[f"Search returned HTTP {status}"]
+                    warnings=[f"Search returned HTTP {status}"],
                 )
 
             documents = self._parse_search_results(html)
@@ -672,13 +670,13 @@ class CookCountyRecorder(CountyRecorderBase):
                 page_size=max_results,
                 has_more=False,
                 search_criteria=SearchCriteria(
-                    property_address=address,
-                    start_date=start_date,
-                    end_date=end_date
+                    property_address=address, start_date=start_date, end_date=end_date
                 ),
                 search_time_ms=elapsed_ms,
                 source_system=self.SYSTEM_NAME,
-                warnings=["Address search has limited functionality. Consider using PIN search for more complete results."]
+                warnings=[
+                    "Address search has limited functionality. Consider using PIN search for more complete results."
+                ],
             )
 
         except Exception as e:
@@ -692,12 +690,11 @@ class CookCountyRecorder(CountyRecorderBase):
                 search_criteria=SearchCriteria(property_address=address),
                 search_time_ms=int((time.time() - start_time) * 1000),
                 source_system=self.SYSTEM_NAME,
-                warnings=[str(e)]
+                warnings=[str(e)],
             )
 
     async def get_document_detail(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """
         Get detailed information for a specific document.
@@ -725,30 +722,42 @@ class CookCountyRecorder(CountyRecorderBase):
                 county=self.COUNTY_NAME,
                 state=self.STATE_ABBREV,
                 fips_code=self.FIPS_CODE,
-                source_url=detail_url
+                source_url=detail_url,
             )
 
             # Find document info sections
-            info_table = soup.find("table", {"class": "document-info"}) or soup.find("dl", {"class": "document-details"})
+            info_table = soup.find("table", {"class": "document-info"}) or soup.find(
+                "dl", {"class": "document-details"}
+            )
 
             if info_table:
                 doc = self._parse_document_detail_table(info_table, doc)
 
             # Parse parties section
-            parties_section = soup.find("div", {"class": "parties"}) or soup.find("table", {"class": "parties"})
+            parties_section = soup.find("div", {"class": "parties"}) or soup.find(
+                "table", {"class": "parties"}
+            )
             if parties_section:
                 doc.parties = self._parse_parties_section(parties_section)
                 doc.grantors = doc.get_grantors()
                 doc.grantees = doc.get_grantees()
 
             # Parse legal descriptions
-            legal_section = soup.find("div", {"class": "legal-description"}) or soup.find("table", {"class": "legal"})
+            legal_section = soup.find(
+                "div", {"class": "legal-description"}
+            ) or soup.find("table", {"class": "legal"})
             if legal_section:
                 doc.legal_descriptions = self._parse_legal_section(legal_section)
-                doc.parcels = [ld.parcel_number for ld in doc.legal_descriptions if ld.parcel_number]
+                doc.parcels = [
+                    ld.parcel_number
+                    for ld in doc.legal_descriptions
+                    if ld.parcel_number
+                ]
 
             # Check for image availability
-            image_link = soup.find("a", {"class": "view-image"}) or soup.find("a", text=re.compile(r"view.*image", re.I))
+            image_link = soup.find("a", {"class": "view-image"}) or soup.find(
+                "a", text=re.compile(r"view.*image", re.I)
+            )
             if image_link:
                 doc.image_available = True
                 doc.image_url = urljoin(self.BASE_URL, image_link.get("href", ""))
@@ -766,7 +775,9 @@ class CookCountyRecorder(CountyRecorderBase):
             logger.error(f"Error getting document detail: {e}")
             return None
 
-    def _parse_document_detail_table(self, table, doc: RecordedDocument) -> RecordedDocument:
+    def _parse_document_detail_table(
+        self, table, doc: RecordedDocument
+    ) -> RecordedDocument:
         """Parse the document info table/list on the detail page."""
         try:
             # Handle both table and definition list formats
@@ -790,7 +801,9 @@ class CookCountyRecorder(CountyRecorderBase):
 
         return doc
 
-    def _apply_detail_field(self, doc: RecordedDocument, label: str, value: str) -> RecordedDocument:
+    def _apply_detail_field(
+        self, doc: RecordedDocument, label: str, value: str
+    ) -> RecordedDocument:
         """Apply a parsed field to the document."""
         label = label.lower()
 
@@ -828,15 +841,19 @@ class CookCountyRecorder(CountyRecorderBase):
                 if parent:
                     names_text = parent.get_text()
                     # Extract names after "Grantor:" label
-                    names_part = re.sub(r".*grantor[s]?:?\s*", "", names_text, flags=re.I)
+                    names_part = re.sub(
+                        r".*grantor[s]?:?\s*", "", names_text, flags=re.I
+                    )
                     for name in re.split(r"[;,]", names_part):
                         name = name.strip()
                         if name:
-                            parties.append(DocumentParty(
-                                name=self._normalize_name(name),
-                                role=PartyRole.GRANTOR,
-                                raw_name=name
-                            ))
+                            parties.append(
+                                DocumentParty(
+                                    name=self._normalize_name(name),
+                                    role=PartyRole.GRANTOR,
+                                    raw_name=name,
+                                )
+                            )
 
             # Look for grantee section
             grantee_section = section.find(text=re.compile(r"grantee", re.I))
@@ -844,15 +861,19 @@ class CookCountyRecorder(CountyRecorderBase):
                 parent = grantee_section.find_parent(["tr", "div", "li"])
                 if parent:
                     names_text = parent.get_text()
-                    names_part = re.sub(r".*grantee[s]?:?\s*", "", names_text, flags=re.I)
+                    names_part = re.sub(
+                        r".*grantee[s]?:?\s*", "", names_text, flags=re.I
+                    )
                     for name in re.split(r"[;,]", names_part):
                         name = name.strip()
                         if name:
-                            parties.append(DocumentParty(
-                                name=self._normalize_name(name),
-                                role=PartyRole.GRANTEE,
-                                raw_name=name
-                            ))
+                            parties.append(
+                                DocumentParty(
+                                    name=self._normalize_name(name),
+                                    role=PartyRole.GRANTEE,
+                                    raw_name=name,
+                                )
+                            )
 
         except Exception as e:
             logger.warning(f"Error parsing parties section: {e}")
@@ -865,13 +886,15 @@ class CookCountyRecorder(CountyRecorderBase):
 
         try:
             # Find PIN numbers
-            pin_matches = re.findall(r"\d{2}-\d{2}-\d{3}-\d{3}-\d{4}", section.get_text())
+            pin_matches = re.findall(
+                r"\d{2}-\d{2}-\d{3}-\d{3}-\d{4}", section.get_text()
+            )
             for pin in pin_matches:
-                legal_descriptions.append(LegalDescription(
-                    full_description=f"PIN: {pin}",
-                    parcel_number=pin,
-                    apn=pin
-                ))
+                legal_descriptions.append(
+                    LegalDescription(
+                        full_description=f"PIN: {pin}", parcel_number=pin, apn=pin
+                    )
+                )
 
             # Look for subdivision/lot/block info
             text = section.get_text()
@@ -890,12 +913,18 @@ class CookCountyRecorder(CountyRecorderBase):
                     if subdivision_match:
                         ld.subdivision = subdivision_match.group(1).strip()
                 else:
-                    legal_descriptions.append(LegalDescription(
-                        full_description=text.strip(),
-                        lot=lot_match.group(1) if lot_match else None,
-                        block=block_match.group(1) if block_match else None,
-                        subdivision=subdivision_match.group(1).strip() if subdivision_match else None
-                    ))
+                    legal_descriptions.append(
+                        LegalDescription(
+                            full_description=text.strip(),
+                            lot=lot_match.group(1) if lot_match else None,
+                            block=block_match.group(1) if block_match else None,
+                            subdivision=(
+                                subdivision_match.group(1).strip()
+                                if subdivision_match
+                                else None
+                            ),
+                        )
+                    )
 
         except Exception as e:
             logger.warning(f"Error parsing legal section: {e}")
@@ -903,9 +932,7 @@ class CookCountyRecorder(CountyRecorderBase):
         return legal_descriptions
 
     async def search_by_book_page(
-        self,
-        book: str,
-        page: str
+        self, book: str, page: str
     ) -> Optional[RecordedDocument]:
         """
         Search for a document by book and page number.
@@ -935,11 +962,7 @@ class CookCountyRecorder(CountyRecorderBase):
         search_url = f"{self.SEARCH_URL}/bookpage"
 
         try:
-            status, html = await self._fetch(
-                search_url,
-                method="POST",
-                data=params
-            )
+            status, html = await self._fetch(search_url, method="POST", data=params)
 
             if status != 200:
                 return None
@@ -957,34 +980,34 @@ class CookCountyRecorder(CountyRecorderBase):
 
 # Convenience functions for synchronous usage
 
+
 def search_cook_county_by_name(
-    last_name: str,
-    first_name: Optional[str] = None,
-    **kwargs
+    last_name: str, first_name: Optional[str] = None, **kwargs
 ) -> SearchResult:
     """Search Cook County records by name (synchronous)."""
+
     async def _search():
         async with CookCountyRecorder() as recorder:
             return await recorder.search_by_name(last_name, first_name, **kwargs)
+
     return asyncio.run(_search())
 
 
-def search_cook_county_by_pin(
-    pin: str,
-    **kwargs
-) -> SearchResult:
+def search_cook_county_by_pin(pin: str, **kwargs) -> SearchResult:
     """Search Cook County records by PIN (synchronous)."""
+
     async def _search():
         async with CookCountyRecorder() as recorder:
             return await recorder.search_by_parcel(pin, **kwargs)
+
     return asyncio.run(_search())
 
 
-def get_cook_county_document(
-    document_number: str
-) -> Optional[RecordedDocument]:
+def get_cook_county_document(document_number: str) -> Optional[RecordedDocument]:
     """Get a Cook County document by number (synchronous)."""
+
     async def _get():
         async with CookCountyRecorder() as recorder:
             return await recorder.get_document_detail(document_number)
+
     return asyncio.run(_get())

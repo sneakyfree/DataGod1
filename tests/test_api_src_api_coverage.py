@@ -4,24 +4,26 @@ Comprehensive tests for api/src/api.py
 Tests authentication, endpoints, rate limiting, and caching functionality
 """
 
-import pytest
 import time
-from unittest.mock import MagicMock, patch, AsyncMock
 from datetime import datetime, timedelta
 from functools import wraps
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 
 # ============================================================================
 # Tests for User Models
 # ============================================================================
+
 
 class TestUserModels:
     """Tests for User and related Pydantic models"""
 
     def test_user_model_creation(self):
         """Test User model creation"""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class User(BaseModel):
             username: str
@@ -37,8 +39,9 @@ class TestUserModels:
 
     def test_user_model_with_all_fields(self):
         """Test User model with all fields populated"""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class User(BaseModel):
             username: str
@@ -50,15 +53,16 @@ class TestUserModels:
             username="testuser",
             email="test@example.com",
             full_name="Test User",
-            disabled=False
+            disabled=False,
         )
         assert user.full_name == "Test User"
         assert user.disabled == False
 
     def test_user_in_db_model(self):
         """Test UserInDB model extends User"""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class User(BaseModel):
             username: str
@@ -72,7 +76,7 @@ class TestUserModels:
         user = UserInDB(
             username="testuser",
             email="test@example.com",
-            hashed_password="$2b$12$hashedpassword"
+            hashed_password="$2b$12$hashedpassword",
         )
         assert user.hashed_password == "$2b$12$hashedpassword"
 
@@ -90,8 +94,9 @@ class TestUserModels:
 
     def test_token_data_model(self):
         """Test TokenData model"""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class TokenData(BaseModel):
             username: Optional[str] = None
@@ -106,6 +111,7 @@ class TestUserModels:
 # ============================================================================
 # Tests for Password Hashing
 # ============================================================================
+
 
 class TestPasswordHashing:
     """Tests for password hashing functions"""
@@ -149,6 +155,7 @@ class TestPasswordHashing:
 # ============================================================================
 # Tests for User Authentication
 # ============================================================================
+
 
 class TestUserAuthentication:
     """Tests for user authentication functions"""
@@ -241,6 +248,7 @@ class TestUserAuthentication:
 
     def test_authenticate_user_not_found(self):
         """Test authentication with non-existent user"""
+
         def get_user(db, username):
             return None
 
@@ -257,6 +265,7 @@ class TestUserAuthentication:
 # ============================================================================
 # Tests for Token Creation
 # ============================================================================
+
 
 class TestTokenCreation:
     """Tests for JWT token creation"""
@@ -278,8 +287,7 @@ class TestTokenCreation:
             return encoded_jwt
 
         token = create_access_token(
-            {"sub": "testuser"},
-            expires_delta=timedelta(minutes=30)
+            {"sub": "testuser"}, expires_delta=timedelta(minutes=30)
         )
 
         assert token == "encoded_token"
@@ -312,6 +320,7 @@ class TestTokenCreation:
 # ============================================================================
 # Tests for Current User Retrieval
 # ============================================================================
+
 
 class TestGetCurrentUser:
     """Tests for get_current_user function"""
@@ -382,6 +391,7 @@ class TestGetCurrentUser:
 # Tests for Rate Limiting
 # ============================================================================
 
+
 class TestRateLimiting:
     """Tests for rate limiting decorator"""
 
@@ -406,7 +416,9 @@ class TestRateLimiting:
                         request_count[0] = 1
                         last_reset[0] = current_time
                     return await func(*args, **kwargs)
+
                 return wrapper
+
             return decorator
 
         @rate_limit(max_requests=5, window=60)
@@ -414,6 +426,7 @@ class TestRateLimiting:
             return "success"
 
         import asyncio
+
         result = asyncio.get_event_loop().run_until_complete(test_endpoint())
         assert result == "success"
         assert request_count[0] == 1
@@ -435,6 +448,7 @@ class TestRateLimiting:
             return "success"
 
         import asyncio
+
         for _ in range(5):
             result = asyncio.get_event_loop().run_until_complete(
                 make_request(max_requests=10, window=60)
@@ -457,6 +471,7 @@ class TestRateLimiting:
             return "success"
 
         import asyncio
+
         with pytest.raises(Exception) as exc_info:
             asyncio.get_event_loop().run_until_complete(
                 make_request(max_requests=100, window=60)
@@ -467,6 +482,7 @@ class TestRateLimiting:
 # ============================================================================
 # Tests for API Endpoints
 # ============================================================================
+
 
 class TestAPIEndpoints:
     """Tests for API endpoint functions"""
@@ -490,8 +506,7 @@ class TestAPIEndpoints:
             if not user:
                 raise Exception("Incorrect username or password")
             access_token = create_access_token(
-                data={"sub": user.username},
-                expires_delta=timedelta(minutes=30)
+                data={"sub": user.username}, expires_delta=timedelta(minutes=30)
             )
             return {"access_token": access_token, "token_type": "bearer"}
 
@@ -502,6 +517,7 @@ class TestAPIEndpoints:
     @pytest.mark.asyncio
     async def test_login_failure(self):
         """Test failed login"""
+
         def authenticate_user(db, username, password):
             return False
 
@@ -531,6 +547,7 @@ class TestAPIEndpoints:
     @pytest.mark.asyncio
     async def test_health_check(self):
         """Test health check endpoint"""
+
         async def health_check():
             return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
@@ -541,10 +558,11 @@ class TestAPIEndpoints:
     @pytest.mark.asyncio
     async def test_get_metrics(self):
         """Test metrics endpoint"""
+
         async def get_metrics():
             return {
                 "status": "metrics available",
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
             }
 
         result = await get_metrics()
@@ -553,6 +571,7 @@ class TestAPIEndpoints:
     @pytest.mark.asyncio
     async def test_test_endpoint(self):
         """Test simple test endpoint"""
+
         async def test_endpoint():
             return {"message": "API is working"}
 
@@ -563,6 +582,7 @@ class TestAPIEndpoints:
 # ============================================================================
 # Tests for Search Functionality
 # ============================================================================
+
 
 class TestSearchFunctionality:
     """Tests for advanced search endpoint"""
@@ -585,7 +605,7 @@ class TestSearchFunctionality:
                 "records": records,
                 "count": records_query.count(),
                 "offset": offset,
-                "limit": limit
+                "limit": limit,
             }
 
         result = await advanced_search(mock_db)
@@ -615,7 +635,7 @@ class TestSearchFunctionality:
                 "records": records,
                 "count": records_query.count(),
                 "offset": offset,
-                "limit": limit
+                "limit": limit,
             }
 
         result = await advanced_search(mock_db, query="test")
@@ -643,7 +663,7 @@ class TestSearchFunctionality:
             amount_min=None,
             amount_max=None,
             limit=100,
-            offset=0
+            offset=0,
         ):
             records_query = db.query(MagicMock())
 
@@ -667,7 +687,7 @@ class TestSearchFunctionality:
                 "records": records,
                 "count": records_query.count(),
                 "offset": offset,
-                "limit": limit
+                "limit": limit,
             }
 
         result = await advanced_search(
@@ -677,7 +697,7 @@ class TestSearchFunctionality:
             date_from="2023-01-01",
             date_to="2023-12-31",
             amount_min=10000,
-            amount_max=500000
+            amount_max=500000,
         )
 
         assert result["records"] == []
@@ -686,6 +706,7 @@ class TestSearchFunctionality:
 # ============================================================================
 # Tests for Export Functionality
 # ============================================================================
+
 
 class TestExportFunctionality:
     """Tests for data export endpoint"""
@@ -714,18 +735,30 @@ class TestExportFunctionality:
         from io import StringIO
 
         mock_record = MagicMock()
-        mock_record.__dict__ = {"id": 1, "title": "Record 1", "_sa_instance_state": None}
+        mock_record.__dict__ = {
+            "id": 1,
+            "title": "Record 1",
+            "_sa_instance_state": None,
+        }
         mock_records = [mock_record]
 
         async def export_data(records, format="csv"):
             if format == "csv":
                 output = StringIO()
                 if records:
-                    fieldnames = [k for k in records[0].__dict__.keys() if k != "_sa_instance_state"]
+                    fieldnames = [
+                        k
+                        for k in records[0].__dict__.keys()
+                        if k != "_sa_instance_state"
+                    ]
                     writer = csv.DictWriter(output, fieldnames=fieldnames)
                     writer.writeheader()
                     for record in records:
-                        row = {k: v for k, v in record.__dict__.items() if k != "_sa_instance_state"}
+                        row = {
+                            k: v
+                            for k, v in record.__dict__.items()
+                            if k != "_sa_instance_state"
+                        }
                         writer.writerow(row)
                 return output.getvalue()
             return None
@@ -740,7 +773,11 @@ class TestExportFunctionality:
         import xml.etree.ElementTree as ET
 
         mock_record = MagicMock()
-        mock_record.__dict__ = {"id": 1, "title": "Record 1", "_sa_instance_state": None}
+        mock_record.__dict__ = {
+            "id": 1,
+            "title": "Record 1",
+            "_sa_instance_state": None,
+        }
         mock_records = [mock_record]
 
         async def export_data(records, format="xml"):
@@ -765,6 +802,7 @@ class TestExportFunctionality:
 # Tests for Caching
 # ============================================================================
 
+
 class TestCaching:
     """Tests for caching functionality"""
 
@@ -779,6 +817,7 @@ class TestCaching:
                 cached_data = redis_client.get(key)
                 if cached_data:
                     import json
+
                     return {"cached": True, "data": json.loads(cached_data)}
             return {"cached": False, "data": None}
 
@@ -806,6 +845,7 @@ class TestCaching:
     @pytest.mark.asyncio
     async def test_get_cached_data_no_redis(self):
         """Test caching when Redis not available"""
+
         async def get_cached_data(key, redis_client):
             if redis_client:
                 cached_data = redis_client.get(key)
@@ -824,22 +864,19 @@ class TestCaching:
         async def set_cached_data(key, data, expire, redis_client):
             if redis_client:
                 import json
+
                 redis_client.setex(key, expire, json.dumps(data))
                 return {"status": "cached"}
             return {"status": "cache not available"}
 
-        result = await set_cached_data(
-            "test_key",
-            {"key": "value"},
-            3600,
-            mock_redis
-        )
+        result = await set_cached_data("test_key", {"key": "value"}, 3600, mock_redis)
         assert result["status"] == "cached"
         mock_redis.setex.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_set_cached_data_no_redis(self):
         """Test setting cache when Redis not available"""
+
         async def set_cached_data(key, data, expire, redis_client):
             if redis_client:
                 return {"status": "cached"}
@@ -852,6 +889,7 @@ class TestCaching:
 # ============================================================================
 # Tests for CRUD Endpoints
 # ============================================================================
+
 
 class TestCRUDEndpoints:
     """Tests for CRUD endpoint functions"""
@@ -874,7 +912,9 @@ class TestCRUDEndpoints:
         """Test getting specific jurisdiction"""
         mock_db = MagicMock()
         mock_jurisdiction = MagicMock(id=1, name="Test County")
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_jurisdiction
+        mock_db.query.return_value.filter.return_value.first.return_value = (
+            mock_jurisdiction
+        )
 
         async def get_jurisdiction(id, db):
             jurisdiction = db.query(MagicMock()).filter(MagicMock()).first()
@@ -906,7 +946,9 @@ class TestCRUDEndpoints:
         """Test getting records with pagination"""
         mock_db = MagicMock()
         mock_records = [MagicMock(id=i) for i in range(10)]
-        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = mock_records
+        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = (
+            mock_records
+        )
 
         async def get_records(db, limit=100, offset=0):
             return db.query(MagicMock()).offset(offset).limit(limit).all()
@@ -935,7 +977,9 @@ class TestCRUDEndpoints:
         """Test getting entities with pagination"""
         mock_db = MagicMock()
         mock_entities = [MagicMock(id=i) for i in range(5)]
-        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = mock_entities
+        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = (
+            mock_entities
+        )
 
         async def get_entities(db, limit=100, offset=0):
             return db.query(MagicMock()).offset(offset).limit(limit).all()
@@ -948,7 +992,9 @@ class TestCRUDEndpoints:
         """Test getting relationships with pagination"""
         mock_db = MagicMock()
         mock_relationships = [MagicMock(id=i) for i in range(3)]
-        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = mock_relationships
+        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = (
+            mock_relationships
+        )
 
         async def get_relationships(db, limit=100, offset=0):
             return db.query(MagicMock()).offset(offset).limit(limit).all()
@@ -957,5 +1003,5 @@ class TestCRUDEndpoints:
         assert len(result) == 3
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

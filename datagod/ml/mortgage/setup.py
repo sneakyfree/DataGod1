@@ -2,7 +2,7 @@
 Setup script for Mortgage Data Gathering Neural Network module
 """
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -44,7 +44,7 @@ setup(
         "ml": [
             "tensorflow>=2.8.0",
             "torch>=1.9.0",
-        ]
+        ],
     },
     entry_points={
         "console_scripts": [

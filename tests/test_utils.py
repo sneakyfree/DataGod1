@@ -8,9 +8,10 @@ Tests cover:
 - Quality metrics
 """
 
-import pytest
-from datetime import datetime
 import json
+from datetime import datetime
+
+import pytest
 
 
 class TestDataValidator:
@@ -21,10 +22,7 @@ class TestDataValidator:
         from datagod.utils.data_validation import DataValidator
 
         validator = DataValidator()
-        jurisdiction_data = {
-            "name": "Harris County",
-            "state": "TX"
-        }
+        jurisdiction_data = {"name": "Harris County", "state": "TX"}
 
         result = validator.validate_jurisdiction(jurisdiction_data)
 
@@ -37,9 +35,7 @@ class TestDataValidator:
         from datagod.utils.data_validation import DataValidator
 
         validator = DataValidator()
-        jurisdiction_data = {
-            "state": "TX"
-        }
+        jurisdiction_data = {"state": "TX"}
 
         result = validator.validate_jurisdiction(jurisdiction_data)
 
@@ -51,9 +47,7 @@ class TestDataValidator:
         from datagod.utils.data_validation import DataValidator
 
         validator = DataValidator()
-        jurisdiction_data = {
-            "name": "Harris County"
-        }
+        jurisdiction_data = {"name": "Harris County"}
 
         result = validator.validate_jurisdiction(jurisdiction_data)
 
@@ -67,7 +61,7 @@ class TestDataValidator:
         validator = DataValidator()
         jurisdiction_data = {
             "name": "Harris County",
-            "state": "Texas"  # Should be 2-letter abbreviation
+            "state": "Texas",  # Should be 2-letter abbreviation
         }
 
         result = validator.validate_jurisdiction(jurisdiction_data)
@@ -82,7 +76,7 @@ class TestDataValidator:
         validator = DataValidator()
         jurisdiction_data = {
             "name": "Harris County",
-            "state": "tx"  # Should be uppercase
+            "state": "tx",  # Should be uppercase
         }
 
         result = validator.validate_jurisdiction(jurisdiction_data)
@@ -97,7 +91,7 @@ class TestDataValidator:
         record_data = {
             "source_id": "12345",
             "record_type": "property",
-            "data": {"address": "123 Main St"}
+            "data": {"address": "123 Main St"},
         }
 
         result = validator.validate_record(record_data)
@@ -128,7 +122,7 @@ class TestDataValidator:
         record_data = {
             "source_id": "12345",
             "record_type": "invalid_type",
-            "data": {"test": "data"}
+            "data": {"test": "data"},
         }
 
         result = validator.validate_record(record_data)
@@ -144,7 +138,7 @@ class TestDataValidator:
         record_data = {
             "source_id": "12345",
             "record_type": "property",
-            "data": "not a dict"
+            "data": "not a dict",
         }
 
         result = validator.validate_record(record_data)
@@ -161,7 +155,7 @@ class TestDataValidator:
             "name": "John Doe",
             "address": "123 Main St",
             "city": "Houston",
-            "state": "TX"
+            "state": "TX",
         }
 
         metrics = validator.calculate_quality_metrics(data, "test_source")
@@ -177,11 +171,7 @@ class TestDataValidator:
         from datagod.utils.data_validation import DataValidator
 
         validator = DataValidator()
-        data = {
-            "field1": "value1",
-            "field2": "value2",
-            "field3": "value3"
-        }
+        data = {"field1": "value1", "field2": "value2", "field3": "value3"}
 
         completeness = validator._calculate_completeness(data)
 
@@ -192,16 +182,12 @@ class TestDataValidator:
         from datagod.utils.data_validation import DataValidator
 
         validator = DataValidator()
-        data = {
-            "field1": "value1",
-            "field2": None,
-            "field3": ""
-        }
+        data = {"field1": "value1", "field2": None, "field3": ""}
 
         completeness = validator._calculate_completeness(data)
 
         # Only field1 is filled, so 1/3
-        assert completeness == pytest.approx(1/3, 0.01)
+        assert completeness == pytest.approx(1 / 3, 0.01)
 
     def test_calculate_completeness_empty_data(self):
         """Test completeness score with empty data."""
@@ -222,11 +208,7 @@ class TestDataProcessor:
         from datagod.utils.data_processor import DataProcessor
 
         processor = DataProcessor()
-        data = {
-            "name": "John",
-            "address": None,
-            "city": "Houston"
-        }
+        data = {"name": "John", "address": None, "city": "Houston"}
 
         result = processor.validate_and_clean(data)
 
@@ -239,10 +221,7 @@ class TestDataProcessor:
         from datagod.utils.data_processor import DataProcessor
 
         processor = DataProcessor()
-        data = {
-            "name": "John",
-            "address": "null"
-        }
+        data = {"name": "John", "address": "null"}
 
         result = processor.validate_and_clean(data)
 
@@ -253,10 +232,7 @@ class TestDataProcessor:
         from datagod.utils.data_processor import DataProcessor
 
         processor = DataProcessor()
-        data = {
-            "age": "25",
-            "price": "99.99"
-        }
+        data = {"age": "25", "price": "99.99"}
 
         result = processor.validate_and_clean(data)
 
@@ -274,7 +250,7 @@ class TestDataProcessor:
             {"id": 1, "name": "John"},
             {"id": 2, "name": "Jane"},
             {"id": 1, "name": "John"},  # Duplicate
-            {"id": 3, "name": "Bob"}
+            {"id": 3, "name": "Bob"},
         ]
 
         result = processor.deduplicate_records(records)
@@ -347,7 +323,18 @@ class TestDataProcessor:
 
         processor = DataProcessor()
         # 8 out of 10 filled = 80% completeness
-        data = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8, "i": None, "j": ""}
+        data = {
+            "a": 1,
+            "b": 2,
+            "c": 3,
+            "d": 4,
+            "e": 5,
+            "f": 6,
+            "g": 7,
+            "h": 8,
+            "i": None,
+            "j": "",
+        }
 
         score = processor._calculate_confidence_score(data)
 
@@ -359,7 +346,18 @@ class TestDataProcessor:
 
         processor = DataProcessor()
         # 3 out of 10 filled = 30% completeness
-        data = {"a": 1, "b": 2, "c": 3, "d": None, "e": "", "f": None, "g": "", "h": None, "i": None, "j": ""}
+        data = {
+            "a": 1,
+            "b": 2,
+            "c": 3,
+            "d": None,
+            "e": "",
+            "f": None,
+            "g": "",
+            "h": None,
+            "i": None,
+            "j": "",
+        }
 
         score = processor._calculate_confidence_score(data)
 
@@ -383,12 +381,12 @@ class TestDataProcessor:
         data = {
             "first_name": "John",
             "last_name": "Doe",
-            "street_address": "123 Main St"
+            "street_address": "123 Main St",
         }
         mapping = {
             "first_name": "given_name",
             "last_name": "family_name",
-            "street_address": "address"
+            "street_address": "address",
         }
 
         result = processor.transform_data(data, mapping)
@@ -403,14 +401,8 @@ class TestDataProcessor:
         from datagod.utils.data_processor import DataProcessor
 
         processor = DataProcessor()
-        data = {
-            "first_name": "John",
-            "last_name": "Doe",
-            "age": 30
-        }
-        mapping = {
-            "first_name": "name"
-        }
+        data = {"first_name": "John", "last_name": "Doe", "age": 30}
+        mapping = {"first_name": "name"}
 
         result = processor.transform_data(data, mapping)
 
@@ -427,7 +419,7 @@ class TestDataProcessor:
             "name": "John Doe",
             "address": "123 Main St",
             "city": "Houston",
-            "state": "TX"
+            "state": "TX",
         }
 
         metrics = processor.validate_data_quality(data)
@@ -445,8 +437,7 @@ class TestValidatorGlobalInstance:
 
     def test_global_validator_exists(self):
         """Test that global validator instance exists."""
-        from datagod.utils.data_validation import validator
-        from datagod.utils.data_validation import DataValidator
+        from datagod.utils.data_validation import DataValidator, validator
 
         assert validator is not None
         assert isinstance(validator, DataValidator)
@@ -457,8 +448,7 @@ class TestProcessorGlobalInstance:
 
     def test_global_processor_exists(self):
         """Test that global processor instance exists."""
-        from datagod.utils.data_processor import processor
-        from datagod.utils.data_processor import DataProcessor
+        from datagod.utils.data_processor import DataProcessor, processor
 
         assert processor is not None
         assert isinstance(processor, DataProcessor)

@@ -14,26 +14,26 @@ Note: Harris County has excellent online systems with public APIs.
 """
 
 import asyncio
-import aiohttp
-import re
 import json
+import re
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 from bs4 import BeautifulSoup
 
 from .base_county_scraper import (
     BaseCountyScraper,
-    CountyConfig,
-    PropertyRecord,
-    DeedRecord,
-    MortgageRecord,
-    TaxRecord,
-    CourtCase,
-    LienRecord,
-    RecordType,
     CaseType,
+    CountyConfig,
+    CourtCase,
+    DeedRecord,
+    LienRecord,
+    MortgageRecord,
+    PropertyRecord,
+    RecordType,
+    TaxRecord,
 )
-
 
 # Harris County Configuration
 HARRIS_COUNTY_CONFIG = CountyConfig(
@@ -76,10 +76,7 @@ class HarrisCountyScraper(BaseCountyScraper):
     # ==================== Property/Appraisal Methods ====================
 
     async def search_property_by_address(
-        self,
-        address: str,
-        city: Optional[str] = None,
-        zip_code: Optional[str] = None
+        self, address: str, city: Optional[str] = None, zip_code: Optional[str] = None
     ) -> List[PropertyRecord]:
         """
         Search HCAD by address.
@@ -114,17 +111,33 @@ class HarrisCountyScraper(BaseCountyScraper):
                                 city=item.get("city", city or "Houston"),
                                 state="TX",
                                 zip_code=item.get("zip", zip_code),
-                                owner_name=item.get("owner_name", item.get("OwnerName")),
-                                property_class=item.get("state_class", item.get("StateClass")),
-                                assessed_value=self._parse_currency(item.get("appraised_val", item.get("AppraisedValue"))),
-                                land_value=self._parse_currency(item.get("land_val", item.get("LandValue"))),
-                                improvement_value=self._parse_currency(item.get("impr_val", item.get("ImprovementValue"))),
-                                market_value=self._parse_currency(item.get("market_val", item.get("MarketValue"))),
+                                owner_name=item.get(
+                                    "owner_name", item.get("OwnerName")
+                                ),
+                                property_class=item.get(
+                                    "state_class", item.get("StateClass")
+                                ),
+                                assessed_value=self._parse_currency(
+                                    item.get(
+                                        "appraised_val", item.get("AppraisedValue")
+                                    )
+                                ),
+                                land_value=self._parse_currency(
+                                    item.get("land_val", item.get("LandValue"))
+                                ),
+                                improvement_value=self._parse_currency(
+                                    item.get("impr_val", item.get("ImprovementValue"))
+                                ),
+                                market_value=self._parse_currency(
+                                    item.get("market_val", item.get("MarketValue"))
+                                ),
                                 tax_year=item.get("tax_year", item.get("TaxYear")),
                                 acres=float(item.get("acreage", 0) or 0),
                                 square_feet=int(item.get("land_sqft", 0) or 0),
                                 year_built=item.get("yr_built", item.get("YearBuilt")),
-                                legal_description=item.get("legal_desc", item.get("LegalDescription")),
+                                legal_description=item.get(
+                                    "legal_desc", item.get("LegalDescription")
+                                ),
                                 county="Harris County",
                                 fips_code="48201",
                                 raw_data=item,
@@ -138,10 +151,7 @@ class HarrisCountyScraper(BaseCountyScraper):
 
         return results
 
-    async def search_property_by_owner(
-        self,
-        owner_name: str
-    ) -> List[PropertyRecord]:
+    async def search_property_by_owner(self, owner_name: str) -> List[PropertyRecord]:
         """
         Search HCAD by owner name.
         """
@@ -173,8 +183,12 @@ class HarrisCountyScraper(BaseCountyScraper):
                                 state="TX",
                                 zip_code=item.get("zip"),
                                 owner_name=item.get("owner_name", owner_name),
-                                assessed_value=self._parse_currency(item.get("appraised_val")),
-                                market_value=self._parse_currency(item.get("market_val")),
+                                assessed_value=self._parse_currency(
+                                    item.get("appraised_val")
+                                ),
+                                market_value=self._parse_currency(
+                                    item.get("market_val")
+                                ),
                                 property_class=item.get("state_class"),
                                 county="Harris County",
                                 fips_code="48201",
@@ -190,8 +204,7 @@ class HarrisCountyScraper(BaseCountyScraper):
         return results
 
     async def search_property_by_parcel(
-        self,
-        parcel_id: str
+        self, parcel_id: str
     ) -> Optional[PropertyRecord]:
         """
         Get property details by HCAD account number.
@@ -201,7 +214,7 @@ class HarrisCountyScraper(BaseCountyScraper):
         await self._ensure_session()
 
         # Clean account number
-        account = re.sub(r'[^0-9]', '', parcel_id)
+        account = re.sub(r"[^0-9]", "", parcel_id)
 
         try:
             detail_url = f"https://pdata.hcad.org/api/property/{account}"
@@ -219,7 +232,9 @@ class HarrisCountyScraper(BaseCountyScraper):
                         owner_name=data.get("owner_name", data.get("OwnerName")),
                         owner_address=data.get("mail_addr", data.get("MailingAddress")),
                         property_class=data.get("state_class", data.get("StateClass")),
-                        land_use=data.get("land_use_desc", data.get("LandUseDescription")),
+                        land_use=data.get(
+                            "land_use_desc", data.get("LandUseDescription")
+                        ),
                         assessed_value=self._parse_currency(data.get("appraised_val")),
                         land_value=self._parse_currency(data.get("land_val")),
                         improvement_value=self._parse_currency(data.get("impr_val")),
@@ -256,7 +271,7 @@ class HarrisCountyScraper(BaseCountyScraper):
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         as_grantor: bool = True,
-        as_grantee: bool = True
+        as_grantee: bool = True,
     ) -> List[DeedRecord]:
         """
         Search Harris County Clerk records by party name.
@@ -268,7 +283,11 @@ class HarrisCountyScraper(BaseCountyScraper):
             search_url = "https://countyclerk.harriscountytx.gov/Apps/CCLERK/PRS/search"
 
             start = start_date.strftime("%m/%d/%Y") if start_date else "01/01/1970"
-            end = end_date.strftime("%m/%d/%Y") if end_date else datetime.now().strftime("%m/%d/%Y")
+            end = (
+                end_date.strftime("%m/%d/%Y")
+                if end_date
+                else datetime.now().strftime("%m/%d/%Y")
+            )
 
             search_data = {
                 "searchType": "name",
@@ -285,18 +304,28 @@ class HarrisCountyScraper(BaseCountyScraper):
 
                     for item in data.get("documents", data.get("results", [])):
                         try:
-                            doc_num = item.get("documentNumber", item.get("doc_number", ""))
+                            doc_num = item.get(
+                                "documentNumber", item.get("doc_number", "")
+                            )
                             if not doc_num:
                                 continue
 
                             record = DeedRecord(
                                 document_number=str(doc_num),
-                                record_type=item.get("instrumentType", item.get("doc_type", "Unknown")),
+                                record_type=item.get(
+                                    "instrumentType", item.get("doc_type", "Unknown")
+                                ),
                                 grantor=item.get("grantor"),
                                 grantee=item.get("grantee"),
-                                recording_date=self._parse_date(item.get("filedDate", item.get("recording_date"))),
-                                document_date=self._parse_date(item.get("documentDate")),
-                                consideration=self._parse_currency(item.get("consideration")),
+                                recording_date=self._parse_date(
+                                    item.get("filedDate", item.get("recording_date"))
+                                ),
+                                document_date=self._parse_date(
+                                    item.get("documentDate")
+                                ),
+                                consideration=self._parse_currency(
+                                    item.get("consideration")
+                                ),
                                 book=item.get("volume"),
                                 page=item.get("page"),
                                 parcel_id=item.get("accountNumber"),
@@ -319,7 +348,7 @@ class HarrisCountyScraper(BaseCountyScraper):
         self,
         parcel_id: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[DeedRecord]:
         """
         Search Harris County Clerk by account number.
@@ -327,13 +356,17 @@ class HarrisCountyScraper(BaseCountyScraper):
         await self._ensure_session()
         results = []
 
-        account = re.sub(r'[^0-9]', '', parcel_id)
+        account = re.sub(r"[^0-9]", "", parcel_id)
 
         try:
             search_url = "https://countyclerk.harriscountytx.gov/Apps/CCLERK/PRS/search"
 
             start = start_date.strftime("%m/%d/%Y") if start_date else "01/01/1970"
-            end = end_date.strftime("%m/%d/%Y") if end_date else datetime.now().strftime("%m/%d/%Y")
+            end = (
+                end_date.strftime("%m/%d/%Y")
+                if end_date
+                else datetime.now().strftime("%m/%d/%Y")
+            )
 
             search_data = {
                 "searchType": "account",
@@ -358,7 +391,9 @@ class HarrisCountyScraper(BaseCountyScraper):
                                 grantor=item.get("grantor"),
                                 grantee=item.get("grantee"),
                                 recording_date=self._parse_date(item.get("filedDate")),
-                                consideration=self._parse_currency(item.get("consideration")),
+                                consideration=self._parse_currency(
+                                    item.get("consideration")
+                                ),
                                 parcel_id=account,
                                 county="Harris County",
                                 state="TX",
@@ -381,7 +416,7 @@ class HarrisCountyScraper(BaseCountyScraper):
         name: str,
         case_type: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """
         Search Harris County District Clerk cases by party name.
@@ -407,24 +442,36 @@ class HarrisCountyScraper(BaseCountyScraper):
             if not html:
                 return results
 
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
 
-            for row in soup.select('tr.case-row, .case-result, tbody tr'):
+            for row in soup.select("tr.case-row, .case-result, tbody tr"):
                 try:
-                    cells = row.select('td')
+                    cells = row.select("td")
                     if len(cells) < 3:
                         continue
 
                     case_num = cells[0].get_text(strip=True)
-                    if not case_num or case_num.lower() in ['case number', '']:
+                    if not case_num or case_num.lower() in ["case number", ""]:
                         continue
 
                     case = CourtCase(
                         case_number=case_num,
-                        case_type=cells[1].get_text(strip=True) if len(cells) > 1 else "Unknown",
-                        case_title=cells[2].get_text(strip=True) if len(cells) > 2 else None,
-                        filing_date=self._parse_date(cells[3].get_text(strip=True)) if len(cells) > 3 else None,
-                        status=cells[4].get_text(strip=True) if len(cells) > 4 else None,
+                        case_type=(
+                            cells[1].get_text(strip=True)
+                            if len(cells) > 1
+                            else "Unknown"
+                        ),
+                        case_title=(
+                            cells[2].get_text(strip=True) if len(cells) > 2 else None
+                        ),
+                        filing_date=(
+                            self._parse_date(cells[3].get_text(strip=True))
+                            if len(cells) > 3
+                            else None
+                        ),
+                        status=(
+                            cells[4].get_text(strip=True) if len(cells) > 4 else None
+                        ),
                         court=cells[5].get_text(strip=True) if len(cells) > 5 else None,
                         county="Harris County",
                         state="TX",
@@ -432,8 +479,10 @@ class HarrisCountyScraper(BaseCountyScraper):
                     )
 
                     # Parse parties from case title
-                    if case.case_title and ' vs ' in case.case_title.lower():
-                        parts = re.split(r'\s+v[s.]?\s+', case.case_title, flags=re.IGNORECASE)
+                    if case.case_title and " vs " in case.case_title.lower():
+                        parts = re.split(
+                            r"\s+v[s.]?\s+", case.case_title, flags=re.IGNORECASE
+                        )
                         if len(parts) >= 2:
                             case.plaintiff = self._clean_name(parts[0])
                             case.defendant = self._clean_name(parts[1])
@@ -449,8 +498,7 @@ class HarrisCountyScraper(BaseCountyScraper):
         return results
 
     async def search_court_cases_by_number(
-        self,
-        case_number: str
+        self, case_number: str
     ) -> Optional[CourtCase]:
         """
         Get Harris County District Clerk case by case number.
@@ -464,7 +512,7 @@ class HarrisCountyScraper(BaseCountyScraper):
             if not html:
                 return None
 
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
 
             case = CourtCase(
                 case_number=case_number,
@@ -475,9 +523,9 @@ class HarrisCountyScraper(BaseCountyScraper):
             )
 
             # Parse case details
-            for row in soup.select('.detail-row, tr'):
-                label = row.select_one('.label, th, td:first-child')
-                value = row.select_one('.value, td:last-child')
+            for row in soup.select(".detail-row, tr"):
+                label = row.select_one(".label, th, td:first-child")
+                value = row.select_one(".value, td:last-child")
 
                 if not label or not value:
                     continue
@@ -485,31 +533,33 @@ class HarrisCountyScraper(BaseCountyScraper):
                 label_text = label.get_text(strip=True).lower()
                 value_text = value.get_text(strip=True)
 
-                if 'case type' in label_text or 'type' in label_text:
+                if "case type" in label_text or "type" in label_text:
                     case.case_type = value_text
-                elif 'status' in label_text:
+                elif "status" in label_text:
                     case.status = value_text
-                elif 'filed' in label_text or 'filing date' in label_text:
+                elif "filed" in label_text or "filing date" in label_text:
                     case.filing_date = self._parse_date(value_text)
-                elif 'court' in label_text:
+                elif "court" in label_text:
                     case.court = value_text
-                elif 'judge' in label_text:
+                elif "judge" in label_text:
                     case.judge = value_text
-                elif 'style' in label_text or 'title' in label_text:
+                elif "style" in label_text or "title" in label_text:
                     case.case_title = value_text
 
             # Parse parties
-            parties_section = soup.select_one('#parties, .parties-table')
+            parties_section = soup.select_one("#parties, .parties-table")
             if parties_section:
-                for party_row in parties_section.select('tr'):
-                    cells = party_row.select('td')
+                for party_row in parties_section.select("tr"):
+                    cells = party_row.select("td")
                     if len(cells) >= 2:
                         party_type = cells[0].get_text(strip=True)
                         party_name = cells[1].get_text(strip=True)
-                        case.parties.append({
-                            "type": party_type,
-                            "name": self._clean_name(party_name),
-                        })
+                        case.parties.append(
+                            {
+                                "type": party_type,
+                                "name": self._clean_name(party_name),
+                            }
+                        )
 
             return case
 
@@ -526,16 +576,18 @@ class HarrisCountyScraper(BaseCountyScraper):
         """
         await self._ensure_session()
 
-        account = re.sub(r'[^0-9]', '', parcel_id)
+        account = re.sub(r"[^0-9]", "", parcel_id)
 
         try:
-            search_url = f"https://www.hctax.net/Property/PropertySearch?account={account}"
+            search_url = (
+                f"https://www.hctax.net/Property/PropertySearch?account={account}"
+            )
 
             html = await self._get(search_url)
             if not html:
                 return None
 
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
 
             record = TaxRecord(
                 parcel_id=account,
@@ -546,9 +598,9 @@ class HarrisCountyScraper(BaseCountyScraper):
             )
 
             # Parse tax details
-            for row in soup.select('.tax-detail tr, .property-row'):
-                label = row.select_one('th, .label, td:first-child')
-                value = row.select_one('td:last-child, .value')
+            for row in soup.select(".tax-detail tr, .property-row"):
+                label = row.select_one("th, .label, td:first-child")
+                value = row.select_one("td:last-child, .value")
 
                 if not label or not value:
                     continue
@@ -556,21 +608,21 @@ class HarrisCountyScraper(BaseCountyScraper):
                 label_text = label.get_text(strip=True).lower()
                 value_text = value.get_text(strip=True)
 
-                if 'owner' in label_text:
+                if "owner" in label_text:
                     record.owner_name = self._clean_name(value_text)
-                elif 'address' in label_text and 'property' in label_text:
+                elif "address" in label_text and "property" in label_text:
                     record.property_address = value_text
-                elif 'appraised' in label_text or 'assessed' in label_text:
+                elif "appraised" in label_text or "assessed" in label_text:
                     record.assessed_value = self._parse_currency(value_text)
-                elif 'taxable' in label_text:
+                elif "taxable" in label_text:
                     record.taxable_value = self._parse_currency(value_text)
-                elif 'total tax' in label_text or 'tax amount' in label_text:
+                elif "total tax" in label_text or "tax amount" in label_text:
                     record.tax_amount = self._parse_currency(value_text)
-                elif 'amount due' in label_text or 'balance' in label_text:
+                elif "amount due" in label_text or "balance" in label_text:
                     record.amount_due = self._parse_currency(value_text)
-                elif 'paid' in label_text:
+                elif "paid" in label_text:
                     record.amount_paid = self._parse_currency(value_text)
-                elif 'status' in label_text:
+                elif "status" in label_text:
                     record.status = value_text
 
             return record
@@ -585,9 +637,10 @@ class HarrisCountyScraper(BaseCountyScraper):
 def search_harris_county_property_sync(
     address: Optional[str] = None,
     owner: Optional[str] = None,
-    account: Optional[str] = None
+    account: Optional[str] = None,
 ) -> List[PropertyRecord]:
     """Synchronous wrapper for Harris County property search."""
+
     async def _search():
         async with HarrisCountyScraper() as scraper:
             if account:
@@ -598,14 +651,15 @@ def search_harris_county_property_sync(
             elif address:
                 return await scraper.search_property_by_address(address)
             return []
+
     return asyncio.run(_search())
 
 
 def search_harris_county_deeds_sync(
-    name: Optional[str] = None,
-    parcel_id: Optional[str] = None
+    name: Optional[str] = None, parcel_id: Optional[str] = None
 ) -> List[DeedRecord]:
     """Synchronous wrapper for Harris County deed search."""
+
     async def _search():
         async with HarrisCountyScraper() as scraper:
             if parcel_id:
@@ -613,6 +667,7 @@ def search_harris_county_deeds_sync(
             elif name:
                 return await scraper.search_deeds_by_name(name)
             return []
+
     return asyncio.run(_search())
 
 

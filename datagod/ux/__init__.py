@@ -7,38 +7,37 @@ Provides UX excellence components:
 """
 
 from .intake_wizard import (
-    GuidedIntakeWizard,
-    IntakeSchema,
+    Contradiction,
     FieldType,
     FieldVisibility,
     FormField,
+    GuidedIntakeWizard,
+    IntakeSchema,
     ValidationResult,
-    Contradiction,
-    VerificationTask
+    VerificationTask,
 )
-
 from .report_generator import (
-    MultiViewReportGenerator,
-    ReportView,
     ExportFormat,
+    MultiViewReportGenerator,
+    ReportMetadata,
     ReportSection,
-    ReportMetadata
+    ReportView,
 )
 
 __all__ = [
     # Intake Wizard
-    'GuidedIntakeWizard',
-    'IntakeSchema',
-    'FieldType',
-    'FieldVisibility',
-    'FormField',
-    'ValidationResult',
-    'Contradiction',
-    'VerificationTask',
+    "GuidedIntakeWizard",
+    "IntakeSchema",
+    "FieldType",
+    "FieldVisibility",
+    "FormField",
+    "ValidationResult",
+    "Contradiction",
+    "VerificationTask",
     # Report Generator
-    'MultiViewReportGenerator',
-    'ReportView',
-    'ExportFormat',
-    'ReportSection',
-    'ReportMetadata',
+    "MultiViewReportGenerator",
+    "ReportView",
+    "ExportFormat",
+    "ReportSection",
+    "ReportMetadata",
 ]

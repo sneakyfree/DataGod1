@@ -3,242 +3,230 @@ DataGod Scrapers Package
 Comprehensive public records data collection from multiple jurisdictions
 """
 
+from datagod.scrapers.arizona_api import (
+    ArizonaCountyAPI,
+    MaricopaCountyAPI,
+    PimaCountyAPI,
+)
+from datagod.scrapers.base_api_integration import (
+    APIAuthenticationError,
+    APIDataError,
+    APIIntegrationMetrics,
+    APIKeyAuthentication,
+    BaseAPIIntegration,
+    HMACAuthentication,
+    OAuth2Authentication,
+    RateLimitExceeded,
+)
+
 # Base classes
 from datagod.scrapers.base_scraper import BaseScraper
-from datagod.scrapers.base_api_integration import (
-    BaseAPIIntegration,
-    APIKeyAuthentication,
-    OAuth2Authentication,
-    HMACAuthentication,
-    APIIntegrationMetrics,
-    RateLimitExceeded,
-    APIAuthenticationError,
-    APIDataError
-)
-
-# State-specific APIs
-from datagod.scrapers.florida_api import (
-    FloridaPropertyAppraiserAPI,
-    FloridaMiamiDadeAPI,
-    FloridaBrowardAPI
-)
-
-from datagod.scrapers.texas_api import (
-    TexasCountyAPI,
-    HarrisCountyAPI,
-    DallasCountyAPI,
-    TravisCountyAPI
-)
-
 from datagod.scrapers.california_api import (
     CaliforniaCountyAPI,
     CaliforniaSecretaryOfStateAPI,
     LosAngelesCountyAPI,
     SanDiegoCountyAPI,
     SanFranciscoCountyAPI,
-    SantaClaraCountyAPI
+    SantaClaraCountyAPI,
 )
-
-from datagod.scrapers.newyork_api import (
-    NewYorkCountyAPI,
-    NYCACRISApi,
-    NassauCountyAPI,
-    SuffolkCountyAPI
-)
-
-from datagod.scrapers.illinois_api import (
-    IllinoisCountyAPI,
-    CookCountyAPI,
-    DuPageCountyAPI,
-    LakeCountyILAPI,
-    WillCountyAPI
-)
-
-from datagod.scrapers.pennsylvania_api import (
-    PennsylvaniaCountyAPI,
-    PhiladelphiaCountyAPI,
-    AlleghenyCountyAPI,
-    MontgomeryCountyPAAPI,
-    BucksCountyAPI
-)
-
-from datagod.scrapers.arizona_api import (
-    ArizonaCountyAPI,
-    MaricopaCountyAPI,
-    PimaCountyAPI
-)
-
-from datagod.scrapers.georgia_api import (
-    GeorgiaCountyAPI,
-    FultonCountyAPI,
-    DeKalbCountyAPI,
-    CobbCountyAPI,
-    GwinnettCountyAPI
-)
-
-from datagod.scrapers.ohio_api import (
-    OhioCountyAPI,
-    CuyahogaCountyAPI,
-    FranklinCountyAPI,
-    HamiltonCountyAPI
-)
-
-from datagod.scrapers.washington_api import (
-    WashingtonCountyAPI,
-    KingCountyAPI,
-    PierceCountyAPI,
-    SnohomishCountyAPI
-)
-
 from datagod.scrapers.colorado_api import (
+    ArapahoeCountyAPI,
     ColoradoCountyAPI,
     DenverCountyAPI,
     ElPasoCountyAPI,
-    ArapahoeCountyAPI,
-    JeffersonCountyAPI
+    JeffersonCountyAPI,
 )
 
-from datagod.scrapers.northcarolina_api import (
-    NorthCarolinaCountyAPI,
-    MecklenburgCountyAPI,
-    WakeCountyAPI,
-    GuilfordCountyAPI,
-    DurhamCountyAPI
+# State-specific APIs
+from datagod.scrapers.florida_api import (
+    FloridaBrowardAPI,
+    FloridaMiamiDadeAPI,
+    FloridaPropertyAppraiserAPI,
 )
-
-from datagod.scrapers.virginia_api import (
-    VirginiaCountyAPI,
-    FairfaxCountyAPI,
-    VirginiaBeachCityAPI,
-    PrinceWilliamCountyAPI,
-    LoudounCountyAPI
+from datagod.scrapers.georgia_api import (
+    CobbCountyAPI,
+    DeKalbCountyAPI,
+    FultonCountyAPI,
+    GeorgiaCountyAPI,
+    GwinnettCountyAPI,
 )
-
+from datagod.scrapers.illinois_api import (
+    CookCountyAPI,
+    DuPageCountyAPI,
+    IllinoisCountyAPI,
+    LakeCountyILAPI,
+    WillCountyAPI,
+)
 from datagod.scrapers.newjersey_api import (
-    NewJerseyCountyAPI,
     BergenCountyAPI,
-    MiddlesexCountyAPI,
     EssexCountyAPI,
     HudsonCountyAPI,
-    MonmouthCountyAPI
+    MiddlesexCountyAPI,
+    MonmouthCountyAPI,
+    NewJerseyCountyAPI,
+)
+from datagod.scrapers.newyork_api import (
+    NassauCountyAPI,
+    NewYorkCountyAPI,
+    NYCACRISApi,
+    SuffolkCountyAPI,
+)
+from datagod.scrapers.northcarolina_api import (
+    DurhamCountyAPI,
+    GuilfordCountyAPI,
+    MecklenburgCountyAPI,
+    NorthCarolinaCountyAPI,
+    WakeCountyAPI,
+)
+from datagod.scrapers.ohio_api import (
+    CuyahogaCountyAPI,
+    FranklinCountyAPI,
+    HamiltonCountyAPI,
+    OhioCountyAPI,
+)
+from datagod.scrapers.pennsylvania_api import (
+    AlleghenyCountyAPI,
+    BucksCountyAPI,
+    MontgomeryCountyPAAPI,
+    PennsylvaniaCountyAPI,
+    PhiladelphiaCountyAPI,
+)
+from datagod.scrapers.texas_api import (
+    DallasCountyAPI,
+    HarrisCountyAPI,
+    TexasCountyAPI,
+    TravisCountyAPI,
+)
+from datagod.scrapers.virginia_api import (
+    FairfaxCountyAPI,
+    LoudounCountyAPI,
+    PrinceWilliamCountyAPI,
+    VirginiaBeachCityAPI,
+    VirginiaCountyAPI,
+)
+from datagod.scrapers.washington_api import (
+    KingCountyAPI,
+    PierceCountyAPI,
+    SnohomishCountyAPI,
+    WashingtonCountyAPI,
 )
 
 # Scraper registry - maps state codes to their API classes
 SCRAPER_REGISTRY = {
-    'FL': {
-        'default': FloridaPropertyAppraiserAPI,
-        'miami-dade': FloridaMiamiDadeAPI,
-        'broward': FloridaBrowardAPI,
+    "FL": {
+        "default": FloridaPropertyAppraiserAPI,
+        "miami-dade": FloridaMiamiDadeAPI,
+        "broward": FloridaBrowardAPI,
     },
-    'TX': {
-        'default': TexasCountyAPI,
-        'harris': HarrisCountyAPI,
-        'dallas': DallasCountyAPI,
-        'travis': TravisCountyAPI,
+    "TX": {
+        "default": TexasCountyAPI,
+        "harris": HarrisCountyAPI,
+        "dallas": DallasCountyAPI,
+        "travis": TravisCountyAPI,
     },
-    'CA': {
-        'default': CaliforniaCountyAPI,
-        'los-angeles': LosAngelesCountyAPI,
-        'san-diego': SanDiegoCountyAPI,
-        'san-francisco': SanFranciscoCountyAPI,
-        'santa-clara': SantaClaraCountyAPI,
-        'sos': CaliforniaSecretaryOfStateAPI,
+    "CA": {
+        "default": CaliforniaCountyAPI,
+        "los-angeles": LosAngelesCountyAPI,
+        "san-diego": SanDiegoCountyAPI,
+        "san-francisco": SanFranciscoCountyAPI,
+        "santa-clara": SantaClaraCountyAPI,
+        "sos": CaliforniaSecretaryOfStateAPI,
     },
-    'NY': {
-        'default': NewYorkCountyAPI,
-        'new-york': NYCACRISApi,
-        'kings': NYCACRISApi,
-        'queens': NYCACRISApi,
-        'bronx': NYCACRISApi,
-        'richmond': NYCACRISApi,
-        'nassau': NassauCountyAPI,
-        'suffolk': SuffolkCountyAPI,
+    "NY": {
+        "default": NewYorkCountyAPI,
+        "new-york": NYCACRISApi,
+        "kings": NYCACRISApi,
+        "queens": NYCACRISApi,
+        "bronx": NYCACRISApi,
+        "richmond": NYCACRISApi,
+        "nassau": NassauCountyAPI,
+        "suffolk": SuffolkCountyAPI,
     },
-    'IL': {
-        'default': IllinoisCountyAPI,
-        'cook': CookCountyAPI,
-        'dupage': DuPageCountyAPI,
-        'lake': LakeCountyILAPI,
-        'will': WillCountyAPI,
+    "IL": {
+        "default": IllinoisCountyAPI,
+        "cook": CookCountyAPI,
+        "dupage": DuPageCountyAPI,
+        "lake": LakeCountyILAPI,
+        "will": WillCountyAPI,
     },
-    'PA': {
-        'default': PennsylvaniaCountyAPI,
-        'philadelphia': PhiladelphiaCountyAPI,
-        'allegheny': AlleghenyCountyAPI,
-        'montgomery': MontgomeryCountyPAAPI,
-        'bucks': BucksCountyAPI,
+    "PA": {
+        "default": PennsylvaniaCountyAPI,
+        "philadelphia": PhiladelphiaCountyAPI,
+        "allegheny": AlleghenyCountyAPI,
+        "montgomery": MontgomeryCountyPAAPI,
+        "bucks": BucksCountyAPI,
     },
-    'AZ': {
-        'default': ArizonaCountyAPI,
-        'maricopa': MaricopaCountyAPI,
-        'pima': PimaCountyAPI,
+    "AZ": {
+        "default": ArizonaCountyAPI,
+        "maricopa": MaricopaCountyAPI,
+        "pima": PimaCountyAPI,
     },
-    'GA': {
-        'default': GeorgiaCountyAPI,
-        'fulton': FultonCountyAPI,
-        'dekalb': DeKalbCountyAPI,
-        'cobb': CobbCountyAPI,
-        'gwinnett': GwinnettCountyAPI,
+    "GA": {
+        "default": GeorgiaCountyAPI,
+        "fulton": FultonCountyAPI,
+        "dekalb": DeKalbCountyAPI,
+        "cobb": CobbCountyAPI,
+        "gwinnett": GwinnettCountyAPI,
     },
-    'OH': {
-        'default': OhioCountyAPI,
-        'cuyahoga': CuyahogaCountyAPI,
-        'franklin': FranklinCountyAPI,
-        'hamilton': HamiltonCountyAPI,
+    "OH": {
+        "default": OhioCountyAPI,
+        "cuyahoga": CuyahogaCountyAPI,
+        "franklin": FranklinCountyAPI,
+        "hamilton": HamiltonCountyAPI,
     },
-    'WA': {
-        'default': WashingtonCountyAPI,
-        'king': KingCountyAPI,
-        'pierce': PierceCountyAPI,
-        'snohomish': SnohomishCountyAPI,
+    "WA": {
+        "default": WashingtonCountyAPI,
+        "king": KingCountyAPI,
+        "pierce": PierceCountyAPI,
+        "snohomish": SnohomishCountyAPI,
     },
-    'CO': {
-        'default': ColoradoCountyAPI,
-        'denver': DenverCountyAPI,
-        'el-paso': ElPasoCountyAPI,
-        'arapahoe': ArapahoeCountyAPI,
-        'jefferson': JeffersonCountyAPI,
+    "CO": {
+        "default": ColoradoCountyAPI,
+        "denver": DenverCountyAPI,
+        "el-paso": ElPasoCountyAPI,
+        "arapahoe": ArapahoeCountyAPI,
+        "jefferson": JeffersonCountyAPI,
     },
-    'NC': {
-        'default': NorthCarolinaCountyAPI,
-        'mecklenburg': MecklenburgCountyAPI,
-        'wake': WakeCountyAPI,
-        'guilford': GuilfordCountyAPI,
-        'durham': DurhamCountyAPI,
+    "NC": {
+        "default": NorthCarolinaCountyAPI,
+        "mecklenburg": MecklenburgCountyAPI,
+        "wake": WakeCountyAPI,
+        "guilford": GuilfordCountyAPI,
+        "durham": DurhamCountyAPI,
     },
-    'VA': {
-        'default': VirginiaCountyAPI,
-        'fairfax': FairfaxCountyAPI,
-        'virginia-beach': VirginiaBeachCityAPI,
-        'prince-william': PrinceWilliamCountyAPI,
-        'loudoun': LoudounCountyAPI,
+    "VA": {
+        "default": VirginiaCountyAPI,
+        "fairfax": FairfaxCountyAPI,
+        "virginia-beach": VirginiaBeachCityAPI,
+        "prince-william": PrinceWilliamCountyAPI,
+        "loudoun": LoudounCountyAPI,
     },
-    'NJ': {
-        'default': NewJerseyCountyAPI,
-        'bergen': BergenCountyAPI,
-        'middlesex': MiddlesexCountyAPI,
-        'essex': EssexCountyAPI,
-        'hudson': HudsonCountyAPI,
-        'monmouth': MonmouthCountyAPI,
+    "NJ": {
+        "default": NewJerseyCountyAPI,
+        "bergen": BergenCountyAPI,
+        "middlesex": MiddlesexCountyAPI,
+        "essex": EssexCountyAPI,
+        "hudson": HudsonCountyAPI,
+        "monmouth": MonmouthCountyAPI,
     },
 }
 
 # Count of supported jurisdictions
 SUPPORTED_COUNTIES = {
-    'FL': 6,   # Miami-Dade, Broward, Palm Beach, Hillsborough, Orange, Duval
-    'TX': 10,  # Harris, Dallas, Tarrant, Bexar, Travis, Collin, Denton, Fort-Bend, El-Paso, Hidalgo
-    'CA': 15,  # Los Angeles, San Diego, Orange, Riverside, San Bernardino, Santa Clara, Alameda, Sacramento, etc.
-    'NY': 12,  # NYC boroughs (5), Nassau, Suffolk, Westchester, Erie, Monroe, Albany, Onondaga
-    'IL': 10,  # Cook, DuPage, Lake, Will, Kane, McHenry, Winnebago, Madison, St. Clair, Champaign
-    'PA': 12,  # Philadelphia, Allegheny, Montgomery, Bucks, Delaware, Chester, Lancaster, York, Berks, Lehigh, etc.
-    'AZ': 8,   # Maricopa, Pima, Pinal, Yavapai, Mohave, Yuma, Cochise, Coconino
-    'GA': 10,  # Fulton, DeKalb, Cobb, Gwinnett, Chatham, Clayton, Cherokee, Forsyth, Henry, Hall
-    'OH': 10,  # Cuyahoga, Franklin, Hamilton, Summit, Montgomery, Lucas, Butler, Stark, Lorain, Mahoning
-    'WA': 8,   # King, Pierce, Snohomish, Clark, Spokane, Thurston, Kitsap, Whatcom
-    'CO': 8,   # Denver, El Paso, Arapahoe, Jefferson, Adams, Douglas, Boulder, Larimer
-    'NC': 10,  # Mecklenburg, Wake, Guilford, Forsyth, Durham, Cumberland, Buncombe, Union, Cabarrus, New Hanover
-    'VA': 8,   # Fairfax, Virginia Beach, Prince William, Loudoun, Chesterfield, Henrico, Norfolk, Chesapeake
-    'NJ': 10,  # Bergen, Middlesex, Essex, Hudson, Monmouth, Ocean, Union, Passaic, Camden, Morris
+    "FL": 6,  # Miami-Dade, Broward, Palm Beach, Hillsborough, Orange, Duval
+    "TX": 10,  # Harris, Dallas, Tarrant, Bexar, Travis, Collin, Denton, Fort-Bend, El-Paso, Hidalgo
+    "CA": 15,  # Los Angeles, San Diego, Orange, Riverside, San Bernardino, Santa Clara, Alameda, Sacramento, etc.
+    "NY": 12,  # NYC boroughs (5), Nassau, Suffolk, Westchester, Erie, Monroe, Albany, Onondaga
+    "IL": 10,  # Cook, DuPage, Lake, Will, Kane, McHenry, Winnebago, Madison, St. Clair, Champaign
+    "PA": 12,  # Philadelphia, Allegheny, Montgomery, Bucks, Delaware, Chester, Lancaster, York, Berks, Lehigh, etc.
+    "AZ": 8,  # Maricopa, Pima, Pinal, Yavapai, Mohave, Yuma, Cochise, Coconino
+    "GA": 10,  # Fulton, DeKalb, Cobb, Gwinnett, Chatham, Clayton, Cherokee, Forsyth, Henry, Hall
+    "OH": 10,  # Cuyahoga, Franklin, Hamilton, Summit, Montgomery, Lucas, Butler, Stark, Lorain, Mahoning
+    "WA": 8,  # King, Pierce, Snohomish, Clark, Spokane, Thurston, Kitsap, Whatcom
+    "CO": 8,  # Denver, El Paso, Arapahoe, Jefferson, Adams, Douglas, Boulder, Larimer
+    "NC": 10,  # Mecklenburg, Wake, Guilford, Forsyth, Durham, Cumberland, Buncombe, Union, Cabarrus, New Hanover
+    "VA": 8,  # Fairfax, Virginia Beach, Prince William, Loudoun, Chesterfield, Henrico, Norfolk, Chesapeake
+    "NJ": 10,  # Bergen, Middlesex, Essex, Hudson, Monmouth, Ocean, Union, Passaic, Camden, Morris
 }
 
 TOTAL_SUPPORTED_COUNTIES = sum(SUPPORTED_COUNTIES.values())  # 137 counties (14 states)
@@ -263,11 +251,11 @@ def get_scraper_for_jurisdiction(state: str, county: str = None) -> type:
     state_scrapers = SCRAPER_REGISTRY[state]
 
     if county:
-        county_key = county.lower().replace(' ', '-')
+        county_key = county.lower().replace(" ", "-")
         if county_key in state_scrapers:
             return state_scrapers[county_key]
 
-    return state_scrapers['default']
+    return state_scrapers["default"]
 
 
 def list_supported_states() -> list:
@@ -281,118 +269,103 @@ def list_supported_counties(state: str) -> list:
     if state not in SCRAPER_REGISTRY:
         return []
 
-    return [k for k in SCRAPER_REGISTRY[state].keys() if k != 'default']
+    return [k for k in SCRAPER_REGISTRY[state].keys() if k != "default"]
 
 
 __all__ = [
     # Base classes
-    'BaseScraper',
-    'BaseAPIIntegration',
-    'APIKeyAuthentication',
-    'OAuth2Authentication',
-    'HMACAuthentication',
-    'APIIntegrationMetrics',
-    'RateLimitExceeded',
-    'APIAuthenticationError',
-    'APIDataError',
-
+    "BaseScraper",
+    "BaseAPIIntegration",
+    "APIKeyAuthentication",
+    "OAuth2Authentication",
+    "HMACAuthentication",
+    "APIIntegrationMetrics",
+    "RateLimitExceeded",
+    "APIAuthenticationError",
+    "APIDataError",
     # Florida
-    'FloridaPropertyAppraiserAPI',
-    'FloridaMiamiDadeAPI',
-    'FloridaBrowardAPI',
-
+    "FloridaPropertyAppraiserAPI",
+    "FloridaMiamiDadeAPI",
+    "FloridaBrowardAPI",
     # Texas
-    'TexasCountyAPI',
-    'HarrisCountyAPI',
-    'DallasCountyAPI',
-    'TravisCountyAPI',
-
+    "TexasCountyAPI",
+    "HarrisCountyAPI",
+    "DallasCountyAPI",
+    "TravisCountyAPI",
     # California
-    'CaliforniaCountyAPI',
-    'CaliforniaSecretaryOfStateAPI',
-    'LosAngelesCountyAPI',
-    'SanDiegoCountyAPI',
-    'SanFranciscoCountyAPI',
-    'SantaClaraCountyAPI',
-
+    "CaliforniaCountyAPI",
+    "CaliforniaSecretaryOfStateAPI",
+    "LosAngelesCountyAPI",
+    "SanDiegoCountyAPI",
+    "SanFranciscoCountyAPI",
+    "SantaClaraCountyAPI",
     # New York
-    'NewYorkCountyAPI',
-    'NYCACRISApi',
-    'NassauCountyAPI',
-    'SuffolkCountyAPI',
-
+    "NewYorkCountyAPI",
+    "NYCACRISApi",
+    "NassauCountyAPI",
+    "SuffolkCountyAPI",
     # Illinois
-    'IllinoisCountyAPI',
-    'CookCountyAPI',
-    'DuPageCountyAPI',
-    'LakeCountyILAPI',
-    'WillCountyAPI',
-
+    "IllinoisCountyAPI",
+    "CookCountyAPI",
+    "DuPageCountyAPI",
+    "LakeCountyILAPI",
+    "WillCountyAPI",
     # Pennsylvania
-    'PennsylvaniaCountyAPI',
-    'PhiladelphiaCountyAPI',
-    'AlleghenyCountyAPI',
-    'MontgomeryCountyPAAPI',
-    'BucksCountyAPI',
-
+    "PennsylvaniaCountyAPI",
+    "PhiladelphiaCountyAPI",
+    "AlleghenyCountyAPI",
+    "MontgomeryCountyPAAPI",
+    "BucksCountyAPI",
     # Arizona
-    'ArizonaCountyAPI',
-    'MaricopaCountyAPI',
-    'PimaCountyAPI',
-
+    "ArizonaCountyAPI",
+    "MaricopaCountyAPI",
+    "PimaCountyAPI",
     # Georgia
-    'GeorgiaCountyAPI',
-    'FultonCountyAPI',
-    'DeKalbCountyAPI',
-    'CobbCountyAPI',
-    'GwinnettCountyAPI',
-
+    "GeorgiaCountyAPI",
+    "FultonCountyAPI",
+    "DeKalbCountyAPI",
+    "CobbCountyAPI",
+    "GwinnettCountyAPI",
     # Ohio
-    'OhioCountyAPI',
-    'CuyahogaCountyAPI',
-    'FranklinCountyAPI',
-    'HamiltonCountyAPI',
-
+    "OhioCountyAPI",
+    "CuyahogaCountyAPI",
+    "FranklinCountyAPI",
+    "HamiltonCountyAPI",
     # Washington
-    'WashingtonCountyAPI',
-    'KingCountyAPI',
-    'PierceCountyAPI',
-    'SnohomishCountyAPI',
-
+    "WashingtonCountyAPI",
+    "KingCountyAPI",
+    "PierceCountyAPI",
+    "SnohomishCountyAPI",
     # Colorado
-    'ColoradoCountyAPI',
-    'DenverCountyAPI',
-    'ElPasoCountyAPI',
-    'ArapahoeCountyAPI',
-    'JeffersonCountyAPI',
-
+    "ColoradoCountyAPI",
+    "DenverCountyAPI",
+    "ElPasoCountyAPI",
+    "ArapahoeCountyAPI",
+    "JeffersonCountyAPI",
     # North Carolina
-    'NorthCarolinaCountyAPI',
-    'MecklenburgCountyAPI',
-    'WakeCountyAPI',
-    'GuilfordCountyAPI',
-    'DurhamCountyAPI',
-
+    "NorthCarolinaCountyAPI",
+    "MecklenburgCountyAPI",
+    "WakeCountyAPI",
+    "GuilfordCountyAPI",
+    "DurhamCountyAPI",
     # Virginia
-    'VirginiaCountyAPI',
-    'FairfaxCountyAPI',
-    'VirginiaBeachCityAPI',
-    'PrinceWilliamCountyAPI',
-    'LoudounCountyAPI',
-
+    "VirginiaCountyAPI",
+    "FairfaxCountyAPI",
+    "VirginiaBeachCityAPI",
+    "PrinceWilliamCountyAPI",
+    "LoudounCountyAPI",
     # New Jersey
-    'NewJerseyCountyAPI',
-    'BergenCountyAPI',
-    'MiddlesexCountyAPI',
-    'EssexCountyAPI',
-    'HudsonCountyAPI',
-    'MonmouthCountyAPI',
-
+    "NewJerseyCountyAPI",
+    "BergenCountyAPI",
+    "MiddlesexCountyAPI",
+    "EssexCountyAPI",
+    "HudsonCountyAPI",
+    "MonmouthCountyAPI",
     # Registry and utilities
-    'SCRAPER_REGISTRY',
-    'SUPPORTED_COUNTIES',
-    'TOTAL_SUPPORTED_COUNTIES',
-    'get_scraper_for_jurisdiction',
-    'list_supported_states',
-    'list_supported_counties',
+    "SCRAPER_REGISTRY",
+    "SUPPORTED_COUNTIES",
+    "TOTAL_SUPPORTED_COUNTIES",
+    "get_scraper_for_jurisdiction",
+    "list_supported_states",
+    "list_supported_counties",
 ]

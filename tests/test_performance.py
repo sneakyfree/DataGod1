@@ -2,17 +2,18 @@
 Tests for Performance utilities — coverage target for performance/__init__.py (56% → 80%+)
 """
 
-import pytest
 import asyncio
 import time
 
+import pytest
+
 from datagod.performance import (
-    CacheManager,
-    CacheEntry,
     AsyncBatchProcessor,
     BatchResult,
-    cached,
+    CacheEntry,
+    CacheManager,
     _generate_cache_key,
+    cached,
 )
 
 
@@ -165,7 +166,9 @@ class TestAsyncBatchProcessor:
                 raise ValueError("Cannot divide by zero")
             return 10 / item
 
-        processor = AsyncBatchProcessor(batch_size=5, retry_attempts=1, retry_delay=0.01)
+        processor = AsyncBatchProcessor(
+            batch_size=5, retry_attempts=1, retry_delay=0.01
+        )
         result = await processor.process(items, divider)
         assert result.failure_count >= 1
 

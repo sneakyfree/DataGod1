@@ -2,13 +2,15 @@
 Tests for datagod/scrapers/api_integration.py
 Tests that actually import and exercise the module for real coverage.
 """
-import pytest
-import os
+
 import json
+import os
 import tempfile
 import time
-from unittest.mock import patch, MagicMock, Mock
 from datetime import datetime
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 
 class TestAPIIntegrationConfig:
@@ -17,6 +19,7 @@ class TestAPIIntegrationConfig:
     def test_config_import(self):
         """Test that APIIntegrationConfig can be imported"""
         from datagod.scrapers.api_integration import APIIntegrationConfig
+
         assert APIIntegrationConfig is not None
 
     def test_config_required_fields(self):
@@ -24,8 +27,7 @@ class TestAPIIntegrationConfig:
         from datagod.scrapers.api_integration import APIIntegrationConfig
 
         config = APIIntegrationConfig(
-            name="test_api",
-            base_url="https://api.example.com"
+            name="test_api", base_url="https://api.example.com"
         )
 
         assert config.name == "test_api"
@@ -35,10 +37,7 @@ class TestAPIIntegrationConfig:
         """Test config default values"""
         from datagod.scrapers.api_integration import APIIntegrationConfig
 
-        config = APIIntegrationConfig(
-            name="test",
-            base_url="https://test.com"
-        )
+        config = APIIntegrationConfig(name="test", base_url="https://test.com")
 
         assert config.api_key is None
         assert config.rate_limit == 10
@@ -59,7 +58,7 @@ class TestAPIIntegrationConfig:
             rate_limit_period=120,
             timeout=60,
             retry_count=5,
-            retry_delay=10
+            retry_delay=10,
         )
 
         assert config.api_key == "secret123"
@@ -76,23 +75,29 @@ class TestBaseAPIIntegration:
     def get_test_config(self, api_key=None):
         """Helper to create test config"""
         from datagod.scrapers.api_integration import APIIntegrationConfig
+
         return APIIntegrationConfig(
             name="test_api",
             base_url="https://api.example.com",
             api_key=api_key,
             rate_limit=5,
-            rate_limit_period=1  # Short for testing
+            rate_limit_period=1,  # Short for testing
         )
 
     def test_base_api_integration_is_abstract(self):
         """Test BaseAPIIntegration is abstract"""
-        from datagod.scrapers.api_integration import BaseAPIIntegration
         from abc import ABC
+
+        from datagod.scrapers.api_integration import BaseAPIIntegration
+
         assert issubclass(BaseAPIIntegration, ABC)
 
     def test_concrete_integration_creation(self):
         """Test creating a concrete integration"""
-        from datagod.scrapers.api_integration import BaseAPIIntegration, APIIntegrationConfig
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            BaseAPIIntegration,
+        )
 
         class ConcreteIntegration(BaseAPIIntegration):
             def get_records(self, params):
@@ -111,7 +116,10 @@ class TestBaseAPIIntegration:
 
     def test_session_headers_without_api_key(self):
         """Test session headers without API key"""
-        from datagod.scrapers.api_integration import BaseAPIIntegration, APIIntegrationConfig
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            BaseAPIIntegration,
+        )
 
         class ConcreteIntegration(BaseAPIIntegration):
             def get_records(self, params):
@@ -130,7 +138,10 @@ class TestBaseAPIIntegration:
 
     def test_session_headers_with_api_key(self):
         """Test session headers with API key"""
-        from datagod.scrapers.api_integration import BaseAPIIntegration, APIIntegrationConfig
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            BaseAPIIntegration,
+        )
 
         class ConcreteIntegration(BaseAPIIntegration):
             def get_records(self, params):
@@ -147,7 +158,10 @@ class TestBaseAPIIntegration:
 
     def test_close(self):
         """Test closing the integration"""
-        from datagod.scrapers.api_integration import BaseAPIIntegration, APIIntegrationConfig
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            BaseAPIIntegration,
+        )
 
         class ConcreteIntegration(BaseAPIIntegration):
             def get_records(self, params):
@@ -167,7 +181,10 @@ class TestRateLimiting:
 
     def get_concrete_integration(self, rate_limit=5, period=60):
         """Helper to create concrete integration"""
-        from datagod.scrapers.api_integration import BaseAPIIntegration, APIIntegrationConfig
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            BaseAPIIntegration,
+        )
 
         class ConcreteIntegration(BaseAPIIntegration):
             def get_records(self, params):
@@ -180,7 +197,7 @@ class TestRateLimiting:
             name="test",
             base_url="https://test.com",
             rate_limit=rate_limit,
-            rate_limit_period=period
+            rate_limit_period=period,
         )
         return ConcreteIntegration(config)
 
@@ -220,7 +237,10 @@ class TestMakeRequest:
 
     def get_concrete_integration(self):
         """Helper to create concrete integration"""
-        from datagod.scrapers.api_integration import BaseAPIIntegration, APIIntegrationConfig
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            BaseAPIIntegration,
+        )
 
         class ConcreteIntegration(BaseAPIIntegration):
             def get_records(self, params):
@@ -235,7 +255,7 @@ class TestMakeRequest:
             rate_limit=100,
             rate_limit_period=60,
             retry_count=2,
-            retry_delay=0.1
+            retry_delay=0.1,
         )
         return ConcreteIntegration(config)
 
@@ -247,7 +267,7 @@ class TestMakeRequest:
         mock_response.status_code = 200
         mock_response.json.return_value = {"data": "value"}
 
-        with patch.object(integration.session, 'request', return_value=mock_response):
+        with patch.object(integration.session, "request", return_value=mock_response):
             result = integration._make_request("GET", "/endpoint")
 
         assert result == {"data": "value"}
@@ -260,7 +280,7 @@ class TestMakeRequest:
         mock_response.status_code = 404
         mock_response.text = "Not Found"
 
-        with patch.object(integration.session, 'request', return_value=mock_response):
+        with patch.object(integration.session, "request", return_value=mock_response):
             result = integration._make_request("GET", "/notfound")
 
         assert result is None
@@ -277,7 +297,11 @@ class TestMakeRequest:
         mock_response_200.status_code = 200
         mock_response_200.json.return_value = {"success": True}
 
-        with patch.object(integration.session, 'request', side_effect=[mock_response_429, mock_response_200]):
+        with patch.object(
+            integration.session,
+            "request",
+            side_effect=[mock_response_429, mock_response_200],
+        ):
             result = integration._make_request("GET", "/endpoint")
 
         assert result == {"success": True}
@@ -285,9 +309,14 @@ class TestMakeRequest:
     def test_make_request_exception(self):
         """Test request exception handling"""
         import requests
+
         integration = self.get_concrete_integration()
 
-        with patch.object(integration.session, 'request', side_effect=requests.exceptions.Timeout("Timeout")):
+        with patch.object(
+            integration.session,
+            "request",
+            side_effect=requests.exceptions.Timeout("Timeout"),
+        ):
             result = integration._make_request("GET", "/endpoint")
 
         assert result is None
@@ -300,23 +329,24 @@ class TestAPIIntegrationManager:
         """Test manager initialization"""
         from datagod.scrapers.api_integration import APIIntegrationManager
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = APIIntegrationManager()
 
         assert manager.integrations == {}
-        assert manager.base_dir == 'datagod/scrapers/data'
+        assert manager.base_dir == "datagod/scrapers/data"
 
     def test_add_integration(self):
         """Test adding an integration"""
-        from datagod.scrapers.api_integration import APIIntegrationManager, MockAPIIntegration, APIIntegrationConfig
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            APIIntegrationManager,
+            MockAPIIntegration,
+        )
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = APIIntegrationManager()
 
-        config = APIIntegrationConfig(
-            name="test",
-            base_url="https://test.com"
-        )
+        config = APIIntegrationConfig(name="test", base_url="https://test.com")
         integration = MockAPIIntegration(config)
 
         manager.add_integration("test_api", integration)
@@ -326,15 +356,16 @@ class TestAPIIntegrationManager:
 
     def test_get_integration_exists(self):
         """Test getting existing integration"""
-        from datagod.scrapers.api_integration import APIIntegrationManager, MockAPIIntegration, APIIntegrationConfig
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            APIIntegrationManager,
+            MockAPIIntegration,
+        )
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = APIIntegrationManager()
 
-        config = APIIntegrationConfig(
-            name="test",
-            base_url="https://test.com"
-        )
+        config = APIIntegrationConfig(name="test", base_url="https://test.com")
         integration = MockAPIIntegration(config)
         manager.add_integration("my_api", integration)
 
@@ -345,7 +376,7 @@ class TestAPIIntegrationManager:
         """Test getting non-existent integration"""
         from datagod.scrapers.api_integration import APIIntegrationManager
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = APIIntegrationManager()
 
         result = manager.get_integration("nonexistent")
@@ -357,15 +388,16 @@ class TestCollectData:
 
     def test_collect_data_success(self):
         """Test successful data collection"""
-        from datagod.scrapers.api_integration import APIIntegrationManager, MockAPIIntegration, APIIntegrationConfig
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            APIIntegrationManager,
+            MockAPIIntegration,
+        )
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = APIIntegrationManager()
 
-        config = APIIntegrationConfig(
-            name="mock",
-            base_url="https://mock.com"
-        )
+        config = APIIntegrationConfig(name="mock", base_url="https://mock.com")
         integration = MockAPIIntegration(config)
         manager.add_integration("mock", integration)
 
@@ -379,7 +411,7 @@ class TestCollectData:
         """Test collecting from non-existent integration"""
         from datagod.scrapers.api_integration import APIIntegrationManager
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = APIIntegrationManager()
 
         data = manager.collect_data("nonexistent", {})
@@ -389,7 +421,7 @@ class TestCollectData:
         """Test collecting when exception occurs"""
         from datagod.scrapers.api_integration import APIIntegrationManager
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = APIIntegrationManager()
 
         mock_integration = MagicMock()
@@ -409,7 +441,7 @@ class TestSaveIntegrationData:
         from datagod.scrapers.api_integration import APIIntegrationManager
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch('os.makedirs'):
+            with patch("os.makedirs"):
                 manager = APIIntegrationManager()
                 manager.base_dir = tmpdir
 
@@ -418,7 +450,7 @@ class TestSaveIntegrationData:
 
             assert os.path.exists(filepath)
 
-            with open(filepath, 'r') as f:
+            with open(filepath, "r") as f:
                 saved_data = json.load(f)
 
             assert saved_data == data
@@ -428,7 +460,7 @@ class TestSaveIntegrationData:
         from datagod.scrapers.api_integration import APIIntegrationManager
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch('os.makedirs'):
+            with patch("os.makedirs"):
                 manager = APIIntegrationManager()
                 manager.base_dir = tmpdir
 
@@ -445,16 +477,17 @@ class TestMockAPIIntegration:
     def test_mock_api_import(self):
         """Test MockAPIIntegration can be imported"""
         from datagod.scrapers.api_integration import MockAPIIntegration
+
         assert MockAPIIntegration is not None
 
     def test_mock_get_records(self):
         """Test mock get_records"""
-        from datagod.scrapers.api_integration import MockAPIIntegration, APIIntegrationConfig
-
-        config = APIIntegrationConfig(
-            name="mock",
-            base_url="https://mock.com"
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            MockAPIIntegration,
         )
+
+        config = APIIntegrationConfig(name="mock", base_url="https://mock.com")
 
         integration = MockAPIIntegration(config)
         records = integration.get_records({})
@@ -467,12 +500,12 @@ class TestMockAPIIntegration:
 
     def test_mock_normalize_record(self):
         """Test mock normalize_record"""
-        from datagod.scrapers.api_integration import MockAPIIntegration, APIIntegrationConfig
-
-        config = APIIntegrationConfig(
-            name="mock",
-            base_url="https://mock.com"
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            MockAPIIntegration,
         )
+
+        config = APIIntegrationConfig(name="mock", base_url="https://mock.com")
 
         integration = MockAPIIntegration(config)
         record = {
@@ -481,7 +514,7 @@ class TestMockAPIIntegration:
             "description": "Description",
             "amount": 1000.0,
             "date": "2023-01-01",
-            "url": "https://example.com/1"
+            "url": "https://example.com/1",
         }
 
         normalized = integration.normalize_record(record)
@@ -499,16 +532,17 @@ class TestCaliforniaPropertyAPI:
     def test_california_api_import(self):
         """Test CaliforniaPropertyAPI can be imported"""
         from datagod.scrapers.api_integration import CaliforniaPropertyAPI
+
         assert CaliforniaPropertyAPI is not None
 
     def test_california_get_records(self):
         """Test California get_records"""
-        from datagod.scrapers.api_integration import CaliforniaPropertyAPI, APIIntegrationConfig
-
-        config = APIIntegrationConfig(
-            name="california",
-            base_url="https://ca.gov"
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            CaliforniaPropertyAPI,
         )
+
+        config = APIIntegrationConfig(name="california", base_url="https://ca.gov")
 
         integration = CaliforniaPropertyAPI(config)
         records = integration.get_records({})
@@ -520,12 +554,12 @@ class TestCaliforniaPropertyAPI:
 
     def test_california_normalize_record(self):
         """Test California normalize_record"""
-        from datagod.scrapers.api_integration import CaliforniaPropertyAPI, APIIntegrationConfig
-
-        config = APIIntegrationConfig(
-            name="california",
-            base_url="https://ca.gov"
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            CaliforniaPropertyAPI,
         )
+
+        config = APIIntegrationConfig(name="california", base_url="https://ca.gov")
 
         integration = CaliforniaPropertyAPI(config)
         record = {
@@ -539,7 +573,7 @@ class TestCaliforniaPropertyAPI:
             "bedrooms": 3,
             "bathrooms": 2,
             "square_feet": 2000,
-            "year_built": 2000
+            "year_built": 2000,
         }
 
         normalized = integration.normalize_record(record)
@@ -555,16 +589,17 @@ class TestTexasPropertyAPI:
     def test_texas_api_import(self):
         """Test TexasPropertyAPI can be imported"""
         from datagod.scrapers.api_integration import TexasPropertyAPI
+
         assert TexasPropertyAPI is not None
 
     def test_texas_get_records(self):
         """Test Texas get_records"""
-        from datagod.scrapers.api_integration import TexasPropertyAPI, APIIntegrationConfig
-
-        config = APIIntegrationConfig(
-            name="texas",
-            base_url="https://tx.gov"
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            TexasPropertyAPI,
         )
+
+        config = APIIntegrationConfig(name="texas", base_url="https://tx.gov")
 
         integration = TexasPropertyAPI(config)
         records = integration.get_records({})
@@ -573,12 +608,12 @@ class TestTexasPropertyAPI:
 
     def test_texas_normalize_record(self):
         """Test Texas normalize_record"""
-        from datagod.scrapers.api_integration import TexasPropertyAPI, APIIntegrationConfig
-
-        config = APIIntegrationConfig(
-            name="texas",
-            base_url="https://tx.gov"
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            TexasPropertyAPI,
         )
+
+        config = APIIntegrationConfig(name="texas", base_url="https://tx.gov")
 
         integration = TexasPropertyAPI(config)
         record = {
@@ -592,7 +627,7 @@ class TestTexasPropertyAPI:
             "bedrooms": 4,
             "bathrooms": 3,
             "square_feet": 2200,
-            "year_built": 2005
+            "year_built": 2005,
         }
 
         normalized = integration.normalize_record(record)
@@ -607,16 +642,17 @@ class TestFloridaPropertyAPI:
     def test_florida_api_import(self):
         """Test FloridaPropertyAPI can be imported"""
         from datagod.scrapers.api_integration import FloridaPropertyAPI
+
         assert FloridaPropertyAPI is not None
 
     def test_florida_get_records(self):
         """Test Florida get_records"""
-        from datagod.scrapers.api_integration import FloridaPropertyAPI, APIIntegrationConfig
-
-        config = APIIntegrationConfig(
-            name="florida",
-            base_url="https://fl.gov"
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            FloridaPropertyAPI,
         )
+
+        config = APIIntegrationConfig(name="florida", base_url="https://fl.gov")
 
         integration = FloridaPropertyAPI(config)
         records = integration.get_records({})
@@ -625,12 +661,12 @@ class TestFloridaPropertyAPI:
 
     def test_florida_normalize_record(self):
         """Test Florida normalize_record"""
-        from datagod.scrapers.api_integration import FloridaPropertyAPI, APIIntegrationConfig
-
-        config = APIIntegrationConfig(
-            name="florida",
-            base_url="https://fl.gov"
+        from datagod.scrapers.api_integration import (
+            APIIntegrationConfig,
+            FloridaPropertyAPI,
         )
+
+        config = APIIntegrationConfig(name="florida", base_url="https://fl.gov")
 
         integration = FloridaPropertyAPI(config)
         record = {
@@ -644,7 +680,7 @@ class TestFloridaPropertyAPI:
             "bedrooms": 2,
             "bathrooms": 2,
             "square_feet": 1500,
-            "year_built": 2010
+            "year_built": 2010,
         }
 
         normalized = integration.normalize_record(record)
@@ -660,9 +696,9 @@ class TestMainFunction:
         """Test main function executes"""
         from datagod.scrapers.api_integration import main
 
-        with patch('os.makedirs'):
-            with patch('builtins.print'):
-                with patch('builtins.open', MagicMock()):
+        with patch("os.makedirs"):
+            with patch("builtins.print"):
+                with patch("builtins.open", MagicMock()):
                     main()
 
 
@@ -672,4 +708,5 @@ class TestLogger:
     def test_logger_exists(self):
         """Test logger is configured"""
         from datagod.scrapers import api_integration
-        assert hasattr(api_integration, 'logger')
+
+        assert hasattr(api_integration, "logger")

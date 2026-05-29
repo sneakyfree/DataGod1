@@ -2,8 +2,9 @@
 Tests for Mortgage Data Gathering Neural Network
 """
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 
 class TestMortgageDataPoint:
@@ -26,7 +27,7 @@ class TestMortgageDataPoint:
             property_value=300000.0,
             status="active",
             data_source="property_records",
-            scraped_at=datetime.now().isoformat()
+            scraped_at=datetime.now().isoformat(),
         )
 
         assert data_point.property_id == "PROP-123"
@@ -54,7 +55,7 @@ class TestMortgageDataPoint:
             data_source="court_records",
             scraped_at=datetime.now().isoformat(),
             quality_score=95.5,
-            confidence_score=88.0
+            confidence_score=88.0,
         )
 
         assert data_point.quality_score == 95.5
@@ -66,30 +67,36 @@ class TestMortgageDataGatheringNeuralNetwork:
 
     def test_neural_network_initialization(self):
         """Test neural network initialization"""
-        from datagod.ml.mortgage_data_gathering_nn import MortgageDataGatheringNeuralNetwork
+        from datagod.ml.mortgage_data_gathering_nn import (
+            MortgageDataGatheringNeuralNetwork,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
 
         assert nn is not None
         assert nn.similarity_threshold == 0.7
-        assert 'loan_amount' in nn.patterns
-        assert 'interest_rate' in nn.patterns
+        assert "loan_amount" in nn.patterns
+        assert "interest_rate" in nn.patterns
 
     def test_neural_network_patterns(self):
         """Test that patterns are defined correctly"""
-        from datagod.ml.mortgage_data_gathering_nn import MortgageDataGatheringNeuralNetwork
+        from datagod.ml.mortgage_data_gathering_nn import (
+            MortgageDataGatheringNeuralNetwork,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
 
         # Check that patterns are defined for key fields
-        assert len(nn.patterns['loan_amount']) > 0
-        assert len(nn.patterns['interest_rate']) > 0
-        assert 'loan_term' in nn.patterns
-        assert 'property_value' in nn.patterns
+        assert len(nn.patterns["loan_amount"]) > 0
+        assert len(nn.patterns["interest_rate"]) > 0
+        assert "loan_term" in nn.patterns
+        assert "property_value" in nn.patterns
 
     def test_extract_mortgage_data(self):
         """Test mortgage data extraction"""
-        from datagod.ml.mortgage_data_gathering_nn import MortgageDataGatheringNeuralNetwork
+        from datagod.ml.mortgage_data_gathering_nn import (
+            MortgageDataGatheringNeuralNetwork,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
 
@@ -111,7 +118,10 @@ class TestMortgageDataGatheringNeuralNetwork:
 
     def test_get_data_quality_score(self):
         """Test data quality score calculation"""
-        from datagod.ml.mortgage_data_gathering_nn import MortgageDataGatheringNeuralNetwork, MortgageDataPoint
+        from datagod.ml.mortgage_data_gathering_nn import (
+            MortgageDataGatheringNeuralNetwork,
+            MortgageDataPoint,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
 
@@ -128,7 +138,7 @@ class TestMortgageDataGatheringNeuralNetwork:
             property_value=250000.0,
             status="active",
             data_source="property_records",
-            scraped_at=datetime.now().isoformat()
+            scraped_at=datetime.now().isoformat(),
         )
 
         score = nn.get_data_quality_score(data_point)
@@ -139,7 +149,10 @@ class TestMortgageDataGatheringNeuralNetwork:
 
     def test_validate_mortgage_data(self):
         """Test mortgage data validation"""
-        from datagod.ml.mortgage_data_gathering_nn import MortgageDataGatheringNeuralNetwork, MortgageDataPoint
+        from datagod.ml.mortgage_data_gathering_nn import (
+            MortgageDataGatheringNeuralNetwork,
+            MortgageDataPoint,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
 
@@ -156,7 +169,7 @@ class TestMortgageDataGatheringNeuralNetwork:
             property_value=600000.0,
             status="active",
             data_source="property_records",
-            scraped_at=datetime.now().isoformat()
+            scraped_at=datetime.now().isoformat(),
         )
 
         # validate_mortgage_data takes a single data point and returns bool
@@ -167,7 +180,10 @@ class TestMortgageDataGatheringNeuralNetwork:
 
     def test_enhance_data_quality(self):
         """Test data quality enhancement"""
-        from datagod.ml.mortgage_data_gathering_nn import MortgageDataGatheringNeuralNetwork, MortgageDataPoint
+        from datagod.ml.mortgage_data_gathering_nn import (
+            MortgageDataGatheringNeuralNetwork,
+            MortgageDataPoint,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
 
@@ -185,7 +201,7 @@ class TestMortgageDataGatheringNeuralNetwork:
                 property_value=350000.0,
                 status="active",
                 data_source="property_records",
-                scraped_at=datetime.now().isoformat()
+                scraped_at=datetime.now().isoformat(),
             )
         ]
 
@@ -196,7 +212,10 @@ class TestMortgageDataGatheringNeuralNetwork:
 
     def test_get_data_insights(self):
         """Test data insights generation"""
-        from datagod.ml.mortgage_data_gathering_nn import MortgageDataGatheringNeuralNetwork, MortgageDataPoint
+        from datagod.ml.mortgage_data_gathering_nn import (
+            MortgageDataGatheringNeuralNetwork,
+            MortgageDataPoint,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
 
@@ -214,7 +233,7 @@ class TestMortgageDataGatheringNeuralNetwork:
                 property_value=300000.0,
                 status="active",
                 data_source="property_records",
-                scraped_at=datetime.now().isoformat()
+                scraped_at=datetime.now().isoformat(),
             ),
             MortgageDataPoint(
                 property_id="PROP-INS-2",
@@ -229,8 +248,8 @@ class TestMortgageDataGatheringNeuralNetwork:
                 property_value=500000.0,
                 status="active",
                 data_source="court_records",
-                scraped_at=datetime.now().isoformat()
-            )
+                scraped_at=datetime.now().isoformat(),
+            ),
         ]
 
         insights = nn.get_data_insights(records)
@@ -239,7 +258,10 @@ class TestMortgageDataGatheringNeuralNetwork:
 
     def test_learn_patterns(self):
         """Test pattern learning"""
-        from datagod.ml.mortgage_data_gathering_nn import MortgageDataGatheringNeuralNetwork, MortgageDataPoint
+        from datagod.ml.mortgage_data_gathering_nn import (
+            MortgageDataGatheringNeuralNetwork,
+            MortgageDataPoint,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
 
@@ -257,7 +279,7 @@ class TestMortgageDataGatheringNeuralNetwork:
                 property_value=400000.0,
                 status="active",
                 data_source="property_records",
-                scraped_at=datetime.now().isoformat()
+                scraped_at=datetime.now().isoformat(),
             )
         ]
 
@@ -269,7 +291,9 @@ class TestMortgageDataGatheringNeuralNetwork:
 
     def test_process_mortgage_data(self):
         """Test processing mortgage data"""
-        from datagod.ml.mortgage_data_gathering_nn import MortgageDataGatheringNeuralNetwork
+        from datagod.ml.mortgage_data_gathering_nn import (
+            MortgageDataGatheringNeuralNetwork,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
 
@@ -295,12 +319,14 @@ class TestMortgageDataPatternMatching:
 
     def test_loan_type_patterns(self):
         """Test loan type pattern extraction"""
-        from datagod.ml.mortgage_data_gathering_nn import MortgageDataGatheringNeuralNetwork
+        from datagod.ml.mortgage_data_gathering_nn import (
+            MortgageDataGatheringNeuralNetwork,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
 
         # Check that loan_type_patterns exists
-        assert hasattr(nn, 'loan_type_patterns')
+        assert hasattr(nn, "loan_type_patterns")
 
 
 class TestMortgageDataQuality:
@@ -308,7 +334,10 @@ class TestMortgageDataQuality:
 
     def test_quality_score_for_complete_record(self):
         """Test quality score for a complete record"""
-        from datagod.ml.mortgage_data_gathering_nn import MortgageDataGatheringNeuralNetwork, MortgageDataPoint
+        from datagod.ml.mortgage_data_gathering_nn import (
+            MortgageDataGatheringNeuralNetwork,
+            MortgageDataPoint,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
 
@@ -325,7 +354,7 @@ class TestMortgageDataQuality:
             property_value=600000.0,
             status="active",
             data_source="verified_source",
-            scraped_at=datetime.now().isoformat()
+            scraped_at=datetime.now().isoformat(),
         )
 
         score = nn.get_data_quality_score(complete_record)
@@ -335,7 +364,10 @@ class TestMortgageDataQuality:
 
     def test_quality_score_for_incomplete_record(self):
         """Test quality score for an incomplete record"""
-        from datagod.ml.mortgage_data_gathering_nn import MortgageDataGatheringNeuralNetwork, MortgageDataPoint
+        from datagod.ml.mortgage_data_gathering_nn import (
+            MortgageDataGatheringNeuralNetwork,
+            MortgageDataPoint,
+        )
 
         nn = MortgageDataGatheringNeuralNetwork()
 
@@ -353,7 +385,7 @@ class TestMortgageDataQuality:
             property_value=0.0,  # Invalid
             status="unknown",
             data_source="unknown",
-            scraped_at=datetime.now().isoformat()
+            scraped_at=datetime.now().isoformat(),
         )
 
         score = nn.get_data_quality_score(incomplete_record)

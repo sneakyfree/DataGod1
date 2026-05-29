@@ -2,10 +2,11 @@
 Comprehensive tests for datagod/db_manager.py module (SQLite-based DatabaseManager)
 """
 
-import pytest
-import tempfile
 import os
-from unittest.mock import patch, MagicMock
+import tempfile
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestDatabaseManagerInit:
@@ -14,6 +15,7 @@ class TestDatabaseManagerInit:
     def test_database_manager_import(self):
         """Test DatabaseManager can be imported"""
         from datagod.db_manager import DatabaseManager
+
         assert DatabaseManager is not None
 
     def test_database_manager_default_path(self):
@@ -38,11 +40,11 @@ class TestDatabaseManagerInit:
                 cursor = conn.execute(
                     "SELECT name FROM sqlite_master WHERE type='table'"
                 )
-                tables = [row['name'] for row in cursor.fetchall()]
+                tables = [row["name"] for row in cursor.fetchall()]
 
-            assert 'jurisdictions' in tables
-            assert 'data_sources' in tables
-            assert 'records' in tables
+            assert "jurisdictions" in tables
+            assert "data_sources" in tables
+            assert "records" in tables
 
     def test_database_manager_creates_indexes(self):
         """Test DatabaseManager creates indexes"""
@@ -56,11 +58,11 @@ class TestDatabaseManagerInit:
                 cursor = conn.execute(
                     "SELECT name FROM sqlite_master WHERE type='index'"
                 )
-                indexes = [row['name'] for row in cursor.fetchall()]
+                indexes = [row["name"] for row in cursor.fetchall()]
 
-            assert 'idx_records_jurisdiction' in indexes
-            assert 'idx_records_data_source' in indexes
-            assert 'idx_records_date' in indexes
+            assert "idx_records_jurisdiction" in indexes
+            assert "idx_records_data_source" in indexes
+            assert "idx_records_date" in indexes
 
 
 class TestConnectionManagement:
@@ -81,8 +83,9 @@ class TestConnectionManagement:
 
     def test_get_connection_row_factory(self):
         """Test connection uses Row factory"""
-        from datagod.db_manager import DatabaseManager
         import sqlite3
+
+        from datagod.db_manager import DatabaseManager
 
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = os.path.join(tmpdir, "test.db")
@@ -107,38 +110,27 @@ class TestJurisdictionOperations:
     def test_create_jurisdiction(self, db_manager):
         """Test creating a jurisdiction"""
         jid = db_manager.create_jurisdiction(
-            name="Test County",
-            state="TX",
-            country="USA"
+            name="Test County", state="TX", country="USA"
         )
         assert jid is not None
         assert jid > 0
 
     def test_create_jurisdiction_duplicate(self, db_manager):
         """Test creating duplicate jurisdiction"""
-        jid1 = db_manager.create_jurisdiction(
-            name="Unique County",
-            state="CA"
-        )
-        jid2 = db_manager.create_jurisdiction(
-            name="Unique County",
-            state="CA"
-        )
+        jid1 = db_manager.create_jurisdiction(name="Unique County", state="CA")
+        jid2 = db_manager.create_jurisdiction(name="Unique County", state="CA")
         # Should return existing ID or new ID
         assert jid1 is not None
         assert jid2 is not None
 
     def test_get_jurisdiction(self, db_manager):
         """Test getting jurisdiction by ID"""
-        jid = db_manager.create_jurisdiction(
-            name="Harris County",
-            state="TX"
-        )
+        jid = db_manager.create_jurisdiction(name="Harris County", state="TX")
         result = db_manager.get_jurisdiction(jid)
 
         assert result is not None
-        assert result['name'] == "Harris County"
-        assert result['state'] == "TX"
+        assert result["name"] == "Harris County"
+        assert result["state"] == "TX"
 
     def test_get_jurisdiction_not_found(self, db_manager):
         """Test getting non-existent jurisdiction"""
@@ -147,14 +139,11 @@ class TestJurisdictionOperations:
 
     def test_get_jurisdiction_by_name(self, db_manager):
         """Test getting jurisdiction by name"""
-        db_manager.create_jurisdiction(
-            name="Dallas County",
-            state="TX"
-        )
+        db_manager.create_jurisdiction(name="Dallas County", state="TX")
         result = db_manager.get_jurisdiction_by_name("Dallas County")
 
         assert result is not None
-        assert result['name'] == "Dallas County"
+        assert result["name"] == "Dallas County"
 
     def test_get_jurisdiction_by_name_not_found(self, db_manager):
         """Test getting non-existent jurisdiction by name"""
@@ -170,7 +159,7 @@ class TestJurisdictionOperations:
         results = db_manager.get_all_jurisdictions()
 
         assert len(results) >= 3
-        names = [r['name'] for r in results]
+        names = [r["name"] for r in results]
         assert "County A" in names
         assert "County B" in names
         assert "County C" in names
@@ -198,7 +187,7 @@ class TestDataSourceOperations:
         ds_id = db_manager.create_data_source(
             name="Property API",
             url="https://api.example.com",
-            description="Property data source"
+            description="Property data source",
         )
         assert ds_id is not None
         assert ds_id > 0
@@ -214,7 +203,7 @@ class TestDataSourceOperations:
         with db_manager.get_connection() as conn:
             cursor = conn.execute(
                 "INSERT INTO data_sources (name, url) VALUES (?, ?)",
-                ("Test Source", "https://test.com")
+                ("Test Source", "https://test.com"),
             )
             ds_id = cursor.lastrowid
             conn.commit()
@@ -222,7 +211,7 @@ class TestDataSourceOperations:
         result = db_manager.get_data_source(ds_id)
 
         assert result is not None
-        assert result['name'] == "Test Source"
+        assert result["name"] == "Test Source"
 
     def test_get_data_source_not_found(self, db_manager):
         """Test getting non-existent data source"""
@@ -258,11 +247,10 @@ class TestRecordOperations:
             with manager.get_connection() as conn:
                 conn.execute(
                     "INSERT INTO jurisdictions (name, state) VALUES (?, ?)",
-                    ("Test County", "TX")
+                    ("Test County", "TX"),
                 )
                 conn.execute(
-                    "INSERT INTO data_sources (name) VALUES (?)",
-                    ("Test Source",)
+                    "INSERT INTO data_sources (name) VALUES (?)", ("Test Source",)
                 )
                 conn.commit()
 
@@ -277,7 +265,7 @@ class TestRecordOperations:
             description="A test mortgage record",
             amount=500000.00,
             date="2024-01-15",
-            url="https://example.com/record/1"
+            url="https://example.com/record/1",
         )
         assert record_id is not None
         assert record_id > 0
@@ -285,9 +273,7 @@ class TestRecordOperations:
     def test_create_record_minimal(self, db_manager):
         """Test creating record with minimal fields"""
         record_id = db_manager.create_record(
-            jurisdiction_id=1,
-            data_source_id=1,
-            title="Simple Record"
+            jurisdiction_id=1, data_source_id=1, title="Simple Record"
         )
         assert record_id is not None
 
@@ -297,7 +283,7 @@ class TestRecordOperations:
         with db_manager.get_connection() as conn:
             cursor = conn.execute(
                 "INSERT INTO records (jurisdiction_id, data_source_id, title, amount) VALUES (?, ?, ?, ?)",
-                (1, 1, "Get Test Record", 250000.00)
+                (1, 1, "Get Test Record", 250000.00),
             )
             record_id = cursor.lastrowid
             conn.commit()
@@ -305,8 +291,8 @@ class TestRecordOperations:
         result = db_manager.get_record(record_id)
 
         assert result is not None
-        assert result['title'] == "Get Test Record"
-        assert result['amount'] == 250000.00
+        assert result["title"] == "Get Test Record"
+        assert result["amount"] == 250000.00
 
     def test_get_record_not_found(self, db_manager):
         """Test getting non-existent record"""
@@ -319,11 +305,11 @@ class TestRecordOperations:
         with db_manager.get_connection() as conn:
             conn.execute(
                 "INSERT INTO records (jurisdiction_id, data_source_id, title) VALUES (?, ?, ?)",
-                (1, 1, "Record A")
+                (1, 1, "Record A"),
             )
             conn.execute(
                 "INSERT INTO records (jurisdiction_id, data_source_id, title) VALUES (?, ?, ?)",
-                (1, 1, "Record B")
+                (1, 1, "Record B"),
             )
             conn.commit()
 
@@ -343,11 +329,11 @@ class TestRecordOperations:
         with db_manager.get_connection() as conn:
             conn.execute(
                 "INSERT INTO records (jurisdiction_id, data_source_id, title) VALUES (?, ?, ?)",
-                (1, 1, "Source Record 1")
+                (1, 1, "Source Record 1"),
             )
             conn.execute(
                 "INSERT INTO records (jurisdiction_id, data_source_id, title) VALUES (?, ?, ?)",
-                (1, 1, "Source Record 2")
+                (1, 1, "Source Record 2"),
             )
             conn.commit()
 
@@ -360,7 +346,7 @@ class TestRecordOperations:
         with db_manager.get_connection() as conn:
             conn.execute(
                 "INSERT INTO records (jurisdiction_id, data_source_id, title, description) VALUES (?, ?, ?, ?)",
-                (1, 1, "Mortgage for 123 Main Street", "Residential mortgage")
+                (1, 1, "Mortgage for 123 Main Street", "Residential mortgage"),
             )
             conn.commit()
 
@@ -380,7 +366,7 @@ class TestRecordOperations:
             for i in range(10):
                 conn.execute(
                     "INSERT INTO records (jurisdiction_id, data_source_id, title) VALUES (?, ?, ?)",
-                    (1, 1, f"Searchable Record {i}")
+                    (1, 1, f"Searchable Record {i}"),
                 )
             conn.commit()
 
@@ -391,9 +377,18 @@ class TestRecordOperations:
     def test_get_all_records(self, db_manager):
         """Test getting all records"""
         with db_manager.get_connection() as conn:
-            conn.execute("INSERT INTO records (jurisdiction_id, data_source_id, title) VALUES (?, ?, ?)", (1, 1, "All 1"))
-            conn.execute("INSERT INTO records (jurisdiction_id, data_source_id, title) VALUES (?, ?, ?)", (1, 1, "All 2"))
-            conn.execute("INSERT INTO records (jurisdiction_id, data_source_id, title) VALUES (?, ?, ?)", (1, 1, "All 3"))
+            conn.execute(
+                "INSERT INTO records (jurisdiction_id, data_source_id, title) VALUES (?, ?, ?)",
+                (1, 1, "All 1"),
+            )
+            conn.execute(
+                "INSERT INTO records (jurisdiction_id, data_source_id, title) VALUES (?, ?, ?)",
+                (1, 1, "All 2"),
+            )
+            conn.execute(
+                "INSERT INTO records (jurisdiction_id, data_source_id, title) VALUES (?, ?, ?)",
+                (1, 1, "All 3"),
+            )
             conn.commit()
 
         results = db_manager.get_all_records()
@@ -405,19 +400,23 @@ class TestRecordOperations:
         with db_manager.get_connection() as conn:
             cursor = conn.execute(
                 "INSERT INTO records (jurisdiction_id, data_source_id, title, amount) VALUES (?, ?, ?, ?)",
-                (1, 1, "Original Title", 100000)
+                (1, 1, "Original Title", 100000),
             )
             record_id = cursor.lastrowid
             conn.commit()
 
         # The update_record method exists and can be called
-        result = db_manager.update_record(record_id, {'title': 'Updated Title'})
+        result = db_manager.update_record(record_id, {"title": "Updated Title"})
         # Result may be True or False depending on commit behavior
-        assert result in [True, False] or result is None or hasattr(db_manager, 'update_record')
+        assert (
+            result in [True, False]
+            or result is None
+            or hasattr(db_manager, "update_record")
+        )
 
     def test_update_record_not_found(self, db_manager):
         """Test updating non-existent record"""
-        success = db_manager.update_record(99999, {'title': 'New Title'})
+        success = db_manager.update_record(99999, {"title": "New Title"})
         assert success is False
 
     def test_delete_record(self, db_manager):
@@ -425,7 +424,7 @@ class TestRecordOperations:
         with db_manager.get_connection() as conn:
             cursor = conn.execute(
                 "INSERT INTO records (jurisdiction_id, data_source_id, title) VALUES (?, ?, ?)",
-                (1, 1, "To Delete")
+                (1, 1, "To Delete"),
             )
             record_id = cursor.lastrowid
             conn.commit()
@@ -433,7 +432,11 @@ class TestRecordOperations:
         # The delete_record method exists and can be called
         result = db_manager.delete_record(record_id)
         # Result may be True or False depending on commit behavior
-        assert result in [True, False] or result is None or hasattr(db_manager, 'delete_record')
+        assert (
+            result in [True, False]
+            or result is None
+            or hasattr(db_manager, "delete_record")
+        )
 
     def test_delete_record_not_found(self, db_manager):
         """Test deleting non-existent record"""
@@ -457,16 +460,15 @@ class TestStatistics:
             with manager.get_connection() as conn:
                 conn.execute(
                     "INSERT INTO jurisdictions (name, state) VALUES (?, ?)",
-                    ("Stats County", "TX")
+                    ("Stats County", "TX"),
                 )
                 conn.execute(
-                    "INSERT INTO data_sources (name) VALUES (?)",
-                    ("Stats Source",)
+                    "INSERT INTO data_sources (name) VALUES (?)", ("Stats Source",)
                 )
                 for i in range(5):
                     conn.execute(
                         "INSERT INTO records (jurisdiction_id, data_source_id, title, amount) VALUES (?, ?, ?, ?)",
-                        (1, 1, f"Stats Record {i}", 100000 * (i + 1))
+                        (1, 1, f"Stats Record {i}", 100000 * (i + 1)),
                     )
                 conn.commit()
 
@@ -477,15 +479,15 @@ class TestStatistics:
         stats = db_manager.get_statistics()
 
         assert stats is not None
-        assert 'jurisdiction_count' in stats
-        assert 'data_source_count' in stats
-        assert 'record_count' in stats
-        assert 'recent_records' in stats
+        assert "jurisdiction_count" in stats
+        assert "data_source_count" in stats
+        assert "record_count" in stats
+        assert "recent_records" in stats
 
-        assert stats['jurisdiction_count'] >= 1
-        assert stats['data_source_count'] >= 1
-        assert stats['record_count'] >= 5
-        assert len(stats['recent_records']) <= 5
+        assert stats["jurisdiction_count"] >= 1
+        assert stats["data_source_count"] >= 1
+        assert stats["record_count"] >= 5
+        assert len(stats["recent_records"]) <= 5
 
     def test_get_statistics_empty_db(self):
         """Test statistics on empty database"""
@@ -497,10 +499,10 @@ class TestStatistics:
 
             stats = manager.get_statistics()
 
-            assert stats['jurisdiction_count'] == 0
-            assert stats['data_source_count'] == 0
-            assert stats['record_count'] == 0
-            assert stats['recent_records'] == []
+            assert stats["jurisdiction_count"] == 0
+            assert stats["data_source_count"] == 0
+            assert stats["record_count"] == 0
+            assert stats["recent_records"] == []
 
 
 class TestGlobalInstance:
@@ -509,11 +511,13 @@ class TestGlobalInstance:
     def test_global_instance_exists(self):
         """Test global db_manager instance exists"""
         from datagod.db_manager import db_manager
+
         assert db_manager is not None
 
     def test_global_instance_is_database_manager(self):
         """Test global instance is DatabaseManager"""
-        from datagod.db_manager import db_manager, DatabaseManager
+        from datagod.db_manager import DatabaseManager, db_manager
+
         assert isinstance(db_manager, DatabaseManager)
 
 

@@ -29,18 +29,18 @@ from bs4 import BeautifulSoup
 
 from .base import (
     CountyTreasurerBase,
-    TaxStatus,
     LienStatus,
-    TaxSaleType,
     PaymentMethod,
-    TaxBillItem,
-    TaxBill,
-    TaxPayment,
-    TaxLien,
-    TaxSaleProperty,
     PropertyTaxRecord,
+    TaxBill,
+    TaxBillItem,
+    TaxLien,
+    TaxPayment,
+    TaxSaleProperty,
+    TaxSaleType,
     TaxSearchCriteria,
     TaxSearchResult,
+    TaxStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -73,20 +73,16 @@ class KingCountyTreasurer(CountyTreasurerBase):
     def _format_parcel(self, parcel: str) -> str:
         """Format parcel number to 10-digit format."""
         import re
-        digits = re.sub(r'[^0-9]', '', parcel)
+
+        digits = re.sub(r"[^0-9]", "", parcel)
         return digits.zfill(10)[:10]
 
-    async def get_tax_record(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyTaxRecord]:
+    async def get_tax_record(self, parcel_id: str) -> Optional[PropertyTaxRecord]:
         """Get property tax record by parcel number."""
         formatted_parcel = self._format_parcel(parcel_id)
 
         try:
-            data = await self._fetch_json(
-                f"{self.DETAIL_URL}/{formatted_parcel}"
-            )
+            data = await self._fetch_json(f"{self.DETAIL_URL}/{formatted_parcel}")
         except Exception as e:
             logger.error(f"King County tax record lookup failed: {e}")
             return None
@@ -121,7 +117,9 @@ class KingCountyTreasurer(CountyTreasurerBase):
         # Parse exemptions (Washington has senior/disabled, etc.)
         for exemption in data.get("exemptions", []):
             record.exemptions.append(exemption.get("type", ""))
-        record.exemption_amount = self._parse_decimal(str(data.get("exemptionAmount", "")))
+        record.exemption_amount = self._parse_decimal(
+            str(data.get("exemptionAmount", ""))
+        )
 
         # Parse tax bills
         for bill_data in data.get("taxBills", []):
@@ -131,7 +129,9 @@ class KingCountyTreasurer(CountyTreasurerBase):
                 parcel_id=formatted_parcel,
                 property_address=data.get("propertyAddress"),
                 owner_name=data.get("ownerName"),
-                assessed_value=self._parse_decimal(str(bill_data.get("assessedValue", ""))),
+                assessed_value=self._parse_decimal(
+                    str(bill_data.get("assessedValue", ""))
+                ),
                 net_tax=self._parse_decimal(str(bill_data.get("baseTax", ""))),
                 penalties=self._parse_decimal(str(bill_data.get("penalties", ""))),
                 interest=self._parse_decimal(str(bill_data.get("interest", ""))),
@@ -149,7 +149,8 @@ class KingCountyTreasurer(CountyTreasurerBase):
             for item in bill_data.get("lineItems", []):
                 line_item = TaxBillItem(
                     description=item.get("district", ""),
-                    amount=self._parse_decimal(str(item.get("amount", ""))) or Decimal(0),
+                    amount=self._parse_decimal(str(item.get("amount", "")))
+                    or Decimal(0),
                     taxing_authority=item.get("district"),
                     tax_rate=self._parse_decimal(str(item.get("rate", ""))),
                     raw_data=item,
@@ -165,7 +166,8 @@ class KingCountyTreasurer(CountyTreasurerBase):
                 parcel_id=formatted_parcel,
                 tax_year=payment_data.get("taxYear", 0),
                 payment_date=self._parse_date(payment_data.get("paymentDate", "")),
-                payment_amount=self._parse_decimal(str(payment_data.get("amount", ""))) or Decimal(0),
+                payment_amount=self._parse_decimal(str(payment_data.get("amount", "")))
+                or Decimal(0),
                 receipt_number=payment_data.get("receiptNumber"),
                 installment_number=payment_data.get("installment"),
                 raw_data=payment_data,
@@ -179,10 +181,11 @@ class KingCountyTreasurer(CountyTreasurerBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> TaxSearchResult:
         """Search for tax records by property address."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -214,7 +217,9 @@ class KingCountyTreasurer(CountyTreasurerBase):
                 county=self.COUNTY_NAME,
                 owner_name=item.get("ownerName"),
                 assessed_value=self._parse_decimal(str(item.get("assessedValue", ""))),
-                current_balance_due=self._parse_decimal(str(item.get("balanceDue", ""))),
+                current_balance_due=self._parse_decimal(
+                    str(item.get("balanceDue", ""))
+                ),
                 tax_status=self._parse_tax_status(item.get("status", "")),
                 source_system=self.SYSTEM_NAME,
             )
@@ -232,12 +237,11 @@ class KingCountyTreasurer(CountyTreasurerBase):
         )
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> TaxSearchResult:
         """Search for tax records by owner name."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -265,7 +269,9 @@ class KingCountyTreasurer(CountyTreasurerBase):
                 county=self.COUNTY_NAME,
                 owner_name=item.get("ownerName"),
                 assessed_value=self._parse_decimal(str(item.get("assessedValue", ""))),
-                current_balance_due=self._parse_decimal(str(item.get("balanceDue", ""))),
+                current_balance_due=self._parse_decimal(
+                    str(item.get("balanceDue", ""))
+                ),
                 tax_status=self._parse_tax_status(item.get("status", "")),
                 source_system=self.SYSTEM_NAME,
             )
@@ -285,32 +291,38 @@ class KingCountyTreasurer(CountyTreasurerBase):
 
 # Synchronous convenience functions
 
+
 def get_king_county_tax_record(parcel_id: str) -> Optional[PropertyTaxRecord]:
     """Get King County property tax record by parcel number."""
+
     async def _get():
         async with KingCountyTreasurer() as treasurer:
             return await treasurer.get_tax_record(parcel_id)
+
     return asyncio.run(_get())
 
 
 def search_king_county_tax_by_address(
-    address: str,
-    city: Optional[str] = None,
-    max_results: int = 100
+    address: str, city: Optional[str] = None, max_results: int = 100
 ) -> TaxSearchResult:
     """Search King County tax records by address."""
+
     async def _search():
         async with KingCountyTreasurer() as treasurer:
-            return await treasurer.search_by_address(address, city=city, max_results=max_results)
+            return await treasurer.search_by_address(
+                address, city=city, max_results=max_results
+            )
+
     return asyncio.run(_search())
 
 
 def search_king_county_tax_by_owner(
-    owner_name: str,
-    max_results: int = 100
+    owner_name: str, max_results: int = 100
 ) -> TaxSearchResult:
     """Search King County tax records by owner name."""
+
     async def _search():
         async with KingCountyTreasurer() as treasurer:
             return await treasurer.search_by_owner(owner_name, max_results=max_results)
+
     return asyncio.run(_search())

@@ -2,13 +2,15 @@
 Tests for datagod/scrapers/web_scraper.py
 Tests that actually import and exercise the module for real coverage.
 """
-import pytest
-import os
+
 import json
+import os
 import tempfile
 import time
-from unittest.mock import patch, MagicMock, Mock
 from datetime import datetime
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 
 class TestScraperConfig:
@@ -17,6 +19,7 @@ class TestScraperConfig:
     def test_scraper_config_import(self):
         """Test that ScraperConfig can be imported"""
         from datagod.scrapers.web_scraper import ScraperConfig
+
         assert ScraperConfig is not None
 
     def test_scraper_config_creation(self):
@@ -27,7 +30,7 @@ class TestScraperConfig:
             name="test_scraper",
             base_url="https://example.com",
             jurisdiction="Test County, XX",
-            data_type="property"
+            data_type="property",
         )
 
         assert config.name == "test_scraper"
@@ -43,7 +46,7 @@ class TestScraperConfig:
             name="test",
             base_url="https://test.com",
             jurisdiction="Test",
-            data_type="property"
+            data_type="property",
         )
 
         assert config.rate_limit == 5
@@ -67,7 +70,7 @@ class TestScraperConfig:
             timeout=60,
             retry_count=5,
             retry_delay=10,
-            user_agent="CustomBot/1.0"
+            user_agent="CustomBot/1.0",
         )
 
         assert config.rate_limit == 10
@@ -84,13 +87,14 @@ class TestBaseWebScraper:
     def get_test_config(self):
         """Helper to create test config"""
         from datagod.scrapers.web_scraper import ScraperConfig
+
         return ScraperConfig(
             name="test_scraper",
             base_url="https://example.com",
             jurisdiction="Test County",
             data_type="property",
             rate_limit=5,
-            rate_limit_period=1  # Short for testing
+            rate_limit_period=1,  # Short for testing
         )
 
     def test_base_web_scraper_init(self):
@@ -138,7 +142,7 @@ class TestBaseWebScraper:
             "description": "A test record",
             "amount": 1000.0,
             "date": "2024-01-01",
-            "url": "https://example.com/123"
+            "url": "https://example.com/123",
         }
 
         normalized = scraper.normalize_record(record)
@@ -179,13 +183,14 @@ class TestRateLimiting:
     def get_test_config(self, rate_limit=5, period=60):
         """Helper to create test config"""
         from datagod.scrapers.web_scraper import ScraperConfig
+
         return ScraperConfig(
             name="test",
             base_url="https://test.com",
             jurisdiction="Test",
             data_type="property",
             rate_limit=rate_limit,
-            rate_limit_period=period
+            rate_limit_period=period,
         )
 
     def test_check_rate_limit_first_request(self):
@@ -235,6 +240,7 @@ class TestMakeRequest:
     def get_test_config(self):
         """Helper to create test config"""
         from datagod.scrapers.web_scraper import ScraperConfig
+
         return ScraperConfig(
             name="test",
             base_url="https://test.com",
@@ -243,7 +249,7 @@ class TestMakeRequest:
             rate_limit=100,
             rate_limit_period=60,
             retry_count=2,
-            retry_delay=0.1
+            retry_delay=0.1,
         )
 
     def test_make_request_success(self):
@@ -257,7 +263,7 @@ class TestMakeRequest:
         mock_response.status_code = 200
         mock_response.text = "<html>Success</html>"
 
-        with patch.object(scraper.session, 'get', return_value=mock_response):
+        with patch.object(scraper.session, "get", return_value=mock_response):
             result = scraper._make_request("https://example.com")
 
         assert result == "<html>Success</html>"
@@ -273,7 +279,7 @@ class TestMakeRequest:
         mock_response.status_code = 404
         mock_response.text = "Not Found"
 
-        with patch.object(scraper.session, 'get', return_value=mock_response):
+        with patch.object(scraper.session, "get", return_value=mock_response):
             result = scraper._make_request("https://example.com/notfound")
 
         assert result is None
@@ -294,20 +300,25 @@ class TestMakeRequest:
         mock_response_200.text = "Success"
 
         # First returns 429, second returns 200
-        with patch.object(scraper.session, 'get', side_effect=[mock_response_429, mock_response_200]):
+        with patch.object(
+            scraper.session, "get", side_effect=[mock_response_429, mock_response_200]
+        ):
             result = scraper._make_request("https://example.com")
 
         assert result == "Success"
 
     def test_make_request_exception(self):
         """Test request exception handling"""
-        from datagod.scrapers.web_scraper import BaseWebScraper
         import requests
+
+        from datagod.scrapers.web_scraper import BaseWebScraper
 
         config = self.get_test_config()
         scraper = BaseWebScraper(config)
 
-        with patch.object(scraper.session, 'get', side_effect=requests.exceptions.Timeout("Timeout")):
+        with patch.object(
+            scraper.session, "get", side_effect=requests.exceptions.Timeout("Timeout")
+        ):
             result = scraper._make_request("https://example.com")
 
         assert result is None
@@ -319,24 +330,26 @@ class TestGetSoup:
     def get_test_config(self):
         """Helper to create test config"""
         from datagod.scrapers.web_scraper import ScraperConfig
+
         return ScraperConfig(
             name="test",
             base_url="https://test.com",
             jurisdiction="Test",
-            data_type="property"
+            data_type="property",
         )
 
     def test_get_soup_success(self):
         """Test getting BeautifulSoup from successful request"""
-        from datagod.scrapers.web_scraper import BaseWebScraper
         from bs4 import BeautifulSoup
+
+        from datagod.scrapers.web_scraper import BaseWebScraper
 
         config = self.get_test_config()
         scraper = BaseWebScraper(config)
 
         html = "<html><body><h1>Test</h1></body></html>"
 
-        with patch.object(scraper, '_make_request', return_value=html):
+        with patch.object(scraper, "_make_request", return_value=html):
             soup = scraper._get_soup("https://example.com")
 
         assert soup is not None
@@ -350,7 +363,7 @@ class TestGetSoup:
         config = self.get_test_config()
         scraper = BaseWebScraper(config)
 
-        with patch.object(scraper, '_make_request', return_value=None):
+        with patch.object(scraper, "_make_request", return_value=None):
             soup = scraper._get_soup("https://example.com")
 
         assert soup is None
@@ -363,24 +376,28 @@ class TestWebScraperManager:
         """Test manager initialization"""
         from datagod.scrapers.web_scraper import WebScraperManager
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = WebScraperManager()
 
         assert manager.scrapers == {}
-        assert manager.base_dir == 'datagod/scrapers/data'
+        assert manager.base_dir == "datagod/scrapers/data"
 
     def test_add_scraper(self):
         """Test adding a scraper"""
-        from datagod.scrapers.web_scraper import WebScraperManager, BaseWebScraper, ScraperConfig
+        from datagod.scrapers.web_scraper import (
+            BaseWebScraper,
+            ScraperConfig,
+            WebScraperManager,
+        )
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = WebScraperManager()
 
         config = ScraperConfig(
             name="test",
             base_url="https://test.com",
             jurisdiction="Test",
-            data_type="property"
+            data_type="property",
         )
         scraper = BaseWebScraper(config)
 
@@ -391,16 +408,20 @@ class TestWebScraperManager:
 
     def test_get_scraper_exists(self):
         """Test getting existing scraper"""
-        from datagod.scrapers.web_scraper import WebScraperManager, BaseWebScraper, ScraperConfig
+        from datagod.scrapers.web_scraper import (
+            BaseWebScraper,
+            ScraperConfig,
+            WebScraperManager,
+        )
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = WebScraperManager()
 
         config = ScraperConfig(
             name="test",
             base_url="https://test.com",
             jurisdiction="Test",
-            data_type="property"
+            data_type="property",
         )
         scraper = BaseWebScraper(config)
         manager.add_scraper("my_scraper", scraper)
@@ -412,7 +433,7 @@ class TestWebScraperManager:
         """Test getting non-existent scraper"""
         from datagod.scrapers.web_scraper import WebScraperManager
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = WebScraperManager()
 
         result = manager.get_scraper("nonexistent")
@@ -425,6 +446,7 @@ class TestMockWebScraper:
     def test_mock_web_scraper_import(self):
         """Test MockWebScraper can be imported"""
         from datagod.scrapers.web_scraper import MockWebScraper
+
         assert MockWebScraper is not None
 
     def test_mock_scraper_scrape(self):
@@ -435,7 +457,7 @@ class TestMockWebScraper:
             name="mock",
             base_url="https://mock.com",
             jurisdiction="Mock",
-            data_type="property"
+            data_type="property",
         )
 
         scraper = MockWebScraper(config)
@@ -455,17 +477,21 @@ class TestCaliforniaPropertyScraper:
     def test_california_scraper_import(self):
         """Test CaliforniaPropertyScraper can be imported"""
         from datagod.scrapers.web_scraper import CaliforniaPropertyScraper
+
         assert CaliforniaPropertyScraper is not None
 
     def test_california_scraper_scrape(self):
         """Test California scraper scraping"""
-        from datagod.scrapers.web_scraper import CaliforniaPropertyScraper, ScraperConfig
+        from datagod.scrapers.web_scraper import (
+            CaliforniaPropertyScraper,
+            ScraperConfig,
+        )
 
         config = ScraperConfig(
             name="california",
             base_url="https://ca.gov",
             jurisdiction="Los Angeles County, CA",
-            data_type="property"
+            data_type="property",
         )
 
         scraper = CaliforniaPropertyScraper(config)
@@ -479,13 +505,16 @@ class TestCaliforniaPropertyScraper:
 
     def test_california_normalize_record(self):
         """Test California record normalization"""
-        from datagod.scrapers.web_scraper import CaliforniaPropertyScraper, ScraperConfig
+        from datagod.scrapers.web_scraper import (
+            CaliforniaPropertyScraper,
+            ScraperConfig,
+        )
 
         config = ScraperConfig(
             name="california",
             base_url="https://ca.gov",
             jurisdiction="Los Angeles County, CA",
-            data_type="property"
+            data_type="property",
         )
 
         scraper = CaliforniaPropertyScraper(config)
@@ -496,14 +525,16 @@ class TestCaliforniaPropertyScraper:
             "bedrooms": 3,
             "bathrooms": 2,
             "square_feet": 2000,
-            "year_built": 2010
+            "year_built": 2010,
         }
 
         normalized = scraper.normalize_record(record)
 
         assert "additional_data" in normalized
         assert normalized["additional_data"]["owner"] == "John Doe"
-        assert normalized["additional_data"]["property_type"] == "Single Family Residence"
+        assert (
+            normalized["additional_data"]["property_type"] == "Single Family Residence"
+        )
 
 
 class TestTexasPropertyScraper:
@@ -512,17 +543,18 @@ class TestTexasPropertyScraper:
     def test_texas_scraper_import(self):
         """Test TexasPropertyScraper can be imported"""
         from datagod.scrapers.web_scraper import TexasPropertyScraper
+
         assert TexasPropertyScraper is not None
 
     def test_texas_scraper_scrape(self):
         """Test Texas scraper scraping"""
-        from datagod.scrapers.web_scraper import TexasPropertyScraper, ScraperConfig
+        from datagod.scrapers.web_scraper import ScraperConfig, TexasPropertyScraper
 
         config = ScraperConfig(
             name="texas",
             base_url="https://tx.gov",
             jurisdiction="Harris County, TX",
-            data_type="property"
+            data_type="property",
         )
 
         scraper = TexasPropertyScraper(config)
@@ -533,13 +565,13 @@ class TestTexasPropertyScraper:
 
     def test_texas_normalize_record(self):
         """Test Texas record normalization"""
-        from datagod.scrapers.web_scraper import TexasPropertyScraper, ScraperConfig
+        from datagod.scrapers.web_scraper import ScraperConfig, TexasPropertyScraper
 
         config = ScraperConfig(
             name="texas",
             base_url="https://tx.gov",
             jurisdiction="Harris County, TX",
-            data_type="property"
+            data_type="property",
         )
 
         scraper = TexasPropertyScraper(config)
@@ -550,7 +582,7 @@ class TestTexasPropertyScraper:
             "bedrooms": 2,
             "bathrooms": 1,
             "square_feet": 1500,
-            "year_built": 2015
+            "year_built": 2015,
         }
 
         normalized = scraper.normalize_record(record)
@@ -564,6 +596,7 @@ class TestFloridaPropertyScraper:
     def test_florida_scraper_import(self):
         """Test FloridaPropertyScraper can be imported"""
         from datagod.scrapers.web_scraper import FloridaPropertyScraper
+
         assert FloridaPropertyScraper is not None
 
     def test_florida_scraper_scrape(self):
@@ -574,7 +607,7 @@ class TestFloridaPropertyScraper:
             name="florida",
             base_url="https://fl.gov",
             jurisdiction="Miami-Dade County, FL",
-            data_type="property"
+            data_type="property",
         )
 
         scraper = FloridaPropertyScraper(config)
@@ -590,7 +623,7 @@ class TestFloridaPropertyScraper:
             name="florida",
             base_url="https://fl.gov",
             jurisdiction="Miami-Dade County, FL",
-            data_type="property"
+            data_type="property",
         )
 
         scraper = FloridaPropertyScraper(config)
@@ -601,7 +634,7 @@ class TestFloridaPropertyScraper:
             "bedrooms": 4,
             "bathrooms": 3,
             "square_feet": 2500,
-            "year_built": 2018
+            "year_built": 2018,
         }
 
         normalized = scraper.normalize_record(record)
@@ -614,16 +647,20 @@ class TestScraperManagerScrapeData:
 
     def test_scrape_data_success(self):
         """Test successful data scraping"""
-        from datagod.scrapers.web_scraper import WebScraperManager, MockWebScraper, ScraperConfig
+        from datagod.scrapers.web_scraper import (
+            MockWebScraper,
+            ScraperConfig,
+            WebScraperManager,
+        )
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = WebScraperManager()
 
         config = ScraperConfig(
             name="mock",
             base_url="https://mock.com",
             jurisdiction="Mock",
-            data_type="property"
+            data_type="property",
         )
         scraper = MockWebScraper(config)
         manager.add_scraper("mock", scraper)
@@ -638,7 +675,7 @@ class TestScraperManagerScrapeData:
         """Test scraping from non-existent scraper"""
         from datagod.scrapers.web_scraper import WebScraperManager
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = WebScraperManager()
 
         data = manager.scrape_data("nonexistent")
@@ -646,16 +683,20 @@ class TestScraperManagerScrapeData:
 
     def test_scrape_data_exception(self):
         """Test scraping when exception occurs"""
-        from datagod.scrapers.web_scraper import WebScraperManager, BaseWebScraper, ScraperConfig
+        from datagod.scrapers.web_scraper import (
+            BaseWebScraper,
+            ScraperConfig,
+            WebScraperManager,
+        )
 
-        with patch('os.makedirs'):
+        with patch("os.makedirs"):
             manager = WebScraperManager()
 
         config = ScraperConfig(
             name="error",
             base_url="https://error.com",
             jurisdiction="Error",
-            data_type="property"
+            data_type="property",
         )
 
         # Create scraper that raises exception
@@ -676,7 +717,7 @@ class TestScraperManagerSaveData:
         from datagod.scrapers.web_scraper import WebScraperManager
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch('os.makedirs'):
+            with patch("os.makedirs"):
                 manager = WebScraperManager()
                 manager.base_dir = tmpdir
 
@@ -685,7 +726,7 @@ class TestScraperManagerSaveData:
 
             assert os.path.exists(filepath)
 
-            with open(filepath, 'r') as f:
+            with open(filepath, "r") as f:
                 saved_data = json.load(f)
 
             assert saved_data == data
@@ -695,7 +736,7 @@ class TestScraperManagerSaveData:
         from datagod.scrapers.web_scraper import WebScraperManager
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch('os.makedirs'):
+            with patch("os.makedirs"):
                 manager = WebScraperManager()
                 manager.base_dir = tmpdir
 
@@ -712,7 +753,8 @@ class TestLogger:
     def test_logger_exists(self):
         """Test logger is configured"""
         from datagod.scrapers import web_scraper
-        assert hasattr(web_scraper, 'logger')
+
+        assert hasattr(web_scraper, "logger")
 
 
 class TestMainFunction:
@@ -722,7 +764,7 @@ class TestMainFunction:
         """Test main function executes"""
         from datagod.scrapers.web_scraper import main
 
-        with patch('os.makedirs'):
-            with patch('builtins.print'):
-                with patch('builtins.open', MagicMock()):
+        with patch("os.makedirs"):
+            with patch("builtins.print"):
+                with patch("builtins.open", MagicMock()):
                     main()

@@ -8,14 +8,14 @@ import hashlib
 import json
 import logging
 import re
+import threading
 import time
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from difflib import SequenceMatcher
-from typing import Dict, List, Any, Optional, Set, Tuple, Callable
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DuplicateGroup:
     """Represents a group of duplicate records"""
+
     group_id: str
     canonical_record: Dict[str, Any]
     duplicate_records: List[Dict[str, Any]] = field(default_factory=list)
@@ -41,20 +42,21 @@ class DuplicateGroup:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'group_id': self.group_id,
-            'canonical_record': self.canonical_record,
-            'duplicate_records': self.duplicate_records,
-            'confidence_score': self.confidence_score,
-            'merge_strategy': self.merge_strategy,
-            'total_records': self.total_records,
-            'created_at': self.created_at.isoformat(),
-            'last_updated': self.last_updated.isoformat()
+            "group_id": self.group_id,
+            "canonical_record": self.canonical_record,
+            "duplicate_records": self.duplicate_records,
+            "confidence_score": self.confidence_score,
+            "merge_strategy": self.merge_strategy,
+            "total_records": self.total_records,
+            "created_at": self.created_at.isoformat(),
+            "last_updated": self.last_updated.isoformat(),
         }
 
 
 @dataclass
 class DeduplicationMetrics:
     """Metrics for deduplication operations"""
+
     total_records_processed: int = 0
     duplicates_found: int = 0
     duplicate_groups_created: int = 0
@@ -68,19 +70,19 @@ class DeduplicationMetrics:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'total_records_processed': self.total_records_processed,
-            'duplicates_found': self.duplicates_found,
-            'duplicate_groups_created': self.duplicate_groups_created,
-            'records_merged': self.records_merged,
-            'records_deleted': self.records_deleted,
-            'processing_time_seconds': self.processing_time_seconds,
-            'similarity_threshold': self.similarity_threshold,
-            'algorithm_used': self.algorithm_used,
-            'deduplication_rate': (
+            "total_records_processed": self.total_records_processed,
+            "duplicates_found": self.duplicates_found,
+            "duplicate_groups_created": self.duplicate_groups_created,
+            "records_merged": self.records_merged,
+            "records_deleted": self.records_deleted,
+            "processing_time_seconds": self.processing_time_seconds,
+            "similarity_threshold": self.similarity_threshold,
+            "algorithm_used": self.algorithm_used,
+            "deduplication_rate": (
                 self.duplicates_found / max(1, self.total_records_processed) * 100
             ),
-            'start_time': self.start_time.isoformat() if self.start_time else None,
-            'end_time': self.end_time.isoformat() if self.end_time else None
+            "start_time": self.start_time.isoformat() if self.start_time else None,
+            "end_time": self.end_time.isoformat() if self.end_time else None,
         }
 
 
@@ -90,17 +92,32 @@ class DataNormalizer:
     def __init__(self):
         # Common abbreviations and their expansions
         self.name_abbreviations = {
-            'jr': 'junior', 'sr': 'senior', 'dr': 'doctor', 'mr': 'mister',
-            'mrs': 'misses', 'ms': 'miss', 'inc': 'incorporated',
-            'corp': 'corporation', 'llc': 'limited liability company',
-            'ltd': 'limited', 'co': 'company', 'assn': 'association'
+            "jr": "junior",
+            "sr": "senior",
+            "dr": "doctor",
+            "mr": "mister",
+            "mrs": "misses",
+            "ms": "miss",
+            "inc": "incorporated",
+            "corp": "corporation",
+            "llc": "limited liability company",
+            "ltd": "limited",
+            "co": "company",
+            "assn": "association",
         }
 
         # Street address abbreviations
         self.street_abbreviations = {
-            'st': 'street', 'ave': 'avenue', 'blvd': 'boulevard',
-            'rd': 'road', 'ln': 'lane', 'dr': 'drive', 'ct': 'court',
-            'pl': 'place', 'sq': 'square', 'cir': 'circle'
+            "st": "street",
+            "ave": "avenue",
+            "blvd": "boulevard",
+            "rd": "road",
+            "ln": "lane",
+            "dr": "drive",
+            "ct": "court",
+            "pl": "place",
+            "sq": "square",
+            "cir": "circle",
         }
 
     def normalize_text(self, text: str) -> str:
@@ -112,10 +129,10 @@ class DataNormalizer:
         normalized = text.lower().strip()
 
         # Remove extra whitespace
-        normalized = re.sub(r'\s+', ' ', normalized)
+        normalized = re.sub(r"\s+", " ", normalized)
 
         # Remove punctuation except for important separators
-        normalized = re.sub(r'[^\w\s]', '', normalized)
+        normalized = re.sub(r"[^\w\s]", "", normalized)
 
         # Expand common abbreviations
         words = normalized.split()
@@ -131,7 +148,7 @@ class DataNormalizer:
             else:
                 expanded_words.append(word)
 
-        return ' '.join(expanded_words)
+        return " ".join(expanded_words)
 
     def normalize_address(self, address: str) -> str:
         """Normalize address for comparison"""
@@ -143,11 +160,11 @@ class DataNormalizer:
 
         # Standardize common address patterns
         # Remove unit/apt numbers for matching
-        normalized = re.sub(r'\b(apt|apartment|unit|suite)\s*\w+\b', '', normalized)
-        normalized = re.sub(r'#\w+', '', normalized)
+        normalized = re.sub(r"\b(apt|apartment|unit|suite)\s*\w+\b", "", normalized)
+        normalized = re.sub(r"#\w+", "", normalized)
 
         # Normalize street numbers
-        normalized = re.sub(r'\b(\d+)(?:st|nd|rd|th)\b', r'\1', normalized)
+        normalized = re.sub(r"\b(\d+)(?:st|nd|rd|th)\b", r"\1", normalized)
 
         return normalized.strip()
 
@@ -159,11 +176,11 @@ class DataNormalizer:
         normalized = self.normalize_text(name)
 
         # Remove common suffixes for matching
-        suffixes = ['jr', 'sr', 'ii', 'iii', 'iv', 'v', 'phd', 'md', 'esq']
+        suffixes = ["jr", "sr", "ii", "iii", "iv", "v", "phd", "md", "esq"]
         words = normalized.split()
         filtered_words = [w for w in words if w not in suffixes]
 
-        return ' '.join(filtered_words)
+        return " ".join(filtered_words)
 
     def normalize_amount(self, amount: Any) -> Optional[float]:
         """Normalize monetary amounts"""
@@ -172,7 +189,7 @@ class DataNormalizer:
 
         if isinstance(amount, str):
             # Remove currency symbols and commas
-            clean = re.sub(r'[$,]', '', amount.strip())
+            clean = re.sub(r"[$,]", "", amount.strip())
             try:
                 return float(clean)
             except ValueError:
@@ -189,8 +206,12 @@ class DataNormalizer:
 
         # Try different date formats
         formats = [
-            '%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y',
-            '%B %d, %Y', '%b %d, %Y', '%Y/%m/%d'
+            "%Y-%m-%d",
+            "%m/%d/%Y",
+            "%d/%m/%Y",
+            "%B %d, %Y",
+            "%b %d, %Y",
+            "%Y/%m/%d",
         ]
 
         for fmt in formats:
@@ -209,11 +230,11 @@ class DataNormalizer:
         for field in fields:
             value = record.get(field)
             if value is not None:
-                if field in ['address', 'property_address']:
+                if field in ["address", "property_address"]:
                     normalized = self.normalize_address(str(value))
-                elif field in ['name', 'owner_name', 'borrower_name', 'company_name']:
+                elif field in ["name", "owner_name", "borrower_name", "company_name"]:
                     normalized = self.normalize_name(str(value))
-                elif field in ['amount', 'loan_amount', 'sale_amount']:
+                elif field in ["amount", "loan_amount", "sale_amount"]:
                     normalized = str(self.normalize_amount(value))
                 else:
                     normalized = self.normalize_text(str(value))
@@ -221,7 +242,7 @@ class DataNormalizer:
                 if normalized:
                     key_parts.append(normalized)
 
-        return '|'.join(key_parts)
+        return "|".join(key_parts)
 
 
 class SimilarityScorer:
@@ -230,8 +251,13 @@ class SimilarityScorer:
     def __init__(self):
         self.normalizer = DataNormalizer()
 
-    def calculate_similarity(self, record1: Dict[str, Any], record2: Dict[str, Any],
-                           fields: List[str], weights: Optional[Dict[str, float]] = None) -> float:
+    def calculate_similarity(
+        self,
+        record1: Dict[str, Any],
+        record2: Dict[str, Any],
+        fields: List[str],
+        weights: Optional[Dict[str, float]] = None,
+    ) -> float:
         """Calculate overall similarity score between two records"""
         if not weights:
             weights = {field: 1.0 / len(fields) for field in fields}
@@ -241,7 +267,9 @@ class SimilarityScorer:
 
         for field in fields:
             weight = weights.get(field, 1.0)
-            score = self._field_similarity(record1.get(field), record2.get(field), field)
+            score = self._field_similarity(
+                record1.get(field), record2.get(field), field
+            )
             total_score += score * weight
             total_weight += weight
 
@@ -264,13 +292,13 @@ class SimilarityScorer:
             return 0.0
 
         # Field-specific similarity calculations
-        if field_name in ['amount', 'loan_amount', 'sale_amount']:
+        if field_name in ["amount", "loan_amount", "sale_amount"]:
             return self._amount_similarity(str1, str2)
-        elif field_name in ['date', 'filing_date', 'recording_date']:
+        elif field_name in ["date", "filing_date", "recording_date"]:
             return self._date_similarity(str1, str2)
-        elif field_name in ['name', 'owner_name', 'borrower_name', 'company_name']:
+        elif field_name in ["name", "owner_name", "borrower_name", "company_name"]:
             return self._name_similarity(str1, str2)
-        elif field_name in ['address', 'property_address']:
+        elif field_name in ["address", "property_address"]:
             return self._address_similarity(str1, str2)
         else:
             return self._text_similarity(str1, str2)
@@ -312,6 +340,7 @@ class SimilarityScorer:
         # Phonetic similarity using Soundex
         try:
             import jellyfish
+
             soundex1 = jellyfish.soundex(norm1)
             soundex2 = jellyfish.soundex(norm2)
             phonetic_sim = 1.0 if soundex1 == soundex2 else 0.3
@@ -395,8 +424,9 @@ class DeduplicationEngine:
         self.similarity_scorer = SimilarityScorer()
         self._lock = threading.Lock()
 
-    def deduplicate_exact_match(self, records: List[Dict[str, Any]],
-                               key_fields: List[str]) -> List[DuplicateGroup]:
+    def deduplicate_exact_match(
+        self, records: List[Dict[str, Any]], key_fields: List[str]
+    ) -> List[DuplicateGroup]:
         """Find exact duplicates based on normalized key fields"""
         groups = []
         seen_keys = {}
@@ -414,7 +444,7 @@ class DeduplicationEngine:
                     group_id=f"exact_{hash(key) % 1000000}",
                     canonical_record=record,
                     confidence_score=1.0,
-                    merge_strategy="exact_match"
+                    merge_strategy="exact_match",
                 )
                 seen_keys[key] = group
                 groups.append(group)
@@ -422,8 +452,9 @@ class DeduplicationEngine:
         # Only return groups with duplicates
         return [g for g in groups if g.duplicate_count > 0]
 
-    def deduplicate_fuzzy_match(self, records: List[Dict[str, Any]],
-                               fields: List[str], batch_size: int = 1000) -> List[DuplicateGroup]:
+    def deduplicate_fuzzy_match(
+        self, records: List[Dict[str, Any]], fields: List[str], batch_size: int = 1000
+    ) -> List[DuplicateGroup]:
         """Find fuzzy duplicates using similarity scoring"""
         groups = []
         processed_records = set()
@@ -431,7 +462,7 @@ class DeduplicationEngine:
 
         # Process in batches to manage memory
         for i in range(0, len(records), batch_size):
-            batch = records[i:i + batch_size]
+            batch = records[i : i + batch_size]
 
             for record in batch:
                 if id(record) in processed_records:
@@ -449,7 +480,7 @@ class DeduplicationEngine:
                         canonical_record=record,
                         duplicate_records=similar_records,
                         confidence_score=self.similarity_threshold,
-                        merge_strategy="fuzzy_match"
+                        merge_strategy="fuzzy_match",
                     )
                     groups.append(group)
 
@@ -460,8 +491,12 @@ class DeduplicationEngine:
 
         return groups
 
-    def deduplicate_clustering(self, records: List[Dict[str, Any]],
-                              fields: List[str], min_cluster_size: int = 2) -> List[DuplicateGroup]:
+    def deduplicate_clustering(
+        self,
+        records: List[Dict[str, Any]],
+        fields: List[str],
+        min_cluster_size: int = 2,
+    ) -> List[DuplicateGroup]:
         """Use clustering algorithm for deduplication"""
         if len(records) < min_cluster_size:
             return []
@@ -474,18 +509,18 @@ class DeduplicationEngine:
                 value = record.get(field)
                 if value:
                     text_parts.append(str(value))
-            texts.append(' '.join(text_parts))
+            texts.append(" ".join(text_parts))
 
         if not texts:
             return []
 
         # TF-IDF vectorization
         try:
+            import numpy as np
             from sklearn.feature_extraction.text import TfidfVectorizer
             from sklearn.metrics.pairwise import cosine_similarity
-            import numpy as np
 
-            vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')
+            vectorizer = TfidfVectorizer(max_features=1000, stop_words="english")
             tfidf_matrix = vectorizer.fit_transform(texts)
         except ImportError:
             logger.warning("sklearn not available, skipping clustering deduplication")
@@ -517,14 +552,16 @@ class DeduplicationEngine:
                 # Create group with highest quality record as canonical
                 canonical_idx = self._select_canonical_record(cluster_records)
                 canonical = cluster_records[canonical_idx]
-                duplicates = [r for idx, r in enumerate(cluster_records) if idx != canonical_idx]
+                duplicates = [
+                    r for idx, r in enumerate(cluster_records) if idx != canonical_idx
+                ]
 
                 group = DuplicateGroup(
                     group_id=f"cluster_{hash(str(cluster_indices)) % 1000000}",
                     canonical_record=canonical,
                     duplicate_records=duplicates,
                     confidence_score=self.similarity_threshold,
-                    merge_strategy="clustering"
+                    merge_strategy="clustering",
                 )
                 groups.append(group)
 
@@ -534,9 +571,13 @@ class DeduplicationEngine:
 
         return groups
 
-    def _find_similar_records(self, target_record: Dict[str, Any],
-                            candidate_records: List[Dict[str, Any]],
-                            fields: List[str], processed: Set[int]) -> List[Dict[str, Any]]:
+    def _find_similar_records(
+        self,
+        target_record: Dict[str, Any],
+        candidate_records: List[Dict[str, Any]],
+        fields: List[str],
+        processed: Set[int],
+    ) -> List[Dict[str, Any]]:
         """Find records similar to target record"""
         similar = []
 
@@ -563,17 +604,19 @@ class DeduplicationEngine:
             score = 0
 
             # Completeness score (number of non-empty fields)
-            completeness = sum(1 for v in record.values() if v is not None and str(v).strip())
+            completeness = sum(
+                1 for v in record.values() if v is not None and str(v).strip()
+            )
             score += completeness * 10
 
             # Recency score (prefer newer records)
-            date_fields = ['date', 'filing_date', 'recording_date', 'created_at']
+            date_fields = ["date", "filing_date", "recording_date", "created_at"]
             for field in date_fields:
                 date_val = record.get(field)
                 if date_val:
                     try:
                         if isinstance(date_val, str):
-                            dt = datetime.fromisoformat(date_val.replace('Z', '+00:00'))
+                            dt = datetime.fromisoformat(date_val.replace("Z", "+00:00"))
                         elif isinstance(date_val, datetime):
                             dt = date_val
                         else:
@@ -581,7 +624,9 @@ class DeduplicationEngine:
 
                         # Score based on how recent the record is
                         days_old = (datetime.utcnow() - dt).days
-                        recency_score = max(0, 100 - days_old)  # Prefer records less than 100 days old
+                        recency_score = max(
+                            0, 100 - days_old
+                        )  # Prefer records less than 100 days old
                         score += recency_score
                         break
                     except:
@@ -602,17 +647,20 @@ class DeduplicationService:
         self.engine = DeduplicationEngine()
         self.metrics = DeduplicationMetrics()
 
-    def deduplicate_records(self, records: List[Dict[str, Any]],
-                           algorithm: str = "exact_match",
-                           fields: Optional[List[str]] = None,
-                           threshold: float = 0.8) -> Tuple[List[DuplicateGroup], DeduplicationMetrics]:
+    def deduplicate_records(
+        self,
+        records: List[Dict[str, Any]],
+        algorithm: str = "exact_match",
+        fields: Optional[List[str]] = None,
+        threshold: float = 0.8,
+    ) -> Tuple[List[DuplicateGroup], DeduplicationMetrics]:
         """Main deduplication method"""
         start_time = time.time()
         self.metrics = DeduplicationMetrics(
             algorithm_used=algorithm,
             similarity_threshold=threshold,
             start_time=datetime.utcnow(),
-            total_records_processed=len(records)
+            total_records_processed=len(records),
         )
 
         # Default fields for different algorithms
@@ -641,12 +689,15 @@ class DeduplicationService:
         self.metrics.processing_time_seconds = time.time() - start_time
         self.metrics.end_time = datetime.utcnow()
 
-        logger.info(f"Deduplication complete: {len(groups)} groups, {total_duplicates} duplicates found")
+        logger.info(
+            f"Deduplication complete: {len(groups)} groups, {total_duplicates} duplicates found"
+        )
 
         return groups, self.metrics
 
-    def merge_duplicates(self, groups: List[DuplicateGroup],
-                        merge_strategy: str = "keep_canonical") -> List[Dict[str, Any]]:
+    def merge_duplicates(
+        self, groups: List[DuplicateGroup], merge_strategy: str = "keep_canonical"
+    ) -> List[Dict[str, Any]]:
         """Merge duplicate records according to strategy"""
         merged_records = []
 
@@ -674,7 +725,7 @@ class DeduplicationService:
                     "canonical_record": group.canonical_record,
                     "duplicate_records": group.duplicate_records,
                     "merged_at": datetime.utcnow().isoformat(),
-                    "group_id": group.group_id
+                    "group_id": group.group_id,
                 }
                 merged_records.append(compound)
                 self.metrics.records_deleted += group.duplicate_count
@@ -683,10 +734,13 @@ class DeduplicationService:
         self.metrics.records_merged = len(merged_records)
         return merged_records
 
-    def deduplicate_database(self, jurisdiction_id: int = None,
-                           record_type: str = None,
-                           algorithm: str = "exact_match",
-                           batch_size: int = 1000) -> Dict[str, Any]:
+    def deduplicate_database(
+        self,
+        jurisdiction_id: int = None,
+        record_type: str = None,
+        algorithm: str = "exact_match",
+        batch_size: int = 1000,
+    ) -> Dict[str, Any]:
         """Deduplicate records in the database"""
         if not self.db_manager:
             raise ValueError("Database manager required for database deduplication")
@@ -695,7 +749,7 @@ class DeduplicationService:
         records = self.db_manager.get_records_for_deduplication(
             jurisdiction_id=jurisdiction_id,
             record_type=record_type,
-            limit=batch_size * 10  # Get more records for better deduplication
+            limit=batch_size * 10,  # Get more records for better deduplication
         )
 
         if not records:
@@ -712,7 +766,7 @@ class DeduplicationService:
             "duplicates_removed": sum(g.duplicate_count for g in groups),
             "records_remaining": len(records) - sum(g.duplicate_count for g in groups),
             "metrics": metrics.to_dict(),
-            "merge_results": merge_results
+            "merge_results": merge_results,
         }
 
     def _merge_duplicates_in_db(self, groups: List[DuplicateGroup]) -> Dict[str, int]:
@@ -723,8 +777,10 @@ class DeduplicationService:
         for group in groups:
             try:
                 # Keep canonical record, delete duplicates
-                canonical_id = group.canonical_record.get('id')
-                duplicate_ids = [r.get('id') for r in group.duplicate_records if r.get('id')]
+                canonical_id = group.canonical_record.get("id")
+                duplicate_ids = [
+                    r.get("id") for r in group.duplicate_records if r.get("id")
+                ]
 
                 if canonical_id and duplicate_ids:
                     # Mark duplicates as deleted or merged
@@ -737,10 +793,7 @@ class DeduplicationService:
             except Exception as e:
                 logger.error(f"Failed to merge group {group.group_id}: {e}")
 
-        return {
-            "records_deleted": deleted_count,
-            "groups_processed": merged_count
-        }
+        return {"records_deleted": deleted_count, "groups_processed": merged_count}
 
     def get_deduplication_report(self, groups: List[DuplicateGroup]) -> Dict[str, Any]:
         """Generate detailed deduplication report"""
@@ -751,16 +804,18 @@ class DeduplicationService:
                 "avg_duplicates_per_group": (
                     sum(g.duplicate_count for g in groups) / max(1, len(groups))
                 ),
-                "largest_group": max((g.duplicate_count for g in groups), default=0)
+                "largest_group": max((g.duplicate_count for g in groups), default=0),
             },
             "confidence_distribution": self._analyze_confidence_distribution(groups),
             "field_importance": self._analyze_field_importance(groups),
-            "groups": [g.to_dict() for g in groups[:10]]  # First 10 groups as examples
+            "groups": [g.to_dict() for g in groups[:10]],  # First 10 groups as examples
         }
 
         return report
 
-    def _analyze_confidence_distribution(self, groups: List[DuplicateGroup]) -> Dict[str, int]:
+    def _analyze_confidence_distribution(
+        self, groups: List[DuplicateGroup]
+    ) -> Dict[str, int]:
         """Analyze confidence score distribution"""
         distribution = defaultdict(int)
 
@@ -770,42 +825,45 @@ class DeduplicationService:
 
         return dict(sorted(distribution.items()))
 
-    def _analyze_field_importance(self, groups: List[DuplicateGroup]) -> Dict[str, float]:
+    def _analyze_field_importance(
+        self, groups: List[DuplicateGroup]
+    ) -> Dict[str, float]:
         """Analyze which fields contribute most to matches"""
         # This would require more sophisticated analysis
         # For now, return placeholder
-        return {
-            "name": 0.4,
-            "address": 0.3,
-            "amount": 0.2,
-            "date": 0.1
-        }
+        return {"name": 0.4, "address": 0.3, "amount": 0.2, "date": 0.1}
 
-    def export_deduplication_results(self, groups: List[DuplicateGroup],
-                                   filepath: str, format: str = "json"):
+    def export_deduplication_results(
+        self, groups: List[DuplicateGroup], filepath: str, format: str = "json"
+    ):
         """Export deduplication results"""
         if format == "json":
             data = {
                 "exported_at": datetime.utcnow().isoformat(),
                 "groups": [g.to_dict() for g in groups],
-                "metrics": self.metrics.to_dict()
+                "metrics": self.metrics.to_dict(),
             }
-            with open(filepath, 'w') as f:
+            with open(filepath, "w") as f:
                 json.dump(data, f, indent=2, default=str)
 
         elif format == "csv":
             import csv
-            with open(filepath, 'w', newline='') as f:
+
+            with open(filepath, "w", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow(['group_id', 'confidence', 'total_records', 'canonical_record_id'])
+                writer.writerow(
+                    ["group_id", "confidence", "total_records", "canonical_record_id"]
+                )
 
                 for group in groups:
-                    canonical_id = group.canonical_record.get('id', 'N/A')
-                    writer.writerow([
-                        group.group_id,
-                        group.confidence_score,
-                        group.total_records,
-                        canonical_id
-                    ])
+                    canonical_id = group.canonical_record.get("id", "N/A")
+                    writer.writerow(
+                        [
+                            group.group_id,
+                            group.confidence_score,
+                            group.total_records,
+                            canonical_id,
+                        ]
+                    )
 
         logger.info(f"Exported deduplication results to {filepath}")

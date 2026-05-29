@@ -10,18 +10,19 @@ Features:
 - Escalation policies
 """
 
-import logging
-from datetime import datetime, timedelta
-from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional, Callable
-from enum import Enum
 import json
+import logging
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class AlertSeverity(Enum):
     """Alert severity levels"""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -30,6 +31,7 @@ class AlertSeverity(Enum):
 
 class AlertStatus(Enum):
     """Alert status"""
+
     ACTIVE = "active"
     ACKNOWLEDGED = "acknowledged"
     RESOLVED = "resolved"
@@ -38,6 +40,7 @@ class AlertStatus(Enum):
 
 class ComparisonOperator(Enum):
     """Comparison operators for alert rules"""
+
     GREATER_THAN = "gt"
     LESS_THAN = "lt"
     GREATER_EQUAL = "gte"
@@ -49,6 +52,7 @@ class ComparisonOperator(Enum):
 @dataclass
 class Alert:
     """Represents an alert"""
+
     alert_id: str
     rule_id: str
     severity: AlertSeverity
@@ -84,25 +88,28 @@ class Alert:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'alert_id': self.alert_id,
-            'rule_id': self.rule_id,
-            'severity': self.severity.value,
-            'title': self.title,
-            'message': self.message,
-            'status': self.status.value,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
-            'acknowledged_at': self.acknowledged_at.isoformat() if self.acknowledged_at else None,
-            'resolved_at': self.resolved_at.isoformat() if self.resolved_at else None,
-            'acknowledged_by': self.acknowledged_by,
-            'metadata': self.metadata,
-            'notification_sent': self.notification_sent,
+            "alert_id": self.alert_id,
+            "rule_id": self.rule_id,
+            "severity": self.severity.value,
+            "title": self.title,
+            "message": self.message,
+            "status": self.status.value,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "acknowledged_at": (
+                self.acknowledged_at.isoformat() if self.acknowledged_at else None
+            ),
+            "resolved_at": self.resolved_at.isoformat() if self.resolved_at else None,
+            "acknowledged_by": self.acknowledged_by,
+            "metadata": self.metadata,
+            "notification_sent": self.notification_sent,
         }
 
 
 @dataclass
 class AlertRule:
     """Defines when to trigger an alert"""
+
     rule_id: str
     name: str
     description: str
@@ -133,16 +140,16 @@ class AlertRule:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'rule_id': self.rule_id,
-            'name': self.name,
-            'description': self.description,
-            'metric_name': self.metric_name,
-            'operator': self.operator.value,
-            'threshold': self.threshold,
-            'severity': self.severity.value,
-            'tags_filter': self.tags_filter,
-            'cooldown_minutes': self.cooldown_minutes,
-            'enabled': self.enabled,
+            "rule_id": self.rule_id,
+            "name": self.name,
+            "description": self.description,
+            "metric_name": self.metric_name,
+            "operator": self.operator.value,
+            "threshold": self.threshold,
+            "severity": self.severity.value,
+            "tags_filter": self.tags_filter,
+            "cooldown_minutes": self.cooldown_minutes,
+            "enabled": self.enabled,
         }
 
 
@@ -166,7 +173,9 @@ class LogNotificationChannel(NotificationChannel):
             AlertSeverity.CRITICAL: logger.critical,
         }.get(alert.severity, logger.warning)
 
-        log_method(f"ALERT [{alert.severity.value.upper()}]: {alert.title} - {alert.message}")
+        log_method(
+            f"ALERT [{alert.severity.value.upper()}]: {alert.title} - {alert.message}"
+        )
         return True
 
 
@@ -180,18 +189,17 @@ class WebhookNotificationChannel(NotificationChannel):
     def send(self, alert: Alert) -> bool:
         """Send webhook notification"""
         try:
-            import urllib.request
             import urllib.error
+            import urllib.request
 
-            payload = json.dumps(alert.to_dict()).encode('utf-8')
+            payload = json.dumps(alert.to_dict()).encode("utf-8")
             request = urllib.request.Request(
-                self.webhook_url,
-                data=payload,
-                headers=self.headers,
-                method='POST'
+                self.webhook_url, data=payload, headers=self.headers, method="POST"
             )
 
-            with urllib.request.urlopen(request, timeout=10) as response:
+            with urllib.request.urlopen(
+                request, timeout=10
+            ) as response:  # nosec B310 - internal alert webhook URL only
                 return response.status == 200
 
         except Exception as e:
@@ -202,9 +210,15 @@ class WebhookNotificationChannel(NotificationChannel):
 class EmailNotificationChannel(NotificationChannel):
     """Notification channel that sends emails"""
 
-    def __init__(self, smtp_host: str, smtp_port: int,
-                 from_email: str, to_emails: List[str],
-                 username: str = None, password: str = None):
+    def __init__(
+        self,
+        smtp_host: str,
+        smtp_port: int,
+        from_email: str,
+        to_emails: List[str],
+        username: str = None,
+        password: str = None,
+    ):
         self.smtp_host = smtp_host
         self.smtp_port = smtp_port
         self.from_email = from_email
@@ -233,9 +247,9 @@ Metadata:
             """
 
             msg = MIMEText(body)
-            msg['Subject'] = subject
-            msg['From'] = self.from_email
-            msg['To'] = ", ".join(self.to_emails)
+            msg["Subject"] = subject
+            msg["From"] = self.from_email
+            msg["To"] = ", ".join(self.to_emails)
 
             with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
                 if self.username and self.password:
@@ -293,8 +307,9 @@ class AlertManager:
         """Add a notification channel"""
         self._channels.append(channel)
 
-    def evaluate(self, metric_name: str, value: float,
-                 tags: Dict[str, str] = None) -> List[Alert]:
+    def evaluate(
+        self, metric_name: str, value: float, tags: Dict[str, str] = None
+    ) -> List[Alert]:
         """
         Evaluate a metric against all applicable rules.
 
@@ -336,11 +351,14 @@ class AlertManager:
 
         return triggered_alerts
 
-    def _create_alert(self, rule: AlertRule, value: float,
-                      tags: Dict[str, str]) -> Alert:
+    def _create_alert(
+        self, rule: AlertRule, value: float, tags: Dict[str, str]
+    ) -> Alert:
         """Create an alert from a triggered rule"""
         self._alert_counter += 1
-        alert_id = f"alert-{self._alert_counter}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        alert_id = (
+            f"alert-{self._alert_counter}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        )
 
         alert = Alert(
             alert_id=alert_id,
@@ -349,12 +367,12 @@ class AlertManager:
             title=rule.name,
             message=f"{rule.description}. Current value: {value}, Threshold: {rule.threshold}",
             metadata={
-                'metric_name': rule.metric_name,
-                'value': value,
-                'threshold': rule.threshold,
-                'operator': rule.operator.value,
-                'tags': tags,
-            }
+                "metric_name": rule.metric_name,
+                "value": value,
+                "threshold": rule.threshold,
+                "operator": rule.operator.value,
+                "tags": tags,
+            },
         )
 
         self._alerts[alert_id] = alert
@@ -380,13 +398,11 @@ class AlertManager:
 
     def get_active_alerts(self) -> List[Alert]:
         """Get all active alerts"""
-        return [a for a in self._alerts.values()
-                if a.status == AlertStatus.ACTIVE]
+        return [a for a in self._alerts.values() if a.status == AlertStatus.ACTIVE]
 
     def get_alerts_by_severity(self, severity: AlertSeverity) -> List[Alert]:
         """Get alerts by severity"""
-        return [a for a in self._alerts.values()
-                if a.severity == severity]
+        return [a for a in self._alerts.values() if a.severity == severity]
 
     def acknowledge_alert(self, alert_id: str, user: str = None) -> bool:
         """Acknowledge an alert"""
@@ -418,24 +434,31 @@ class AlertManager:
         severity_counts = {}
 
         for alert in self._alerts.values():
-            status_counts[alert.status.value] = status_counts.get(alert.status.value, 0) + 1
-            severity_counts[alert.severity.value] = severity_counts.get(alert.severity.value, 0) + 1
+            status_counts[alert.status.value] = (
+                status_counts.get(alert.status.value, 0) + 1
+            )
+            severity_counts[alert.severity.value] = (
+                severity_counts.get(alert.severity.value, 0) + 1
+            )
 
         return {
-            'total_alerts': len(self._alerts),
-            'active_alerts': len(self.get_active_alerts()),
-            'by_status': status_counts,
-            'by_severity': severity_counts,
-            'rules_count': len(self._rules),
-            'channels_count': len(self._channels),
+            "total_alerts": len(self._alerts),
+            "active_alerts": len(self.get_active_alerts()),
+            "by_status": status_counts,
+            "by_severity": severity_counts,
+            "rules_count": len(self._rules),
+            "channels_count": len(self._channels),
         }
 
     def cleanup_old_alerts(self, days: int = 30):
         """Remove alerts older than specified days"""
         cutoff = datetime.now() - timedelta(days=days)
-        old_alerts = [a.alert_id for a in self._alerts.values()
-                     if a.created_at < cutoff and a.status in
-                     (AlertStatus.RESOLVED, AlertStatus.SILENCED)]
+        old_alerts = [
+            a.alert_id
+            for a in self._alerts.values()
+            if a.created_at < cutoff
+            and a.status in (AlertStatus.RESOLVED, AlertStatus.SILENCED)
+        ]
 
         for alert_id in old_alerts:
             del self._alerts[alert_id]
@@ -524,12 +547,15 @@ def get_alert_manager() -> AlertManager:
     return _manager_instance
 
 
-def send_alert(severity: AlertSeverity, title: str, message: str,
-               metadata: Dict[str, Any] = None) -> Alert:
+def send_alert(
+    severity: AlertSeverity, title: str, message: str, metadata: Dict[str, Any] = None
+) -> Alert:
     """Convenience function to send a manual alert"""
     manager = get_alert_manager()
     manager._alert_counter += 1
-    alert_id = f"manual-{manager._alert_counter}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    alert_id = (
+        f"manual-{manager._alert_counter}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    )
 
     alert = Alert(
         alert_id=alert_id,
@@ -547,7 +573,8 @@ def send_alert(severity: AlertSeverity, title: str, message: str,
     return alert
 
 
-def check_alert_rules(metric_name: str, value: float,
-                      tags: Dict[str, str] = None) -> List[Alert]:
+def check_alert_rules(
+    metric_name: str, value: float, tags: Dict[str, str] = None
+) -> List[Alert]:
     """Convenience function to check alert rules"""
     return get_alert_manager().evaluate(metric_name, value, tags)

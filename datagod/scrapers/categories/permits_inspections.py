@@ -12,16 +12,17 @@ Collects permit and inspection public records including:
 """
 
 import logging
-from typing import Dict, List, Any, Optional
-from datetime import datetime
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class PermitType(Enum):
     """Types of permits."""
+
     BUILDING = "building"
     CONSTRUCTION = "construction"
     ELECTRICAL = "electrical"
@@ -40,6 +41,7 @@ class PermitType(Enum):
 
 class InspectionType(Enum):
     """Types of inspections."""
+
     BUILDING = "building"
     HEALTH = "health"
     RESTAURANT = "restaurant"
@@ -54,6 +56,7 @@ class InspectionType(Enum):
 
 class PermitStatus(Enum):
     """Permit status values."""
+
     APPLIED = "applied"
     UNDER_REVIEW = "under_review"
     APPROVED = "approved"
@@ -66,6 +69,7 @@ class PermitStatus(Enum):
 
 class InspectionResult(Enum):
     """Inspection result values."""
+
     PASS = "pass"
     FAIL = "fail"
     PASS_WITH_CONDITIONS = "pass_with_conditions"
@@ -77,6 +81,7 @@ class InspectionResult(Enum):
 @dataclass
 class PermitRecord:
     """Permit record data structure."""
+
     permit_number: str
     permit_type: PermitType
     address: str
@@ -105,35 +110,42 @@ class PermitRecord:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'permit_number': self.permit_number,
-            'permit_type': self.permit_type.value,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'zip_code': self.zip_code,
-            'parcel_id': self.parcel_id,
-            'applicant_name': self.applicant_name,
-            'contractor_name': self.contractor_name,
-            'owner_name': self.owner_name,
-            'description': self.description,
-            'status': self.status.value,
-            'application_date': self.application_date.isoformat() if self.application_date else None,
-            'issue_date': self.issue_date.isoformat() if self.issue_date else None,
-            'expiration_date': self.expiration_date.isoformat() if self.expiration_date else None,
-            'completion_date': self.completion_date.isoformat() if self.completion_date else None,
-            'estimated_cost': self.estimated_cost,
-            'fee_amount': self.fee_amount,
-            'square_footage': self.square_footage,
-            'units': self.units,
-            'inspections': self.inspections,
-            'violations': self.violations,
-            'source_url': self.source_url,
+            "permit_number": self.permit_number,
+            "permit_type": self.permit_type.value,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "zip_code": self.zip_code,
+            "parcel_id": self.parcel_id,
+            "applicant_name": self.applicant_name,
+            "contractor_name": self.contractor_name,
+            "owner_name": self.owner_name,
+            "description": self.description,
+            "status": self.status.value,
+            "application_date": (
+                self.application_date.isoformat() if self.application_date else None
+            ),
+            "issue_date": self.issue_date.isoformat() if self.issue_date else None,
+            "expiration_date": (
+                self.expiration_date.isoformat() if self.expiration_date else None
+            ),
+            "completion_date": (
+                self.completion_date.isoformat() if self.completion_date else None
+            ),
+            "estimated_cost": self.estimated_cost,
+            "fee_amount": self.fee_amount,
+            "square_footage": self.square_footage,
+            "units": self.units,
+            "inspections": self.inspections,
+            "violations": self.violations,
+            "source_url": self.source_url,
         }
 
 
 @dataclass
 class InspectionRecord:
     """Inspection record data structure."""
+
     inspection_id: str
     inspection_type: InspectionType
     business_name: Optional[str] = None
@@ -158,110 +170,114 @@ class InspectionRecord:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'inspection_id': self.inspection_id,
-            'inspection_type': self.inspection_type.value,
-            'business_name': self.business_name,
-            'address': self.address,
-            'city': self.city,
-            'state': self.state,
-            'zip_code': self.zip_code,
-            'inspection_date': self.inspection_date.isoformat() if self.inspection_date else None,
-            'result': self.result.value,
-            'score': self.score,
-            'inspector_name': self.inspector_name,
-            'violations': self.violations,
-            'critical_violations': self.critical_violations,
-            'non_critical_violations': self.non_critical_violations,
-            'follow_up_required': self.follow_up_required,
-            'follow_up_date': self.follow_up_date.isoformat() if self.follow_up_date else None,
-            'source_url': self.source_url,
+            "inspection_id": self.inspection_id,
+            "inspection_type": self.inspection_type.value,
+            "business_name": self.business_name,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "zip_code": self.zip_code,
+            "inspection_date": (
+                self.inspection_date.isoformat() if self.inspection_date else None
+            ),
+            "result": self.result.value,
+            "score": self.score,
+            "inspector_name": self.inspector_name,
+            "violations": self.violations,
+            "critical_violations": self.critical_violations,
+            "non_critical_violations": self.non_critical_violations,
+            "follow_up_required": self.follow_up_required,
+            "follow_up_date": (
+                self.follow_up_date.isoformat() if self.follow_up_date else None
+            ),
+            "source_url": self.source_url,
         }
 
 
 # Major city permit portals
 CITY_PERMIT_SOURCES: Dict[str, Dict[str, str]] = {
-    'NYC': {
-        'permits': 'https://a810-bisweb.nyc.gov/bisweb/bispi00.jsp',
-        'dob': 'https://www1.nyc.gov/site/buildings/index.page',
-        'health': 'https://a816-healthpsi.nyc.gov/HealthInspection/',
+    "NYC": {
+        "permits": "https://a810-bisweb.nyc.gov/bisweb/bispi00.jsp",
+        "dob": "https://www1.nyc.gov/site/buildings/index.page",
+        "health": "https://a816-healthpsi.nyc.gov/HealthInspection/",
     },
-    'LA': {
-        'permits': 'https://www.ladbsservices.lacity.org/',
-        'health': 'http://publichealth.lacounty.gov/eh/rating/',
+    "LA": {
+        "permits": "https://www.ladbsservices.lacity.org/",
+        "health": "http://publichealth.lacounty.gov/eh/rating/",
     },
-    'Chicago': {
-        'permits': 'https://webapps1.chicago.gov/buildingrecords/',
-        'health': 'https://www.chicago.gov/city/en/depts/cdph/provdrs/food_safety.html',
+    "Chicago": {
+        "permits": "https://webapps1.chicago.gov/buildingrecords/",
+        "health": "https://www.chicago.gov/city/en/depts/cdph/provdrs/food_safety.html",
     },
-    'Houston': {
-        'permits': 'https://www.houstontx.gov/publicsafety/permitting/',
-        'health': 'https://www.houstontx.gov/health/Food/',
+    "Houston": {
+        "permits": "https://www.houstontx.gov/publicsafety/permitting/",
+        "health": "https://www.houstontx.gov/health/Food/",
     },
-    'Phoenix': {
-        'permits': 'https://www.phoenix.gov/pdd/permits',
+    "Phoenix": {
+        "permits": "https://www.phoenix.gov/pdd/permits",
     },
-    'Philadelphia': {
-        'permits': 'https://www.phila.gov/li/',
-        'health': 'https://www.phila.gov/services/permits-violations-licenses/',
+    "Philadelphia": {
+        "permits": "https://www.phila.gov/li/",
+        "health": "https://www.phila.gov/services/permits-violations-licenses/",
     },
-    'San Antonio': {
-        'permits': 'https://www.sanantonio.gov/DSD/Permits',
+    "San Antonio": {
+        "permits": "https://www.sanantonio.gov/DSD/Permits",
     },
-    'San Diego': {
-        'permits': 'https://www.sandiego.gov/development-services',
+    "San Diego": {
+        "permits": "https://www.sandiego.gov/development-services",
     },
-    'Dallas': {
-        'permits': 'https://dallascityhall.com/departments/sustainabledevelopment/buildinginspection/',
+    "Dallas": {
+        "permits": "https://dallascityhall.com/departments/sustainabledevelopment/buildinginspection/",
     },
-    'San Jose': {
-        'permits': 'https://www.sanjoseca.gov/your-government/departments-offices/planning-building-code-enforcement/building',
+    "San Jose": {
+        "permits": "https://www.sanjoseca.gov/your-government/departments-offices/planning-building-code-enforcement/building",
     },
-    'Austin': {
-        'permits': 'https://www.austintexas.gov/department/development-services',
+    "Austin": {
+        "permits": "https://www.austintexas.gov/department/development-services",
     },
-    'Jacksonville': {
-        'permits': 'https://www.coj.net/departments/neighborhoods/building-inspection',
+    "Jacksonville": {
+        "permits": "https://www.coj.net/departments/neighborhoods/building-inspection",
     },
-    'San Francisco': {
-        'permits': 'https://sfdbi.org/',
-        'health': 'https://www.sfdph.org/dph/EH/Food/Score/default.asp',
+    "San Francisco": {
+        "permits": "https://sfdbi.org/",
+        "health": "https://www.sfdph.org/dph/EH/Food/Score/default.asp",
     },
-    'Columbus': {
-        'permits': 'https://www.columbus.gov/bzs/',
+    "Columbus": {
+        "permits": "https://www.columbus.gov/bzs/",
     },
-    'Indianapolis': {
-        'permits': 'https://www.indy.gov/agency/development-services',
+    "Indianapolis": {
+        "permits": "https://www.indy.gov/agency/development-services",
     },
-    'Fort Worth': {
-        'permits': 'https://www.fortworthtexas.gov/departments/development-services',
+    "Fort Worth": {
+        "permits": "https://www.fortworthtexas.gov/departments/development-services",
     },
-    'Seattle': {
-        'permits': 'https://www.seattle.gov/sdci/permits',
+    "Seattle": {
+        "permits": "https://www.seattle.gov/sdci/permits",
     },
-    'Denver': {
-        'permits': 'https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Community-Planning-and-Development',
+    "Denver": {
+        "permits": "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Community-Planning-and-Development",
     },
-    'Washington DC': {
-        'permits': 'https://dcra.dc.gov/',
-        'health': 'https://dchealth.dc.gov/',
+    "Washington DC": {
+        "permits": "https://dcra.dc.gov/",
+        "health": "https://dchealth.dc.gov/",
     },
-    'Boston': {
-        'permits': 'https://www.boston.gov/departments/inspectional-services',
-        'health': 'https://www.boston.gov/departments/inspectional-services/food-establishment-inspections',
+    "Boston": {
+        "permits": "https://www.boston.gov/departments/inspectional-services",
+        "health": "https://www.boston.gov/departments/inspectional-services/food-establishment-inspections",
     },
 }
 
 # Restaurant inspection data sources
 RESTAURANT_INSPECTION_SOURCES = {
-    'yelp': {
-        'name': 'Yelp Health Scores',
-        'url': 'https://www.yelp.com/healthscores',
-        'description': 'Restaurant health scores from Yelp',
+    "yelp": {
+        "name": "Yelp Health Scores",
+        "url": "https://www.yelp.com/healthscores",
+        "description": "Restaurant health scores from Yelp",
     },
-    'hdscores': {
-        'name': 'HD Scores',
-        'url': 'https://hdscores.com/',
-        'description': 'National restaurant inspection database',
+    "hdscores": {
+        "name": "HD Scores",
+        "url": "https://hdscores.com/",
+        "description": "National restaurant inspection database",
     },
 }
 
@@ -296,7 +312,7 @@ class PermitsInspectionsScraper:
         address: str = "",
         permit_type: PermitType = None,
         start_date: datetime = None,
-        end_date: datetime = None
+        end_date: datetime = None,
     ) -> List[PermitRecord]:
         """
         Search for building permits.
@@ -319,10 +335,7 @@ class PermitsInspectionsScraper:
         return permits
 
     def get_permit_by_number(
-        self,
-        permit_number: str,
-        city: str,
-        state: str
+        self, permit_number: str, city: str, state: str
     ) -> Optional[PermitRecord]:
         """
         Get permit details by number.
@@ -346,7 +359,7 @@ class PermitsInspectionsScraper:
         inspection_type: InspectionType = None,
         business_name: str = "",
         start_date: datetime = None,
-        end_date: datetime = None
+        end_date: datetime = None,
     ) -> List[InspectionRecord]:
         """
         Search for inspection records.
@@ -374,7 +387,7 @@ class PermitsInspectionsScraper:
         state: str,
         restaurant_name: str = "",
         min_score: int = None,
-        max_score: int = None
+        max_score: int = None,
     ) -> List[InspectionRecord]:
         """
         Get restaurant health inspections.
@@ -396,11 +409,7 @@ class PermitsInspectionsScraper:
         return inspections
 
     def get_violations(
-        self,
-        city: str,
-        state: str,
-        address: str = "",
-        violation_type: str = ""
+        self, city: str, state: str, address: str = "", violation_type: str = ""
     ) -> List[Dict[str, Any]]:
         """
         Get code violations.
@@ -421,10 +430,7 @@ class PermitsInspectionsScraper:
         return violations
 
     def search_by_contractor(
-        self,
-        contractor_name: str,
-        city: str = "",
-        state: str = ""
+        self, contractor_name: str, city: str = "", state: str = ""
     ) -> List[PermitRecord]:
         """
         Search permits by contractor name.
@@ -446,12 +452,12 @@ class PermitsInspectionsScraper:
     def get_coverage_stats(self) -> Dict[str, Any]:
         """Get coverage statistics."""
         return {
-            'category': self.CATEGORY,
-            'display_name': self.DISPLAY_NAME,
-            'cities_covered': len(self.city_sources),
-            'cities': list(self.city_sources.keys()),
-            'permit_types': [t.value for t in PermitType],
-            'inspection_types': [t.value for t in InspectionType],
+            "category": self.CATEGORY,
+            "display_name": self.DISPLAY_NAME,
+            "cities_covered": len(self.city_sources),
+            "cities": list(self.city_sources.keys()),
+            "permit_types": [t.value for t in PermitType],
+            "inspection_types": [t.value for t in InspectionType],
         }
 
 
@@ -471,6 +477,6 @@ def search_building_permits(city: str, state: str, **kwargs) -> List[Dict[str, A
 def get_available_sources() -> Dict[str, Any]:
     """Get all available permit and inspection sources."""
     return {
-        'city_sources': CITY_PERMIT_SOURCES,
-        'restaurant_sources': RESTAURANT_INSPECTION_SOURCES,
+        "city_sources": CITY_PERMIT_SOURCES,
+        "restaurant_sources": RESTAURANT_INSPECTION_SOURCES,
     }

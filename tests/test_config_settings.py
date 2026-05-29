@@ -2,9 +2,10 @@
 Tests for DataGod configuration settings
 """
 
-import pytest
 import os
 from pathlib import Path
+
+import pytest
 
 
 class TestProjectPaths:
@@ -52,8 +53,10 @@ class TestDatabaseConfiguration:
     def test_db_pool_settings(self):
         """Test database pool settings have valid values"""
         from datagod.config.settings import (
-            DB_POOL_SIZE, DB_MAX_OVERFLOW,
-            DB_POOL_TIMEOUT, DB_POOL_RECYCLE
+            DB_MAX_OVERFLOW,
+            DB_POOL_RECYCLE,
+            DB_POOL_SIZE,
+            DB_POOL_TIMEOUT,
         )
 
         assert isinstance(DB_POOL_SIZE, int)
@@ -111,8 +114,9 @@ class TestSecurityConfiguration:
     def test_jwt_settings(self):
         """Test JWT settings are properly configured"""
         from datagod.config.settings import (
-            JWT_SECRET_KEY, JWT_ALGORITHM,
-            JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+            JWT_ACCESS_TOKEN_EXPIRE_MINUTES,
+            JWT_ALGORITHM,
+            JWT_SECRET_KEY,
         )
 
         assert JWT_SECRET_KEY is not None
@@ -246,7 +250,7 @@ class TestLoggingConfiguration:
 
     def test_log_rotation_settings(self):
         """Test log rotation settings are valid"""
-        from datagod.config.settings import LOG_MAX_BYTES, LOG_BACKUP_COUNT
+        from datagod.config.settings import LOG_BACKUP_COUNT, LOG_MAX_BYTES
 
         assert isinstance(LOG_MAX_BYTES, int)
         assert LOG_MAX_BYTES > 0
@@ -340,8 +344,8 @@ class TestSettingsClass:
             from api.src.config import Settings, settings
 
             assert settings is not None
-            assert hasattr(settings, 'api_title')
-            assert hasattr(settings, 'api_version')
+            assert hasattr(settings, "api_title")
+            assert hasattr(settings, "api_version")
         except ImportError:
             # If import fails, skip this test
             pytest.skip("api.src.config module not available")

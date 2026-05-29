@@ -23,16 +23,16 @@ from bs4 import BeautifulSoup
 
 from .base_county_scraper import (
     BaseCountyScraper,
-    CountyConfig,
-    PropertyRecord,
-    DeedRecord,
-    MortgageRecord,
-    TaxRecord,
-    CourtCase,
-    LienRecord,
-    RecordType,
-    CaseType,
     CaseStatus,
+    CaseType,
+    CountyConfig,
+    CourtCase,
+    DeedRecord,
+    LienRecord,
+    MortgageRecord,
+    PropertyRecord,
+    RecordType,
+    TaxRecord,
 )
 
 logger = logging.getLogger(__name__)
@@ -86,10 +86,7 @@ class MaricopaCountyScraper(BaseCountyScraper):
     # ==================== Property Records ====================
 
     async def search_property_by_address(
-        self,
-        address: str,
-        city: Optional[str] = None,
-        zip_code: Optional[str] = None
+        self, address: str, city: Optional[str] = None, zip_code: Optional[str] = None
     ) -> List[PropertyRecord]:
         """
         Search Maricopa County Assessor by address.
@@ -124,7 +121,9 @@ class MaricopaCountyScraper(BaseCountyScraper):
                                 results.append(record)
                     else:
                         # Fallback to HTML scraping
-                        results = await self._scrape_assessor_address(session, address, city, zip_code)
+                        results = await self._scrape_assessor_address(
+                            session, address, city, zip_code
+                        )
 
         except Exception as e:
             logger.error(f"Error searching Maricopa property by address: {e}")
@@ -136,7 +135,7 @@ class MaricopaCountyScraper(BaseCountyScraper):
         session: aiohttp.ClientSession,
         address: str,
         city: Optional[str],
-        zip_code: Optional[str]
+        zip_code: Optional[str],
     ) -> List[PropertyRecord]:
         """Scrape assessor website for property by address."""
         results = []
@@ -228,7 +227,9 @@ class MaricopaCountyScraper(BaseCountyScraper):
 
         return results
 
-    async def search_property_by_parcel(self, parcel_id: str) -> Optional[PropertyRecord]:
+    async def search_property_by_parcel(
+        self, parcel_id: str
+    ) -> Optional[PropertyRecord]:
         """
         Get detailed property information by APN (Assessor's Parcel Number).
 
@@ -255,9 +256,7 @@ class MaricopaCountyScraper(BaseCountyScraper):
         return None
 
     async def _scrape_parcel_detail(
-        self,
-        session: aiohttp.ClientSession,
-        parcel_id: str
+        self, session: aiohttp.ClientSession, parcel_id: str
     ) -> Optional[PropertyRecord]:
         """Scrape detailed parcel information from assessor website."""
         try:
@@ -275,10 +274,14 @@ class MaricopaCountyScraper(BaseCountyScraper):
                     owner_section = soup.find("div", class_="owner-info")
                     if owner_section:
                         owner_name = owner_section.find("span", class_="owner-name")
-                        details["owner"] = owner_name.get_text(strip=True) if owner_name else None
+                        details["owner"] = (
+                            owner_name.get_text(strip=True) if owner_name else None
+                        )
 
                         mailing = owner_section.find("span", class_="mailing-address")
-                        details["mailing_address"] = mailing.get_text(strip=True) if mailing else None
+                        details["mailing_address"] = (
+                            mailing.get_text(strip=True) if mailing else None
+                        )
 
                     # Property address
                     addr_elem = soup.find("span", class_="property-address")
@@ -289,19 +292,33 @@ class MaricopaCountyScraper(BaseCountyScraper):
                     if value_section:
                         fcv = value_section.find("span", {"data-field": "fcv"})
                         lcv = value_section.find("span", {"data-field": "lcv"})
-                        details["full_cash_value"] = self._parse_currency(fcv.get_text() if fcv else "0")
-                        details["limited_value"] = self._parse_currency(lcv.get_text() if lcv else "0")
+                        details["full_cash_value"] = self._parse_currency(
+                            fcv.get_text() if fcv else "0"
+                        )
+                        details["limited_value"] = self._parse_currency(
+                            lcv.get_text() if lcv else "0"
+                        )
 
                     # Property characteristics
                     char_section = soup.find("div", class_="characteristics")
                     if char_section:
-                        year_built = char_section.find("span", {"data-field": "year-built"})
+                        year_built = char_section.find(
+                            "span", {"data-field": "year-built"}
+                        )
                         sqft = char_section.find("span", {"data-field": "sqft"})
                         lot_size = char_section.find("span", {"data-field": "lot-size"})
 
-                        details["year_built"] = int(year_built.get_text()) if year_built else None
-                        details["sqft"] = int(sqft.get_text().replace(",", "")) if sqft else None
-                        details["lot_sqft"] = int(lot_size.get_text().replace(",", "")) if lot_size else None
+                        details["year_built"] = (
+                            int(year_built.get_text()) if year_built else None
+                        )
+                        details["sqft"] = (
+                            int(sqft.get_text().replace(",", "")) if sqft else None
+                        )
+                        details["lot_sqft"] = (
+                            int(lot_size.get_text().replace(",", ""))
+                            if lot_size
+                            else None
+                        )
 
                     return PropertyRecord(
                         parcel_id=parcel_id,
@@ -325,7 +342,9 @@ class MaricopaCountyScraper(BaseCountyScraper):
 
         return None
 
-    async def _parse_assessor_parcel(self, data: Dict[str, Any]) -> Optional[PropertyRecord]:
+    async def _parse_assessor_parcel(
+        self, data: Dict[str, Any]
+    ) -> Optional[PropertyRecord]:
         """Parse assessor API parcel data into PropertyRecord."""
         try:
             return PropertyRecord(
@@ -349,7 +368,9 @@ class MaricopaCountyScraper(BaseCountyScraper):
             logger.error(f"Error parsing Maricopa assessor parcel: {e}")
             return None
 
-    async def _parse_assessor_detail(self, data: Dict[str, Any]) -> Optional[PropertyRecord]:
+    async def _parse_assessor_detail(
+        self, data: Dict[str, Any]
+    ) -> Optional[PropertyRecord]:
         """Parse detailed assessor API response."""
         try:
             parcel = data.get("parcel", data)
@@ -396,7 +417,7 @@ class MaricopaCountyScraper(BaseCountyScraper):
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         as_grantor: bool = True,
-        as_grantee: bool = True
+        as_grantee: bool = True,
     ) -> List[DeedRecord]:
         """
         Search Maricopa County Recorder for deeds by party name.
@@ -451,7 +472,11 @@ class MaricopaCountyScraper(BaseCountyScraper):
                                     county="Maricopa",
                                     state="AZ",
                                     source_url=f"{self.config.recorder_url}document/{doc_num}",
-                                    raw_data={"columns": [c.get_text(strip=True) for c in cols]},
+                                    raw_data={
+                                        "columns": [
+                                            c.get_text(strip=True) for c in cols
+                                        ]
+                                    },
                                 )
                                 results.append(record)
 
@@ -464,7 +489,7 @@ class MaricopaCountyScraper(BaseCountyScraper):
         self,
         parcel_id: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[DeedRecord]:
         """Search recorder by parcel number."""
         results = []
@@ -493,7 +518,9 @@ class MaricopaCountyScraper(BaseCountyScraper):
                                 record = DeedRecord(
                                     document_number=cols[0].get_text(strip=True),
                                     record_type=cols[1].get_text(strip=True),
-                                    recording_date=self._parse_date(cols[2].get_text(strip=True)),
+                                    recording_date=self._parse_date(
+                                        cols[2].get_text(strip=True)
+                                    ),
                                     grantor=cols[3].get_text(strip=True),
                                     grantee=cols[4].get_text(strip=True),
                                     parcel_id=parcel_id,
@@ -513,7 +540,7 @@ class MaricopaCountyScraper(BaseCountyScraper):
         name: Optional[str] = None,
         parcel_id: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[MortgageRecord]:
         """Search for mortgage records in Maricopa County."""
         results = []
@@ -546,10 +573,14 @@ class MaricopaCountyScraper(BaseCountyScraper):
                                 record = MortgageRecord(
                                     document_number=cols[0].get_text(strip=True),
                                     record_type="DEED OF TRUST",
-                                    recording_date=self._parse_date(cols[2].get_text(strip=True)),
+                                    recording_date=self._parse_date(
+                                        cols[2].get_text(strip=True)
+                                    ),
                                     trustor=cols[3].get_text(strip=True),  # Borrower
                                     beneficiary=cols[4].get_text(strip=True),  # Lender
-                                    loan_amount=self._parse_currency(cols[5].get_text(strip=True)),
+                                    loan_amount=self._parse_currency(
+                                        cols[5].get_text(strip=True)
+                                    ),
                                     parcel_id=parcel_id,
                                     county="Maricopa",
                                     state="AZ",
@@ -566,7 +597,7 @@ class MaricopaCountyScraper(BaseCountyScraper):
         self,
         name: Optional[str] = None,
         parcel_id: Optional[str] = None,
-        lien_type: Optional[str] = None
+        lien_type: Optional[str] = None,
     ) -> List[LienRecord]:
         """Search for liens in Maricopa County Recorder."""
         results = []
@@ -599,10 +630,18 @@ class MaricopaCountyScraper(BaseCountyScraper):
                                     record = LienRecord(
                                         document_number=cols[0].get_text(strip=True),
                                         lien_type=lt,
-                                        recording_date=self._parse_date(cols[2].get_text(strip=True)),
+                                        recording_date=self._parse_date(
+                                            cols[2].get_text(strip=True)
+                                        ),
                                         debtor=cols[3].get_text(strip=True),
                                         creditor=cols[4].get_text(strip=True),
-                                        amount=self._parse_currency(cols[5].get_text(strip=True)) if len(cols) > 5 else 0.0,
+                                        amount=(
+                                            self._parse_currency(
+                                                cols[5].get_text(strip=True)
+                                            )
+                                            if len(cols) > 5
+                                            else 0.0
+                                        ),
                                         parcel_id=parcel_id,
                                         county="Maricopa",
                                         state="AZ",
@@ -624,7 +663,7 @@ class MaricopaCountyScraper(BaseCountyScraper):
         name: str,
         case_type: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """
         Search Maricopa County Superior Court cases by party name.
@@ -668,11 +707,19 @@ class MaricopaCountyScraper(BaseCountyScraper):
                                 if " vs " in case_title.lower():
                                     parts = case_title.lower().split(" vs ")
                                     plaintiff = parts[0].strip().title()
-                                    defendant = parts[1].strip().title() if len(parts) > 1 else None
+                                    defendant = (
+                                        parts[1].strip().title()
+                                        if len(parts) > 1
+                                        else None
+                                    )
                                 elif " v " in case_title.lower():
                                     parts = case_title.lower().split(" v ")
                                     plaintiff = parts[0].strip().title()
-                                    defendant = parts[1].strip().title() if len(parts) > 1 else None
+                                    defendant = (
+                                        parts[1].strip().title()
+                                        if len(parts) > 1
+                                        else None
+                                    )
 
                                 record = CourtCase(
                                     case_number=case_number,
@@ -686,7 +733,11 @@ class MaricopaCountyScraper(BaseCountyScraper):
                                     county="Maricopa",
                                     state="AZ",
                                     source_url=f"{self.config.court_url}case/{case_number}",
-                                    raw_data={"columns": [c.get_text(strip=True) for c in cols]},
+                                    raw_data={
+                                        "columns": [
+                                            c.get_text(strip=True) for c in cols
+                                        ]
+                                    },
                                 )
                                 results.append(record)
 
@@ -696,8 +747,7 @@ class MaricopaCountyScraper(BaseCountyScraper):
         return results
 
     async def search_court_cases_by_case_number(
-        self,
-        case_number: str
+        self, case_number: str
     ) -> Optional[CourtCase]:
         """Get detailed court case information by case number."""
         try:
@@ -716,7 +766,9 @@ class MaricopaCountyScraper(BaseCountyScraper):
                         header = soup.find("div", class_="case-header")
                         if header:
                             title = header.find("h2")
-                            details["title"] = title.get_text(strip=True) if title else None
+                            details["title"] = (
+                                title.get_text(strip=True) if title else None
+                            )
 
                         # Case info section
                         info_section = soup.find("div", class_="case-info")
@@ -725,16 +777,32 @@ class MaricopaCountyScraper(BaseCountyScraper):
                                 label = row.find("span", class_="label")
                                 value = row.find("span", class_="value")
                                 if label and value:
-                                    key = label.get_text(strip=True).lower().replace(" ", "_")
+                                    key = (
+                                        label.get_text(strip=True)
+                                        .lower()
+                                        .replace(" ", "_")
+                                    )
                                     details[key] = value.get_text(strip=True)
 
                         # Parties section
                         parties_section = soup.find("div", class_="parties")
                         if parties_section:
-                            plaintiff_div = parties_section.find("div", class_="plaintiff")
-                            defendant_div = parties_section.find("div", class_="defendant")
-                            details["plaintiff"] = plaintiff_div.get_text(strip=True) if plaintiff_div else None
-                            details["defendant"] = defendant_div.get_text(strip=True) if defendant_div else None
+                            plaintiff_div = parties_section.find(
+                                "div", class_="plaintiff"
+                            )
+                            defendant_div = parties_section.find(
+                                "div", class_="defendant"
+                            )
+                            details["plaintiff"] = (
+                                plaintiff_div.get_text(strip=True)
+                                if plaintiff_div
+                                else None
+                            )
+                            details["defendant"] = (
+                                defendant_div.get_text(strip=True)
+                                if defendant_div
+                                else None
+                            )
 
                         # Docket entries
                         docket_entries = []
@@ -743,11 +811,17 @@ class MaricopaCountyScraper(BaseCountyScraper):
                             for row in docket_table.find_all("tr")[1:]:
                                 cols = row.find_all("td")
                                 if len(cols) >= 3:
-                                    docket_entries.append({
-                                        "date": cols[0].get_text(strip=True),
-                                        "entry": cols[1].get_text(strip=True),
-                                        "filed_by": cols[2].get_text(strip=True) if len(cols) > 2 else None,
-                                    })
+                                    docket_entries.append(
+                                        {
+                                            "date": cols[0].get_text(strip=True),
+                                            "entry": cols[1].get_text(strip=True),
+                                            "filed_by": (
+                                                cols[2].get_text(strip=True)
+                                                if len(cols) > 2
+                                                else None
+                                            ),
+                                        }
+                                    )
 
                         return CourtCase(
                             case_number=case_number,
@@ -775,50 +849,45 @@ class MaricopaCountyScraper(BaseCountyScraper):
         self,
         name: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """Search civil court cases (lawsuits, collections, evictions)."""
         return await self.search_court_cases_by_name(
-            name=name,
-            case_type="CV",  # Civil
-            start_date=start_date,
-            end_date=end_date
+            name=name, case_type="CV", start_date=start_date, end_date=end_date  # Civil
         )
 
     async def search_family_cases(
         self,
         name: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """Search family court cases (divorce, custody, child support)."""
         return await self.search_court_cases_by_name(
             name=name,
             case_type="FC",  # Family Court
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
         )
 
     async def search_probate_cases(
         self,
         name: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[CourtCase]:
         """Search probate cases (estates, guardianships)."""
         return await self.search_court_cases_by_name(
             name=name,
             case_type="PB",  # Probate
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
         )
 
     # ==================== Tax Records ====================
 
     async def search_tax_records(
-        self,
-        parcel_id: str,
-        tax_year: Optional[int] = None
+        self, parcel_id: str, tax_year: Optional[int] = None
     ) -> List[TaxRecord]:
         """
         Search Maricopa County Treasurer for tax records.
@@ -844,8 +913,12 @@ class MaricopaCountyScraper(BaseCountyScraper):
                             record = TaxRecord(
                                 parcel_id=parcel_id,
                                 tax_year=tax_year_data.get("year", datetime.now().year),
-                                assessed_value=float(tax_year_data.get("assessedValue", 0)),
-                                taxable_value=float(tax_year_data.get("limitedValue", 0)),
+                                assessed_value=float(
+                                    tax_year_data.get("assessedValue", 0)
+                                ),
+                                taxable_value=float(
+                                    tax_year_data.get("limitedValue", 0)
+                                ),
                                 tax_amount=float(tax_year_data.get("totalTax", 0)),
                                 amount_paid=float(tax_year_data.get("amountPaid", 0)),
                                 amount_due=float(tax_year_data.get("amountDue", 0)),
@@ -859,7 +932,9 @@ class MaricopaCountyScraper(BaseCountyScraper):
                             results.append(record)
                     else:
                         # Fallback to scraping treasurer site
-                        results = await self._scrape_tax_records(session, parcel_id, tax_year)
+                        results = await self._scrape_tax_records(
+                            session, parcel_id, tax_year
+                        )
 
         except Exception as e:
             logger.error(f"Error searching Maricopa tax records: {e}")
@@ -867,10 +942,7 @@ class MaricopaCountyScraper(BaseCountyScraper):
         return results
 
     async def _scrape_tax_records(
-        self,
-        session: aiohttp.ClientSession,
-        parcel_id: str,
-        tax_year: Optional[int]
+        self, session: aiohttp.ClientSession, parcel_id: str, tax_year: Optional[int]
     ) -> List[TaxRecord]:
         """Scrape tax records from treasurer website."""
         results = []
@@ -897,10 +969,20 @@ class MaricopaCountyScraper(BaseCountyScraper):
                                 record = TaxRecord(
                                     parcel_id=parcel_id,
                                     tax_year=year,
-                                    tax_amount=self._parse_currency(cols[1].get_text(strip=True)),
-                                    amount_paid=self._parse_currency(cols[2].get_text(strip=True)),
-                                    amount_due=self._parse_currency(cols[3].get_text(strip=True)),
-                                    status=cols[4].get_text(strip=True) if len(cols) > 4 else "",
+                                    tax_amount=self._parse_currency(
+                                        cols[1].get_text(strip=True)
+                                    ),
+                                    amount_paid=self._parse_currency(
+                                        cols[2].get_text(strip=True)
+                                    ),
+                                    amount_due=self._parse_currency(
+                                        cols[3].get_text(strip=True)
+                                    ),
+                                    status=(
+                                        cols[4].get_text(strip=True)
+                                        if len(cols) > 4
+                                        else ""
+                                    ),
                                     county="Maricopa",
                                     state="AZ",
                                     source_url=response.url.human_repr(),
@@ -948,9 +1030,7 @@ class MaricopaCountyScraper(BaseCountyScraper):
 
 # Synchronous wrapper functions for convenience
 def search_property_by_address(
-    address: str,
-    city: Optional[str] = None,
-    zip_code: Optional[str] = None
+    address: str, city: Optional[str] = None, zip_code: Optional[str] = None
 ) -> List[PropertyRecord]:
     """Synchronous wrapper for property search by address."""
     scraper = MaricopaCountyScraper()
@@ -966,17 +1046,14 @@ def search_property_by_owner(owner_name: str) -> List[PropertyRecord]:
 def search_deeds_by_name(
     name: str,
     start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None,
 ) -> List[DeedRecord]:
     """Synchronous wrapper for deed search by name."""
     scraper = MaricopaCountyScraper()
     return asyncio.run(scraper.search_deeds_by_name(name, start_date, end_date))
 
 
-def search_court_cases(
-    name: str,
-    case_type: Optional[str] = None
-) -> List[CourtCase]:
+def search_court_cases(name: str, case_type: Optional[str] = None) -> List[CourtCase]:
     """Synchronous wrapper for court case search."""
     scraper = MaricopaCountyScraper()
     return asyncio.run(scraper.search_court_cases_by_name(name, case_type))

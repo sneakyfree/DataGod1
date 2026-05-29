@@ -33,12 +33,12 @@ from bs4 import BeautifulSoup
 
 from .base import (
     CountyRecorderBase,
-    DocumentType,
+    DocumentParty,
     DocumentStatus,
+    DocumentType,
+    LegalDescription,
     PartyRole,
     RecordedDocument,
-    DocumentParty,
-    LegalDescription,
     SearchCriteria,
     SearchResult,
 )
@@ -147,10 +147,11 @@ class OrangeCountyRecorder(CountyRecorderBase):
         party_type: str = "both",
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for documents by party name."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -175,7 +176,9 @@ class OrangeCountyRecorder(CountyRecorderBase):
                 page_number=1,
                 page_size=max_results,
                 has_more=False,
-                search_criteria=SearchCriteria(last_name=last_name, first_name=first_name),
+                search_criteria=SearchCriteria(
+                    last_name=last_name, first_name=first_name
+                ),
                 warnings=[str(e)],
             )
 
@@ -199,14 +202,12 @@ class OrangeCountyRecorder(CountyRecorderBase):
         )
 
     async def search_by_document_number(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """Search for a specific document by document number."""
         try:
             json_response = await self._fetch_json(
-                self.DETAIL_URL,
-                params={"docNumber": document_number}
+                self.DETAIL_URL, params={"docNumber": document_number}
             )
             if json_response.get("document"):
                 return self._parse_document_detail(json_response["document"])
@@ -219,10 +220,11 @@ class OrangeCountyRecorder(CountyRecorderBase):
         apn: str,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for documents by Assessor's Parcel Number."""
         import time
+
         start_time = time.time()
 
         formatted_apn = self._format_apn(apn)
@@ -275,11 +277,14 @@ class OrangeCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for documents by parcel/APN number."""
         return await self.search_by_apn(
-            parcel_number, start_date=start_date, end_date=end_date, max_results=max_results
+            parcel_number,
+            start_date=start_date,
+            end_date=end_date,
+            max_results=max_results,
         )
 
     async def search_by_address(
@@ -289,10 +294,11 @@ class OrangeCountyRecorder(CountyRecorderBase):
         zip_code: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """Search for documents by property address."""
         import time
+
         start_time = time.time()
 
         params = {
@@ -341,12 +347,13 @@ class OrangeCountyRecorder(CountyRecorderBase):
             source_system=self.SYSTEM_NAME,
         )
 
-    async def get_document_detail(self, document_number: str) -> Optional[RecordedDocument]:
+    async def get_document_detail(
+        self, document_number: str
+    ) -> Optional[RecordedDocument]:
         """Get full document details by document number."""
         try:
             json_response = await self._fetch_json(
-                self.DETAIL_URL,
-                params={"docNumber": document_number, "include": "all"}
+                self.DETAIL_URL, params={"docNumber": document_number, "include": "all"}
             )
             if json_response.get("document"):
                 return self._parse_document_detail(json_response["document"])
@@ -354,7 +361,9 @@ class OrangeCountyRecorder(CountyRecorderBase):
             logger.error(f"Orange County document detail failed: {e}")
         return None
 
-    def _parse_document_result(self, data: Dict[str, Any]) -> Optional[RecordedDocument]:
+    def _parse_document_result(
+        self, data: Dict[str, Any]
+    ) -> Optional[RecordedDocument]:
         """Parse a search result into RecordedDocument."""
         doc_number = data.get("documentNumber", data.get("docNumber", ""))
         if not doc_number:
@@ -368,26 +377,32 @@ class OrangeCountyRecorder(CountyRecorderBase):
             name = grantor if isinstance(grantor, str) else grantor.get("name", "")
             if name:
                 grantors.append(self._normalize_name(name))
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTOR,
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTOR,
+                    )
+                )
 
         for grantee in data.get("grantees", []):
             name = grantee if isinstance(grantee, str) else grantee.get("name", "")
             if name:
                 grantees.append(self._normalize_name(name))
-                parties.append(DocumentParty(
-                    name=self._normalize_name(name),
-                    role=PartyRole.GRANTEE,
-                ))
+                parties.append(
+                    DocumentParty(
+                        name=self._normalize_name(name),
+                        role=PartyRole.GRANTEE,
+                    )
+                )
 
         legal_descriptions = []
         for apn in data.get("parcels", data.get("apns", [])):
-            legal_descriptions.append(LegalDescription(
-                full_description="",
-                apn=self._format_apn(apn) if apn else None,
-            ))
+            legal_descriptions.append(
+                LegalDescription(
+                    full_description="",
+                    apn=self._format_apn(apn) if apn else None,
+                )
+            )
 
         return RecordedDocument(
             document_number=doc_number,
@@ -426,12 +441,14 @@ class OrangeCountyRecorder(CountyRecorderBase):
         doc.image_url = data.get("imageUrl")
 
         if data.get("legalDescription"):
-            doc.legal_descriptions.append(LegalDescription(
-                full_description=data.get("legalDescription", ""),
-                subdivision=data.get("subdivision"),
-                lot=data.get("lot"),
-                block=data.get("block"),
-            ))
+            doc.legal_descriptions.append(
+                LegalDescription(
+                    full_description=data.get("legalDescription", ""),
+                    subdivision=data.get("subdivision"),
+                    lot=data.get("lot"),
+                    block=data.get("block"),
+                )
+            )
 
         return doc
 
@@ -460,48 +477,50 @@ class OrangeCountyRecorder(CountyRecorderBase):
 
 # Synchronous convenience functions
 
+
 def search_orange_county_by_name(
-    last_name: str,
-    first_name: Optional[str] = None,
-    max_results: int = 100
+    last_name: str, first_name: Optional[str] = None, max_results: int = 100
 ) -> SearchResult:
     """Search Orange County recorded documents by name."""
+
     async def _search():
         async with OrangeCountyRecorder() as recorder:
             return await recorder.search_by_name(
                 last_name, first_name=first_name, max_results=max_results
             )
+
     return asyncio.run(_search())
 
 
-def search_orange_county_by_apn(
-    apn: str,
-    max_results: int = 100
-) -> SearchResult:
+def search_orange_county_by_apn(apn: str, max_results: int = 100) -> SearchResult:
     """Search Orange County recorded documents by APN."""
+
     async def _search():
         async with OrangeCountyRecorder() as recorder:
             return await recorder.search_by_apn(apn, max_results=max_results)
+
     return asyncio.run(_search())
 
 
 def search_orange_county_by_address(
-    address: str,
-    city: Optional[str] = None,
-    max_results: int = 100
+    address: str, city: Optional[str] = None, max_results: int = 100
 ) -> SearchResult:
     """Search Orange County recorded documents by address."""
+
     async def _search():
         async with OrangeCountyRecorder() as recorder:
             return await recorder.search_by_address(
                 address, city=city, max_results=max_results
             )
+
     return asyncio.run(_search())
 
 
 def get_orange_county_document(document_number: str) -> Optional[RecordedDocument]:
     """Get a specific Orange County recorded document."""
+
     async def _get():
         async with OrangeCountyRecorder() as recorder:
             return await recorder.get_document_detail(document_number)
+
     return asyncio.run(_get())

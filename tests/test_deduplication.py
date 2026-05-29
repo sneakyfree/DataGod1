@@ -8,8 +8,9 @@ Tests cover:
 - DeduplicationService
 """
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
 
 
 class TestDataNormalizer:
@@ -106,10 +107,7 @@ class TestDataNormalizer:
 
         normalizer = DataNormalizer()
 
-        record = {
-            "name": "John Doe",
-            "address": "123 Main St"
-        }
+        record = {"name": "John Doe", "address": "123 Main St"}
 
         key = normalizer.create_comparison_key(record, ["name", "address"])
         assert key != ""
@@ -269,7 +267,11 @@ class TestDeduplicationEngine:
 
         records = [
             {"name": "John"},  # Less complete
-            {"name": "John Doe", "address": "123 Main St", "phone": "555-1234"},  # More complete
+            {
+                "name": "John Doe",
+                "address": "123 Main St",
+                "phone": "555-1234",
+            },  # More complete
             {"name": "John Doe", "address": "123 Main St"},
         ]
 
@@ -322,7 +324,10 @@ class TestDeduplicationService:
 
     def test_merge_duplicates_keep_canonical(self):
         """Test merging with keep_canonical strategy."""
-        from datagod.utils.data_deduplication import DeduplicationService, DuplicateGroup
+        from datagod.utils.data_deduplication import (
+            DeduplicationService,
+            DuplicateGroup,
+        )
 
         service = DeduplicationService()
 
@@ -331,7 +336,7 @@ class TestDeduplicationService:
                 group_id="test_1",
                 canonical_record={"id": 1, "name": "John Doe"},
                 duplicate_records=[{"id": 2, "name": "John Doe"}],
-                confidence_score=1.0
+                confidence_score=1.0,
             )
         ]
 
@@ -342,7 +347,10 @@ class TestDeduplicationService:
 
     def test_merge_duplicates_merge_fields(self):
         """Test merging with merge_fields strategy."""
-        from datagod.utils.data_deduplication import DeduplicationService, DuplicateGroup
+        from datagod.utils.data_deduplication import (
+            DeduplicationService,
+            DuplicateGroup,
+        )
 
         service = DeduplicationService()
 
@@ -350,8 +358,10 @@ class TestDeduplicationService:
             DuplicateGroup(
                 group_id="test_1",
                 canonical_record={"id": 1, "name": "John Doe", "email": None},
-                duplicate_records=[{"id": 2, "name": "John Doe", "email": "john@example.com"}],
-                confidence_score=1.0
+                duplicate_records=[
+                    {"id": 2, "name": "John Doe", "email": "john@example.com"}
+                ],
+                confidence_score=1.0,
             )
         ]
 
@@ -362,7 +372,10 @@ class TestDeduplicationService:
 
     def test_get_deduplication_report(self):
         """Test deduplication report generation."""
-        from datagod.utils.data_deduplication import DeduplicationService, DuplicateGroup
+        from datagod.utils.data_deduplication import (
+            DeduplicationService,
+            DuplicateGroup,
+        )
 
         service = DeduplicationService()
 
@@ -371,14 +384,14 @@ class TestDeduplicationService:
                 group_id="test_1",
                 canonical_record={"id": 1, "name": "John Doe"},
                 duplicate_records=[{"id": 2}, {"id": 3}],
-                confidence_score=0.95
+                confidence_score=0.95,
             ),
             DuplicateGroup(
                 group_id="test_2",
                 canonical_record={"id": 4, "name": "Jane Smith"},
                 duplicate_records=[{"id": 5}],
-                confidence_score=0.85
-            )
+                confidence_score=0.85,
+            ),
         ]
 
         report = service.get_deduplication_report(groups)
@@ -400,7 +413,7 @@ class TestDuplicateGroup:
             group_id="test_1",
             canonical_record={"id": 1},
             duplicate_records=[{"id": 2}, {"id": 3}, {"id": 4}],
-            confidence_score=0.9
+            confidence_score=0.9,
         )
 
         assert group.total_records == 4  # 1 canonical + 3 duplicates
@@ -411,9 +424,7 @@ class TestDuplicateGroup:
         from datagod.utils.data_deduplication import DuplicateGroup
 
         group = DuplicateGroup(
-            group_id="test_1",
-            canonical_record={"id": 1},
-            confidence_score=0.9
+            group_id="test_1", canonical_record={"id": 1}, confidence_score=0.9
         )
 
         data = group.to_dict()
@@ -435,7 +446,7 @@ class TestDeduplicationMetrics:
             duplicates_found=20,
             duplicate_groups_created=10,
             processing_time_seconds=1.5,
-            algorithm_used="exact_match"
+            algorithm_used="exact_match",
         )
 
         data = metrics.to_dict()
@@ -456,7 +467,10 @@ class TestDeduplicationEngineAdvanced:
 
         records = [
             {"name": "John Doe Real Estate LLC", "description": "Property management"},
-            {"name": "John Doe Real Estate", "description": "Property management services"},
+            {
+                "name": "John Doe Real Estate",
+                "description": "Property management services",
+            },
             {"name": "Jane Smith Insurance", "description": "Insurance services"},
         ]
 
@@ -489,15 +503,25 @@ class TestDeduplicationEngineAdvanced:
 
     def test_select_canonical_with_dates(self):
         """Test canonical selection with date fields."""
-        from datagod.utils.data_deduplication import DeduplicationEngine
         from datetime import datetime, timedelta
+
+        from datagod.utils.data_deduplication import DeduplicationEngine
 
         engine = DeduplicationEngine()
 
         records = [
-            {"name": "John", "filing_date": (datetime.utcnow() - timedelta(days=5)).isoformat()},
-            {"name": "John Doe", "filing_date": (datetime.utcnow() - timedelta(days=100)).isoformat()},
-            {"name": "John D", "filing_date": datetime.utcnow().isoformat()},  # Most recent
+            {
+                "name": "John",
+                "filing_date": (datetime.utcnow() - timedelta(days=5)).isoformat(),
+            },
+            {
+                "name": "John Doe",
+                "filing_date": (datetime.utcnow() - timedelta(days=100)).isoformat(),
+            },
+            {
+                "name": "John D",
+                "filing_date": datetime.utcnow().isoformat(),
+            },  # Most recent
         ]
 
         best_idx = engine._select_canonical_record(records)
@@ -506,8 +530,9 @@ class TestDeduplicationEngineAdvanced:
 
     def test_select_canonical_with_datetime_objects(self):
         """Test canonical selection with datetime objects."""
-        from datagod.utils.data_deduplication import DeduplicationEngine
         from datetime import datetime, timedelta
+
+        from datagod.utils.data_deduplication import DeduplicationEngine
 
         engine = DeduplicationEngine()
 
@@ -531,7 +556,9 @@ class TestDeduplicationEngineAdvanced:
             {"name": "Jane Smith", "address": "456 Oak Ave"},  # Different
         ]
 
-        similar = engine._find_similar_records(target, candidates, ["name", "address"], set())
+        similar = engine._find_similar_records(
+            target, candidates, ["name", "address"], set()
+        )
         assert len(similar) >= 0  # May or may not find depending on exact threshold
 
 
@@ -700,9 +727,19 @@ class TestIntegration:
         records = [
             {"id": 1, "name": "John Doe", "address": "123 Main St", "amount": 250000},
             {"id": 2, "name": "Jane Smith", "address": "456 Oak Ave", "amount": 175000},
-            {"id": 3, "name": "John Doe", "address": "123 Main St", "amount": 250000},  # Duplicate of 1
+            {
+                "id": 3,
+                "name": "John Doe",
+                "address": "123 Main St",
+                "amount": 250000,
+            },  # Duplicate of 1
             {"id": 4, "name": "Bob Wilson", "address": "789 Pine Rd", "amount": 300000},
-            {"id": 5, "name": "John Doe", "address": "123 Main St", "amount": 250000},  # Duplicate of 1
+            {
+                "id": 5,
+                "name": "John Doe",
+                "address": "123 Main St",
+                "amount": 250000,
+            },  # Duplicate of 1
         ]
 
         # Run deduplication

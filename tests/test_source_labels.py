@@ -3,14 +3,15 @@ Tests for Source Labels (Gap P7 – Audit-Grade Provenance)
 """
 
 import pytest
+
 from datagod.compliance.source_labels import (
-    SourceConfidence,
     LabeledValue,
+    SourceConfidence,
     label_data,
-    label_verified,
-    label_stated,
     label_estimated,
+    label_stated,
     label_unknown,
+    label_verified,
 )
 
 

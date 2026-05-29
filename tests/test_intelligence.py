@@ -2,32 +2,32 @@
 Tests for intelligence/blocker_engine.py and intelligence/scenario_builder.py — deep coverage boost
 """
 
-import pytest
 from datetime import datetime
 
+import pytest
+
 from datagod.intelligence.blocker_engine import (
+    Blocker,
     BlockerCategory,
     BlockerSeverity,
-    FixTimeframe,
     BlockerType,
-    FixOption,
-    Blocker,
-    Unlocker,
     BlockerUnlockerEngine,
+    FixOption,
+    FixTimeframe,
+    Unlocker,
 )
-
 from datagod.intelligence.scenario_builder import (
     ScenarioCategory,
     ScenarioConfidence,
-    ScenarioType,
     ScenarioResult,
+    ScenarioType,
     ScenarioUniverseBuilder,
 )
-
 
 # ============================================================
 # Blocker Engine Tests
 # ============================================================
+
 
 class TestBlockerCategory:
     def test_values(self):
@@ -69,7 +69,7 @@ class TestBlockerType:
             severity=BlockerSeverity.CRITICAL,
             description="Unpaid tax lien on property",
             why_not_template="Tax lien of {amount} blocks title transfer",
-            default_fix_options=[]
+            default_fix_options=[],
         )
         assert bt.id == "tax_lien"
         assert bt.severity == BlockerSeverity.CRITICAL
@@ -88,7 +88,7 @@ class TestBlocker:
             source_date=datetime.utcnow(),
             data={"amount": 50000},
             fix_options=[],
-            source="county_records"
+            source="county_records",
         )
         assert blocker.blocker_id == "b1"
         assert blocker.severity == BlockerSeverity.HIGH
@@ -103,7 +103,7 @@ class TestUnlocker:
             description="Price significantly below market",
             opportunity="Potential investment opportunity",
             confidence=0.8,
-            data={"discount": 25}
+            data={"discount": 25},
         )
         assert unlocker.signal_type == "below_market"
         assert unlocker.confidence == 0.8
@@ -117,7 +117,7 @@ class TestBlockerUnlockerEngine:
         assert self.engine is not None
 
     def test_catalog_initialized(self):
-        assert hasattr(self.engine, 'BLOCKER_CATALOG')
+        assert hasattr(self.engine, "BLOCKER_CATALOG")
         assert len(self.engine.BLOCKER_CATALOG) > 0
 
     def test_analyze_empty_data(self):
@@ -133,7 +133,7 @@ class TestBlockerUnlockerEngine:
                     {"type": "tax_lien", "amount": 50000, "status": "active"},
                     {"type": "mortgage", "amount": 200000, "status": "active"},
                 ]
-            }
+            },
         )
         assert isinstance(blockers, list)
 
@@ -141,10 +141,8 @@ class TestBlockerUnlockerEngine:
         blockers, unlockers = self.engine.analyze(
             property_data={"address": "123 Main St"},
             title_data={
-                "chain_of_title": [
-                    {"description": "Cloud on title", "type": "cloud"}
-                ]
-            }
+                "chain_of_title": [{"description": "Cloud on title", "type": "cloud"}]
+            },
         )
         assert isinstance(blockers, list)
 
@@ -152,10 +150,8 @@ class TestBlockerUnlockerEngine:
         blockers, unlockers = self.engine.analyze(
             property_data={"address": "123 Main St"},
             legal_data={
-                "pending_cases": [
-                    {"type": "foreclosure", "status": "pending"}
-                ]
-            }
+                "pending_cases": [{"type": "foreclosure", "status": "pending"}]
+            },
         )
         assert isinstance(blockers, list)
 
@@ -212,11 +208,11 @@ class TestBlockerUnlockerEngine:
                         timeframe_days=(14, 30),
                         confidence=0.9,
                         requires=["funds"],
-                        next_steps=["Contact county"]
+                        next_steps=["Contact county"],
                     )
                 ],
                 source="test",
-                source_date=datetime.utcnow()
+                source_date=datetime.utcnow(),
             )
         ]
         fix_list = self.engine.generate_fix_list(blockers)
@@ -226,6 +222,7 @@ class TestBlockerUnlockerEngine:
 # ============================================================
 # Scenario Builder Tests
 # ============================================================
+
 
 class TestScenarioCategory:
     def test_values(self):
@@ -259,7 +256,7 @@ class TestScenarioResult:
             evidence=[{"source": "county", "finding": "delinquent taxes"}],
             missing_data=[],
             recommended_actions=["Contact county tax office"],
-            source_labels=[{"source": "county_records", "type": "official"}]
+            source_labels=[{"source": "county_records", "type": "official"}],
         )
         assert result.scenario_id == "s1"
         assert result.confidence_score == 0.75
@@ -273,7 +270,7 @@ class TestScenarioUniverseBuilder:
         assert self.builder is not None
 
     def test_taxonomy_initialized(self):
-        assert hasattr(self.builder, 'SCENARIO_TAXONOMY')
+        assert hasattr(self.builder, "SCENARIO_TAXONOMY")
         assert len(self.builder.SCENARIO_TAXONOMY) > 0
 
     @pytest.mark.asyncio
@@ -297,11 +294,9 @@ class TestScenarioUniverseBuilder:
         results = await self.builder.analyze(
             property_data={"address": "123 Main St"},
             lien_data={
-                "liens": [
-                    {"type": "tax_lien", "amount": 50000}
-                ],
-                "total_liens": 1
-            }
+                "liens": [{"type": "tax_lien", "amount": 50000}],
+                "total_liens": 1,
+            },
         )
         assert isinstance(results, list)
 
@@ -312,7 +307,7 @@ class TestScenarioUniverseBuilder:
             entity_data={
                 "owner_name": "John Smith",
                 "owner_type": "individual",
-            }
+            },
         )
         assert isinstance(results, list)
 
@@ -320,10 +315,7 @@ class TestScenarioUniverseBuilder:
     async def test_analyze_with_risk_data(self):
         results = await self.builder.analyze(
             property_data={"address": "123 Main St"},
-            risk_data={
-                "risk_score": 0.8,
-                "risk_factors": ["fire_zone", "flood_zone"]
-            }
+            risk_data={"risk_score": 0.8, "risk_factors": ["fire_zone", "flood_zone"]},
         )
         assert isinstance(results, list)
 
@@ -336,10 +328,7 @@ class TestScenarioUniverseBuilder:
         assert isinstance(summary, dict)
 
     def test_flatten_data(self):
-        flat = self.builder._flatten_data({
-            "a": {"b": 1, "c": {"d": 2}},
-            "e": 3
-        })
+        flat = self.builder._flatten_data({"a": {"b": 1, "c": {"d": 2}}, "e": 3})
         assert isinstance(flat, dict)
 
     def test_calculate_confidence(self):

@@ -29,22 +29,23 @@ import re
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 from .base import (
     CountyTreasurerBase,
-    TaxStatus,
     LienStatus,
-    TaxSaleType,
     PaymentMethod,
-    TaxBillItem,
-    TaxBill,
-    TaxPayment,
-    TaxLien,
-    TaxSaleProperty,
     PropertyTaxRecord,
+    TaxBill,
+    TaxBillItem,
+    TaxLien,
+    TaxPayment,
+    TaxSaleProperty,
+    TaxSaleType,
     TaxSearchCriteria,
     TaxSearchResult,
+    TaxStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -138,7 +139,9 @@ class CookCountyTreasurer(CountyTreasurerBase):
         if len(digits) != 14:
             return pin  # Return as-is if not 14 digits
 
-        return f"{digits[0:2]}-{digits[2:4]}-{digits[4:7]}-{digits[7:10]}-{digits[10:14]}"
+        return (
+            f"{digits[0:2]}-{digits[2:4]}-{digits[4:7]}-{digits[7:10]}-{digits[10:14]}"
+        )
 
     def _parse_pin(self, pin: str) -> Dict[str, str]:
         """Parse PIN into components."""
@@ -157,10 +160,7 @@ class CookCountyTreasurer(CountyTreasurerBase):
             "township_name": self.TOWNSHIPS.get(digits[0:2], "Unknown"),
         }
 
-    async def get_tax_record(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyTaxRecord]:
+    async def get_tax_record(self, parcel_id: str) -> Optional[PropertyTaxRecord]:
         """Get property tax record by PIN."""
         formatted_pin = self._format_pin(parcel_id)
         detail_url = f"{self.API_BASE}property/{formatted_pin}"
@@ -181,10 +181,11 @@ class CookCountyTreasurer(CountyTreasurerBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> TaxSearchResult:
         """Search for tax records by property address."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}search/address"
@@ -234,12 +235,11 @@ class CookCountyTreasurer(CountyTreasurerBase):
         )
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> TaxSearchResult:
         """Search for tax records by owner name."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}search/owner"
@@ -282,12 +282,11 @@ class CookCountyTreasurer(CountyTreasurerBase):
         )
 
     async def get_delinquent_properties(
-        self,
-        min_amount: Optional[Decimal] = None,
-        max_results: int = 500
+        self, min_amount: Optional[Decimal] = None, max_results: int = 500
     ) -> TaxSearchResult:
         """Get list of delinquent properties."""
         import time
+
         start_time = time.time()
 
         delinquent_url = f"{self.API_BASE}delinquent"
@@ -324,7 +323,9 @@ class CookCountyTreasurer(CountyTreasurerBase):
             page_number=1,
             page_size=max_results,
             has_more=json_response.get("hasMore", False),
-            search_criteria=TaxSearchCriteria(delinquent_only=True, min_amount_due=min_amount),
+            search_criteria=TaxSearchCriteria(
+                delinquent_only=True, min_amount_due=min_amount
+            ),
             search_time_ms=search_time,
             source_system=self.SYSTEM_NAME,
         )
@@ -333,7 +334,7 @@ class CookCountyTreasurer(CountyTreasurerBase):
         self,
         sale_type: Optional[TaxSaleType] = None,
         upcoming_only: bool = True,
-        max_results: int = 500
+        max_results: int = 500,
     ) -> List[TaxSaleProperty]:
         """Get properties scheduled for tax sale (scavenger sale)."""
         sale_url = f"{self.API_BASE}taxsale"
@@ -364,7 +365,7 @@ class CookCountyTreasurer(CountyTreasurerBase):
         self,
         parcel_id: Optional[str] = None,
         status: Optional[LienStatus] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> List[TaxLien]:
         """Get tax liens (sold taxes)."""
         liens_url = f"{self.API_BASE}liens"
@@ -401,14 +402,20 @@ class CookCountyTreasurer(CountyTreasurerBase):
         pin_parts = self._parse_pin(pin)
 
         # Parse current tax info
-        current_tax = self._parse_decimal(str(item.get("totalTax", item.get("taxAmount", ""))))
-        balance_due = self._parse_decimal(str(item.get("balanceDue", item.get("amountDue", ""))))
+        current_tax = self._parse_decimal(
+            str(item.get("totalTax", item.get("taxAmount", "")))
+        )
+        balance_due = self._parse_decimal(
+            str(item.get("balanceDue", item.get("amountDue", "")))
+        )
         amount_paid = self._parse_decimal(str(item.get("amountPaid", "")))
 
         # Determine status
         status_str = item.get("status", item.get("paymentStatus", ""))
         tax_status = self._parse_tax_status(status_str)
-        is_delinquent = "DELINQUENT" in str(status_str).upper() or (balance_due and balance_due > 0)
+        is_delinquent = "DELINQUENT" in str(status_str).upper() or (
+            balance_due and balance_due > 0
+        )
 
         # Parse exemptions
         exemptions = item.get("exemptions", [])
@@ -425,7 +432,9 @@ class CookCountyTreasurer(CountyTreasurerBase):
             owner_name=item.get("owner", item.get("ownerName")),
             owner_address=item.get("ownerAddress", item.get("mailingAddress")),
             assessed_value=self._parse_decimal(str(item.get("assessedValue", ""))),
-            taxable_value=self._parse_decimal(str(item.get("taxableValue", item.get("equalized", "")))),
+            taxable_value=self._parse_decimal(
+                str(item.get("taxableValue", item.get("equalized", "")))
+            ),
             market_value=self._parse_decimal(str(item.get("marketValue", ""))),
             current_tax_year=self._parse_int(str(item.get("taxYear", ""))),
             current_tax_amount=current_tax,
@@ -433,7 +442,8 @@ class CookCountyTreasurer(CountyTreasurerBase):
             current_balance_due=balance_due,
             tax_status=tax_status,
             is_delinquent=is_delinquent,
-            years_delinquent=self._parse_int(str(item.get("yearsDelinquent", "0"))) or 0,
+            years_delinquent=self._parse_int(str(item.get("yearsDelinquent", "0")))
+            or 0,
             total_delinquent=self._parse_decimal(str(item.get("totalDelinquent", ""))),
             exemptions=exemptions,
             exemption_amount=self._parse_decimal(str(item.get("exemptionAmount", ""))),
@@ -483,22 +493,31 @@ class CookCountyTreasurer(CountyTreasurerBase):
         for assess_data in data.get("specialAssessments", []):
             item = TaxBillItem(
                 description=assess_data.get("description", "Special Assessment"),
-                amount=self._parse_decimal(str(assess_data.get("amount", ""))) or Decimal(0),
+                amount=self._parse_decimal(str(assess_data.get("amount", "")))
+                or Decimal(0),
                 taxing_authority=assess_data.get("authority"),
                 raw_data=assess_data,
             )
             special_assessments.append(item)
 
         # Calculate totals
-        current_tax = self._parse_decimal(str(data.get("totalTax", data.get("currentTax", ""))))
-        balance_due = self._parse_decimal(str(data.get("balanceDue", data.get("totalDue", ""))))
+        current_tax = self._parse_decimal(
+            str(data.get("totalTax", data.get("currentTax", "")))
+        )
+        balance_due = self._parse_decimal(
+            str(data.get("balanceDue", data.get("totalDue", "")))
+        )
         amount_paid = self._parse_decimal(str(data.get("amountPaid", "")))
-        total_delinquent = self._parse_decimal(str(data.get("totalDelinquent", data.get("priorDue", ""))))
+        total_delinquent = self._parse_decimal(
+            str(data.get("totalDelinquent", data.get("priorDue", "")))
+        )
 
         # Determine status
         status_str = data.get("status", data.get("paymentStatus", ""))
         tax_status = self._parse_tax_status(status_str)
-        is_delinquent = "DELINQUENT" in str(status_str).upper() or bool(total_delinquent and total_delinquent > 0)
+        is_delinquent = "DELINQUENT" in str(status_str).upper() or bool(
+            total_delinquent and total_delinquent > 0
+        )
 
         return PropertyTaxRecord(
             parcel_id=formatted_pin,
@@ -510,7 +529,9 @@ class CookCountyTreasurer(CountyTreasurerBase):
             owner_name=data.get("owner", data.get("ownerName")),
             owner_address=data.get("ownerAddress", data.get("mailingAddress")),
             assessed_value=self._parse_decimal(str(data.get("assessedValue", ""))),
-            taxable_value=self._parse_decimal(str(data.get("taxableValue", data.get("equalized", "")))),
+            taxable_value=self._parse_decimal(
+                str(data.get("taxableValue", data.get("equalized", "")))
+            ),
             market_value=self._parse_decimal(str(data.get("marketValue", ""))),
             current_tax_year=self._parse_int(str(data.get("taxYear", ""))),
             current_tax_amount=current_tax,
@@ -518,7 +539,8 @@ class CookCountyTreasurer(CountyTreasurerBase):
             current_balance_due=balance_due,
             tax_status=tax_status,
             is_delinquent=is_delinquent,
-            years_delinquent=self._parse_int(str(data.get("yearsDelinquent", "0"))) or 0,
+            years_delinquent=self._parse_int(str(data.get("yearsDelinquent", "0")))
+            or 0,
             total_delinquent=total_delinquent,
             exemptions=exemptions,
             exemption_amount=self._parse_decimal(str(data.get("exemptionAmount", ""))),
@@ -544,7 +566,10 @@ class CookCountyTreasurer(CountyTreasurerBase):
         for item_data in data.get("lineItems", data.get("taxingBodies", [])):
             item = TaxBillItem(
                 description=item_data.get("description", item_data.get("name", "")),
-                amount=self._parse_decimal(str(item_data.get("amount", item_data.get("tax", "")))) or Decimal(0),
+                amount=self._parse_decimal(
+                    str(item_data.get("amount", item_data.get("tax", "")))
+                )
+                or Decimal(0),
                 taxing_authority=item_data.get("authority", item_data.get("district")),
                 tax_rate=self._parse_decimal(str(item_data.get("rate", ""))),
                 assessed_value=self._parse_decimal(str(item_data.get("eav", ""))),
@@ -559,15 +584,25 @@ class CookCountyTreasurer(CountyTreasurerBase):
             property_address=data.get("address"),
             owner_name=data.get("owner"),
             assessed_value=self._parse_decimal(str(data.get("assessedValue", ""))),
-            taxable_value=self._parse_decimal(str(data.get("eav", data.get("taxableValue", "")))),
-            tax_rate=self._parse_decimal(str(data.get("taxRate", data.get("rate", "")))),
-            gross_tax=self._parse_decimal(str(data.get("grossTax", data.get("totalTax", "")))),
+            taxable_value=self._parse_decimal(
+                str(data.get("eav", data.get("taxableValue", "")))
+            ),
+            tax_rate=self._parse_decimal(
+                str(data.get("taxRate", data.get("rate", "")))
+            ),
+            gross_tax=self._parse_decimal(
+                str(data.get("grossTax", data.get("totalTax", "")))
+            ),
             exemptions=self._parse_decimal(str(data.get("exemptionAmount", ""))),
             net_tax=self._parse_decimal(str(data.get("netTax", ""))),
-            penalties=self._parse_decimal(str(data.get("penalty", data.get("penalties", "")))),
+            penalties=self._parse_decimal(
+                str(data.get("penalty", data.get("penalties", "")))
+            ),
             interest=self._parse_decimal(str(data.get("interest", ""))),
             fees=self._parse_decimal(str(data.get("fees", data.get("costs", "")))),
-            total_due=self._parse_decimal(str(data.get("totalDue", data.get("amountDue", "")))),
+            total_due=self._parse_decimal(
+                str(data.get("totalDue", data.get("amountDue", "")))
+            ),
             amount_paid=self._parse_decimal(str(data.get("amountPaid", ""))),
             balance_due=self._parse_decimal(str(data.get("balanceDue", ""))),
             payment_status=self._parse_tax_status(data.get("status", "")),
@@ -584,7 +619,9 @@ class CookCountyTreasurer(CountyTreasurerBase):
     def _parse_payment(self, data: Dict[str, Any], pin: str) -> Optional[TaxPayment]:
         """Parse a payment record."""
         payment_date = self._parse_date(data.get("paymentDate", data.get("date", "")))
-        amount = self._parse_decimal(str(data.get("amount", data.get("paymentAmount", ""))))
+        amount = self._parse_decimal(
+            str(data.get("amount", data.get("paymentAmount", "")))
+        )
 
         if not amount:
             return None
@@ -629,7 +666,9 @@ class CookCountyTreasurer(CountyTreasurerBase):
 
     def _parse_tax_lien(self, data: Dict[str, Any]) -> Optional[TaxLien]:
         """Parse a tax lien (sold tax) record."""
-        lien_number = data.get("lienNumber", data.get("certificateNumber", data.get("saleId", "")))
+        lien_number = data.get(
+            "lienNumber", data.get("certificateNumber", data.get("saleId", ""))
+        )
         parcel_id = data.get("pin", data.get("parcelId", ""))
 
         if not lien_number and not parcel_id:
@@ -638,7 +677,9 @@ class CookCountyTreasurer(CountyTreasurerBase):
         # Parse tax years covered
         tax_years = data.get("taxYears", [])
         if isinstance(tax_years, str):
-            tax_years = [int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()]
+            tax_years = [
+                int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()
+            ]
         elif isinstance(tax_years, int):
             tax_years = [tax_years]
 
@@ -646,33 +687,55 @@ class CookCountyTreasurer(CountyTreasurerBase):
             lien_number=str(lien_number) if lien_number else f"LIEN-{parcel_id}",
             parcel_id=self._format_pin(parcel_id) if parcel_id else "",
             lien_date=self._parse_date(data.get("saleDate", data.get("lienDate", ""))),
-            lien_amount=self._parse_decimal(str(data.get("lienAmount", data.get("saleAmount", "")))),
-            face_value=self._parse_decimal(str(data.get("faceValue", data.get("taxAmount", "")))),
-            interest_rate=self._parse_decimal(str(data.get("interestRate", data.get("rate", "")))),
+            lien_amount=self._parse_decimal(
+                str(data.get("lienAmount", data.get("saleAmount", "")))
+            ),
+            face_value=self._parse_decimal(
+                str(data.get("faceValue", data.get("taxAmount", "")))
+            ),
+            interest_rate=self._parse_decimal(
+                str(data.get("interestRate", data.get("rate", "")))
+            ),
             accrued_interest=self._parse_decimal(str(data.get("accruedInterest", ""))),
             penalties=self._parse_decimal(str(data.get("penalties", ""))),
-            total_due=self._parse_decimal(str(data.get("totalDue", data.get("redemptionAmount", "")))),
+            total_due=self._parse_decimal(
+                str(data.get("totalDue", data.get("redemptionAmount", "")))
+            ),
             status=self._parse_lien_status(data.get("status", "")),
             property_address=data.get("address", data.get("propertyAddress")),
             owner_name=data.get("owner", data.get("ownerName")),
             legal_description=data.get("legalDescription"),
             tax_years=tax_years,
-            holder_name=data.get("buyer", data.get("holderName", data.get("purchaser"))),
+            holder_name=data.get(
+                "buyer", data.get("holderName", data.get("purchaser"))
+            ),
             holder_address=data.get("buyerAddress", data.get("holderAddress")),
             assignment_date=self._parse_date(data.get("assignmentDate", "")),
             redemption_date=self._parse_date(data.get("redemptionDate", "")),
-            redemption_amount=self._parse_decimal(str(data.get("redemptionAmount", ""))),
-            redemption_deadline=self._parse_date(data.get("redemptionDeadline", data.get("expirationDate", ""))),
+            redemption_amount=self._parse_decimal(
+                str(data.get("redemptionAmount", ""))
+            ),
+            redemption_deadline=self._parse_date(
+                data.get("redemptionDeadline", data.get("expirationDate", ""))
+            ),
             sale_date=self._parse_date(data.get("saleDate", "")),
-            sale_type=TaxSaleType.SCAVENGER_SALE if data.get("isScavenger") else self._parse_sale_type(data.get("saleType", "")),
-            sale_amount=self._parse_decimal(str(data.get("saleAmount", data.get("winningBid", "")))),
+            sale_type=(
+                TaxSaleType.SCAVENGER_SALE
+                if data.get("isScavenger")
+                else self._parse_sale_type(data.get("saleType", ""))
+            ),
+            sale_amount=self._parse_decimal(
+                str(data.get("saleAmount", data.get("winningBid", "")))
+            ),
             county=self.COUNTY_NAME,
             state=self.STATE,
             source_url=f"{self.BASE_URL}taxsale?lien={lien_number}",
             raw_data=data,
         )
 
-    def _parse_tax_sale_property(self, data: Dict[str, Any]) -> Optional[TaxSaleProperty]:
+    def _parse_tax_sale_property(
+        self, data: Dict[str, Any]
+    ) -> Optional[TaxSaleProperty]:
         """Parse a tax sale property listing."""
         parcel_id = data.get("pin", data.get("parcelId", ""))
         if not parcel_id:
@@ -683,7 +746,9 @@ class CookCountyTreasurer(CountyTreasurerBase):
         # Parse delinquent years
         tax_years = data.get("taxYears", data.get("yearsDelinquent", []))
         if isinstance(tax_years, str):
-            tax_years = [int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()]
+            tax_years = [
+                int(y.strip()) for y in tax_years.split(",") if y.strip().isdigit()
+            ]
         elif isinstance(tax_years, int):
             tax_years = [tax_years]
 
@@ -702,11 +767,17 @@ class CookCountyTreasurer(CountyTreasurerBase):
             penalties_due=self._parse_decimal(str(data.get("penalties", ""))),
             interest_due=self._parse_decimal(str(data.get("interest", ""))),
             fees_due=self._parse_decimal(str(data.get("fees", data.get("costs", "")))),
-            total_amount_due=self._parse_decimal(str(data.get("totalDue", data.get("openingBid", "")))),
+            total_amount_due=self._parse_decimal(
+                str(data.get("totalDue", data.get("openingBid", "")))
+            ),
             sale_type=TaxSaleType.SCAVENGER_SALE,  # Cook County uses scavenger sale
             sale_date=self._parse_date(data.get("saleDate", "")),
-            auction_date=self._parse_date(data.get("auctionDate", data.get("saleDate", ""))),
-            minimum_bid=self._parse_decimal(str(data.get("minimumBid", data.get("openingBid", "")))),
+            auction_date=self._parse_date(
+                data.get("auctionDate", data.get("saleDate", ""))
+            ),
+            minimum_bid=self._parse_decimal(
+                str(data.get("minimumBid", data.get("openingBid", "")))
+            ),
             opening_bid=self._parse_decimal(str(data.get("openingBid", ""))),
             assessed_value=self._parse_decimal(str(data.get("assessedValue", ""))),
             market_value=self._parse_decimal(str(data.get("marketValue", ""))),
@@ -753,6 +824,7 @@ class CookCountyTreasurer(CountyTreasurerBase):
 
 # Convenience functions
 
+
 def get_cook_county_tax_record(parcel_id: str) -> Optional[PropertyTaxRecord]:
     """Get Cook County tax record by PIN."""
     treasurer = CookCountyTreasurer()
@@ -760,6 +832,7 @@ def get_cook_county_tax_record(parcel_id: str) -> Optional[PropertyTaxRecord]:
     async def _get():
         async with treasurer:
             return await treasurer.get_tax_record(parcel_id)
+
     return asyncio.run(_get())
 
 
@@ -767,14 +840,17 @@ def search_cook_county_by_address(
     street_address: str,
     city: Optional[str] = None,
     zip_code: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> TaxSearchResult:
     """Search Cook County tax records by address."""
     treasurer = CookCountyTreasurer()
 
     async def _search():
         async with treasurer:
-            return await treasurer.search_by_address(street_address, city, zip_code, **kwargs)
+            return await treasurer.search_by_address(
+                street_address, city, zip_code, **kwargs
+            )
+
     return asyncio.run(_search())
 
 
@@ -785,4 +861,5 @@ def search_cook_county_by_owner(owner_name: str, **kwargs) -> TaxSearchResult:
     async def _search():
         async with treasurer:
             return await treasurer.search_by_owner(owner_name, **kwargs)
+
     return asyncio.run(_search())

@@ -1,10 +1,11 @@
+import importlib.util
+import sys
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock
+
 from fastapi.testclient import TestClient
 from passlib.context import CryptContext
-import sys
-from pathlib import Path
-import importlib.util
 
 # Add paths for imports
 api_src_path = Path(__file__).parent
@@ -36,7 +37,7 @@ class MockUserDbManager:
                 "api_calls_today": 0,
                 "exports_this_month": 0,
                 "created_at": "2024-01-01T00:00:00",
-                "updated_at": "2024-01-01T00:00:00"
+                "updated_at": "2024-01-01T00:00:00",
             }
         }
 
@@ -62,7 +63,9 @@ def create_mock_user_db_manager():
 
 
 # Load api_v2_simple module directly to set up mock before main.py imports it
-api_v2_spec = importlib.util.spec_from_file_location("api_v2_simple", api_src_path / "api_v2_simple.py")
+api_v2_spec = importlib.util.spec_from_file_location(
+    "api_v2_simple", api_src_path / "api_v2_simple.py"
+)
 api_v2_module = importlib.util.module_from_spec(api_v2_spec)
 sys.modules["api_v2_simple"] = api_v2_module
 api_v2_spec.loader.exec_module(api_v2_module)
@@ -100,16 +103,19 @@ class TestAPI(unittest.TestCase):
 
     def test_token_endpoint(self):
         # Test token endpoint with valid admin credentials (api v2 is mounted at /api/v2)
-        response = client.post("/api/v2/token",
-                               data={"username": "admin", "password": "admin123"})
+        response = client.post(
+            "/api/v2/token", data={"username": "admin", "password": "admin123"}
+        )
         # This should return 200 with valid credentials
         self.assertEqual(response.status_code, 200)
         self.assertIn("access_token", response.json())
 
     def test_token_endpoint_invalid_credentials(self):
         # Test token endpoint with invalid credentials
-        response = client.post("/api/v2/token",
-                               data={"username": "invalid_user", "password": "invalid_password"})
+        response = client.post(
+            "/api/v2/token",
+            data={"username": "invalid_user", "password": "invalid_password"},
+        )
         # Should return 401 Unauthorized
         self.assertEqual(response.status_code, 401)
 

@@ -24,20 +24,21 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+
 import aiohttp
 
 from .base import (
-    CountyAssessorBase,
-    PropertyType,
-    PropertyClass,
-    ExemptionType,
-    PropertyAssessment,
-    PropertyCharacteristics,
-    TaxAssessment,
-    OwnershipRecord,
-    SaleRecord,
     AssessorSearchCriteria,
     AssessorSearchResult,
+    CountyAssessorBase,
+    ExemptionType,
+    OwnershipRecord,
+    PropertyAssessment,
+    PropertyCharacteristics,
+    PropertyClass,
+    PropertyType,
+    SaleRecord,
+    TaxAssessment,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,12 +67,32 @@ class MaricopaCountyAssessor(CountyAssessorBase):
 
     # Cities in Maricopa County
     CITIES = [
-        "Phoenix", "Mesa", "Chandler", "Scottsdale", "Gilbert",
-        "Glendale", "Tempe", "Peoria", "Surprise", "Avondale",
-        "Goodyear", "Buckeye", "Casa Grande", "San Tan Valley",
-        "Fountain Hills", "Paradise Valley", "Cave Creek", "Carefree",
-        "Queen Creek", "El Mirage", "Litchfield Park", "Tolleson",
-        "Wickenburg", "Youngtown", "Guadalupe", "Apache Junction",
+        "Phoenix",
+        "Mesa",
+        "Chandler",
+        "Scottsdale",
+        "Gilbert",
+        "Glendale",
+        "Tempe",
+        "Peoria",
+        "Surprise",
+        "Avondale",
+        "Goodyear",
+        "Buckeye",
+        "Casa Grande",
+        "San Tan Valley",
+        "Fountain Hills",
+        "Paradise Valley",
+        "Cave Creek",
+        "Carefree",
+        "Queen Creek",
+        "El Mirage",
+        "Litchfield Park",
+        "Tolleson",
+        "Wickenburg",
+        "Youngtown",
+        "Guadalupe",
+        "Apache Junction",
     ]
 
     # Property use codes
@@ -122,10 +143,11 @@ class MaricopaCountyAssessor(CountyAssessorBase):
         street_address: str,
         city: Optional[str] = None,
         zip_code: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> AssessorSearchResult:
         """Search for properties by address."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}parcel/search"
@@ -172,18 +194,13 @@ class MaricopaCountyAssessor(CountyAssessorBase):
             page_size=max_results,
             has_more=json_response.get("hasMore", False),
             search_criteria=AssessorSearchCriteria(
-                street_address=street_address,
-                city=city,
-                zip_code=zip_code
+                street_address=street_address, city=city, zip_code=zip_code
             ),
             search_time_ms=search_time,
             source_system=self.SYSTEM_NAME,
         )
 
-    async def search_by_parcel_id(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def search_by_parcel_id(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """Search for a property by APN."""
         formatted_apn = self._format_apn(parcel_id)
 
@@ -194,12 +211,11 @@ class MaricopaCountyAssessor(CountyAssessorBase):
         return await self.get_property_detail(formatted_apn)
 
     async def search_by_owner(
-        self,
-        owner_name: str,
-        max_results: int = 100
+        self, owner_name: str, max_results: int = 100
     ) -> AssessorSearchResult:
         """Search for properties by owner name."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}parcel/search"
@@ -245,12 +261,11 @@ class MaricopaCountyAssessor(CountyAssessorBase):
         )
 
     async def search_by_subdivision(
-        self,
-        subdivision_name: str,
-        max_results: int = 100
+        self, subdivision_name: str, max_results: int = 100
     ) -> AssessorSearchResult:
         """Search for properties by subdivision name."""
         import time
+
         start_time = time.time()
 
         search_url = f"{self.API_BASE}parcel/search"
@@ -295,10 +310,7 @@ class MaricopaCountyAssessor(CountyAssessorBase):
             source_system=self.SYSTEM_NAME,
         )
 
-    async def get_property_detail(
-        self,
-        parcel_id: str
-    ) -> Optional[PropertyAssessment]:
+    async def get_property_detail(self, parcel_id: str) -> Optional[PropertyAssessment]:
         """Get detailed property information."""
         formatted_apn = self._format_apn(parcel_id)
 
@@ -317,7 +329,9 @@ class MaricopaCountyAssessor(CountyAssessorBase):
 
         return self._parse_property_detail(json_response, formatted_apn)
 
-    def _parse_search_result(self, item: Dict[str, Any]) -> Optional[PropertyAssessment]:
+    def _parse_search_result(
+        self, item: Dict[str, Any]
+    ) -> Optional[PropertyAssessment]:
         """Parse a search result item."""
         apn = item.get("apn", item.get("parcelNumber", ""))
         if not apn:
@@ -332,21 +346,29 @@ class MaricopaCountyAssessor(CountyAssessorBase):
             state=self.STATE,
             zip_code=item.get("situsZip", item.get("zip", "")),
             county=self.COUNTY_NAME,
-            property_type=self._parse_property_type(item.get("useCode", item.get("propertyType", ""))),
-            assessed_value=self._parse_decimal(str(item.get("fullCashValue", item.get("assessedValue", "")))),
-            market_value=self._parse_decimal(str(item.get("marketValue", item.get("limitedValue", "")))),
-            current_owner=OwnershipRecord(
-                owner_name=item.get("ownerName", item.get("owner", "")),
-            ) if item.get("ownerName") or item.get("owner") else None,
+            property_type=self._parse_property_type(
+                item.get("useCode", item.get("propertyType", ""))
+            ),
+            assessed_value=self._parse_decimal(
+                str(item.get("fullCashValue", item.get("assessedValue", "")))
+            ),
+            market_value=self._parse_decimal(
+                str(item.get("marketValue", item.get("limitedValue", "")))
+            ),
+            current_owner=(
+                OwnershipRecord(
+                    owner_name=item.get("ownerName", item.get("owner", "")),
+                )
+                if item.get("ownerName") or item.get("owner")
+                else None
+            ),
             source_url=f"{self.PARCEL_SEARCH}{formatted_apn.replace('-', '')}",
             source_system=self.SYSTEM_NAME,
             raw_data=item,
         )
 
     def _parse_property_detail(
-        self,
-        data: Dict[str, Any],
-        apn: str
+        self, data: Dict[str, Any], apn: str
     ) -> PropertyAssessment:
         """Parse detailed property data."""
         # Parse characteristics
@@ -357,25 +379,43 @@ class MaricopaCountyAssessor(CountyAssessorBase):
         land_data = data.get("land", {})
 
         characteristics = PropertyCharacteristics(
-            year_built=self._parse_int(str(chars.get("yearBuilt", chars.get("effectiveYear", "")))),
-            building_sqft=self._parse_int(str(chars.get("totalSqft", chars.get("buildingArea", "")))),
-            living_sqft=self._parse_int(str(chars.get("livingSqft", chars.get("livingArea", "")))),
+            year_built=self._parse_int(
+                str(chars.get("yearBuilt", chars.get("effectiveYear", "")))
+            ),
+            building_sqft=self._parse_int(
+                str(chars.get("totalSqft", chars.get("buildingArea", "")))
+            ),
+            living_sqft=self._parse_int(
+                str(chars.get("livingSqft", chars.get("livingArea", "")))
+            ),
             bedrooms=self._parse_int(str(chars.get("bedrooms", ""))),
-            bathrooms=self._parse_float(str(chars.get("bathrooms", chars.get("totalBaths", "")))),
+            bathrooms=self._parse_float(
+                str(chars.get("bathrooms", chars.get("totalBaths", "")))
+            ),
             full_baths=self._parse_int(str(chars.get("fullBaths", ""))),
-            half_baths=self._parse_int(str(chars.get("halfBaths", chars.get("threeQuarterBaths", "")))),
-            stories=self._parse_float(str(chars.get("stories", chars.get("numberOfStories", "")))),
+            half_baths=self._parse_int(
+                str(chars.get("halfBaths", chars.get("threeQuarterBaths", "")))
+            ),
+            stories=self._parse_float(
+                str(chars.get("stories", chars.get("numberOfStories", "")))
+            ),
             garage_type=chars.get("garageType", chars.get("parkingType")),
-            garage_spaces=self._parse_int(str(chars.get("garageSpaces", chars.get("parkingSpaces", "")))),
-            lot_sqft=self._parse_int(str(land_data.get("sqft", land_data.get("landArea", "")))),
+            garage_spaces=self._parse_int(
+                str(chars.get("garageSpaces", chars.get("parkingSpaces", "")))
+            ),
+            lot_sqft=self._parse_int(
+                str(land_data.get("sqft", land_data.get("landArea", "")))
+            ),
             lot_acres=self._parse_float(str(land_data.get("acres", ""))),
             construction_type=chars.get("constructionType", chars.get("construction")),
             exterior_wall=chars.get("exteriorWall", chars.get("exterior")),
             roof_type=chars.get("roofType", chars.get("roof")),
             foundation_type=chars.get("foundationType", chars.get("foundation")),
-            central_air=chars.get("cooling") == "Central" or "AIR" in str(chars.get("cooling", "")).upper(),
+            central_air=chars.get("cooling") == "Central"
+            or "AIR" in str(chars.get("cooling", "")).upper(),
             heating_type=chars.get("heating", chars.get("heatingType")),
-            pool=chars.get("pool", False) or "POOL" in str(chars.get("amenities", "")).upper(),
+            pool=chars.get("pool", False)
+            or "POOL" in str(chars.get("amenities", "")).upper(),
             fireplace_count=self._parse_int(str(chars.get("fireplaces", ""))),
             raw_characteristics=chars,
         )
@@ -385,10 +425,22 @@ class MaricopaCountyAssessor(CountyAssessorBase):
         for assessment in data.get("valueHistory", data.get("valuations", [])):
             tax_assessment = TaxAssessment(
                 tax_year=assessment.get("taxYear", assessment.get("year", 0)),
-                assessed_value_land=self._parse_decimal(str(assessment.get("landValue", assessment.get("landFCV", "")))),
-                assessed_value_improvements=self._parse_decimal(str(assessment.get("improvementValue", assessment.get("improvementFCV", "")))),
-                assessed_value_total=self._parse_decimal(str(assessment.get("fullCashValue", assessment.get("totalFCV", "")))),
-                market_value_total=self._parse_decimal(str(assessment.get("limitedValue", assessment.get("LPV", "")))),
+                assessed_value_land=self._parse_decimal(
+                    str(assessment.get("landValue", assessment.get("landFCV", "")))
+                ),
+                assessed_value_improvements=self._parse_decimal(
+                    str(
+                        assessment.get(
+                            "improvementValue", assessment.get("improvementFCV", "")
+                        )
+                    )
+                ),
+                assessed_value_total=self._parse_decimal(
+                    str(assessment.get("fullCashValue", assessment.get("totalFCV", "")))
+                ),
+                market_value_total=self._parse_decimal(
+                    str(assessment.get("limitedValue", assessment.get("LPV", "")))
+                ),
             )
             assessment_history.append(tax_assessment)
 
@@ -396,8 +448,14 @@ class MaricopaCountyAssessor(CountyAssessorBase):
         sales_history = []
         for sale in data.get("salesHistory", data.get("transfers", [])):
             sale_record = SaleRecord(
-                sale_date=self._parse_date(sale.get("saleDate", sale.get("recordingDate", ""))) or date.today(),
-                sale_price=self._parse_decimal(str(sale.get("salePrice", sale.get("consideration", "")))) or Decimal(0),
+                sale_date=self._parse_date(
+                    sale.get("saleDate", sale.get("recordingDate", ""))
+                )
+                or date.today(),
+                sale_price=self._parse_decimal(
+                    str(sale.get("salePrice", sale.get("consideration", "")))
+                )
+                or Decimal(0),
                 buyer_name=sale.get("grantee", sale.get("buyer")),
                 seller_name=sale.get("grantor", sale.get("seller")),
                 document_number=sale.get("documentNumber", sale.get("docketPage")),
@@ -411,13 +469,23 @@ class MaricopaCountyAssessor(CountyAssessorBase):
         if isinstance(owner_data, str):
             owner_data = {"name": owner_data}
 
-        current_owner = OwnershipRecord(
-            owner_name=owner_data.get("name", owner_data.get("ownerName", data.get("ownerName", ""))),
-            mailing_address=owner_data.get("mailingAddress", owner_data.get("address")),
-            mailing_city=owner_data.get("mailingCity", owner_data.get("city")),
-            mailing_state=owner_data.get("mailingState", owner_data.get("state")),
-            mailing_zip=owner_data.get("mailingZip", owner_data.get("zip")),
-        ) if owner_data.get("name") or owner_data.get("ownerName") or data.get("ownerName") else None
+        current_owner = (
+            OwnershipRecord(
+                owner_name=owner_data.get(
+                    "name", owner_data.get("ownerName", data.get("ownerName", ""))
+                ),
+                mailing_address=owner_data.get(
+                    "mailingAddress", owner_data.get("address")
+                ),
+                mailing_city=owner_data.get("mailingCity", owner_data.get("city")),
+                mailing_state=owner_data.get("mailingState", owner_data.get("state")),
+                mailing_zip=owner_data.get("mailingZip", owner_data.get("zip")),
+            )
+            if owner_data.get("name")
+            or owner_data.get("ownerName")
+            or data.get("ownerName")
+            else None
+        )
 
         # Parse exemptions - Arizona has different exemption types
         exemptions = []
@@ -426,7 +494,9 @@ class MaricopaCountyAssessor(CountyAssessorBase):
             exemption_data = [{"type": exemption_data}]
 
         for exemption in exemption_data:
-            exemption_type = str(exemption.get("type", exemption.get("code", ""))).upper()
+            exemption_type = str(
+                exemption.get("type", exemption.get("code", ""))
+            ).upper()
             if "HOMEOWNER" in exemption_type or "WIDOW" in exemption_type:
                 exemptions.append(ExemptionType.HOMESTEAD)
             elif "SENIOR" in exemption_type or "65" in exemption_type:
@@ -457,14 +527,28 @@ class MaricopaCountyAssessor(CountyAssessorBase):
             county=self.COUNTY_NAME,
             legal_description=data.get("legalDescription", data.get("legal")),
             subdivision=data.get("subdivision", data.get("subdivisionName")),
-            property_type=self._parse_property_type(data.get("useCode", data.get("propertyType", ""))),
+            property_type=self._parse_property_type(
+                data.get("useCode", data.get("propertyType", ""))
+            ),
             property_class=self._parse_property_class(data.get("useCode", "")),
-            property_use=data.get("useDescription", self.USE_CODES.get(data.get("useCode", ""))),
+            property_use=data.get(
+                "useDescription", self.USE_CODES.get(data.get("useCode", ""))
+            ),
             zoning=data.get("zoning"),
-            assessed_value=current_assessment.assessed_value_total if current_assessment else None,
-            market_value=current_assessment.market_value_total if current_assessment else None,
-            land_value=current_assessment.assessed_value_land if current_assessment else None,
-            improvement_value=current_assessment.assessed_value_improvements if current_assessment else None,
+            assessed_value=(
+                current_assessment.assessed_value_total if current_assessment else None
+            ),
+            market_value=(
+                current_assessment.market_value_total if current_assessment else None
+            ),
+            land_value=(
+                current_assessment.assessed_value_land if current_assessment else None
+            ),
+            improvement_value=(
+                current_assessment.assessed_value_improvements
+                if current_assessment
+                else None
+            ),
             tax_year=current_assessment.tax_year if current_assessment else None,
             characteristics=characteristics,
             assessment_history=assessment_history,
@@ -474,7 +558,9 @@ class MaricopaCountyAssessor(CountyAssessorBase):
             last_sale_date=sales_history[0].sale_date if sales_history else None,
             last_sale_price=sales_history[0].sale_price if sales_history else None,
             latitude=self._parse_float(str(data.get("latitude", data.get("lat", "")))),
-            longitude=self._parse_float(str(data.get("longitude", data.get("lng", "")))),
+            longitude=self._parse_float(
+                str(data.get("longitude", data.get("lng", "")))
+            ),
             neighborhood=data.get("neighborhood", data.get("area")),
             source_url=f"{self.PARCEL_SEARCH}{apn_clean}",
             source_system=self.SYSTEM_NAME,
@@ -486,7 +572,11 @@ class MaricopaCountyAssessor(CountyAssessorBase):
         if not use_code:
             return None
 
-        code = str(use_code).strip()[:3] if len(str(use_code)) >= 3 else str(use_code).strip()
+        code = (
+            str(use_code).strip()[:3]
+            if len(str(use_code)) >= 3
+            else str(use_code).strip()
+        )
 
         code_mapping = {
             "100": PropertyType.SINGLE_FAMILY,
@@ -531,6 +621,7 @@ class MaricopaCountyAssessor(CountyAssessorBase):
 
 # Convenience functions
 
+
 def search_maricopa_county_address(address: str, **kwargs) -> AssessorSearchResult:
     """Search Maricopa County properties by address."""
     assessor = MaricopaCountyAssessor()
@@ -538,6 +629,7 @@ def search_maricopa_county_address(address: str, **kwargs) -> AssessorSearchResu
     async def _search():
         async with assessor:
             return await assessor.search_by_address(address, **kwargs)
+
     return asyncio.run(_search())
 
 
@@ -548,6 +640,7 @@ def search_maricopa_county_owner(owner_name: str, **kwargs) -> AssessorSearchRes
     async def _search():
         async with assessor:
             return await assessor.search_by_owner(owner_name, **kwargs)
+
     return asyncio.run(_search())
 
 
@@ -558,4 +651,5 @@ def get_maricopa_county_property(apn: str) -> Optional[PropertyAssessment]:
     async def _get():
         async with assessor:
             return await assessor.get_property_detail(apn)
+
     return asyncio.run(_get())

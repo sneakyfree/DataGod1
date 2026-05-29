@@ -2,13 +2,15 @@
 Tests for api/src/api.py - actual import-based tests for coverage.
 Uses TestClient to test FastAPI endpoints.
 """
-import pytest
-import sys
-import os
-from pathlib import Path
-from unittest.mock import patch, MagicMock, Mock
-from datetime import datetime, timedelta
+
 import json
+import os
+import sys
+from datetime import datetime, timedelta
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 # Add api/src to path for imports
 api_path = Path(__file__).parent.parent / "api" / "src"
@@ -21,17 +23,23 @@ class TestPasswordHashing:
     def test_get_password_hash(self):
         """Test password hashing"""
         # Mock the api module imports
-        with patch.dict(sys.modules, {
-            'db': MagicMock(),
-            'config': MagicMock(settings=MagicMock(
-                api_title="Test API",
-                api_version="1.0.0",
-                secret_key="test-secret-key",
-                algorithm="HS256",
-                access_token_expire_minutes=30
-            ))
-        }):
+        with patch.dict(
+            sys.modules,
+            {
+                "db": MagicMock(),
+                "config": MagicMock(
+                    settings=MagicMock(
+                        api_title="Test API",
+                        api_version="1.0.0",
+                        secret_key="test-secret-key",
+                        algorithm="HS256",
+                        access_token_expire_minutes=30,
+                    )
+                ),
+            },
+        ):
             from passlib.context import CryptContext
+
             pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
             # Test hashing
@@ -45,6 +53,7 @@ class TestPasswordHashing:
     def test_verify_password(self):
         """Test password verification"""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         password = "my_secure_password"
@@ -95,7 +104,7 @@ class TestJWTToken:
 
     def test_decode_invalid_token(self):
         """Test decoding invalid token raises error"""
-        from jose import jwt, JWTError
+        from jose import JWTError, jwt
 
         SECRET_KEY = "test-secret-key"
         ALGORITHM = "HS256"
@@ -105,7 +114,7 @@ class TestJWTToken:
 
     def test_decode_expired_token(self):
         """Test decoding expired token raises error"""
-        from jose import jwt, ExpiredSignatureError
+        from jose import ExpiredSignatureError, jwt
 
         SECRET_KEY = "test-secret-key"
         ALGORITHM = "HS256"
@@ -124,8 +133,9 @@ class TestUserModels:
 
     def test_user_model(self):
         """Test User model creation"""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class User(BaseModel):
             username: str
@@ -137,7 +147,7 @@ class TestUserModels:
             username="testuser",
             email="test@example.com",
             full_name="Test User",
-            disabled=False
+            disabled=False,
         )
 
         assert user.username == "testuser"
@@ -147,8 +157,9 @@ class TestUserModels:
 
     def test_user_model_optional_fields(self):
         """Test User model with only required fields"""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class User(BaseModel):
             username: str
@@ -174,8 +185,9 @@ class TestUserModels:
 
     def test_token_data_model(self):
         """Test TokenData model"""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class TokenData(BaseModel):
             username: Optional[str] = None
@@ -257,8 +269,9 @@ class TestGetUser:
 
     def test_get_user_exists(self):
         """Test getting existing user"""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class User(BaseModel):
             username: str
@@ -292,8 +305,9 @@ class TestGetUser:
 
     def test_get_user_not_exists(self):
         """Test getting non-existent user"""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class User(BaseModel):
             username: str
@@ -321,9 +335,10 @@ class TestAuthenticateUser:
 
     def test_authenticate_user_success(self):
         """Test successful authentication"""
+        from typing import Optional
+
         from passlib.context import CryptContext
         from pydantic import BaseModel
-        from typing import Optional
 
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -367,9 +382,10 @@ class TestAuthenticateUser:
 
     def test_authenticate_user_wrong_password(self):
         """Test authentication with wrong password"""
+        from typing import Optional
+
         from passlib.context import CryptContext
         from pydantic import BaseModel
-        from typing import Optional
 
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -411,9 +427,10 @@ class TestAuthenticateUser:
 
     def test_authenticate_user_not_exists(self):
         """Test authentication for non-existent user"""
+        from typing import Optional
+
         from passlib.context import CryptContext
         from pydantic import BaseModel
-        from typing import Optional
 
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -453,10 +470,7 @@ class TestExportFormats:
         import csv
         from io import StringIO
 
-        records = [
-            {"id": 1, "name": "Test1"},
-            {"id": 2, "name": "Test2"}
-        ]
+        records = [{"id": 1, "name": "Test1"}, {"id": 2, "name": "Test2"}]
 
         output = StringIO()
         if records:
@@ -476,10 +490,7 @@ class TestExportFormats:
         """Test XML export formatting"""
         import xml.etree.ElementTree as ET
 
-        records = [
-            {"id": "1", "name": "Test1"},
-            {"id": "2", "name": "Test2"}
-        ]
+        records = [{"id": "1", "name": "Test1"}, {"id": "2", "name": "Test2"}]
 
         root = ET.Element("records")
         for record in records:
@@ -496,10 +507,7 @@ class TestExportFormats:
 
     def test_json_export_format(self):
         """Test JSON export formatting"""
-        records = [
-            {"id": 1, "name": "Test1"},
-            {"id": 2, "name": "Test2"}
-        ]
+        records = [{"id": 1, "name": "Test1"}, {"id": 2, "name": "Test2"}]
 
         result = {"records": records}
         json_output = json.dumps(result)
@@ -567,10 +575,7 @@ class TestHealthEndpoint:
 
     def test_health_response_structure(self):
         """Test health check response structure"""
-        response = {
-            "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        response = {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
         assert response["status"] == "healthy"
         assert "timestamp" in response
@@ -580,7 +585,7 @@ class TestHealthEndpoint:
         """Test metrics response structure"""
         response = {
             "status": "metrics available",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
         assert response["status"] == "metrics available"
@@ -691,8 +696,7 @@ class TestHTTPExceptions:
 
         with pytest.raises(HTTPException) as exc_info:
             raise HTTPException(
-                status_code=429,
-                detail="Too many requests, rate limit exceeded"
+                status_code=429, detail="Too many requests, rate limit exceeded"
             )
 
         assert exc_info.value.status_code == 429

@@ -11,14 +11,15 @@ This module tests:
 Coverage target: 100% of export-related code in api_v2_simple.py
 """
 
-import pytest
-import os
-import sys
-import json
 import csv
 import io
-from datetime import datetime, date
-from unittest.mock import patch, MagicMock
+import json
+import os
+import sys
+from datetime import date, datetime
+from unittest.mock import MagicMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 
 # Set test environment before imports
@@ -26,8 +27,8 @@ os.environ["TESTING"] = "1"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 # Add paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'api', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "api", "src"))
 
 
 class TestExportEndpoint:
@@ -38,6 +39,7 @@ class TestExportEndpoint:
         """Create test client."""
         from api.src.api_v2_simple import app
         from api.src.db import init_db
+
         try:
             init_db()
         except Exception:
@@ -47,9 +49,7 @@ class TestExportEndpoint:
     def test_export_json_format(self, client):
         """Test exporting data in JSON format."""
         try:
-            response = client.post("/export", json={
-                "format": "json"
-            })
+            response = client.post("/export", json={"format": "json"})
             assert response.status_code in [200, 401, 422, 500]
             if response.status_code == 200:
                 data = response.json()
@@ -60,9 +60,7 @@ class TestExportEndpoint:
     def test_export_csv_format(self, client):
         """Test exporting data in CSV format."""
         try:
-            response = client.post("/export", json={
-                "format": "csv"
-            })
+            response = client.post("/export", json={"format": "csv"})
             assert response.status_code in [200, 401, 422, 500]
             if response.status_code == 200:
                 # Check content-type for CSV
@@ -74,9 +72,7 @@ class TestExportEndpoint:
     def test_export_excel_format(self, client):
         """Test exporting data in Excel format."""
         try:
-            response = client.post("/export", json={
-                "format": "excel"
-            })
+            response = client.post("/export", json={"format": "excel"})
             # May fail if pandas/xlsxwriter not installed
             assert response.status_code in [200, 401, 422, 500]
         except Exception:
@@ -85,12 +81,9 @@ class TestExportEndpoint:
     def test_export_with_query_filter(self, client):
         """Test export with query filter."""
         try:
-            response = client.post("/export", json={
-                "format": "json",
-                "query": {
-                    "query": "mortgage"
-                }
-            })
+            response = client.post(
+                "/export", json={"format": "json", "query": {"query": "mortgage"}}
+            )
             assert response.status_code in [200, 401, 422, 500]
         except Exception:
             pass
@@ -98,12 +91,10 @@ class TestExportEndpoint:
     def test_export_with_jurisdiction_filter(self, client):
         """Test export with jurisdiction ID filter."""
         try:
-            response = client.post("/export", json={
-                "format": "json",
-                "query": {
-                    "jurisdiction_ids": [1, 2, 3]
-                }
-            })
+            response = client.post(
+                "/export",
+                json={"format": "json", "query": {"jurisdiction_ids": [1, 2, 3]}},
+            )
             assert response.status_code in [200, 401, 422, 500]
         except Exception:
             pass
@@ -111,12 +102,13 @@ class TestExportEndpoint:
     def test_export_with_record_types_filter(self, client):
         """Test export with record type filter."""
         try:
-            response = client.post("/export", json={
-                "format": "json",
-                "query": {
-                    "record_types": ["mortgage", "property"]
-                }
-            })
+            response = client.post(
+                "/export",
+                json={
+                    "format": "json",
+                    "query": {"record_types": ["mortgage", "property"]},
+                },
+            )
             assert response.status_code in [200, 401, 422, 500]
         except Exception:
             pass
@@ -124,13 +116,13 @@ class TestExportEndpoint:
     def test_export_with_date_range(self, client):
         """Test export with date range filter."""
         try:
-            response = client.post("/export", json={
-                "format": "json",
-                "query": {
-                    "date_from": "2024-01-01",
-                    "date_to": "2024-12-31"
-                }
-            })
+            response = client.post(
+                "/export",
+                json={
+                    "format": "json",
+                    "query": {"date_from": "2024-01-01", "date_to": "2024-12-31"},
+                },
+            )
             assert response.status_code in [200, 401, 422, 500]
         except Exception:
             pass
@@ -138,13 +130,13 @@ class TestExportEndpoint:
     def test_export_with_amount_range(self, client):
         """Test export with amount range filter."""
         try:
-            response = client.post("/export", json={
-                "format": "json",
-                "query": {
-                    "amount_min": 100000,
-                    "amount_max": 500000
-                }
-            })
+            response = client.post(
+                "/export",
+                json={
+                    "format": "json",
+                    "query": {"amount_min": 100000, "amount_max": 500000},
+                },
+            )
             assert response.status_code in [200, 401, 422, 500]
         except Exception:
             pass
@@ -152,18 +144,21 @@ class TestExportEndpoint:
     def test_export_with_all_filters(self, client):
         """Test export with all filters combined."""
         try:
-            response = client.post("/export", json={
-                "format": "json",
-                "query": {
-                    "query": "test",
-                    "jurisdiction_ids": [1],
-                    "record_types": ["mortgage"],
-                    "date_from": "2024-01-01",
-                    "date_to": "2024-12-31",
-                    "amount_min": 100000,
-                    "amount_max": 500000
-                }
-            })
+            response = client.post(
+                "/export",
+                json={
+                    "format": "json",
+                    "query": {
+                        "query": "test",
+                        "jurisdiction_ids": [1],
+                        "record_types": ["mortgage"],
+                        "date_from": "2024-01-01",
+                        "date_to": "2024-12-31",
+                        "amount_min": 100000,
+                        "amount_max": 500000,
+                    },
+                },
+            )
             assert response.status_code in [200, 401, 422, 500]
         except Exception:
             pass
@@ -171,9 +166,7 @@ class TestExportEndpoint:
     def test_export_invalid_format(self, client):
         """Test export with invalid format."""
         try:
-            response = client.post("/export", json={
-                "format": "invalid_format"
-            })
+            response = client.post("/export", json={"format": "invalid_format"})
             # Should return 422 for validation error
             assert response.status_code in [200, 401, 422, 500]
         except Exception:
@@ -182,12 +175,13 @@ class TestExportEndpoint:
     def test_export_empty_result(self, client):
         """Test export that returns empty results."""
         try:
-            response = client.post("/export", json={
-                "format": "json",
-                "query": {
-                    "query": "nonexistent_record_xyz123"
-                }
-            })
+            response = client.post(
+                "/export",
+                json={
+                    "format": "json",
+                    "query": {"query": "nonexistent_record_xyz123"},
+                },
+            )
             assert response.status_code in [200, 401, 422, 500]
             if response.status_code == 200:
                 data = response.json()
@@ -202,8 +196,9 @@ class TestExportResponseModel:
 
     def test_export_response_structure(self):
         """Test ExportResponse model structure."""
+        from typing import Any, Dict, List, Optional
+
         from pydantic import BaseModel
-        from typing import List, Optional, Any, Dict
 
         class ExportResponse(BaseModel):
             records: List[Dict[str, Any]] = []
@@ -212,9 +207,7 @@ class TestExportResponseModel:
             exported_at: Optional[str] = None
 
         response = ExportResponse(
-            records=[{"id": 1, "title": "Test"}],
-            total=1,
-            format="json"
+            records=[{"id": 1, "title": "Test"}], total=1, format="json"
         )
         assert response.total == 1
         assert response.format == "json"
@@ -222,8 +215,9 @@ class TestExportResponseModel:
 
     def test_export_request_model(self):
         """Test ExportRequest model."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class SearchQuery(BaseModel):
             query: Optional[str] = None
@@ -246,6 +240,7 @@ class TestHealthEndpoints:
     def client(self):
         """Create test client."""
         from api.src.api_v2_simple import app
+
         return TestClient(app)
 
     def test_health_check(self, client):
@@ -279,6 +274,7 @@ class TestCacheEndpoints:
     def client(self):
         """Create test client."""
         from api.src.api_v2_simple import app
+
         return TestClient(app)
 
     def test_cache_stats(self, client):
@@ -305,6 +301,7 @@ class TestStatisticsEndpoints:
         """Create test client."""
         from api.src.api_v2_simple import app
         from api.src.db import init_db
+
         try:
             init_db()
         except Exception:
@@ -357,7 +354,9 @@ class TestCSVExportLogic:
         writer = csv.DictWriter(output, fieldnames=fieldnames)
 
         writer.writeheader()
-        writer.writerow({"id": 1, "title": "Test", "type": "mortgage", "amount": 100000})
+        writer.writerow(
+            {"id": 1, "title": "Test", "type": "mortgage", "amount": 100000}
+        )
 
         output.seek(0)
         content = output.read()
@@ -401,7 +400,7 @@ class TestJSONExportLogic:
         """Test JSON serialization of records."""
         records = [
             {"id": 1, "title": "Test", "amount": 100000.50},
-            {"id": 2, "title": "Test 2", "amount": 200000.00}
+            {"id": 2, "title": "Test 2", "amount": 200000.00},
         ]
 
         json_str = json.dumps(records)
@@ -417,7 +416,7 @@ class TestJSONExportLogic:
         record = {
             "id": 1,
             "date": date(2024, 1, 15).isoformat(),
-            "created_at": datetime(2024, 1, 15, 10, 30, 0).isoformat()
+            "created_at": datetime(2024, 1, 15, 10, 30, 0).isoformat(),
         }
 
         json_str = json.dumps(record)
@@ -427,12 +426,7 @@ class TestJSONExportLogic:
 
     def test_json_none_handling(self):
         """Test JSON serialization of None values."""
-        record = {
-            "id": 1,
-            "title": "Test",
-            "amount": None,
-            "notes": None
-        }
+        record = {"id": 1, "title": "Test", "amount": None, "notes": None}
 
         json_str = json.dumps(record)
         parsed = json.loads(json_str)
@@ -490,7 +484,7 @@ class TestExportFieldSelection:
         """Test extracting fieldnames from records."""
         records = [
             {"id": 1, "title": "Test", "amount": 100000},
-            {"id": 2, "title": "Test 2", "amount": 200000}
+            {"id": 2, "title": "Test 2", "amount": 200000},
         ]
 
         if records:
@@ -580,7 +574,7 @@ class TestExportQueryValidation:
             "jurisdiction_ids": [1, 2],
             "record_types": ["mortgage"],
             "date_from": "2024-01-01",
-            "date_to": "2024-12-31"
+            "date_to": "2024-12-31",
         }
 
         assert "query" in query
@@ -595,9 +589,7 @@ class TestExportQueryValidation:
 
     def test_partial_query(self):
         """Test partial query with some fields."""
-        query = {
-            "record_types": ["mortgage"]
-        }
+        query = {"record_types": ["mortgage"]}
 
         assert "record_types" in query
         assert "query" not in query

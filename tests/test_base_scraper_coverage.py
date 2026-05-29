@@ -2,11 +2,13 @@
 Tests for datagod/scrapers/base_scraper.py
 Tests that actually import and exercise the module for real coverage.
 """
-import pytest
+
 import json
 import os
 import tempfile
-from unittest.mock import patch, MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 import requests
 
 
@@ -16,12 +18,15 @@ class TestBaseScraper:
     def test_base_scraper_import(self):
         """Test that BaseScraper can be imported"""
         from datagod.scrapers.base_scraper import BaseScraper
+
         assert BaseScraper is not None
 
     def test_base_scraper_is_abstract(self):
         """Test that BaseScraper is an abstract class"""
-        from datagod.scrapers.base_scraper import BaseScraper
         from abc import ABC
+
+        from datagod.scrapers.base_scraper import BaseScraper
+
         assert issubclass(BaseScraper, ABC)
 
     def test_concrete_scraper_creation(self):
@@ -99,7 +104,7 @@ class TestMakeRequest:
 
         return ConcreteScraper("https://example.com", delay=0)
 
-    @patch('time.sleep')
+    @patch("time.sleep")
     def test_make_request_get_success_json(self, mock_sleep):
         """Test successful GET request with JSON response"""
         scraper = self.get_concrete_scraper()
@@ -107,17 +112,17 @@ class TestMakeRequest:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"key": "value"}
-        mock_response.headers = {'Content-Type': 'application/json'}
+        mock_response.headers = {"Content-Type": "application/json"}
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(scraper.session, 'get', return_value=mock_response):
+        with patch.object(scraper.session, "get", return_value=mock_response):
             result = scraper._make_request("https://example.com/api")
 
         assert result["success"] is True
         assert result["data"] == {"key": "value"}
         assert result["status_code"] == 200
 
-    @patch('time.sleep')
+    @patch("time.sleep")
     def test_make_request_get_success_text(self, mock_sleep):
         """Test successful GET request with text response"""
         scraper = self.get_concrete_scraper()
@@ -128,13 +133,13 @@ class TestMakeRequest:
         mock_response.text = "<html>content</html>"
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(scraper.session, 'get', return_value=mock_response):
+        with patch.object(scraper.session, "get", return_value=mock_response):
             result = scraper._make_request("https://example.com/page")
 
         assert result["success"] is True
         assert result["data"] == "<html>content</html>"
 
-    @patch('time.sleep')
+    @patch("time.sleep")
     def test_make_request_post(self, mock_sleep):
         """Test POST request"""
         scraper = self.get_concrete_scraper()
@@ -144,43 +149,47 @@ class TestMakeRequest:
         mock_response.json.return_value = {"created": True}
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(scraper.session, 'post', return_value=mock_response):
-            result = scraper._make_request("https://example.com/api", method='POST')
+        with patch.object(scraper.session, "post", return_value=mock_response):
+            result = scraper._make_request("https://example.com/api", method="POST")
 
         assert result["success"] is True
         assert result["status_code"] == 201
 
-    @patch('time.sleep')
+    @patch("time.sleep")
     def test_make_request_unsupported_method(self, mock_sleep):
         """Test unsupported HTTP method returns error dict"""
         scraper = self.get_concrete_scraper()
 
         # _make_request catches ValueError internally and returns error dict
-        result = scraper._make_request("https://example.com", method='PATCH')
+        result = scraper._make_request("https://example.com", method="PATCH")
         assert result["success"] is False
         assert "Unsupported HTTP method" in result["error"]
 
-    @patch('time.sleep')
+    @patch("time.sleep")
     def test_make_request_request_exception(self, mock_sleep):
         """Test request exception handling"""
         scraper = self.get_concrete_scraper()
 
-        with patch.object(scraper.session, 'get', side_effect=requests.exceptions.Timeout("Timeout")):
+        with patch.object(
+            scraper.session, "get", side_effect=requests.exceptions.Timeout("Timeout")
+        ):
             result = scraper._make_request("https://example.com")
 
         assert result["success"] is False
         assert "Timeout" in result["error"]
 
-    @patch('time.sleep')
+    @patch("time.sleep")
     def test_make_request_http_error(self, mock_sleep):
         """Test HTTP error handling"""
         scraper = self.get_concrete_scraper()
 
         mock_response = MagicMock()
         mock_response.status_code = 404
-        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("404 Not Found")
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            "404 Not Found"
+        )
 
-        with patch.object(scraper.session, 'get', return_value=mock_response):
+        with patch.object(scraper.session, "get", return_value=mock_response):
             result = scraper._make_request("https://example.com/notfound")
 
         assert result["success"] is False
@@ -190,13 +199,13 @@ class TestMakeRequest:
         scraper = self.get_concrete_scraper()
         scraper.delay = 0.5
 
-        with patch('time.sleep') as mock_sleep:
+        with patch("time.sleep") as mock_sleep:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.return_value = {}
             mock_response.raise_for_status = MagicMock()
 
-            with patch.object(scraper.session, 'get', return_value=mock_response):
+            with patch.object(scraper.session, "get", return_value=mock_response):
                 scraper._make_request("https://example.com")
 
             mock_sleep.assert_called_with(0.5)
@@ -218,12 +227,12 @@ class TestExtractLinks:
     def test_extract_absolute_links(self):
         """Test extracting absolute links"""
         scraper = self.get_concrete_scraper()
-        html = '''
+        html = """
         <html>
             <a href="https://example.com/page1">Page 1</a>
             <a href="https://example.com/page2">Page 2</a>
         </html>
-        '''
+        """
         links = scraper._extract_links(html, "https://example.com")
         assert "https://example.com/page1" in links
         assert "https://example.com/page2" in links
@@ -231,12 +240,12 @@ class TestExtractLinks:
     def test_extract_relative_links_with_slash(self):
         """Test extracting relative links starting with /"""
         scraper = self.get_concrete_scraper()
-        html = '''
+        html = """
         <html>
             <a href="/page1">Page 1</a>
             <a href="/subdir/page2">Page 2</a>
         </html>
-        '''
+        """
         links = scraper._extract_links(html, "https://example.com")
         assert "https://example.com/page1" in links
         assert "https://example.com/subdir/page2" in links
@@ -244,18 +253,18 @@ class TestExtractLinks:
     def test_extract_relative_links_without_slash(self):
         """Test extracting relative links without slash"""
         scraper = self.get_concrete_scraper()
-        html = '''
+        html = """
         <html>
             <a href="page1.html">Page 1</a>
         </html>
-        '''
+        """
         links = scraper._extract_links(html, "https://example.com")
         assert "https://example.com/page1.html" in links
 
     def test_extract_no_links(self):
         """Test HTML with no links"""
         scraper = self.get_concrete_scraper()
-        html = '<html><body>No links here</body></html>'
+        html = "<html><body>No links here</body></html>"
         links = scraper._extract_links(html, "https://example.com")
         assert links == []
 
@@ -289,7 +298,7 @@ class TestParseJsonData:
     def test_parse_invalid_json(self):
         """Test parsing invalid JSON string"""
         scraper = self.get_concrete_scraper()
-        result = scraper._parse_json_data('not valid json')
+        result = scraper._parse_json_data("not valid json")
         assert result == {}
 
 
@@ -321,11 +330,7 @@ class TestValidateData:
     def test_validate_valid_data(self):
         """Test validating valid data"""
         scraper = self.get_concrete_scraper()
-        data = {
-            "source": "test",
-            "scraped_at": "2024-01-01",
-            "data": {"key": "value"}
-        }
+        data = {"source": "test", "scraped_at": "2024-01-01", "data": {"key": "value"}}
         assert scraper.validate_data(data) is True
 
 
@@ -347,14 +352,14 @@ class TestSaveData:
         scraper = self.get_concrete_scraper()
         data = [{"id": 1}, {"id": 2}]
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             filename = f.name
 
         try:
             result = scraper.save_data(data, filename)
             assert result is True
 
-            with open(filename, 'r') as f:
+            with open(filename, "r") as f:
                 saved_data = json.load(f)
             assert saved_data == data
         finally:
@@ -375,7 +380,8 @@ class TestLogger:
     def test_logger_exists(self):
         """Test that logger is configured"""
         from datagod.scrapers import base_scraper
-        assert hasattr(base_scraper, 'logger')
+
+        assert hasattr(base_scraper, "logger")
 
 
 class TestModuleExports:
@@ -383,11 +389,12 @@ class TestModuleExports:
 
     def test_module_has_base_scraper(self):
         """Test module exports BaseScraper"""
-        from datagod.scrapers.base_scraper import BaseScraper
         from abc import abstractmethod
 
+        from datagod.scrapers.base_scraper import BaseScraper
+
         # Check scrape is abstract
-        assert hasattr(BaseScraper, 'scrape')
+        assert hasattr(BaseScraper, "scrape")
 
     def test_abstractmethod_decorator(self):
         """Test scrape method is abstract"""

@@ -9,22 +9,23 @@ Tests cover:
 - ATTOMAPIClient implementation
 """
 
-import pytest
 from datetime import date, datetime
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from datagod.scrapers.paid.attom_api import (
-    RiskLevel,
-    SchoolType,
-    ATTOMProperty,
-    SalesComparable,
-    NeighborhoodData,
-    SchoolInfo,
-    HazardRisk,
-    MarketTrend,
-    ATTOMSearch,
     ATTOMAPI,
     ATTOMAPIClient,
+    ATTOMProperty,
+    ATTOMSearch,
+    HazardRisk,
+    MarketTrend,
+    NeighborhoodData,
+    RiskLevel,
+    SalesComparable,
+    SchoolInfo,
+    SchoolType,
     create_attom_client,
 )
 
@@ -34,7 +35,14 @@ class TestRiskLevelEnum:
 
     def test_all_risk_levels_exist(self):
         """Verify all expected risk levels are defined"""
-        expected_levels = ['VERY_LOW', 'LOW', 'MODERATE', 'HIGH', 'VERY_HIGH', 'UNKNOWN']
+        expected_levels = [
+            "VERY_LOW",
+            "LOW",
+            "MODERATE",
+            "HIGH",
+            "VERY_HIGH",
+            "UNKNOWN",
+        ]
         for level in expected_levels:
             assert hasattr(RiskLevel, level)
 
@@ -52,7 +60,15 @@ class TestSchoolTypeEnum:
 
     def test_all_school_types_exist(self):
         """Verify all expected school types are defined"""
-        expected_types = ['ELEMENTARY', 'MIDDLE', 'HIGH', 'COMBINED', 'PRIVATE', 'CHARTER', 'UNKNOWN']
+        expected_types = [
+            "ELEMENTARY",
+            "MIDDLE",
+            "HIGH",
+            "COMBINED",
+            "PRIVATE",
+            "CHARTER",
+            "UNKNOWN",
+        ]
         for school_type in expected_types:
             assert hasattr(SchoolType, school_type)
 
@@ -76,7 +92,7 @@ class TestATTOMProperty:
             zip_code="77001",
             county="Harris",
             fips="48201",
-            property_type="SFR"
+            property_type="SFR",
         )
         assert prop.attom_id == "A123456"
         assert prop.address == "123 Main St"
@@ -107,7 +123,7 @@ class TestATTOMProperty:
             last_sale_date=date(2020, 6, 15),
             last_sale_price=380000.0,
             latitude=29.7604,
-            longitude=-95.3698
+            longitude=-95.3698,
         )
         assert prop.bedrooms == 4
         assert prop.pool is True
@@ -124,12 +140,12 @@ class TestATTOMProperty:
             county="Harris",
             fips="48201",
             property_type="SFR",
-            last_sale_date=date(2020, 6, 15)
+            last_sale_date=date(2020, 6, 15),
         )
         result = prop.to_dict()
-        assert result['attom_id'] == "A123456"
-        assert result['last_sale_date'] == "2020-06-15"
-        assert 'fetched_at' in result
+        assert result["attom_id"] == "A123456"
+        assert result["last_sale_date"] == "2020-06-15"
+        assert "fetched_at" in result
 
 
 class TestSalesComparable:
@@ -143,7 +159,7 @@ class TestSalesComparable:
             city="Houston",
             state="TX",
             zip_code="77002",
-            property_type="SFR"
+            property_type="SFR",
         )
         assert comp.attom_id == "A789012"
         assert comp.sale_price is None
@@ -165,7 +181,7 @@ class TestSalesComparable:
             building_sqft=2300.0,
             year_built=2012,
             price_per_sqft=184.78,
-            adjusted_price=430000.0
+            adjusted_price=430000.0,
         )
         assert comp.distance_miles == 0.5
         assert comp.sale_price == 425000.0
@@ -180,11 +196,11 @@ class TestSalesComparable:
             zip_code="77002",
             property_type="SFR",
             sale_date=date(2024, 3, 15),
-            sale_price=425000.0
+            sale_price=425000.0,
         )
         result = comp.to_dict()
-        assert result['sale_date'] == "2024-03-15"
-        assert result['sale_price'] == 425000.0
+        assert result["sale_date"] == "2024-03-15"
+        assert result["sale_price"] == 425000.0
 
 
 class TestNeighborhoodData:
@@ -193,10 +209,7 @@ class TestNeighborhoodData:
     def test_create_minimal_neighborhood(self):
         """Test creating neighborhood data with required fields"""
         neighborhood = NeighborhoodData(
-            fips="48201",
-            name="Downtown",
-            city="Houston",
-            state="TX"
+            fips="48201", name="Downtown", city="Houston", state="TX"
         )
         assert neighborhood.fips == "48201"
         assert neighborhood.name == "Downtown"
@@ -215,7 +228,7 @@ class TestNeighborhoodData:
             population_density=5000.0,
             median_age=35.5,
             owner_occupied_rate=0.45,
-            crime_index=85
+            crime_index=85,
         )
         assert neighborhood.median_home_value == 450000.0
         assert neighborhood.crime_index == 85
@@ -227,11 +240,11 @@ class TestNeighborhoodData:
             name="Downtown",
             city="Houston",
             state="TX",
-            median_home_value=450000.0
+            median_home_value=450000.0,
         )
         result = neighborhood.to_dict()
-        assert result['name'] == "Downtown"
-        assert result['median_home_value'] == 450000.0
+        assert result["name"] == "Downtown"
+        assert result["median_home_value"] == 450000.0
 
 
 class TestSchoolInfo:
@@ -242,7 +255,7 @@ class TestSchoolInfo:
         school = SchoolInfo(
             school_id="S123",
             name="Lincoln Elementary",
-            school_type=SchoolType.ELEMENTARY
+            school_type=SchoolType.ELEMENTARY,
         )
         assert school.school_id == "S123"
         assert school.school_type == SchoolType.ELEMENTARY
@@ -263,7 +276,7 @@ class TestSchoolInfo:
             enrollment=450,
             student_teacher_ratio=18.5,
             great_schools_rating=8,
-            distance_miles=0.3
+            distance_miles=0.3,
         )
         assert school.district_name == "Houston ISD"
         assert school.great_schools_rating == 8
@@ -274,12 +287,12 @@ class TestSchoolInfo:
             school_id="S123",
             name="Lincoln Elementary",
             school_type=SchoolType.ELEMENTARY,
-            great_schools_rating=8
+            great_schools_rating=8,
         )
         result = school.to_dict()
-        assert result['name'] == "Lincoln Elementary"
-        assert result['school_type'] == "elementary"
-        assert result['great_schools_rating'] == 8
+        assert result["name"] == "Lincoln Elementary"
+        assert result["school_type"] == "elementary"
+        assert result["great_schools_rating"] == 8
 
 
 class TestHazardRisk:
@@ -287,9 +300,7 @@ class TestHazardRisk:
 
     def test_create_minimal_hazard(self):
         """Test creating hazard risk with required fields"""
-        hazard = HazardRisk(
-            property_id="A123456"
-        )
+        hazard = HazardRisk(property_id="A123456")
         assert hazard.property_id == "A123456"
         assert hazard.flood_risk == RiskLevel.UNKNOWN
 
@@ -305,7 +316,7 @@ class TestHazardRisk:
             wind_risk=RiskLevel.HIGH,
             tornado_risk=RiskLevel.MODERATE,
             superfund_site_nearby=False,
-            composite_risk_score=65
+            composite_risk_score=65,
         )
         assert hazard.flood_risk == RiskLevel.MODERATE
         assert hazard.composite_risk_score == 65
@@ -313,13 +324,11 @@ class TestHazardRisk:
     def test_hazard_to_dict(self):
         """Test converting hazard risk to dictionary"""
         hazard = HazardRisk(
-            property_id="A123456",
-            flood_risk=RiskLevel.HIGH,
-            flood_zone="VE"
+            property_id="A123456", flood_risk=RiskLevel.HIGH, flood_zone="VE"
         )
         result = hazard.to_dict()
-        assert result['flood_risk'] == "high"
-        assert result['flood_zone'] == "VE"
+        assert result["flood_risk"] == "high"
+        assert result["flood_zone"] == "VE"
 
 
 class TestMarketTrend:
@@ -327,11 +336,7 @@ class TestMarketTrend:
 
     def test_create_minimal_trend(self):
         """Test creating market trend with required fields"""
-        trend = MarketTrend(
-            area_name="77001",
-            area_type="zip",
-            period="2024-01"
-        )
+        trend = MarketTrend(area_name="77001", area_type="zip", period="2024-01")
         assert trend.area_name == "77001"
         assert trend.area_type == "zip"
         assert trend.period == "2024-01"
@@ -349,7 +354,7 @@ class TestMarketTrend:
             active_listings=85,
             median_dom=22,
             months_of_supply=2.1,
-            foreclosure_rate=0.5
+            foreclosure_rate=0.5,
         )
         assert trend.median_sale_price == 425000.0
         assert trend.median_price_change_yoy == 5.2
@@ -360,12 +365,12 @@ class TestMarketTrend:
             area_name="77001",
             area_type="zip",
             period="2024-01",
-            median_sale_price=425000.0
+            median_sale_price=425000.0,
         )
         result = trend.to_dict()
-        assert result['area_name'] == "77001"
-        assert result['period'] == "2024-01"
-        assert result['median_sale_price'] == 425000.0
+        assert result["area_name"] == "77001"
+        assert result["period"] == "2024-01"
+        assert result["median_sale_price"] == 425000.0
 
 
 class TestATTOMSearch:
@@ -381,10 +386,7 @@ class TestATTOMSearch:
     def test_create_address_search(self):
         """Test creating search by address"""
         search = ATTOMSearch(
-            address="123 Main St",
-            city="Houston",
-            state="TX",
-            zip_code="77001"
+            address="123 Main St", city="Houston", state="TX", zip_code="77001"
         )
         assert search.address == "123 Main St"
 
@@ -396,7 +398,7 @@ class TestATTOMSearch:
             min_beds=3,
             max_value=500000.0,
             radius_miles=2.0,
-            page_size=100
+            page_size=100,
         )
         assert search.min_beds == 3
         assert search.radius_miles == 2.0
@@ -412,16 +414,16 @@ class TestATTOMAPIClient:
 
     def test_initialization_with_config(self):
         """Test ATTOMAPIClient initialization with config"""
-        config = {'timeout': 60}
+        config = {"timeout": 60}
         client = ATTOMAPIClient(api_key="test_key", config=config)
-        assert client.config['timeout'] == 60
+        assert client.config["timeout"] == 60
 
     def test_get_headers(self):
         """Test authenticated headers generation"""
         client = ATTOMAPIClient(api_key="test_key")
         headers = client._get_headers()
-        assert headers['apikey'] == "test_key"
-        assert headers['Accept'] == 'application/json'
+        assert headers["apikey"] == "test_key"
+        assert headers["Accept"] == "application/json"
 
     def test_search_properties_returns_list(self):
         """Test search_properties method returns list"""
@@ -478,9 +480,9 @@ class TestCreateAttomClientFunction:
 
     def test_create_client_with_config(self):
         """Test creating ATTOM client with config"""
-        config = {'timeout': 60}
+        config = {"timeout": 60}
         client = create_attom_client(api_key="test_key", config=config)
-        assert client.config['timeout'] == 60
+        assert client.config["timeout"] == 60
 
 
 class TestATTOMImports:
@@ -489,24 +491,36 @@ class TestATTOMImports:
     def test_all_exports_available(self):
         """Test that all expected exports are available"""
         from datagod.scrapers.paid.attom_api import (
-            RiskLevel,
-            SchoolType,
-            ATTOMProperty,
-            SalesComparable,
-            NeighborhoodData,
-            SchoolInfo,
-            HazardRisk,
-            MarketTrend,
-            ATTOMSearch,
             ATTOMAPI,
             ATTOMAPIClient,
-            create_attom_client
+            ATTOMProperty,
+            ATTOMSearch,
+            HazardRisk,
+            MarketTrend,
+            NeighborhoodData,
+            RiskLevel,
+            SalesComparable,
+            SchoolInfo,
+            SchoolType,
+            create_attom_client,
         )
-        assert all([
-            RiskLevel, SchoolType, ATTOMProperty, SalesComparable,
-            NeighborhoodData, SchoolInfo, HazardRisk, MarketTrend,
-            ATTOMSearch, ATTOMAPI, ATTOMAPIClient, create_attom_client
-        ])
+
+        assert all(
+            [
+                RiskLevel,
+                SchoolType,
+                ATTOMProperty,
+                SalesComparable,
+                NeighborhoodData,
+                SchoolInfo,
+                HazardRisk,
+                MarketTrend,
+                ATTOMSearch,
+                ATTOMAPI,
+                ATTOMAPIClient,
+                create_attom_client,
+            ]
+        )
 
 
 class TestATTOMEdgeCases:
@@ -522,34 +536,27 @@ class TestATTOMEdgeCases:
             zip_code="77001",
             county="Harris",
             fips="48201",
-            property_type="SFR"
+            property_type="SFR",
         )
         result = prop.to_dict()
-        assert result['last_sale_date'] is None
+        assert result["last_sale_date"] is None
 
     def test_hazard_all_unknown_risks(self):
         """Test hazard with all unknown risk levels"""
         hazard = HazardRisk(property_id="A123456")
         result = hazard.to_dict()
-        assert result['flood_risk'] == "unknown"
-        assert result['earthquake_risk'] == "unknown"
+        assert result["flood_risk"] == "unknown"
+        assert result["earthquake_risk"] == "unknown"
 
     def test_school_without_rating(self):
         """Test school info without rating"""
-        school = SchoolInfo(
-            school_id="S123",
-            name="New School"
-        )
+        school = SchoolInfo(school_id="S123", name="New School")
         result = school.to_dict()
-        assert result['great_schools_rating'] is None
+        assert result["great_schools_rating"] is None
 
     def test_trend_null_statistics(self):
         """Test market trend with null statistics"""
-        trend = MarketTrend(
-            area_name="77001",
-            area_type="zip",
-            period="2024-01"
-        )
+        trend = MarketTrend(area_name="77001", area_type="zip", period="2024-01")
         result = trend.to_dict()
-        assert result['median_sale_price'] is None
-        assert result['sales_count'] is None
+        assert result["median_sale_price"] is None
+        assert result["sales_count"] is None

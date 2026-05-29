@@ -3,15 +3,16 @@ Tests for Tool Registry — coverage target for agents/tool_registry.py (69% →
 """
 
 import pytest
+
+from datagod.agents.schemas import ToolPermission
 from datagod.agents.tool_registry import (
-    ToolRegistry,
     ToolExecutionError,
     ToolNotFoundError,
     ToolPermissionError,
-    tool_registry,
+    ToolRegistry,
     register_tool,
+    tool_registry,
 )
-from datagod.agents.schemas import ToolPermission
 
 
 class TestToolRegistryInit:
@@ -87,13 +88,21 @@ class TestToolListing:
     def setup_method(self):
         self.reg = ToolRegistry()
         self.reg.register(
-            tool_id="tool_a", name="A", description="Alpha",
-            handler=lambda **kw: {}, input_schema={}, output_schema={},
+            tool_id="tool_a",
+            name="A",
+            description="Alpha",
+            handler=lambda **kw: {},
+            input_schema={},
+            output_schema={},
             permission=ToolPermission.READ_ONLY,
         )
         self.reg.register(
-            tool_id="tool_b", name="B", description="Beta",
-            handler=lambda **kw: {}, input_schema={}, output_schema={},
+            tool_id="tool_b",
+            name="B",
+            description="Beta",
+            handler=lambda **kw: {},
+            input_schema={},
+            output_schema={},
             permission=ToolPermission.READ_WRITE,
         )
 
@@ -116,11 +125,16 @@ class TestToolExecution:
             return {"success": True, "data": kw.get("query", "none")}
 
         self.reg.register(
-            tool_id="search_tool", name="Search", description="Searches",
-            handler=handler, input_schema={"query": "string"},
+            tool_id="search_tool",
+            name="Search",
+            description="Searches",
+            handler=handler,
+            input_schema={"query": "string"},
             output_schema={"success": "bool"},
         )
-        result = await self.reg.execute("search_tool", "orchestrator", {"query": "test"})
+        result = await self.reg.execute(
+            "search_tool", "orchestrator", {"query": "test"}
+        )
         assert result["success"] is True
 
     @pytest.mark.asyncio

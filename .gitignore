@@ -103,3 +103,4 @@ certbot/
 node_modules/
 .next/
 *.log
+coverage.json

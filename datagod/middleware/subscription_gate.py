@@ -4,10 +4,10 @@ Enforces feature access based on user subscription tier
 """
 
 import logging
-from typing import Optional, List
 from functools import wraps
+from typing import List, Optional
 
-from fastapi import Depends, HTTPException, status, Request
+from fastapi import Depends, HTTPException, Request, status
 
 logger = logging.getLogger("datagod.middleware.subscription")
 
@@ -57,7 +57,7 @@ class SubscriptionGate:
     """
     FastAPI dependency that checks if a user's subscription tier
     meets the minimum required level for an endpoint.
-    
+
     Usage:
         @app.get("/premium-endpoint", dependencies=[Depends(SubscriptionGate(min_tier="basic"))])
         async def premium_endpoint(): ...

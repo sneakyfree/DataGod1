@@ -5,8 +5,9 @@ These tests cover the __repr__ methods for various SQLAlchemy models
 to achieve 100% coverage on the model files.
 """
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 
 
 class TestJurisdictionRepr:
@@ -15,7 +16,13 @@ class TestJurisdictionRepr:
     def test_jurisdiction_repr(self):
         """Test Jurisdiction __repr__ method"""
         # Import all models together to resolve relationships
-        from datagod.models import Jurisdiction, DataSource, Record, Entity, Relationship
+        from datagod.models import (
+            DataSource,
+            Entity,
+            Jurisdiction,
+            Record,
+            Relationship,
+        )
 
         # Create a jurisdiction instance and set attributes
         jurisdiction = Jurisdiction()
@@ -35,7 +42,13 @@ class TestDataSourceRepr:
     def test_data_source_repr(self):
         """Test DataSource __repr__ method"""
         # Import all models together to resolve relationships
-        from datagod.models import Jurisdiction, DataSource, Record, Entity, Relationship
+        from datagod.models import (
+            DataSource,
+            Entity,
+            Jurisdiction,
+            Record,
+            Relationship,
+        )
 
         # Create a data source instance
         data_source = DataSource()
@@ -52,7 +65,13 @@ class TestEntityRepr:
     def test_entity_repr(self):
         """Test Entity __repr__ method"""
         # Import all models together to resolve relationships
-        from datagod.models import Jurisdiction, DataSource, Record, Entity, Relationship
+        from datagod.models import (
+            DataSource,
+            Entity,
+            Jurisdiction,
+            Record,
+            Relationship,
+        )
 
         # Create an entity instance and set attributes
         entity = Entity()
@@ -74,7 +93,13 @@ class TestRecordRepr:
     def test_record_repr(self):
         """Test Record __repr__ method"""
         # Import all models together to resolve relationships
-        from datagod.models import Jurisdiction, DataSource, Record, Entity, Relationship
+        from datagod.models import (
+            DataSource,
+            Entity,
+            Jurisdiction,
+            Record,
+            Relationship,
+        )
 
         # Create a record instance and set attributes
         record = Record()
@@ -94,7 +119,13 @@ class TestRelationshipRepr:
     def test_relationship_repr(self):
         """Test Relationship __repr__ method"""
         # Import all models together to resolve relationships
-        from datagod.models import Jurisdiction, DataSource, Record, Entity, Relationship
+        from datagod.models import (
+            DataSource,
+            Entity,
+            Jurisdiction,
+            Record,
+            Relationship,
+        )
 
         # Create a relationship instance and set attributes
         rel = Relationship()
@@ -115,7 +146,14 @@ class TestModelImports:
 
     def test_all_models_import(self):
         """Test all models can be imported together"""
-        from datagod.models import Jurisdiction, DataSource, Record, Entity, Relationship
+        from datagod.models import (
+            DataSource,
+            Entity,
+            Jurisdiction,
+            Record,
+            Relationship,
+        )
+
         assert Jurisdiction is not None
         assert DataSource is not None
         assert Record is not None

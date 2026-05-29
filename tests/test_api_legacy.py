@@ -13,22 +13,23 @@ This module tests:
 Coverage target: 100% of api/src/api.py (232 lines)
 """
 
-import pytest
+import json
 import os
 import sys
-import json
 import time
 from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock, Mock
 from functools import wraps
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 # Set test environment before imports
 os.environ["TESTING"] = "1"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 # Add paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'api', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "api", "src"))
 
 
 class TestAppInitialization:
@@ -37,6 +38,7 @@ class TestAppInitialization:
     def test_app_creation(self):
         """Test FastAPI app is created."""
         from fastapi import FastAPI
+
         app = FastAPI(title="Test API", version="1.0.0")
         assert app is not None
         assert app.title == "Test API"
@@ -85,12 +87,14 @@ class TestPasswordContext:
     def test_password_context_creation(self):
         """Test password context creation."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         assert pwd_context is not None
 
     def test_password_hashing(self):
         """Test password hashing."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         password = "testpassword123"
@@ -102,6 +106,7 @@ class TestPasswordContext:
     def test_password_verification(self):
         """Test password verification."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         password = "testpassword123"
@@ -117,12 +122,14 @@ class TestOAuth2Scheme:
     def test_oauth2_scheme_creation(self):
         """Test OAuth2 password bearer creation."""
         from fastapi.security import OAuth2PasswordBearer
+
         oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
         assert oauth2_scheme is not None
 
     def test_oauth2_scheme_token_url(self):
         """Test OAuth2 scheme token URL."""
         from fastapi.security import OAuth2PasswordBearer
+
         oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
         assert "token" in str(oauth2_scheme.model.flows.password.tokenUrl)
 
@@ -212,12 +219,15 @@ class TestRateLimitDecorator:
 
     def test_rate_limit_decorator_function(self):
         """Test rate limit decorator as function."""
+
         def rate_limit(max_requests=100, window=60):
             def decorator(func):
                 @wraps(func)
                 async def wrapper(*args, **kwargs):
                     return await func(*args, **kwargs)
+
                 return wrapper
+
             return decorator
 
         @rate_limit(max_requests=50, window=30)
@@ -232,8 +242,9 @@ class TestUserModel:
 
     def test_user_model_creation(self):
         """Test User model creation."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class User(BaseModel):
             username: str
@@ -249,8 +260,9 @@ class TestUserModel:
 
     def test_user_model_with_full_name(self):
         """Test User model with full name."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class User(BaseModel):
             username: str
@@ -259,16 +271,15 @@ class TestUserModel:
             disabled: Optional[bool] = None
 
         user = User(
-            username="testuser",
-            email="test@example.com",
-            full_name="Test User"
+            username="testuser", email="test@example.com", full_name="Test User"
         )
         assert user.full_name == "Test User"
 
     def test_user_in_db_model(self):
         """Test UserInDB model with hashed password."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class User(BaseModel):
             username: str
@@ -282,7 +293,7 @@ class TestUserModel:
         user = UserInDB(
             username="testuser",
             email="test@example.com",
-            hashed_password="$2b$12$hashedpassword"
+            hashed_password="$2b$12$hashedpassword",
         )
         assert user.hashed_password.startswith("$2b$")
 
@@ -299,15 +310,15 @@ class TestTokenModel:
             token_type: str
 
         token = Token(
-            access_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-            token_type="bearer"
+            access_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", token_type="bearer"
         )
         assert token.token_type == "bearer"
 
     def test_token_data_model(self):
         """Test TokenData model."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class TokenData(BaseModel):
             username: Optional[str] = None
@@ -317,8 +328,9 @@ class TestTokenModel:
 
     def test_token_data_model_empty(self):
         """Test TokenData model with no username."""
-        from pydantic import BaseModel
         from typing import Optional
+
+        from pydantic import BaseModel
 
         class TokenData(BaseModel):
             username: Optional[str] = None
@@ -377,6 +389,7 @@ class TestPasswordHashing:
     def test_verify_password_correct(self):
         """Test verifying correct password."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         password = "testpassword123"
@@ -390,6 +403,7 @@ class TestPasswordHashing:
     def test_verify_password_incorrect(self):
         """Test verifying incorrect password."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         password = "testpassword123"
@@ -403,6 +417,7 @@ class TestPasswordHashing:
     def test_get_password_hash(self):
         """Test getting password hash."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         def get_password_hash(password):
@@ -418,6 +433,7 @@ class TestAuthenticateUser:
     def test_authenticate_user_success(self):
         """Test successful user authentication."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         hashed = pwd_context.hash("testpassword")
@@ -426,7 +442,7 @@ class TestAuthenticateUser:
                 "username": "testuser",
                 "email": "test@test.com",
                 "hashed_password": hashed,
-                "disabled": False
+                "disabled": False,
             }
         }
 
@@ -445,14 +461,12 @@ class TestAuthenticateUser:
     def test_authenticate_user_wrong_password(self):
         """Test authentication with wrong password."""
         from passlib.context import CryptContext
+
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         hashed = pwd_context.hash("testpassword")
         fake_users_db = {
-            "testuser": {
-                "username": "testuser",
-                "hashed_password": hashed
-            }
+            "testuser": {"username": "testuser", "hashed_password": hashed}
         }
 
         username = "testuser"
@@ -568,7 +582,7 @@ class TestGetCurrentUser:
 
     def test_invalid_token(self):
         """Test invalid token raises error."""
-        from jose import jwt, JWTError
+        from jose import JWTError, jwt
 
         secret_key = "testsecretkey"
         algorithm = "HS256"
@@ -670,10 +684,7 @@ class TestExportEndpoint:
         import csv
         from io import StringIO
 
-        records = [
-            {"id": 1, "title": "Test 1"},
-            {"id": 2, "title": "Test 2"}
-        ]
+        records = [{"id": 1, "title": "Test 1"}, {"id": 2, "title": "Test 2"}]
 
         output = StringIO()
         if records:
@@ -693,10 +704,7 @@ class TestExportEndpoint:
         """Test XML export format."""
         import xml.etree.ElementTree as ET
 
-        records = [
-            {"id": "1", "title": "Test 1"},
-            {"id": "2", "title": "Test 2"}
-        ]
+        records = [{"id": "1", "title": "Test 1"}, {"id": "2", "title": "Test 2"}]
 
         root = ET.Element("records")
         for record in records:
@@ -778,10 +786,7 @@ class TestHealthEndpoint:
 
     def test_health_response_structure(self):
         """Test health check response structure."""
-        response = {
-            "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        response = {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
         assert response["status"] == "healthy"
         assert "timestamp" in response
@@ -801,7 +806,7 @@ class TestMetricsEndpoint:
         """Test metrics response structure."""
         response = {
             "status": "metrics available",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
         assert response["status"] == "metrics available"
@@ -815,7 +820,7 @@ class TestJurisdictionEndpoints:
         """Test get jurisdictions returns list."""
         jurisdictions = [
             {"id": 1, "name": "Test County"},
-            {"id": 2, "name": "Another County"}
+            {"id": 2, "name": "Another County"},
         ]
 
         assert isinstance(jurisdictions, list)
@@ -854,10 +859,7 @@ class TestDataSourceEndpoints:
 
     def test_get_data_sources_returns_list(self):
         """Test get data sources returns list."""
-        data_sources = [
-            {"id": 1, "name": "Source 1"},
-            {"id": 2, "name": "Source 2"}
-        ]
+        data_sources = [{"id": 1, "name": "Source 1"}, {"id": 2, "name": "Source 2"}]
 
         assert isinstance(data_sources, list)
         assert len(data_sources) == 2
@@ -872,7 +874,7 @@ class TestRecordEndpoints:
         limit = 10
         offset = 20
 
-        paginated = records[offset:offset + limit]
+        paginated = records[offset : offset + limit]
 
         assert len(paginated) == 10
         assert paginated[0]["id"] == 20
@@ -914,7 +916,7 @@ class TestEntityEndpoints:
         limit = 10
         offset = 0
 
-        paginated = entities[offset:offset + limit]
+        paginated = entities[offset : offset + limit]
 
         assert len(paginated) == 10
 
@@ -949,7 +951,7 @@ class TestRelationshipEndpoints:
         limit = 10
         offset = 0
 
-        paginated = relationships[offset:offset + limit]
+        paginated = relationships[offset : offset + limit]
 
         assert len(paginated) == 10
 

@@ -11,18 +11,19 @@ This module tests:
 Coverage target: 100% of utility modules
 """
 
-import pytest
 import os
-import sys
 import re
-from datetime import datetime, date
-from unittest.mock import patch, MagicMock
+import sys
+from datetime import date, datetime
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Set test environment before imports
 os.environ["TESTING"] = "1"
 
 # Add paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 class TestEmailServiceInit:
@@ -36,13 +37,13 @@ class TestEmailServiceInit:
     def test_smtp_configuration(self):
         """Test SMTP configuration."""
         config = {
-            'smtp_host': 'smtp.gmail.com',
-            'smtp_port': 587,
-            'smtp_user': 'user@example.com',
-            'smtp_password': 'password'
+            "smtp_host": "smtp.gmail.com",
+            "smtp_port": 587,
+            "smtp_user": "user@example.com",
+            "smtp_password": "password",
         }
 
-        assert config['smtp_port'] == 587
+        assert config["smtp_port"] == 587
 
     def test_sender_defaults(self):
         """Test sender defaults."""
@@ -59,14 +60,14 @@ class TestEmailSending:
     def test_email_parameters(self):
         """Test email parameters structure."""
         email = {
-            'to_email': 'recipient@example.com',
-            'subject': 'Test Subject',
-            'body_text': 'Plain text body',
-            'body_html': '<p>HTML body</p>'
+            "to_email": "recipient@example.com",
+            "subject": "Test Subject",
+            "body_text": "Plain text body",
+            "body_html": "<p>HTML body</p>",
         }
 
-        assert 'to_email' in email
-        assert 'subject' in email
+        assert "to_email" in email
+        assert "subject" in email
 
     def test_stub_mode(self):
         """Test stub mode logs instead of sending."""
@@ -130,7 +131,7 @@ class TestVerificationEmail:
         import uuid
 
         token = str(uuid.uuid4())
-        assert '-' in token
+        assert "-" in token
 
     def test_verification_url(self):
         """Test verification URL construction."""
@@ -146,12 +147,12 @@ class TestEmailValidation:
 
     def test_valid_email_format(self):
         """Test valid email format."""
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
         valid_emails = [
             "user@example.com",
             "test.user@domain.org",
-            "name+tag@company.co.uk"
+            "name+tag@company.co.uk",
         ]
 
         for email in valid_emails:
@@ -159,14 +160,9 @@ class TestEmailValidation:
 
     def test_invalid_email_format(self):
         """Test invalid email format."""
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
-        invalid_emails = [
-            "notanemail",
-            "@example.com",
-            "user@",
-            "user@.com"
-        ]
+        invalid_emails = ["notanemail", "@example.com", "user@", "user@.com"]
 
         for email in invalid_emails:
             assert re.match(email_pattern, email) is None
@@ -177,11 +173,11 @@ class TestDataValidation:
 
     def test_required_field_validation(self):
         """Test required field validation."""
-        data = {'name': 'Test', 'email': 'test@example.com'}
-        required = ['name', 'email', 'password']
+        data = {"name": "Test", "email": "test@example.com"}
+        required = ["name", "email", "password"]
 
         missing = [f for f in required if f not in data]
-        assert missing == ['password']
+        assert missing == ["password"]
 
     def test_type_validation(self):
         """Test type validation."""
@@ -247,7 +243,7 @@ class TestDataProcessing:
     def test_phone_normalization(self):
         """Test phone number normalization."""
         phone = "(555) 123-4567"
-        digits = re.sub(r'\D', '', phone)
+        digits = re.sub(r"\D", "", phone)
 
         assert digits == "5551234567"
 
@@ -257,7 +253,7 @@ class TestAddressValidation:
 
     def test_zip_code_validation(self):
         """Test ZIP code validation."""
-        zip_pattern = r'^\d{5}(-\d{4})?$'
+        zip_pattern = r"^\d{5}(-\d{4})?$"
 
         valid_zips = ["12345", "12345-6789"]
         invalid_zips = ["1234", "123456", "abcde"]
@@ -270,9 +266,9 @@ class TestAddressValidation:
 
     def test_state_code_validation(self):
         """Test state code validation."""
-        valid_states = ['TX', 'CA', 'NY', 'FL']
+        valid_states = ["TX", "CA", "NY", "FL"]
 
-        state = 'TX'
+        state = "TX"
         is_valid = len(state) == 2 and state.isupper()
 
         assert is_valid is True
@@ -293,20 +289,20 @@ class TestAPIConnector:
         """Test query parameter encoding."""
         from urllib.parse import urlencode
 
-        params = {'search': 'test value', 'page': 1}
+        params = {"search": "test value", "page": 1}
         encoded = urlencode(params)
 
-        assert 'search=test+value' in encoded or 'search=test%20value' in encoded
+        assert "search=test+value" in encoded or "search=test%20value" in encoded
 
     def test_header_construction(self):
         """Test HTTP header construction."""
         headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer token123'
+            "Content-Type": "application/json",
+            "Authorization": "Bearer token123",
         }
 
-        assert 'Content-Type' in headers
-        assert 'Bearer' in headers['Authorization']
+        assert "Content-Type" in headers
+        assert "Bearer" in headers["Authorization"]
 
 
 class TestHTTPMethods:
@@ -334,6 +330,7 @@ class TestErrorHandling:
 
     def test_connection_error(self):
         """Test connection error handling."""
+
         class ConnectionError(Exception):
             pass
 
@@ -344,6 +341,7 @@ class TestErrorHandling:
 
     def test_timeout_error(self):
         """Test timeout error handling."""
+
         class TimeoutError(Exception):
             pass
 
@@ -402,10 +400,10 @@ class TestConfigurationManagement:
         false_values = ["false", "False", "0", "no", "No"]
 
         for val in true_values:
-            assert val.lower() in ['true', '1', 'yes']
+            assert val.lower() in ["true", "1", "yes"]
 
         for val in false_values:
-            assert val.lower() in ['false', '0', 'no']
+            assert val.lower() in ["false", "0", "no"]
 
 
 class TestLoggingConfiguration:
@@ -413,10 +411,10 @@ class TestLoggingConfiguration:
 
     def test_log_levels(self):
         """Test log level configuration."""
-        log_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+        log_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
         for level in log_levels:
-            assert level in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+            assert level in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
     def test_log_format(self):
         """Test log message format."""
@@ -466,7 +464,7 @@ class TestUUIDGeneration:
         generated = str(uuid.uuid4())
 
         # UUID4 format: 8-4-4-4-12 hex digits
-        parts = generated.split('-')
+        parts = generated.split("-")
         assert len(parts) == 5
         assert len(parts[0]) == 8
         assert len(parts[4]) == 12

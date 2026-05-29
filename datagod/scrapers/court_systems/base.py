@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
+
 import aiohttp
 from bs4 import BeautifulSoup
 
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 class CourtType(Enum):
     """Types of courts."""
+
     # Federal
     FEDERAL_DISTRICT = "federal_district"
     FEDERAL_APPELLATE = "federal_appellate"
@@ -63,6 +65,7 @@ class CourtType(Enum):
 
 class CourtLevel(Enum):
     """Hierarchical level of court."""
+
     SUPREME = "supreme"
     APPELLATE = "appellate"
     TRIAL = "trial"
@@ -73,6 +76,7 @@ class CourtLevel(Enum):
 
 class CaseType(Enum):
     """Types of court cases."""
+
     # Civil
     CIVIL_GENERAL = "civil_general"
     CONTRACT = "contract"
@@ -136,6 +140,7 @@ class CaseType(Enum):
 
 class CaseStatus(Enum):
     """Status of a court case."""
+
     OPEN = "open"
     PENDING = "pending"
     ACTIVE = "active"
@@ -156,6 +161,7 @@ class CaseStatus(Enum):
 
 class PartyType(Enum):
     """Types of parties in court cases."""
+
     INDIVIDUAL = "individual"
     CORPORATION = "corporation"
     LLC = "llc"
@@ -169,6 +175,7 @@ class PartyType(Enum):
 
 class PartyRole(Enum):
     """Roles of parties in court cases."""
+
     # Civil
     PLAINTIFF = "plaintiff"
     DEFENDANT = "defendant"
@@ -209,6 +216,7 @@ class PartyRole(Enum):
 @dataclass
 class CaseParty:
     """A party (person or entity) in a court case."""
+
     name: str
     role: PartyRole
     party_type: PartyType = PartyType.UNKNOWN
@@ -228,6 +236,7 @@ class CaseParty:
 @dataclass
 class CaseEvent:
     """An event/docket entry in a court case."""
+
     date: date
     description: str
     event_type: Optional[str] = None
@@ -244,6 +253,7 @@ class CaseEvent:
 @dataclass
 class CaseDocument:
     """A document filed in a court case."""
+
     document_number: str
     title: str
     filed_date: Optional[date] = None
@@ -260,6 +270,7 @@ class CaseDocument:
 @dataclass
 class CaseCharge:
     """A criminal charge in a court case."""
+
     charge_number: Optional[str] = None
     statute: Optional[str] = None
     description: str = ""
@@ -279,6 +290,7 @@ class CaseCharge:
 @dataclass
 class CourtCase:
     """A court case record."""
+
     # Core identifiers
     case_number: str
     court_name: str
@@ -342,20 +354,29 @@ class CourtCase:
 
     def get_plaintiffs(self) -> List[str]:
         """Get plaintiff names from parties."""
-        plaintiff_roles = {PartyRole.PLAINTIFF, PartyRole.PETITIONER,
-                          PartyRole.APPELLANT, PartyRole.APPLICANT}
+        plaintiff_roles = {
+            PartyRole.PLAINTIFF,
+            PartyRole.PETITIONER,
+            PartyRole.APPELLANT,
+            PartyRole.APPLICANT,
+        }
         return [p.name for p in self.parties if p.role in plaintiff_roles]
 
     def get_defendants(self) -> List[str]:
         """Get defendant names from parties."""
-        defendant_roles = {PartyRole.DEFENDANT, PartyRole.RESPONDENT,
-                          PartyRole.APPELLEE, PartyRole.ACCUSED}
+        defendant_roles = {
+            PartyRole.DEFENDANT,
+            PartyRole.RESPONDENT,
+            PartyRole.APPELLEE,
+            PartyRole.ACCUSED,
+        }
         return [p.name for p in self.parties if p.role in defendant_roles]
 
 
 @dataclass
 class SearchCriteria:
     """Criteria for searching court cases."""
+
     # Party search
     party_name: Optional[str] = None
     party_type: Optional[str] = None  # plaintiff, defendant, any
@@ -395,6 +416,7 @@ class SearchCriteria:
 @dataclass
 class SearchResult:
     """Result of a court case search."""
+
     cases: List[CourtCase]
     total_count: int
     page_number: int
@@ -450,7 +472,7 @@ class CourtSystemBase(ABC):
         if self._owns_session:
             self.session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=self.TIMEOUT),
-                headers=self._get_headers()
+                headers=self._get_headers(),
             )
         return self
 
@@ -472,6 +494,7 @@ class CourtSystemBase(ABC):
     async def _rate_limit(self):
         """Enforce rate limiting between requests."""
         import time
+
         current_time = time.time()
         elapsed = current_time - self._last_request_time
         if elapsed < self.REQUEST_DELAY:
@@ -497,15 +520,19 @@ class CourtSystemBase(ABC):
                     raise ValueError(f"Unsupported HTTP method: {method}")
 
             except aiohttp.ClientError as e:
-                logger.warning(f"Request failed (attempt {attempt + 1}/{self.MAX_RETRIES}): {e}")
+                logger.warning(
+                    f"Request failed (attempt {attempt + 1}/{self.MAX_RETRIES}): {e}"
+                )
                 if attempt < self.MAX_RETRIES - 1:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                 else:
                     raise
 
         raise RuntimeError(f"Failed to fetch {url} after {self.MAX_RETRIES} attempts")
 
-    async def _fetch_json(self, url: str, method: str = "GET", **kwargs) -> Dict[str, Any]:
+    async def _fetch_json(
+        self, url: str, method: str = "GET", **kwargs
+    ) -> Dict[str, Any]:
         """Fetch a URL and parse JSON response."""
         if not self.session:
             raise RuntimeError("Session not initialized.")
@@ -528,7 +555,18 @@ class CourtSystemBase(ABC):
         # Handle common legal suffixes
         parts = []
         for part in name.split():
-            if part.upper() in {"LLC", "LP", "LLP", "INC", "CORP", "CO", "LTD", "PC", "PA", "PLLC"}:
+            if part.upper() in {
+                "LLC",
+                "LP",
+                "LLP",
+                "INC",
+                "CORP",
+                "CO",
+                "LTD",
+                "PC",
+                "PA",
+                "PLLC",
+            }:
                 parts.append(part.upper())
             elif part.upper() in {"II", "III", "IV", "JR", "SR", "ESQ"}:
                 parts.append(part.upper())
@@ -561,7 +599,6 @@ class CourtSystemBase(ABC):
             "LT": CaseType.LANDLORD_TENANT,
             "DEBT": CaseType.DEBT_COLLECTION,
             "COLLECTION": CaseType.DEBT_COLLECTION,
-
             # Criminal
             "CR": CaseType.CRIMINAL_FELONY,
             "CRIMINAL": CaseType.CRIMINAL_FELONY,
@@ -574,7 +611,6 @@ class CourtSystemBase(ABC):
             "DWI": CaseType.DUI_DWI,
             "TRAFFIC": CaseType.TRAFFIC,
             "TR": CaseType.TRAFFIC,
-
             # Family
             "DR": CaseType.DIVORCE,
             "DIVORCE": CaseType.DIVORCE,
@@ -583,20 +619,17 @@ class CourtSystemBase(ABC):
             "SUPPORT": CaseType.CHILD_SUPPORT,
             "DV": CaseType.DOMESTIC_VIOLENCE,
             "DOMESTIC": CaseType.DOMESTIC_VIOLENCE,
-
             # Probate
             "PB": CaseType.PROBATE_ESTATE,
             "PROBATE": CaseType.PROBATE_ESTATE,
             "ESTATE": CaseType.PROBATE_ESTATE,
             "GUARDIANSHIP": CaseType.GUARDIANSHIP,
-
             # Bankruptcy
             "BK": CaseType.BANKRUPTCY_CH7,
             "BANKRUPTCY": CaseType.BANKRUPTCY_CH7,
             "CH7": CaseType.BANKRUPTCY_CH7,
             "CH11": CaseType.BANKRUPTCY_CH11,
             "CH13": CaseType.BANKRUPTCY_CH13,
-
             # Other
             "SC": CaseType.SMALL_CLAIMS,
             "SMALL CLAIMS": CaseType.SMALL_CLAIMS,
@@ -704,7 +737,7 @@ class CourtSystemBase(ABC):
         filed_end_date: Optional[date] = None,
         case_types: Optional[List[CaseType]] = None,
         include_closed: bool = True,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search for cases by party name.
@@ -724,10 +757,7 @@ class CourtSystemBase(ABC):
         pass
 
     @abstractmethod
-    async def search_by_case_number(
-        self,
-        case_number: str
-    ) -> Optional[CourtCase]:
+    async def search_by_case_number(self, case_number: str) -> Optional[CourtCase]:
         """
         Search for a specific case by case number.
 
@@ -740,10 +770,7 @@ class CourtSystemBase(ABC):
         pass
 
     @abstractmethod
-    async def get_case_detail(
-        self,
-        case_number: str
-    ) -> Optional[CourtCase]:
+    async def get_case_detail(self, case_number: str) -> Optional[CourtCase]:
         """
         Get detailed information for a specific case including docket.
 
@@ -755,10 +782,7 @@ class CourtSystemBase(ABC):
         """
         pass
 
-    async def get_docket(
-        self,
-        case_number: str
-    ) -> List[CaseEvent]:
+    async def get_docket(self, case_number: str) -> List[CaseEvent]:
         """
         Get the docket/event list for a case.
 
@@ -774,10 +798,7 @@ class CourtSystemBase(ABC):
         case = await self.get_case_detail(case_number)
         return case.events if case else []
 
-    async def get_documents(
-        self,
-        case_number: str
-    ) -> List[CaseDocument]:
+    async def get_documents(self, case_number: str) -> List[CaseDocument]:
         """
         Get the document list for a case.
 
@@ -808,7 +829,9 @@ class CourtSystemBase(ABC):
         """
         if not self.REQUIRES_LOGIN:
             return True
-        raise NotImplementedError("This court requires authentication. Override authenticate() method.")
+        raise NotImplementedError(
+            "This court requires authentication. Override authenticate() method."
+        )
 
     def get_court_info(self) -> Dict[str, Any]:
         """Get information about this court system."""
@@ -829,24 +852,24 @@ class CourtSystemBase(ABC):
 
 # Synchronous wrapper functions
 
+
 def search_party_sync(
-    court: CourtSystemBase,
-    party_name: str,
-    **kwargs
+    court: CourtSystemBase, party_name: str, **kwargs
 ) -> SearchResult:
     """Synchronous wrapper for search_by_party."""
+
     async def _search():
         async with court:
             return await court.search_by_party(party_name, **kwargs)
+
     return asyncio.run(_search())
 
 
-def get_case_sync(
-    court: CourtSystemBase,
-    case_number: str
-) -> Optional[CourtCase]:
+def get_case_sync(court: CourtSystemBase, case_number: str) -> Optional[CourtCase]:
     """Synchronous wrapper for get_case_detail."""
+
     async def _get():
         async with court:
             return await court.get_case_detail(case_number)
+
     return asyncio.run(_get())

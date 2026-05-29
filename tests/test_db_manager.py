@@ -2,9 +2,10 @@
 Tests for DatabaseManager
 """
 
-import pytest
 from datetime import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestDatabaseManager:
@@ -21,8 +22,8 @@ class TestDatabaseManager:
 
     def test_get_session_context_manager(self):
         """Test session context manager"""
-        with patch('sqlalchemy.create_engine'):
-            with patch('sqlalchemy.orm.sessionmaker') as mock_sessionmaker:
+        with patch("sqlalchemy.create_engine"):
+            with patch("sqlalchemy.orm.sessionmaker") as mock_sessionmaker:
                 from db_manager import DatabaseManager
 
                 mock_session = MagicMock()
@@ -46,9 +47,11 @@ class TestDatabaseManager:
         assert result is not None
         assert result.state == "TX"
 
-    def test_search_records(self, db_session, sample_jurisdiction_data, sample_record_data):
+    def test_search_records(
+        self, db_session, sample_jurisdiction_data, sample_record_data
+    ):
         """Test searching records"""
-        from datagod.models import Jurisdiction, Record, DataSource
+        from datagod.models import DataSource, Jurisdiction, Record
 
         # Create jurisdiction
         jurisdiction = Jurisdiction(**sample_jurisdiction_data)
@@ -57,9 +60,7 @@ class TestDatabaseManager:
 
         # Create data source
         data_source = DataSource(
-            jurisdiction_id=jurisdiction.id,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jurisdiction.id, source_name="Test API", source_type="api"
         )
         db_session.add(data_source)
         db_session.commit()
@@ -72,16 +73,18 @@ class TestDatabaseManager:
         db_session.commit()
 
         # Search
-        results = db_session.query(Record).filter(
-            Record.record_type == "mortgage"
-        ).all()
+        results = (
+            db_session.query(Record).filter(Record.record_type == "mortgage").all()
+        )
 
         assert len(results) == 1
         assert results[0].grantor == "John Doe"
 
-    def test_bulk_create_records(self, db_session, sample_jurisdiction_data, sample_record_data):
+    def test_bulk_create_records(
+        self, db_session, sample_jurisdiction_data, sample_record_data
+    ):
         """Test bulk creating records"""
-        from datagod.models import Jurisdiction, Record, DataSource
+        from datagod.models import DataSource, Jurisdiction, Record
 
         # Create jurisdiction
         jurisdiction = Jurisdiction(**sample_jurisdiction_data)
@@ -90,9 +93,7 @@ class TestDatabaseManager:
 
         # Create data source
         data_source = DataSource(
-            jurisdiction_id=jurisdiction.id,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jurisdiction.id, source_name="Test API", source_type="api"
         )
         db_session.add(data_source)
         db_session.commit()
@@ -113,10 +114,13 @@ class TestDatabaseManager:
         count = db_session.query(Record).count()
         assert count == 10
 
-    def test_get_dashboard_stats(self, db_session, sample_jurisdiction_data, sample_record_data):
+    def test_get_dashboard_stats(
+        self, db_session, sample_jurisdiction_data, sample_record_data
+    ):
         """Test getting dashboard statistics"""
-        from datagod.models import Jurisdiction, Record, DataSource
         from sqlalchemy import func
+
+        from datagod.models import DataSource, Jurisdiction, Record
 
         # Create jurisdiction
         jurisdiction = Jurisdiction(**sample_jurisdiction_data)
@@ -125,9 +129,7 @@ class TestDatabaseManager:
 
         # Create data source
         data_source = DataSource(
-            jurisdiction_id=jurisdiction.id,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jurisdiction.id, source_name="Test API", source_type="api"
         )
         db_session.add(data_source)
         db_session.commit()
@@ -154,9 +156,11 @@ class TestDatabaseManager:
 class TestDatabaseQueries:
     """Tests for database query operations"""
 
-    def test_search_by_grantor(self, db_session, sample_jurisdiction_data, sample_record_data):
+    def test_search_by_grantor(
+        self, db_session, sample_jurisdiction_data, sample_record_data
+    ):
         """Test searching by grantor name"""
-        from datagod.models import Jurisdiction, Record, DataSource
+        from datagod.models import DataSource, Jurisdiction, Record
 
         # Create jurisdiction
         jurisdiction = Jurisdiction(**sample_jurisdiction_data)
@@ -165,9 +169,7 @@ class TestDatabaseQueries:
 
         # Create data source
         data_source = DataSource(
-            jurisdiction_id=jurisdiction.id,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jurisdiction.id, source_name="Test API", source_type="api"
         )
         db_session.add(data_source)
         db_session.commit()
@@ -186,15 +188,15 @@ class TestDatabaseQueries:
         db_session.commit()
 
         # Search for "John"
-        results = db_session.query(Record).filter(
-            Record.grantor.ilike("%John%")
-        ).all()
+        results = db_session.query(Record).filter(Record.grantor.ilike("%John%")).all()
 
         assert len(results) == 2
 
-    def test_filter_by_amount_range(self, db_session, sample_jurisdiction_data, sample_record_data):
+    def test_filter_by_amount_range(
+        self, db_session, sample_jurisdiction_data, sample_record_data
+    ):
         """Test filtering by amount range"""
-        from datagod.models import Jurisdiction, Record, DataSource
+        from datagod.models import DataSource, Jurisdiction, Record
 
         # Create jurisdiction
         jurisdiction = Jurisdiction(**sample_jurisdiction_data)
@@ -203,9 +205,7 @@ class TestDatabaseQueries:
 
         # Create data source
         data_source = DataSource(
-            jurisdiction_id=jurisdiction.id,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jurisdiction.id, source_name="Test API", source_type="api"
         )
         db_session.add(data_source)
         db_session.commit()
@@ -224,17 +224,21 @@ class TestDatabaseQueries:
         db_session.commit()
 
         # Filter by range
-        results = db_session.query(Record).filter(
-            Record.amount >= 200000,
-            Record.amount <= 600000
-        ).all()
+        results = (
+            db_session.query(Record)
+            .filter(Record.amount >= 200000, Record.amount <= 600000)
+            .all()
+        )
 
         assert len(results) == 2  # 250000 and 500000
 
-    def test_filter_by_date_range(self, db_session, sample_jurisdiction_data, sample_record_data):
+    def test_filter_by_date_range(
+        self, db_session, sample_jurisdiction_data, sample_record_data
+    ):
         """Test filtering by date range"""
-        from datagod.models import Jurisdiction, Record, DataSource
         from datetime import datetime, timedelta
+
+        from datagod.models import DataSource, Jurisdiction, Record
 
         # Create jurisdiction
         jurisdiction = Jurisdiction(**sample_jurisdiction_data)
@@ -243,9 +247,7 @@ class TestDatabaseQueries:
 
         # Create data source
         data_source = DataSource(
-            jurisdiction_id=jurisdiction.id,
-            source_name="Test API",
-            source_type="api"
+            jurisdiction_id=jurisdiction.id, source_name="Test API", source_type="api"
         )
         db_session.add(data_source)
         db_session.commit()
@@ -267,9 +269,10 @@ class TestDatabaseQueries:
         start_date = datetime(2024, 2, 1)
         end_date = datetime(2024, 4, 1)
 
-        results = db_session.query(Record).filter(
-            Record.date >= start_date,
-            Record.date <= end_date
-        ).all()
+        results = (
+            db_session.query(Record)
+            .filter(Record.date >= start_date, Record.date <= end_date)
+            .all()
+        )
 
         assert len(results) == 2  # February and March records

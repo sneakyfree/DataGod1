@@ -4,9 +4,10 @@ Tests for datagod/ml/mortgage/neural_network.py
 Comprehensive coverage tests that instantiate and exercise the neural network methods.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 
 class TestMortgageDataPointCreation:
@@ -18,24 +19,24 @@ class TestMortgageDataPointCreation:
             from datagod.ml.mortgage.neural_network import MortgageDataPoint
 
             point = MortgageDataPoint(
-                property_id='PROP123',
-                borrower_name='John Doe',
-                lender_name='ABC Bank',
+                property_id="PROP123",
+                borrower_name="John Doe",
+                lender_name="ABC Bank",
                 loan_amount=250000.0,
-                loan_type='Conventional',
+                loan_type="Conventional",
                 interest_rate=5.5,
                 loan_term=30,
-                loan_date='2024-01-15',
-                property_address='123 Main St',
+                loan_date="2024-01-15",
+                property_address="123 Main St",
                 property_value=300000.0,
-                status='active',
-                data_source='property_records',
-                scraped_at='2024-01-15T10:00:00'
+                status="active",
+                data_source="property_records",
+                scraped_at="2024-01-15T10:00:00",
             )
 
-            assert point.property_id == 'PROP123'
-            assert point.borrower_name == 'John Doe'
-            assert point.lender_name == 'ABC Bank'
+            assert point.property_id == "PROP123"
+            assert point.borrower_name == "John Doe"
+            assert point.lender_name == "ABC Bank"
             assert point.loan_amount == 250000.0
         except ImportError:
             pytest.skip("MortgageDataPoint not available")
@@ -46,20 +47,20 @@ class TestMortgageDataPointCreation:
             from datagod.ml.mortgage.neural_network import MortgageDataPoint
 
             point = MortgageDataPoint(
-                property_id='PROP123',
-                borrower_name='John Doe',
-                lender_name='ABC Bank',
+                property_id="PROP123",
+                borrower_name="John Doe",
+                lender_name="ABC Bank",
                 loan_amount=250000.0,
-                loan_type='Conventional',
+                loan_type="Conventional",
                 interest_rate=5.5,
                 loan_term=30,
-                loan_date='2024-01-15',
-                property_address='123 Main St',
+                loan_date="2024-01-15",
+                property_address="123 Main St",
                 property_value=300000.0,
-                status='active',
-                data_source='property_records',
-                scraped_at='2024-01-15T10:00:00',
-                quality_score=95.0
+                status="active",
+                data_source="property_records",
+                scraped_at="2024-01-15T10:00:00",
+                quality_score=95.0,
             )
 
             assert point.quality_score == 95.0
@@ -73,26 +74,28 @@ class TestNeuralNetworkInitialization:
     def test_neural_network_init(self):
         """Test neural network initialization"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
             assert nn is not None
-            assert hasattr(nn, 'patterns')
-            assert hasattr(nn, 'loan_type_patterns')
-            assert hasattr(nn, 'vectorizer')
+            assert hasattr(nn, "patterns")
+            assert hasattr(nn, "loan_type_patterns")
+            assert hasattr(nn, "vectorizer")
         except ImportError:
             pytest.skip("MortgageDataGatheringNeuralNetwork not available")
 
     def test_neural_network_custom_sizes(self):
         """Test neural network with custom sizes"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork(
-                input_size=500,
-                hidden_size=256,
-                output_size=5
+                input_size=500, hidden_size=256, output_size=5
             )
 
             assert nn is not None
@@ -102,16 +105,18 @@ class TestNeuralNetworkInitialization:
     def test_neural_network_has_layers(self):
         """Test neural network has expected layers"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
-            assert hasattr(nn, 'layer1')
-            assert hasattr(nn, 'layer2')
-            assert hasattr(nn, 'layer3')
-            assert hasattr(nn, 'relu')
-            assert hasattr(nn, 'dropout')
-            assert hasattr(nn, 'sigmoid')
+            assert hasattr(nn, "layer1")
+            assert hasattr(nn, "layer2")
+            assert hasattr(nn, "layer3")
+            assert hasattr(nn, "relu")
+            assert hasattr(nn, "dropout")
+            assert hasattr(nn, "sigmoid")
         except ImportError:
             pytest.skip("MortgageDataGatheringNeuralNetwork not available")
 
@@ -123,9 +128,14 @@ class TestNeuralNetworkForward:
         """Test neural network forward pass"""
         try:
             import torch
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
 
-            nn = MortgageDataGatheringNeuralNetwork(input_size=100, hidden_size=50, output_size=5)
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
+
+            nn = MortgageDataGatheringNeuralNetwork(
+                input_size=100, hidden_size=50, output_size=5
+            )
 
             # Create dummy input
             x = torch.randn(1, 100)
@@ -147,7 +157,9 @@ class TestExtractMortgageData:
     def test_extract_from_property_records(self):
         """Test extracting data from property records"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
@@ -161,7 +173,7 @@ class TestExtractMortgageData:
             Loan Date: 2024-01-15
             """
 
-            result = nn.extract_mortgage_data(raw_data, 'property_records')
+            result = nn.extract_mortgage_data(raw_data, "property_records")
 
             assert isinstance(result, list)
         except ImportError:
@@ -173,7 +185,9 @@ class TestExtractMortgageData:
     def test_extract_from_court_records(self):
         """Test extracting data from court records"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
@@ -185,7 +199,7 @@ class TestExtractMortgageData:
             Rate: 4.25%
             """
 
-            result = nn.extract_mortgage_data(raw_data, 'court_records')
+            result = nn.extract_mortgage_data(raw_data, "court_records")
 
             assert isinstance(result, list)
         except ImportError:
@@ -194,7 +208,9 @@ class TestExtractMortgageData:
     def test_extract_from_government_api(self):
         """Test extracting data from government API"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
@@ -206,7 +222,7 @@ class TestExtractMortgageData:
             Term: 15 years
             """
 
-            result = nn.extract_mortgage_data(raw_data, 'government_api')
+            result = nn.extract_mortgage_data(raw_data, "government_api")
 
             assert isinstance(result, list)
         except ImportError:
@@ -215,7 +231,9 @@ class TestExtractMortgageData:
     def test_extract_generic(self):
         """Test extracting data from generic source"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
@@ -224,7 +242,7 @@ class TestExtractMortgageData:
             Amount: $100,000
             """
 
-            result = nn.extract_mortgage_data(raw_data, 'unknown_source')
+            result = nn.extract_mortgage_data(raw_data, "unknown_source")
 
             assert isinstance(result, list)
         except ImportError:
@@ -237,24 +255,27 @@ class TestGetDataQualityScore:
     def test_quality_score_complete_data(self):
         """Test quality score for complete data"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork, MortgageDataPoint
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+                MortgageDataPoint,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
             point = MortgageDataPoint(
-                property_id='PROP123',
-                borrower_name='John Doe',
-                lender_name='ABC Bank',
+                property_id="PROP123",
+                borrower_name="John Doe",
+                lender_name="ABC Bank",
                 loan_amount=250000.0,
-                loan_type='Conventional',
+                loan_type="Conventional",
                 interest_rate=5.5,
                 loan_term=30,
-                loan_date='2024-01-15',
-                property_address='123 Main St',
+                loan_date="2024-01-15",
+                property_address="123 Main St",
                 property_value=300000.0,
-                status='active',
-                data_source='property_records',
-                scraped_at='2024-01-15T10:00:00'
+                status="active",
+                data_source="property_records",
+                scraped_at="2024-01-15T10:00:00",
             )
 
             score = nn.get_data_quality_score(point)
@@ -268,25 +289,28 @@ class TestGetDataQualityScore:
     def test_quality_score_partial_data(self):
         """Test quality score for partial data"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork, MortgageDataPoint
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+                MortgageDataPoint,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
             # Partial data with Unknown values
             point = MortgageDataPoint(
-                property_id='PROP123',
-                borrower_name='Unknown',
-                lender_name='Unknown',
+                property_id="PROP123",
+                borrower_name="Unknown",
+                lender_name="Unknown",
                 loan_amount=0.0,
-                loan_type='Unknown',
+                loan_type="Unknown",
                 interest_rate=0.0,
                 loan_term=30,
-                loan_date='',
-                property_address='Unknown',
+                loan_date="",
+                property_address="Unknown",
                 property_value=0.0,
-                status='active',
-                data_source='property_records',
-                scraped_at=''
+                status="active",
+                data_source="property_records",
+                scraped_at="",
             )
 
             score = nn.get_data_quality_score(point)
@@ -304,7 +328,9 @@ class TestLearnPatterns:
     def test_learn_patterns_empty_list(self):
         """Test learn_patterns with empty list"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
@@ -316,25 +342,28 @@ class TestLearnPatterns:
     def test_learn_patterns_with_data(self):
         """Test learn_patterns with data points"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork, MortgageDataPoint
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+                MortgageDataPoint,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
             points = [
                 MortgageDataPoint(
-                    property_id='PROP1',
-                    borrower_name='John Doe',
-                    lender_name='ABC Bank',
+                    property_id="PROP1",
+                    borrower_name="John Doe",
+                    lender_name="ABC Bank",
                     loan_amount=250000.0,
-                    loan_type='Conventional',
+                    loan_type="Conventional",
                     interest_rate=5.5,
                     loan_term=30,
-                    loan_date='2024-01-15',
-                    property_address='123 Main St',
+                    loan_date="2024-01-15",
+                    property_address="123 Main St",
                     property_value=300000.0,
-                    status='active',
-                    data_source='property_records',
-                    scraped_at='2024-01-15T10:00:00'
+                    status="active",
+                    data_source="property_records",
+                    scraped_at="2024-01-15T10:00:00",
                 )
             ]
 
@@ -350,14 +379,16 @@ class TestExtractByPattern:
     def test_extract_amounts(self):
         """Test extracting amounts from text"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
             text = "The loan amount is $250,000 for the property"
 
             # Method takes (text, pattern_type) where pattern_type is string key
-            result = nn._extract_by_pattern(text, 'loan_amount')
+            result = nn._extract_by_pattern(text, "loan_amount")
 
             assert isinstance(result, list)
         except ImportError:
@@ -368,14 +399,16 @@ class TestExtractByPattern:
     def test_extract_rates(self):
         """Test extracting interest rates from text"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
             text = "The interest rate is 5.5% APR"
 
             # Method takes (text, pattern_type) where pattern_type is string key
-            result = nn._extract_by_pattern(text, 'interest_rate')
+            result = nn._extract_by_pattern(text, "interest_rate")
 
             assert isinstance(result, list)
         except ImportError:
@@ -390,7 +423,9 @@ class TestExtractLoanTypes:
     def test_extract_conventional_loan(self):
         """Test extracting conventional loan type"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
@@ -405,7 +440,9 @@ class TestExtractLoanTypes:
     def test_extract_fha_loan(self):
         """Test extracting FHA loan type"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
@@ -424,7 +461,9 @@ class TestParseHelpers:
     def test_parse_amount(self):
         """Test _parse_amount method"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
@@ -443,7 +482,9 @@ class TestParseHelpers:
     def test_parse_percentage(self):
         """Test _parse_percentage method"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
@@ -457,7 +498,9 @@ class TestParseHelpers:
     def test_parse_number(self):
         """Test _parse_number method"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
@@ -475,37 +518,43 @@ class TestPatternConfiguration:
     def test_has_loan_amount_patterns(self):
         """Test that loan_amount patterns are defined"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
-            assert 'loan_amount' in nn.patterns
-            assert len(nn.patterns['loan_amount']) > 0
+            assert "loan_amount" in nn.patterns
+            assert len(nn.patterns["loan_amount"]) > 0
         except ImportError:
             pytest.skip("MortgageDataGatheringNeuralNetwork not available")
 
     def test_has_interest_rate_patterns(self):
         """Test that interest_rate patterns are defined"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
-            assert 'interest_rate' in nn.patterns
-            assert len(nn.patterns['interest_rate']) > 0
+            assert "interest_rate" in nn.patterns
+            assert len(nn.patterns["interest_rate"]) > 0
         except ImportError:
             pytest.skip("MortgageDataGatheringNeuralNetwork not available")
 
     def test_has_loan_type_patterns(self):
         """Test that loan_type_patterns are defined"""
         try:
-            from datagod.ml.mortgage.neural_network import MortgageDataGatheringNeuralNetwork
+            from datagod.ml.mortgage.neural_network import (
+                MortgageDataGatheringNeuralNetwork,
+            )
 
             nn = MortgageDataGatheringNeuralNetwork()
 
-            assert hasattr(nn, 'loan_type_patterns')
-            assert 'conventional' in nn.loan_type_patterns
-            assert 'fha' in nn.loan_type_patterns
-            assert 'va' in nn.loan_type_patterns
+            assert hasattr(nn, "loan_type_patterns")
+            assert "conventional" in nn.loan_type_patterns
+            assert "fha" in nn.loan_type_patterns
+            assert "va" in nn.loan_type_patterns
         except ImportError:
             pytest.skip("MortgageDataGatheringNeuralNetwork not available")

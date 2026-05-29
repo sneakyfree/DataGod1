@@ -4,12 +4,13 @@ Comprehensive tests for datagod/scrapers/api_manager.py
 Tests APIManager class functionality
 """
 
-import pytest
-import os
 import json
+import os
 import tempfile
-from unittest.mock import MagicMock, patch, mock_open
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
 
 
 class TestAPIManagerInit:
@@ -21,21 +22,25 @@ class TestAPIManagerInit:
 
         class MockAPIManager:
             API_REGISTRY = {
-                'florida_property_appraiser': MagicMock,
-                'california_sos': MagicMock,
+                "florida_property_appraiser": MagicMock,
+                "california_sos": MagicMock,
             }
 
             def __init__(self, credentials_file=None):
-                self.credentials_file = credentials_file or self._get_default_credentials_file()
+                self.credentials_file = (
+                    credentials_file or self._get_default_credentials_file()
+                )
                 self.credentials = self._load_credentials()
                 self.active_integrations = {}
                 self.usage_stats = {
-                    'total_requests': 0,
-                    'total_cost': 0.0,
-                    'api_usage': {},
-                    'last_updated': datetime.now().isoformat()
+                    "total_requests": 0,
+                    "total_cost": 0.0,
+                    "api_usage": {},
+                    "last_updated": datetime.now().isoformat(),
                 }
-                mock_logger.info(f"Initialized API Manager with {len(self.API_REGISTRY)} registered APIs")
+                mock_logger.info(
+                    f"Initialized API Manager with {len(self.API_REGISTRY)} registered APIs"
+                )
 
             def _get_default_credentials_file(self):
                 return "/tmp/api_credentials.json"
@@ -46,11 +51,12 @@ class TestAPIManagerInit:
         manager = MockAPIManager()
 
         assert manager.credentials_file == "/tmp/api_credentials.json"
-        assert manager.usage_stats['total_requests'] == 0
-        assert manager.usage_stats['total_cost'] == 0.0
+        assert manager.usage_stats["total_requests"] == 0
+        assert manager.usage_stats["total_cost"] == 0.0
 
     def test_api_manager_init_custom_credentials(self):
         """Test APIManager initialization with custom credentials file"""
+
         class MockAPIManager:
             API_REGISTRY = {}
 
@@ -59,10 +65,10 @@ class TestAPIManagerInit:
                 self.credentials = {}
                 self.active_integrations = {}
                 self.usage_stats = {
-                    'total_requests': 0,
-                    'total_cost': 0.0,
-                    'api_usage': {},
-                    'last_updated': datetime.now().isoformat()
+                    "total_requests": 0,
+                    "total_cost": 0.0,
+                    "api_usage": {},
+                    "last_updated": datetime.now().isoformat(),
                 }
 
         manager = MockAPIManager(credentials_file="/custom/credentials.json")
@@ -87,29 +93,30 @@ class TestCredentialsManagement:
     def test_load_credentials_file_exists(self):
         """Test loading credentials when file exists"""
         credentials_data = {
-            'florida_property_appraiser': {
-                'api_key': 'test_key_123',
-                'updated_at': '2023-01-01T00:00:00'
+            "florida_property_appraiser": {
+                "api_key": "test_key_123",
+                "updated_at": "2023-01-01T00:00:00",
             }
         }
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(credentials_data, f)
             temp_path = f.name
 
         try:
+
             def _load_credentials(credentials_file):
                 if os.path.exists(credentials_file):
                     try:
-                        with open(credentials_file, 'r') as f:
+                        with open(credentials_file, "r") as f:
                             return json.load(f)
                     except Exception:
                         return {}
                 return {}
 
             result = _load_credentials(temp_path)
-            assert 'florida_property_appraiser' in result
-            assert result['florida_property_appraiser']['api_key'] == 'test_key_123'
+            assert "florida_property_appraiser" in result
+            assert result["florida_property_appraiser"]["api_key"] == "test_key_123"
         finally:
             os.unlink(temp_path)
 
@@ -120,7 +127,7 @@ class TestCredentialsManagement:
         def _load_credentials(credentials_file):
             if os.path.exists(credentials_file):
                 try:
-                    with open(credentials_file, 'r') as f:
+                    with open(credentials_file, "r") as f:
                         return json.load(f)
                 except Exception as e:
                     mock_logger.error(f"Failed to load credentials: {e}")
@@ -137,15 +144,16 @@ class TestCredentialsManagement:
         """Test loading credentials with invalid JSON"""
         mock_logger = MagicMock()
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             f.write("invalid json content")
             temp_path = f.name
 
         try:
+
             def _load_credentials(credentials_file):
                 if os.path.exists(credentials_file):
                     try:
-                        with open(credentials_file, 'r') as f:
+                        with open(credentials_file, "r") as f:
                             return json.load(f)
                     except Exception as e:
                         mock_logger.error(f"Failed to load credentials: {e}")
@@ -162,20 +170,20 @@ class TestCredentialsManagement:
         """Test saving credentials to file"""
         mock_logger = MagicMock()
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             temp_path = f.name
 
         try:
             credentials = {
-                'florida_property_appraiser': {
-                    'api_key': 'new_key_456',
-                    'updated_at': datetime.now().isoformat()
+                "florida_property_appraiser": {
+                    "api_key": "new_key_456",
+                    "updated_at": datetime.now().isoformat(),
                 }
             }
 
             def _save_credentials(credentials_file, credentials_data):
                 try:
-                    with open(credentials_file, 'w') as f:
+                    with open(credentials_file, "w") as f:
                         json.dump(credentials_data, f, indent=2)
                     mock_logger.info("Credentials saved successfully")
                 except Exception as e:
@@ -184,9 +192,9 @@ class TestCredentialsManagement:
             _save_credentials(temp_path, credentials)
 
             # Verify file was saved
-            with open(temp_path, 'r') as f:
+            with open(temp_path, "r") as f:
                 saved_data = json.load(f)
-            assert 'florida_property_appraiser' in saved_data
+            assert "florida_property_appraiser" in saved_data
         finally:
             os.unlink(temp_path)
 
@@ -205,17 +213,17 @@ class TestCredentialsManagement:
             def add_credentials(self, api_name, credentials):
                 self.credentials[api_name] = {
                     **credentials,
-                    'updated_at': datetime.now().isoformat()
+                    "updated_at": datetime.now().isoformat(),
                 }
                 self._save_credentials()
                 mock_logger.info(f"Credentials updated for {api_name}")
 
         manager = MockAPIManager()
-        manager.add_credentials('test_api', {'api_key': 'abc123'})
+        manager.add_credentials("test_api", {"api_key": "abc123"})
 
-        assert 'test_api' in manager.credentials
-        assert manager.credentials['test_api']['api_key'] == 'abc123'
-        assert 'updated_at' in manager.credentials['test_api']
+        assert "test_api" in manager.credentials
+        assert manager.credentials["test_api"]["api_key"] == "abc123"
+        assert "updated_at" in manager.credentials["test_api"]
 
 
 class TestIntegrationManagement:
@@ -236,7 +244,9 @@ class TestIntegrationManagement:
             def _create_integration(self, jurisdiction_id, api_type, jurisdiction_name):
                 return mock_integration
 
-            def get_integration(self, jurisdiction_id, api_type, jurisdiction_name=None):
+            def get_integration(
+                self, jurisdiction_id, api_type, jurisdiction_name=None
+            ):
                 cache_key = f"{jurisdiction_id}_{api_type}"
 
                 if cache_key in self.active_integrations:
@@ -246,7 +256,9 @@ class TestIntegrationManagement:
                     else:
                         del self.active_integrations[cache_key]
 
-                integration = self._create_integration(jurisdiction_id, api_type, jurisdiction_name)
+                integration = self._create_integration(
+                    jurisdiction_id, api_type, jurisdiction_name
+                )
                 if integration:
                     self.active_integrations[cache_key] = integration
 
@@ -255,11 +267,11 @@ class TestIntegrationManagement:
         manager = MockAPIManager()
 
         # First call creates integration
-        result1 = manager.get_integration(1, 'florida_api')
+        result1 = manager.get_integration(1, "florida_api")
         assert result1 == mock_integration
 
         # Second call returns cached
-        result2 = manager.get_integration(1, 'florida_api')
+        result2 = manager.get_integration(1, "florida_api")
         assert result2 == mock_integration
 
     def test_get_integration_expired(self):
@@ -269,7 +281,7 @@ class TestIntegrationManagement:
 
         class MockAPIManager:
             def __init__(self):
-                self.active_integrations = {'1_florida_api': mock_old_integration}
+                self.active_integrations = {"1_florida_api": mock_old_integration}
                 self.credentials = {}
                 self.call_count = 0
 
@@ -279,7 +291,9 @@ class TestIntegrationManagement:
             def _create_integration(self, jurisdiction_id, api_type, jurisdiction_name):
                 return mock_new_integration
 
-            def get_integration(self, jurisdiction_id, api_type, jurisdiction_name=None):
+            def get_integration(
+                self, jurisdiction_id, api_type, jurisdiction_name=None
+            ):
                 cache_key = f"{jurisdiction_id}_{api_type}"
 
                 if cache_key in self.active_integrations:
@@ -289,14 +303,16 @@ class TestIntegrationManagement:
                     else:
                         del self.active_integrations[cache_key]
 
-                integration = self._create_integration(jurisdiction_id, api_type, jurisdiction_name)
+                integration = self._create_integration(
+                    jurisdiction_id, api_type, jurisdiction_name
+                )
                 if integration:
                     self.active_integrations[cache_key] = integration
 
                 return integration
 
         manager = MockAPIManager()
-        result = manager.get_integration(1, 'florida_api')
+        result = manager.get_integration(1, "florida_api")
 
         assert result == mock_new_integration
 
@@ -305,19 +321,21 @@ class TestIntegrationManagement:
         mock_logger = MagicMock()
 
         class MockAPIManager:
-            API_REGISTRY = {'known_api': MagicMock}
+            API_REGISTRY = {"known_api": MagicMock}
 
             def __init__(self):
                 self.credentials = {}
 
-            def _create_integration(self, jurisdiction_id, api_type, jurisdiction_name=None):
+            def _create_integration(
+                self, jurisdiction_id, api_type, jurisdiction_name=None
+            ):
                 if api_type not in self.API_REGISTRY:
                     mock_logger.error(f"Unknown API type: {api_type}")
                     return None
                 return MagicMock()
 
         manager = MockAPIManager()
-        result = manager._create_integration(1, 'unknown_api')
+        result = manager._create_integration(1, "unknown_api")
 
         assert result is None
         mock_logger.error.assert_called()
@@ -327,12 +345,14 @@ class TestIntegrationManagement:
         mock_logger = MagicMock()
 
         class MockAPIManager:
-            API_REGISTRY = {'known_api': MagicMock}
+            API_REGISTRY = {"known_api": MagicMock}
 
             def __init__(self):
                 self.credentials = {}
 
-            def _create_integration(self, jurisdiction_id, api_type, jurisdiction_name=None):
+            def _create_integration(
+                self, jurisdiction_id, api_type, jurisdiction_name=None
+            ):
                 if api_type not in self.API_REGISTRY:
                     return None
 
@@ -344,7 +364,7 @@ class TestIntegrationManagement:
                 return MagicMock()
 
         manager = MockAPIManager()
-        result = manager._create_integration(1, 'known_api')
+        result = manager._create_integration(1, "known_api")
 
         assert result is None
         mock_logger.warning.assert_called()
@@ -358,12 +378,14 @@ class TestIntegrationManagement:
         mock_api_class.return_value = mock_integration
 
         class MockAPIManager:
-            API_REGISTRY = {'known_api': mock_api_class}
+            API_REGISTRY = {"known_api": mock_api_class}
 
             def __init__(self):
-                self.credentials = {'known_api': {'api_key': 'test123'}}
+                self.credentials = {"known_api": {"api_key": "test123"}}
 
-            def _create_integration(self, jurisdiction_id, api_type, jurisdiction_name=None):
+            def _create_integration(
+                self, jurisdiction_id, api_type, jurisdiction_name=None
+            ):
                 if api_type not in self.API_REGISTRY:
                     return None
 
@@ -373,7 +395,7 @@ class TestIntegrationManagement:
 
                 config = {
                     **credentials,
-                    'jurisdiction_name': jurisdiction_name or 'Unknown'
+                    "jurisdiction_name": jurisdiction_name or "Unknown",
                 }
 
                 try:
@@ -390,7 +412,7 @@ class TestIntegrationManagement:
                     return None
 
         manager = MockAPIManager()
-        result = manager._create_integration(1, 'known_api', 'Test County')
+        result = manager._create_integration(1, "known_api", "Test County")
 
         assert result is not None
         mock_logger.info.assert_called()
@@ -404,14 +426,19 @@ class TestIntegrationManagement:
         mock_api_class.return_value = mock_integration
 
         class MockAPIManager:
-            API_REGISTRY = {'known_api': mock_api_class}
+            API_REGISTRY = {"known_api": mock_api_class}
 
             def __init__(self):
-                self.credentials = {'known_api': {'api_key': 'test123'}}
+                self.credentials = {"known_api": {"api_key": "test123"}}
 
-            def _create_integration(self, jurisdiction_id, api_type, jurisdiction_name=None):
+            def _create_integration(
+                self, jurisdiction_id, api_type, jurisdiction_name=None
+            ):
                 credentials = self.credentials.get(api_type, {})
-                config = {**credentials, 'jurisdiction_name': jurisdiction_name or 'Unknown'}
+                config = {
+                    **credentials,
+                    "jurisdiction_name": jurisdiction_name or "Unknown",
+                }
 
                 api_class = self.API_REGISTRY[api_type]
                 integration = api_class(jurisdiction_id, config)
@@ -423,7 +450,7 @@ class TestIntegrationManagement:
                     return None
 
         manager = MockAPIManager()
-        result = manager._create_integration(1, 'known_api')
+        result = manager._create_integration(1, "known_api")
 
         assert result is None
         mock_logger.error.assert_called()
@@ -433,8 +460,13 @@ class TestIntegrationManagement:
         mock_integration = MagicMock(spec=[])  # No token_expires_at attribute
 
         def _is_integration_valid(integration):
-            if hasattr(integration, 'token_expires_at') and integration.token_expires_at:
-                return datetime.now() < integration.token_expires_at - timedelta(minutes=5)
+            if (
+                hasattr(integration, "token_expires_at")
+                and integration.token_expires_at
+            ):
+                return datetime.now() < integration.token_expires_at - timedelta(
+                    minutes=5
+                )
             return True
 
         assert _is_integration_valid(mock_integration) == True
@@ -445,8 +477,13 @@ class TestIntegrationManagement:
         mock_integration.token_expires_at = datetime.now() + timedelta(hours=1)
 
         def _is_integration_valid(integration):
-            if hasattr(integration, 'token_expires_at') and integration.token_expires_at:
-                return datetime.now() < integration.token_expires_at - timedelta(minutes=5)
+            if (
+                hasattr(integration, "token_expires_at")
+                and integration.token_expires_at
+            ):
+                return datetime.now() < integration.token_expires_at - timedelta(
+                    minutes=5
+                )
             return True
 
         assert _is_integration_valid(mock_integration) == True
@@ -457,8 +494,13 @@ class TestIntegrationManagement:
         mock_integration.token_expires_at = datetime.now() - timedelta(hours=1)
 
         def _is_integration_valid(integration):
-            if hasattr(integration, 'token_expires_at') and integration.token_expires_at:
-                return datetime.now() < integration.token_expires_at - timedelta(minutes=5)
+            if (
+                hasattr(integration, "token_expires_at")
+                and integration.token_expires_at
+            ):
+                return datetime.now() < integration.token_expires_at - timedelta(
+                    minutes=5
+                )
             return True
 
         assert _is_integration_valid(mock_integration) == False
@@ -471,17 +513,21 @@ class TestSearchFunctionality:
         """Test searching across multiple APIs"""
         mock_logger = MagicMock()
         mock_integration = MagicMock()
-        mock_integration.search_records.return_value = [{'id': 1}, {'id': 2}]
+        mock_integration.search_records.return_value = [{"id": 1}, {"id": 2}]
 
         class MockAPIManager:
             def __init__(self):
-                self.usage_stats = {'total_requests': 0, 'total_cost': 0.0, 'api_usage': {}}
+                self.usage_stats = {
+                    "total_requests": 0,
+                    "total_cost": 0.0,
+                    "api_usage": {},
+                }
 
             def get_integration(self, jurisdiction_id, api_type):
                 return mock_integration
 
             def _get_available_apis_for_jurisdiction(self, jurisdiction_id):
-                return ['api1', 'api2']
+                return ["api1", "api2"]
 
             def _track_api_usage(self, api_type, result_count):
                 pass
@@ -490,7 +536,9 @@ class TestSearchFunctionality:
                 results = []
 
                 if api_types is None:
-                    api_types = self._get_available_apis_for_jurisdiction(jurisdiction_id)
+                    api_types = self._get_available_apis_for_jurisdiction(
+                        jurisdiction_id
+                    )
 
                 for api_type in api_types:
                     try:
@@ -507,7 +555,7 @@ class TestSearchFunctionality:
                 return results
 
         manager = MockAPIManager()
-        results = manager.search_across_apis(1, {'name': 'test'})
+        results = manager.search_across_apis(1, {"name": "test"})
 
         assert len(results) == 4  # 2 results from each of 2 APIs
 
@@ -521,14 +569,14 @@ class TestSearchFunctionality:
             call_count[0] += 1
             if call_count[0] == 1:
                 raise Exception("API error")
-            return [{'id': 1}]
+            return [{"id": 1}]
 
         mock_integration = MagicMock()
         mock_integration.search_records = mock_search_records
 
         class MockAPIManager:
             def __init__(self):
-                self.usage_stats = {'api_usage': {}}
+                self.usage_stats = {"api_usage": {}}
 
             def get_integration(self, jurisdiction_id, api_type):
                 return mock_integration
@@ -552,7 +600,7 @@ class TestSearchFunctionality:
                 return results
 
         manager = MockAPIManager()
-        results = manager.search_across_apis(1, {'name': 'test'}, ['api1', 'api2'])
+        results = manager.search_across_apis(1, {"name": "test"}, ["api1", "api2"])
 
         # First API fails, second succeeds
         assert len(results) == 1
@@ -564,83 +612,88 @@ class TestUsageTracking:
 
     def test_track_api_usage_new_api(self):
         """Test tracking usage for a new API"""
+
         class MockAPIManager:
             def __init__(self):
                 self.usage_stats = {
-                    'total_requests': 0,
-                    'total_cost': 0.0,
-                    'api_usage': {}
+                    "total_requests": 0,
+                    "total_cost": 0.0,
+                    "api_usage": {},
                 }
 
             def _calculate_api_cost(self, api_type, result_count):
                 return 0.10
 
             def _track_api_usage(self, api_type, result_count):
-                if api_type not in self.usage_stats['api_usage']:
-                    self.usage_stats['api_usage'][api_type] = {
-                        'requests': 0,
-                        'results': 0,
-                        'cost': 0.0
+                if api_type not in self.usage_stats["api_usage"]:
+                    self.usage_stats["api_usage"][api_type] = {
+                        "requests": 0,
+                        "results": 0,
+                        "cost": 0.0,
                     }
 
-                self.usage_stats['api_usage'][api_type]['requests'] += 1
-                self.usage_stats['api_usage'][api_type]['results'] += result_count
+                self.usage_stats["api_usage"][api_type]["requests"] += 1
+                self.usage_stats["api_usage"][api_type]["results"] += result_count
 
                 cost = self._calculate_api_cost(api_type, result_count)
-                self.usage_stats['api_usage'][api_type]['cost'] += cost
-                self.usage_stats['total_cost'] += cost
-                self.usage_stats['total_requests'] += 1
+                self.usage_stats["api_usage"][api_type]["cost"] += cost
+                self.usage_stats["total_cost"] += cost
+                self.usage_stats["total_requests"] += 1
 
         manager = MockAPIManager()
-        manager._track_api_usage('new_api', 5)
+        manager._track_api_usage("new_api", 5)
 
-        assert 'new_api' in manager.usage_stats['api_usage']
-        assert manager.usage_stats['api_usage']['new_api']['requests'] == 1
-        assert manager.usage_stats['api_usage']['new_api']['results'] == 5
-        assert manager.usage_stats['total_requests'] == 1
+        assert "new_api" in manager.usage_stats["api_usage"]
+        assert manager.usage_stats["api_usage"]["new_api"]["requests"] == 1
+        assert manager.usage_stats["api_usage"]["new_api"]["results"] == 5
+        assert manager.usage_stats["total_requests"] == 1
 
     def test_track_api_usage_existing_api(self):
         """Test tracking usage for an existing API"""
+
         class MockAPIManager:
             def __init__(self):
                 self.usage_stats = {
-                    'total_requests': 5,
-                    'total_cost': 0.50,
-                    'api_usage': {
-                        'existing_api': {'requests': 5, 'results': 25, 'cost': 0.50}
-                    }
+                    "total_requests": 5,
+                    "total_cost": 0.50,
+                    "api_usage": {
+                        "existing_api": {"requests": 5, "results": 25, "cost": 0.50}
+                    },
                 }
 
             def _calculate_api_cost(self, api_type, result_count):
                 return 0.10
 
             def _track_api_usage(self, api_type, result_count):
-                if api_type not in self.usage_stats['api_usage']:
-                    self.usage_stats['api_usage'][api_type] = {
-                        'requests': 0, 'results': 0, 'cost': 0.0
+                if api_type not in self.usage_stats["api_usage"]:
+                    self.usage_stats["api_usage"][api_type] = {
+                        "requests": 0,
+                        "results": 0,
+                        "cost": 0.0,
                     }
 
-                self.usage_stats['api_usage'][api_type]['requests'] += 1
-                self.usage_stats['api_usage'][api_type]['results'] += result_count
+                self.usage_stats["api_usage"][api_type]["requests"] += 1
+                self.usage_stats["api_usage"][api_type]["results"] += result_count
 
                 cost = self._calculate_api_cost(api_type, result_count)
-                self.usage_stats['api_usage'][api_type]['cost'] += cost
-                self.usage_stats['total_cost'] += cost
-                self.usage_stats['total_requests'] += 1
+                self.usage_stats["api_usage"][api_type]["cost"] += cost
+                self.usage_stats["total_cost"] += cost
+                self.usage_stats["total_requests"] += 1
 
         manager = MockAPIManager()
-        manager._track_api_usage('existing_api', 10)
+        manager._track_api_usage("existing_api", 10)
 
-        assert manager.usage_stats['api_usage']['existing_api']['requests'] == 6
-        assert manager.usage_stats['api_usage']['existing_api']['results'] == 35
-        assert manager.usage_stats['total_requests'] == 6
+        assert manager.usage_stats["api_usage"]["existing_api"]["requests"] == 6
+        assert manager.usage_stats["api_usage"]["existing_api"]["results"] == 35
+        assert manager.usage_stats["total_requests"] == 6
 
     def test_calculate_api_cost_default(self):
         """Test cost calculation with default pricing"""
+
         def _calculate_api_cost(api_type, result_count):
             cost_per_request = {
-                'florida_property_appraiser': 0.10,
-                'california_sos': 0.15,
+                "florida_property_appraiser": 0.10,
+                "california_sos": 0.15,
             }
             base_cost = cost_per_request.get(api_type, 0.10)
 
@@ -649,14 +702,15 @@ class TestUsageTracking:
 
             return base_cost
 
-        assert _calculate_api_cost('florida_property_appraiser', 5) == 0.10
-        assert _calculate_api_cost('california_sos', 5) == 0.15
-        assert _calculate_api_cost('unknown_api', 5) == 0.10
+        assert _calculate_api_cost("florida_property_appraiser", 5) == 0.10
+        assert _calculate_api_cost("california_sos", 5) == 0.15
+        assert _calculate_api_cost("unknown_api", 5) == 0.10
 
     def test_calculate_api_cost_high_volume(self):
         """Test cost calculation with high result count"""
+
         def _calculate_api_cost(api_type, result_count):
-            cost_per_request = {'florida_property_appraiser': 0.10}
+            cost_per_request = {"florida_property_appraiser": 0.10}
             base_cost = cost_per_request.get(api_type, 0.10)
 
             if result_count > 10:
@@ -665,7 +719,7 @@ class TestUsageTracking:
             return base_cost
 
         # 20 results = 0.10 + (20-10) * 0.01 = 0.10 + 0.10 = 0.20
-        assert _calculate_api_cost('florida_property_appraiser', 20) == 0.20
+        assert _calculate_api_cost("florida_property_appraiser", 20) == 0.20
 
 
 class TestMetricsAndReporting:
@@ -674,31 +728,28 @@ class TestMetricsAndReporting:
     def test_get_api_metrics(self):
         """Test getting API metrics"""
         mock_integration = MagicMock()
-        mock_integration.get_metrics.return_value = {'requests': 10, 'errors': 1}
+        mock_integration.get_metrics.return_value = {"requests": 10, "errors": 1}
 
         class MockAPIManager:
             def __init__(self):
                 self.usage_stats = {
-                    'total_requests': 100,
-                    'total_cost': 10.0,
-                    'api_usage': {}
+                    "total_requests": 100,
+                    "total_cost": 10.0,
+                    "api_usage": {},
                 }
-                self.active_integrations = {'1_florida_api': mock_integration}
+                self.active_integrations = {"1_florida_api": mock_integration}
 
             def get_api_metrics(self):
-                metrics = {
-                    'overall': self.usage_stats.copy(),
-                    'integrations': {}
-                }
+                metrics = {"overall": self.usage_stats.copy(), "integrations": {}}
 
                 for cache_key, integration in self.active_integrations.items():
-                    parts = cache_key.split('_', 1)
+                    parts = cache_key.split("_", 1)
                     jurisdiction_id = parts[0]
-                    api_type = parts[1] if len(parts) > 1 else 'unknown'
-                    metrics['integrations'][cache_key] = {
-                        'jurisdiction_id': int(jurisdiction_id),
-                        'api_type': api_type,
-                        **integration.get_metrics()
+                    api_type = parts[1] if len(parts) > 1 else "unknown"
+                    metrics["integrations"][cache_key] = {
+                        "jurisdiction_id": int(jurisdiction_id),
+                        "api_type": api_type,
+                        **integration.get_metrics(),
                     }
 
                 return metrics
@@ -706,43 +757,59 @@ class TestMetricsAndReporting:
         manager = MockAPIManager()
         metrics = manager.get_api_metrics()
 
-        assert metrics['overall']['total_requests'] == 100
-        assert '1_florida_api' in metrics['integrations']
-        assert metrics['integrations']['1_florida_api']['requests'] == 10
+        assert metrics["overall"]["total_requests"] == 100
+        assert "1_florida_api" in metrics["integrations"]
+        assert metrics["integrations"]["1_florida_api"]["requests"] == 10
 
     def test_get_cost_report(self):
         """Test generating cost report"""
+
         class MockAPIManager:
             def __init__(self):
                 self.usage_stats = {
-                    'total_cost': 15.50,
-                    'total_requests': 100,
-                    'api_usage': {
-                        'florida_api': {'requests': 60, 'results': 300, 'cost': 9.00},
-                        'california_api': {'requests': 40, 'results': 200, 'cost': 6.50}
-                    }
+                    "total_cost": 15.50,
+                    "total_requests": 100,
+                    "api_usage": {
+                        "florida_api": {"requests": 60, "results": 300, "cost": 9.00},
+                        "california_api": {
+                            "requests": 40,
+                            "results": 200,
+                            "cost": 6.50,
+                        },
+                    },
                 }
 
             def get_cost_report(self, days=30):
                 report = {
-                    'period_days': days,
-                    'total_cost': self.usage_stats['total_cost'],
-                    'total_requests': self.usage_stats['total_requests'],
-                    'cost_per_request': 0.0,
-                    'api_breakdown': {},
-                    'generated_at': datetime.now().isoformat()
+                    "period_days": days,
+                    "total_cost": self.usage_stats["total_cost"],
+                    "total_requests": self.usage_stats["total_requests"],
+                    "cost_per_request": 0.0,
+                    "api_breakdown": {},
+                    "generated_at": datetime.now().isoformat(),
                 }
 
-                if self.usage_stats['total_requests'] > 0:
-                    report['cost_per_request'] = self.usage_stats['total_cost'] / self.usage_stats['total_requests']
+                if self.usage_stats["total_requests"] > 0:
+                    report["cost_per_request"] = (
+                        self.usage_stats["total_cost"]
+                        / self.usage_stats["total_requests"]
+                    )
 
-                for api_type, usage in self.usage_stats['api_usage'].items():
-                    report['api_breakdown'][api_type] = {
-                        'requests': usage['requests'],
-                        'results': usage['results'],
-                        'cost': usage['cost'],
-                        'cost_per_request': usage['cost'] / usage['requests'] if usage['requests'] > 0 else 0,
-                        'results_per_request': usage['results'] / usage['requests'] if usage['requests'] > 0 else 0
+                for api_type, usage in self.usage_stats["api_usage"].items():
+                    report["api_breakdown"][api_type] = {
+                        "requests": usage["requests"],
+                        "results": usage["results"],
+                        "cost": usage["cost"],
+                        "cost_per_request": (
+                            usage["cost"] / usage["requests"]
+                            if usage["requests"] > 0
+                            else 0
+                        ),
+                        "results_per_request": (
+                            usage["results"] / usage["requests"]
+                            if usage["requests"] > 0
+                            else 0
+                        ),
                     }
 
                 return report
@@ -750,41 +817,45 @@ class TestMetricsAndReporting:
         manager = MockAPIManager()
         report = manager.get_cost_report(days=30)
 
-        assert report['period_days'] == 30
-        assert report['total_cost'] == 15.50
-        assert report['total_requests'] == 100
-        assert report['cost_per_request'] == 0.155
-        assert 'florida_api' in report['api_breakdown']
-        assert report['api_breakdown']['florida_api']['cost_per_request'] == 0.15
+        assert report["period_days"] == 30
+        assert report["total_cost"] == 15.50
+        assert report["total_requests"] == 100
+        assert report["cost_per_request"] == 0.155
+        assert "florida_api" in report["api_breakdown"]
+        assert report["api_breakdown"]["florida_api"]["cost_per_request"] == 0.15
 
     def test_get_cost_report_no_requests(self):
         """Test cost report with no requests"""
+
         class MockAPIManager:
             def __init__(self):
                 self.usage_stats = {
-                    'total_cost': 0.0,
-                    'total_requests': 0,
-                    'api_usage': {}
+                    "total_cost": 0.0,
+                    "total_requests": 0,
+                    "api_usage": {},
                 }
 
             def get_cost_report(self, days=30):
                 report = {
-                    'period_days': days,
-                    'total_cost': self.usage_stats['total_cost'],
-                    'total_requests': self.usage_stats['total_requests'],
-                    'cost_per_request': 0.0,
-                    'api_breakdown': {}
+                    "period_days": days,
+                    "total_cost": self.usage_stats["total_cost"],
+                    "total_requests": self.usage_stats["total_requests"],
+                    "cost_per_request": 0.0,
+                    "api_breakdown": {},
                 }
 
-                if self.usage_stats['total_requests'] > 0:
-                    report['cost_per_request'] = self.usage_stats['total_cost'] / self.usage_stats['total_requests']
+                if self.usage_stats["total_requests"] > 0:
+                    report["cost_per_request"] = (
+                        self.usage_stats["total_cost"]
+                        / self.usage_stats["total_requests"]
+                    )
 
                 return report
 
         manager = MockAPIManager()
         report = manager.get_cost_report()
 
-        assert report['cost_per_request'] == 0.0
+        assert report["cost_per_request"] == 0.0
 
 
 class TestCleanupAndMaintenance:
@@ -799,9 +870,9 @@ class TestCleanupAndMaintenance:
         class MockAPIManager:
             def __init__(self):
                 self.active_integrations = {
-                    'valid_1': mock_valid,
-                    'expired_1': mock_expired,
-                    'expired_2': mock_expired
+                    "valid_1": mock_valid,
+                    "expired_1": mock_expired,
+                    "expired_2": mock_expired,
                 }
 
             def _is_integration_valid(self, integration):
@@ -819,13 +890,15 @@ class TestCleanupAndMaintenance:
                     mock_logger.info(f"Cleaned up expired integration: {key}")
 
                 if expired_keys:
-                    mock_logger.info(f"Cleaned up {len(expired_keys)} expired integrations")
+                    mock_logger.info(
+                        f"Cleaned up {len(expired_keys)} expired integrations"
+                    )
 
         manager = MockAPIManager()
         manager.cleanup_expired_integrations()
 
         assert len(manager.active_integrations) == 1
-        assert 'valid_1' in manager.active_integrations
+        assert "valid_1" in manager.active_integrations
         assert mock_logger.info.call_count == 3  # 2 individual + 1 summary
 
     def test_cleanup_no_expired_integrations(self):
@@ -835,7 +908,10 @@ class TestCleanupAndMaintenance:
 
         class MockAPIManager:
             def __init__(self):
-                self.active_integrations = {'valid_1': mock_valid, 'valid_2': mock_valid}
+                self.active_integrations = {
+                    "valid_1": mock_valid,
+                    "valid_2": mock_valid,
+                }
 
             def _is_integration_valid(self, integration):
                 return True
@@ -851,7 +927,9 @@ class TestCleanupAndMaintenance:
                     del self.active_integrations[key]
 
                 if expired_keys:
-                    mock_logger.info(f"Cleaned up {len(expired_keys)} expired integrations")
+                    mock_logger.info(
+                        f"Cleaned up {len(expired_keys)} expired integrations"
+                    )
 
         manager = MockAPIManager()
         manager.cleanup_expired_integrations()
@@ -865,11 +943,12 @@ class TestAPIInfo:
 
     def test_list_available_apis(self):
         """Test listing available APIs"""
+
         class MockAPIManager:
             API_REGISTRY = {
-                'florida_property_appraiser': MagicMock,
-                'california_sos': MagicMock,
-                'texas_comptroller': MagicMock
+                "florida_property_appraiser": MagicMock,
+                "california_sos": MagicMock,
+                "texas_comptroller": MagicMock,
             }
 
             def list_available_apis(self):
@@ -879,23 +958,23 @@ class TestAPIInfo:
         apis = manager.list_available_apis()
 
         assert len(apis) == 3
-        assert 'florida_property_appraiser' in apis
-        assert 'california_sos' in apis
+        assert "florida_property_appraiser" in apis
+        assert "california_sos" in apis
 
     def test_get_api_info_exists(self):
         """Test getting info for existing API"""
         mock_api_class = MagicMock
-        mock_api_class.__name__ = 'FloridaPropertyAppraiserAPI'
-        mock_api_class.__module__ = 'datagod.scrapers.florida_api'
+        mock_api_class.__name__ = "FloridaPropertyAppraiserAPI"
+        mock_api_class.__module__ = "datagod.scrapers.florida_api"
 
         class MockAPIManager:
-            API_REGISTRY = {'florida_property_appraiser': mock_api_class}
+            API_REGISTRY = {"florida_property_appraiser": mock_api_class}
 
             def __init__(self):
                 self.credentials = {
-                    'florida_property_appraiser': {
-                        'api_key': 'test123',
-                        'updated_at': '2023-06-01T00:00:00'
+                    "florida_property_appraiser": {
+                        "api_key": "test123",
+                        "updated_at": "2023-06-01T00:00:00",
                     }
                 }
 
@@ -907,23 +986,24 @@ class TestAPIInfo:
                 credentials = self.credentials.get(api_type, {})
 
                 return {
-                    'api_type': api_type,
-                    'class_name': api_class.__name__,
-                    'has_credentials': bool(credentials),
-                    'last_updated': credentials.get('updated_at'),
-                    'module': api_class.__module__
+                    "api_type": api_type,
+                    "class_name": api_class.__name__,
+                    "has_credentials": bool(credentials),
+                    "last_updated": credentials.get("updated_at"),
+                    "module": api_class.__module__,
                 }
 
         manager = MockAPIManager()
-        info = manager.get_api_info('florida_property_appraiser')
+        info = manager.get_api_info("florida_property_appraiser")
 
-        assert info['api_type'] == 'florida_property_appraiser'
-        assert info['class_name'] == 'FloridaPropertyAppraiserAPI'
-        assert info['has_credentials'] == True
-        assert info['last_updated'] == '2023-06-01T00:00:00'
+        assert info["api_type"] == "florida_property_appraiser"
+        assert info["class_name"] == "FloridaPropertyAppraiserAPI"
+        assert info["has_credentials"] == True
+        assert info["last_updated"] == "2023-06-01T00:00:00"
 
     def test_get_api_info_not_exists(self):
         """Test getting info for non-existent API"""
+
         class MockAPIManager:
             API_REGISTRY = {}
 
@@ -933,10 +1013,10 @@ class TestAPIInfo:
             def get_api_info(self, api_type):
                 if api_type not in self.API_REGISTRY:
                     return {}
-                return {'api_type': api_type}
+                return {"api_type": api_type}
 
         manager = MockAPIManager()
-        info = manager.get_api_info('nonexistent_api')
+        info = manager.get_api_info("nonexistent_api")
 
         assert info == {}
 
@@ -955,5 +1035,5 @@ class TestGlobalInstance:
         assert result == global_manager
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

@@ -12,20 +12,21 @@ This module tests:
 Coverage target: 100% of scraper infrastructure modules
 """
 
-import pytest
+import json
 import os
 import sys
-import json
 import time
 from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock, Mock
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 # Set test environment before imports
 os.environ["TESTING"] = "1"
 
 # Add paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 class TestBaseScraperInit:
@@ -34,7 +35,7 @@ class TestBaseScraperInit:
     def test_base_url_trailing_slash_stripped(self):
         """Test that trailing slash is stripped from base_url."""
         base_url = "https://example.com/"
-        stripped = base_url.rstrip('/')
+        stripped = base_url.rstrip("/")
 
         assert stripped == "https://example.com"
 
@@ -51,15 +52,15 @@ class TestBaseScraperInit:
     def test_session_headers(self):
         """Test session headers structure."""
         headers = {
-            'User-Agent': 'DataGod-Scraper/1.0',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
-            'Connection': 'keep-alive',
+            "User-Agent": "DataGod-Scraper/1.0",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Accept-Encoding": "gzip, deflate",
+            "Connection": "keep-alive",
         }
 
-        assert 'User-Agent' in headers
-        assert 'DataGod-Scraper' in headers['User-Agent']
+        assert "User-Agent" in headers
+        assert "DataGod-Scraper" in headers["User-Agent"]
 
 
 class TestBaseScraperMakeRequest:
@@ -68,19 +69,19 @@ class TestBaseScraperMakeRequest:
     def test_get_method(self):
         """Test GET method selection."""
         method = "GET"
-        is_get = method.upper() == 'GET'
+        is_get = method.upper() == "GET"
         assert is_get is True
 
     def test_post_method(self):
         """Test POST method selection."""
         method = "POST"
-        is_post = method.upper() == 'POST'
+        is_post = method.upper() == "POST"
         assert is_post is True
 
     def test_unsupported_method(self):
         """Test unsupported HTTP method raises error."""
         method = "DELETE"
-        supported = method.upper() in ['GET', 'POST']
+        supported = method.upper() in ["GET", "POST"]
 
         if not supported:
             error = ValueError(f"Unsupported HTTP method: {method}")
@@ -88,25 +89,21 @@ class TestBaseScraperMakeRequest:
 
     def test_successful_response_structure(self):
         """Test successful response structure."""
-        response = {
-            'success': True,
-            'data': {"key": "value"},
-            'status_code': 200
-        }
+        response = {"success": True, "data": {"key": "value"}, "status_code": 200}
 
-        assert response['success'] is True
-        assert response['status_code'] == 200
+        assert response["success"] is True
+        assert response["status_code"] == 200
 
     def test_failed_response_structure(self):
         """Test failed response structure."""
         response = {
-            'success': False,
-            'error': "Connection timeout",
-            'status_code': None
+            "success": False,
+            "error": "Connection timeout",
+            "status_code": None,
         }
 
-        assert response['success'] is False
-        assert 'error' in response
+        assert response["success"] is False
+        assert "error" in response
 
 
 class TestBaseScraperExtractLinks:
@@ -117,7 +114,7 @@ class TestBaseScraperExtractLinks:
         href = "/path/to/page"
         base_url = "https://example.com"
 
-        if href.startswith('/'):
+        if href.startswith("/"):
             result = f"{base_url}{href}"
         else:
             result = href
@@ -129,9 +126,9 @@ class TestBaseScraperExtractLinks:
         href = "page.html"
         base_url = "https://example.com"
 
-        if href.startswith('/'):
+        if href.startswith("/"):
             result = f"{base_url}{href}"
-        elif not href.startswith('http'):
+        elif not href.startswith("http"):
             result = f"{base_url}/{href}"
         else:
             result = href
@@ -143,7 +140,7 @@ class TestBaseScraperExtractLinks:
         href = "https://other.com/page"
         base_url = "https://example.com"
 
-        if not href.startswith('http'):
+        if not href.startswith("http"):
             result = f"{base_url}/{href}"
         else:
             result = href
@@ -197,7 +194,7 @@ class TestBaseScraperValidateData:
     def test_missing_required_fields(self):
         """Test missing required fields is invalid."""
         data = {"source": "test"}
-        required_fields = ['source', 'scraped_at', 'data']
+        required_fields = ["source", "scraped_at", "data"]
 
         valid = True
         for field in required_fields:
@@ -209,12 +206,8 @@ class TestBaseScraperValidateData:
 
     def test_all_required_fields_present(self):
         """Test all required fields present is valid."""
-        data = {
-            "source": "test",
-            "scraped_at": "2024-01-01",
-            "data": {"items": []}
-        }
-        required_fields = ['source', 'scraped_at', 'data']
+        data = {"source": "test", "scraped_at": "2024-01-01", "data": {"items": []}}
+        required_fields = ["source", "scraped_at", "data"]
 
         valid = all(field in data for field in required_fields)
         assert valid is True
@@ -250,18 +243,18 @@ class TestAPIIntegrationMetrics:
     def test_metrics_initialization(self):
         """Test metrics initialization."""
         metrics = {
-            'requests_total': 0,
-            'requests_successful': 0,
-            'requests_failed': 0,
-            'rate_limit_hits': 0,
-            'average_response_time': 0.0,
-            'total_response_time': 0.0,
-            'last_request_time': None,
-            'errors_by_type': {}
+            "requests_total": 0,
+            "requests_successful": 0,
+            "requests_failed": 0,
+            "rate_limit_hits": 0,
+            "average_response_time": 0.0,
+            "total_response_time": 0.0,
+            "last_request_time": None,
+            "errors_by_type": {},
         }
 
-        assert metrics['requests_total'] == 0
-        assert metrics['errors_by_type'] == {}
+        assert metrics["requests_total"] == 0
+        assert metrics["errors_by_type"] == {}
 
     def test_record_successful_request(self):
         """Test recording successful request."""
@@ -309,7 +302,7 @@ class TestAPIIntegrationMetrics:
         requests_total = 10
         requests_successful = 8
 
-        success_rate = (requests_successful / requests_total * 100)
+        success_rate = requests_successful / requests_total * 100
         assert success_rate == 80.0
 
     def test_success_rate_zero_requests(self):
@@ -317,7 +310,9 @@ class TestAPIIntegrationMetrics:
         requests_total = 0
         requests_successful = 0
 
-        success_rate = (requests_successful / requests_total * 100) if requests_total > 0 else 0
+        success_rate = (
+            (requests_successful / requests_total * 100) if requests_total > 0 else 0
+        )
         assert success_rate == 0
 
     def test_rate_limit_hit_counter(self):
@@ -339,7 +334,7 @@ class TestAPIIntegrationMetrics:
             "rate_limit_hits": 1,
             "average_response_time": 0.5,
             "errors_by_type": {"ConnectionError": 1, "TimeoutError": 1},
-            "last_request_time": datetime.now().isoformat()
+            "last_request_time": datetime.now().isoformat(),
         }
 
         assert "requests_total" in metrics
@@ -353,32 +348,32 @@ class TestBaseAPIIntegrationInit:
     def test_config_extraction(self):
         """Test config values extraction."""
         config = {
-            'requests_per_minute': 60,
-            'requests_per_hour': 1000,
-            'api_key': 'test_key',
-            'api_secret': 'test_secret',
-            'base_url': 'https://api.example.com',
-            'timeout': 30,
-            'retry_attempts': 3,
-            'retry_backoff': 1.0
+            "requests_per_minute": 60,
+            "requests_per_hour": 1000,
+            "api_key": "test_key",
+            "api_secret": "test_secret",
+            "base_url": "https://api.example.com",
+            "timeout": 30,
+            "retry_attempts": 3,
+            "retry_backoff": 1.0,
         }
 
-        requests_per_minute = config.get('requests_per_minute', 60)
-        api_key = config.get('api_key')
-        timeout = config.get('timeout', 30)
+        requests_per_minute = config.get("requests_per_minute", 60)
+        api_key = config.get("api_key")
+        timeout = config.get("timeout", 30)
 
         assert requests_per_minute == 60
-        assert api_key == 'test_key'
+        assert api_key == "test_key"
         assert timeout == 30
 
     def test_default_config_values(self):
         """Test default config values when not provided."""
         config = {}
 
-        requests_per_minute = config.get('requests_per_minute', 60)
-        requests_per_hour = config.get('requests_per_hour', 1000)
-        timeout = config.get('timeout', 30)
-        retry_attempts = config.get('retry_attempts', 3)
+        requests_per_minute = config.get("requests_per_minute", 60)
+        requests_per_hour = config.get("requests_per_hour", 1000)
+        timeout = config.get("timeout", 30)
+        retry_attempts = config.get("retry_attempts", 3)
 
         assert requests_per_minute == 60
         assert requests_per_hour == 1000
@@ -399,7 +394,9 @@ class TestRateLimiting:
         for i in range(30):
             request_timestamps.append(now - timedelta(seconds=i))
 
-        recent_requests = [ts for ts in request_timestamps if ts > now - timedelta(minutes=1)]
+        recent_requests = [
+            ts for ts in request_timestamps if ts > now - timedelta(minutes=1)
+        ]
         within_limit = len(recent_requests) < requests_per_minute
 
         assert within_limit is True
@@ -414,7 +411,9 @@ class TestRateLimiting:
         for i in range(60):
             request_timestamps.append(now - timedelta(seconds=i))
 
-        recent_requests = [ts for ts in request_timestamps if ts > now - timedelta(minutes=1)]
+        recent_requests = [
+            ts for ts in request_timestamps if ts > now - timedelta(minutes=1)
+        ]
         within_limit = len(recent_requests) < requests_per_minute
 
         assert within_limit is False
@@ -481,6 +480,7 @@ class TestCustomExceptions:
 
     def test_rate_limit_exceeded(self):
         """Test RateLimitExceeded exception."""
+
         class RateLimitExceeded(Exception):
             pass
 
@@ -491,6 +491,7 @@ class TestCustomExceptions:
 
     def test_api_authentication_error(self):
         """Test APIAuthenticationError exception."""
+
         class APIAuthenticationError(Exception):
             pass
 
@@ -501,6 +502,7 @@ class TestCustomExceptions:
 
     def test_api_data_error(self):
         """Test APIDataError exception."""
+
         class APIDataError(Exception):
             pass
 
@@ -536,16 +538,14 @@ class TestAuthentication:
 
     def test_hmac_signature(self):
         """Test HMAC signature generation."""
-        import hmac
         import hashlib
+        import hmac
 
         api_secret = "secret_key"
         message = "test_message"
 
         signature = hmac.new(
-            api_secret.encode(),
-            message.encode(),
-            hashlib.sha256
+            api_secret.encode(), message.encode(), hashlib.sha256
         ).hexdigest()
 
         assert len(signature) == 64  # SHA256 produces 64 char hex
@@ -559,13 +559,13 @@ class TestDataMapping:
         api_response = {
             "propertyAddress": "123 Main St",
             "ownerName": "John Doe",
-            "salePrice": 250000
+            "salePrice": 250000,
         }
 
         field_mapping = {
             "propertyAddress": "address",
             "ownerName": "owner",
-            "salePrice": "amount"
+            "salePrice": "amount",
         }
 
         mapped = {}
@@ -583,6 +583,7 @@ class TestDataMapping:
 
         # Convert to ISO format
         from datetime import datetime
+
         parsed = datetime.strptime(api_date, "%m/%d/%Y")
         iso_date = parsed.strftime("%Y-%m-%d")
 
@@ -608,11 +609,7 @@ class TestErrorHandling:
         error_type = "ConnectionError"
         error_message = "Failed to connect to server"
 
-        response = {
-            "success": False,
-            "error": error_message,
-            "error_type": error_type
-        }
+        response = {"success": False, "error": error_message, "error_type": error_type}
 
         assert response["success"] is False
         assert response["error_type"] == "ConnectionError"
@@ -622,11 +619,7 @@ class TestErrorHandling:
         timeout = 30
         error = f"Request timed out after {timeout} seconds"
 
-        response = {
-            "success": False,
-            "error": error,
-            "error_type": "TimeoutError"
-        }
+        response = {"success": False, "error": error, "error_type": "TimeoutError"}
 
         assert "timed out" in response["error"]
 
@@ -638,7 +631,7 @@ class TestErrorHandling:
             403: "Forbidden",
             404: "Not Found",
             429: "Rate Limited",
-            500: "Server Error"
+            500: "Server Error",
         }
 
         assert status_codes[401] == "Unauthorized"

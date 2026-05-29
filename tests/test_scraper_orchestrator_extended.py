@@ -5,12 +5,13 @@ Comprehensive tests for the scraper orchestration system including
 TaskStatus, TaskPriority, ScrapingTask, WorkerStats, TaskQueue, and ScraperOrchestrator.
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
 import time
 from datetime import datetime
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestTaskStatusEnum:
@@ -19,41 +20,49 @@ class TestTaskStatusEnum:
     def test_task_status_enum_exists(self):
         """Test TaskStatus enum exists"""
         from datagod.scrapers.scraper_orchestrator import TaskStatus
+
         assert TaskStatus is not None
 
     def test_task_status_pending(self):
         """Test PENDING status"""
         from datagod.scrapers.scraper_orchestrator import TaskStatus
+
         assert TaskStatus.PENDING.value == "pending"
 
     def test_task_status_queued(self):
         """Test QUEUED status"""
         from datagod.scrapers.scraper_orchestrator import TaskStatus
+
         assert TaskStatus.QUEUED.value == "queued"
 
     def test_task_status_running(self):
         """Test RUNNING status"""
         from datagod.scrapers.scraper_orchestrator import TaskStatus
+
         assert TaskStatus.RUNNING.value == "running"
 
     def test_task_status_completed(self):
         """Test COMPLETED status"""
         from datagod.scrapers.scraper_orchestrator import TaskStatus
+
         assert TaskStatus.COMPLETED.value == "completed"
 
     def test_task_status_failed(self):
         """Test FAILED status"""
         from datagod.scrapers.scraper_orchestrator import TaskStatus
+
         assert TaskStatus.FAILED.value == "failed"
 
     def test_task_status_cancelled(self):
         """Test CANCELLED status"""
         from datagod.scrapers.scraper_orchestrator import TaskStatus
+
         assert TaskStatus.CANCELLED.value == "cancelled"
 
     def test_task_status_retry(self):
         """Test RETRY status"""
         from datagod.scrapers.scraper_orchestrator import TaskStatus
+
         assert TaskStatus.RETRY.value == "retry"
 
 
@@ -63,36 +72,43 @@ class TestTaskPriorityEnum:
     def test_task_priority_enum_exists(self):
         """Test TaskPriority enum exists"""
         from datagod.scrapers.scraper_orchestrator import TaskPriority
+
         assert TaskPriority is not None
 
     def test_task_priority_critical(self):
         """Test CRITICAL priority"""
         from datagod.scrapers.scraper_orchestrator import TaskPriority
+
         assert TaskPriority.CRITICAL.value == 1
 
     def test_task_priority_high(self):
         """Test HIGH priority"""
         from datagod.scrapers.scraper_orchestrator import TaskPriority
+
         assert TaskPriority.HIGH.value == 2
 
     def test_task_priority_normal(self):
         """Test NORMAL priority"""
         from datagod.scrapers.scraper_orchestrator import TaskPriority
+
         assert TaskPriority.NORMAL.value == 3
 
     def test_task_priority_low(self):
         """Test LOW priority"""
         from datagod.scrapers.scraper_orchestrator import TaskPriority
+
         assert TaskPriority.LOW.value == 4
 
     def test_task_priority_background(self):
         """Test BACKGROUND priority"""
         from datagod.scrapers.scraper_orchestrator import TaskPriority
+
         assert TaskPriority.BACKGROUND.value == 5
 
     def test_priority_ordering(self):
         """Test that priorities are properly ordered"""
         from datagod.scrapers.scraper_orchestrator import TaskPriority
+
         assert TaskPriority.CRITICAL.value < TaskPriority.HIGH.value
         assert TaskPriority.HIGH.value < TaskPriority.NORMAL.value
         assert TaskPriority.NORMAL.value < TaskPriority.LOW.value
@@ -105,6 +121,7 @@ class TestScrapingTaskDataclass:
     def test_scraping_task_exists(self):
         """Test ScrapingTask dataclass exists"""
         from datagod.scrapers.scraper_orchestrator import ScrapingTask
+
         assert ScrapingTask is not None
 
     def test_create_scraping_task(self):
@@ -117,7 +134,7 @@ class TestScrapingTaskDataclass:
             scraper_class="TestScraper",
             scraper_config={"key": "value"},
             jurisdiction_id=1,
-            jurisdiction_name="Test County"
+            jurisdiction_name="Test County",
         )
 
         assert task.task_id == "test-123"
@@ -135,7 +152,7 @@ class TestScrapingTaskDataclass:
             jurisdiction_id=123,
             jurisdiction_name="Example County",
             priority=TaskPriority.HIGH,
-            max_retries=5
+            max_retries=5,
         )
 
         assert task.scraper_class == "TestScraper"
@@ -153,18 +170,18 @@ class TestScrapingTaskDataclass:
             scraper_config={},
             jurisdiction_id=1,
             jurisdiction_name="Test County",
-            priority=TaskPriority.NORMAL
+            priority=TaskPriority.NORMAL,
         )
 
         result = task.to_dict()
 
-        assert 'task_id' in result
-        assert 'scraper_class' in result
-        assert 'jurisdiction_id' in result
-        assert 'status' in result
-        assert 'priority' in result
-        assert 'created_at' in result
-        assert result['scraper_class'] == "TestScraper"
+        assert "task_id" in result
+        assert "scraper_class" in result
+        assert "jurisdiction_id" in result
+        assert "status" in result
+        assert "priority" in result
+        assert "created_at" in result
+        assert result["scraper_class"] == "TestScraper"
 
     def test_scraping_task_ordering(self):
         """Test that tasks are properly ordered by priority"""
@@ -172,7 +189,9 @@ class TestScrapingTaskDataclass:
 
         task_low = ScrapingTask.create("Scraper", {}, 1, "Low", TaskPriority.LOW)
         task_high = ScrapingTask.create("Scraper", {}, 2, "High", TaskPriority.HIGH)
-        task_critical = ScrapingTask.create("Scraper", {}, 3, "Critical", TaskPriority.CRITICAL)
+        task_critical = ScrapingTask.create(
+            "Scraper", {}, 3, "Critical", TaskPriority.CRITICAL
+        )
 
         # Lower priority value = higher priority
         assert task_critical < task_high
@@ -185,6 +204,7 @@ class TestWorkerStatsDataclass:
     def test_worker_stats_exists(self):
         """Test WorkerStats dataclass exists"""
         from datagod.scrapers.scraper_orchestrator import WorkerStats
+
         assert WorkerStats is not None
 
     def test_create_worker_stats(self):
@@ -211,7 +231,7 @@ class TestWorkerStatsDataclass:
             total_records=500,
             total_time_seconds=3600.0,
             current_task="task-123",
-            is_active=False
+            is_active=False,
         )
 
         assert stats.tasks_completed == 10
@@ -227,6 +247,7 @@ class TestTaskQueue:
     def test_task_queue_exists(self):
         """Test TaskQueue class exists"""
         from datagod.scrapers.scraper_orchestrator import TaskQueue
+
         assert TaskQueue is not None
 
     def test_create_task_queue(self):
@@ -238,11 +259,17 @@ class TestTaskQueue:
 
     def test_task_queue_put_and_get(self):
         """Test putting and getting tasks from queue"""
-        from datagod.scrapers.scraper_orchestrator import TaskQueue, ScrapingTask, TaskPriority
+        from datagod.scrapers.scraper_orchestrator import (
+            ScrapingTask,
+            TaskPriority,
+            TaskQueue,
+        )
 
         queue = TaskQueue()
 
-        task = ScrapingTask.create("TestScraper", {}, 1, "Test County", TaskPriority.NORMAL)
+        task = ScrapingTask.create(
+            "TestScraper", {}, 1, "Test County", TaskPriority.NORMAL
+        )
         queue.put(task)
 
         assert queue.size() == 1
@@ -253,14 +280,20 @@ class TestTaskQueue:
 
     def test_task_queue_priority_ordering(self):
         """Test that tasks are retrieved in priority order"""
-        from datagod.scrapers.scraper_orchestrator import TaskQueue, ScrapingTask, TaskPriority
+        from datagod.scrapers.scraper_orchestrator import (
+            ScrapingTask,
+            TaskPriority,
+            TaskQueue,
+        )
 
         queue = TaskQueue()
 
         # Add tasks in random order
         low = ScrapingTask.create("Scraper", {}, 1, "Low", TaskPriority.LOW)
         high = ScrapingTask.create("Scraper", {}, 2, "High", TaskPriority.HIGH)
-        critical = ScrapingTask.create("Scraper", {}, 3, "Critical", TaskPriority.CRITICAL)
+        critical = ScrapingTask.create(
+            "Scraper", {}, 3, "Critical", TaskPriority.CRITICAL
+        )
 
         queue.put(low)
         queue.put(high)
@@ -278,7 +311,11 @@ class TestTaskQueue:
 
     def test_task_queue_peek(self):
         """Test peeking at the queue"""
-        from datagod.scrapers.scraper_orchestrator import TaskQueue, ScrapingTask, TaskPriority
+        from datagod.scrapers.scraper_orchestrator import (
+            ScrapingTask,
+            TaskPriority,
+            TaskQueue,
+        )
 
         queue = TaskQueue()
 
@@ -302,7 +339,11 @@ class TestTaskQueue:
 
     def test_task_queue_size(self):
         """Test queue size"""
-        from datagod.scrapers.scraper_orchestrator import TaskQueue, ScrapingTask, TaskPriority
+        from datagod.scrapers.scraper_orchestrator import (
+            ScrapingTask,
+            TaskPriority,
+            TaskQueue,
+        )
 
         queue = TaskQueue()
         assert queue.size() == 0
@@ -315,7 +356,11 @@ class TestTaskQueue:
 
     def test_task_queue_get_task_by_id(self):
         """Test getting task by ID from queue"""
-        from datagod.scrapers.scraper_orchestrator import TaskQueue, ScrapingTask, TaskPriority
+        from datagod.scrapers.scraper_orchestrator import (
+            ScrapingTask,
+            TaskPriority,
+            TaskQueue,
+        )
 
         queue = TaskQueue()
 
@@ -336,7 +381,12 @@ class TestTaskQueue:
 
     def test_task_queue_update_task(self):
         """Test updating task in queue"""
-        from datagod.scrapers.scraper_orchestrator import TaskQueue, ScrapingTask, TaskPriority, TaskStatus
+        from datagod.scrapers.scraper_orchestrator import (
+            ScrapingTask,
+            TaskPriority,
+            TaskQueue,
+            TaskStatus,
+        )
 
         queue = TaskQueue()
 
@@ -352,7 +402,11 @@ class TestTaskQueue:
 
     def test_task_queue_get_all_tasks(self):
         """Test getting all tasks from queue"""
-        from datagod.scrapers.scraper_orchestrator import TaskQueue, ScrapingTask, TaskPriority
+        from datagod.scrapers.scraper_orchestrator import (
+            ScrapingTask,
+            TaskPriority,
+            TaskQueue,
+        )
 
         queue = TaskQueue()
 
@@ -378,13 +432,19 @@ class TestTaskQueue:
 
     def test_task_queue_with_persistence(self):
         """Test queue with persistence path"""
-        from datagod.scrapers.scraper_orchestrator import TaskQueue, ScrapingTask, TaskPriority
+        from datagod.scrapers.scraper_orchestrator import (
+            ScrapingTask,
+            TaskPriority,
+            TaskQueue,
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             persist_path = os.path.join(tmpdir, "queue.json")
             queue = TaskQueue(persist_path=persist_path)
 
-            task = ScrapingTask.create("TestScraper", {}, 1, "Test", TaskPriority.NORMAL)
+            task = ScrapingTask.create(
+                "TestScraper", {}, 1, "Test", TaskPriority.NORMAL
+            )
             queue.put(task)
 
             # Check file was created
@@ -397,6 +457,7 @@ class TestScraperOrchestrator:
     def test_scraper_orchestrator_exists(self):
         """Test ScraperOrchestrator class exists"""
         from datagod.scrapers.scraper_orchestrator import ScraperOrchestrator
+
         assert ScraperOrchestrator is not None
 
     def test_create_orchestrator(self):
@@ -432,7 +493,10 @@ class TestScraperOrchestrator:
 
     def test_add_task(self):
         """Test adding a task"""
-        from datagod.scrapers.scraper_orchestrator import ScraperOrchestrator, TaskPriority
+        from datagod.scrapers.scraper_orchestrator import (
+            ScraperOrchestrator,
+            TaskPriority,
+        )
 
         orchestrator = ScraperOrchestrator()
 
@@ -446,11 +510,11 @@ class TestScraperOrchestrator:
             scraper_config={"url": "http://example.com"},
             jurisdiction_id=1,
             jurisdiction_name="Test County",
-            priority=TaskPriority.HIGH
+            priority=TaskPriority.HIGH,
         )
 
         assert task_id is not None
-        assert orchestrator._metrics['total_tasks'] == 1
+        assert orchestrator._metrics["total_tasks"] == 1
 
     def test_add_task_unknown_scraper(self):
         """Test adding task with unknown scraper raises error"""
@@ -463,12 +527,15 @@ class TestScraperOrchestrator:
                 scraper_name="unknown_scraper",
                 scraper_config={},
                 jurisdiction_id=1,
-                jurisdiction_name="Test"
+                jurisdiction_name="Test",
             )
 
     def test_add_bulk_tasks(self):
         """Test adding multiple tasks"""
-        from datagod.scrapers.scraper_orchestrator import ScraperOrchestrator, TaskPriority
+        from datagod.scrapers.scraper_orchestrator import (
+            ScraperOrchestrator,
+            TaskPriority,
+        )
 
         orchestrator = ScraperOrchestrator()
 
@@ -478,15 +545,27 @@ class TestScraperOrchestrator:
         orchestrator.register_scraper("mock_scraper", MockScraper)
 
         tasks = [
-            {"scraper_name": "mock_scraper", "jurisdiction_id": 1, "jurisdiction_name": "County 1"},
-            {"scraper_name": "mock_scraper", "jurisdiction_id": 2, "jurisdiction_name": "County 2"},
-            {"scraper_name": "mock_scraper", "jurisdiction_id": 3, "jurisdiction_name": "County 3"},
+            {
+                "scraper_name": "mock_scraper",
+                "jurisdiction_id": 1,
+                "jurisdiction_name": "County 1",
+            },
+            {
+                "scraper_name": "mock_scraper",
+                "jurisdiction_id": 2,
+                "jurisdiction_name": "County 2",
+            },
+            {
+                "scraper_name": "mock_scraper",
+                "jurisdiction_id": 3,
+                "jurisdiction_name": "County 3",
+            },
         ]
 
         task_ids = orchestrator.add_bulk_tasks(tasks)
 
         assert len(task_ids) == 3
-        assert orchestrator._metrics['total_tasks'] == 3
+        assert orchestrator._metrics["total_tasks"] == 3
 
     def test_start_and_stop(self):
         """Test starting and stopping the orchestrator"""
@@ -534,26 +613,40 @@ class TestScraperOrchestrator:
 
     def test_get_available_worker(self):
         """Test getting available worker"""
-        from datagod.scrapers.scraper_orchestrator import ScraperOrchestrator, WorkerStats
+        from datagod.scrapers.scraper_orchestrator import (
+            ScraperOrchestrator,
+            WorkerStats,
+        )
 
         orchestrator = ScraperOrchestrator(max_workers=2)
 
         # Add workers manually for testing
-        orchestrator._workers["worker-0"] = WorkerStats(worker_id="worker-0", is_active=True, current_task=None)
-        orchestrator._workers["worker-1"] = WorkerStats(worker_id="worker-1", is_active=True, current_task="task-123")
+        orchestrator._workers["worker-0"] = WorkerStats(
+            worker_id="worker-0", is_active=True, current_task=None
+        )
+        orchestrator._workers["worker-1"] = WorkerStats(
+            worker_id="worker-1", is_active=True, current_task="task-123"
+        )
 
         available = orchestrator._get_available_worker()
         assert available == "worker-0"
 
     def test_get_available_worker_none_available(self):
         """Test getting worker when all are busy"""
-        from datagod.scrapers.scraper_orchestrator import ScraperOrchestrator, WorkerStats
+        from datagod.scrapers.scraper_orchestrator import (
+            ScraperOrchestrator,
+            WorkerStats,
+        )
 
         orchestrator = ScraperOrchestrator(max_workers=2)
 
         # Add busy workers
-        orchestrator._workers["worker-0"] = WorkerStats(worker_id="worker-0", is_active=True, current_task="task-1")
-        orchestrator._workers["worker-1"] = WorkerStats(worker_id="worker-1", is_active=True, current_task="task-2")
+        orchestrator._workers["worker-0"] = WorkerStats(
+            worker_id="worker-0", is_active=True, current_task="task-1"
+        )
+        orchestrator._workers["worker-1"] = WorkerStats(
+            worker_id="worker-1", is_active=True, current_task="task-2"
+        )
 
         available = orchestrator._get_available_worker()
         assert available is None
@@ -568,11 +661,11 @@ class TestOrchestratorMetrics:
 
         orchestrator = ScraperOrchestrator()
 
-        assert 'total_tasks' in orchestrator._metrics
-        assert 'completed_tasks' in orchestrator._metrics
-        assert 'failed_tasks' in orchestrator._metrics
-        assert 'total_records' in orchestrator._metrics
-        assert orchestrator._metrics['total_tasks'] == 0
+        assert "total_tasks" in orchestrator._metrics
+        assert "completed_tasks" in orchestrator._metrics
+        assert "failed_tasks" in orchestrator._metrics
+        assert "total_records" in orchestrator._metrics
+        assert orchestrator._metrics["total_tasks"] == 0
 
     def test_metrics_update_on_add_task(self):
         """Test metrics update when adding tasks"""
@@ -586,7 +679,7 @@ class TestOrchestratorMetrics:
         orchestrator.register_scraper("mock", MockScraper)
         orchestrator.add_task("mock", {}, 1, "Test")
 
-        assert orchestrator._metrics['total_tasks'] == 1
+        assert orchestrator._metrics["total_tasks"] == 1
 
 
 class TestOrchestratorCallbacks:
@@ -608,17 +701,18 @@ class TestModuleImports:
     def test_module_imports_successfully(self):
         """Test module imports without errors"""
         from datagod.scrapers import scraper_orchestrator
+
         assert scraper_orchestrator is not None
 
     def test_all_classes_importable(self):
         """Test all main classes can be imported"""
         from datagod.scrapers.scraper_orchestrator import (
-            TaskStatus,
-            TaskPriority,
+            ScraperOrchestrator,
             ScrapingTask,
-            WorkerStats,
+            TaskPriority,
             TaskQueue,
-            ScraperOrchestrator
+            TaskStatus,
+            WorkerStats,
         )
 
         assert TaskStatus is not None

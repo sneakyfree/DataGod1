@@ -15,24 +15,25 @@ logger = logging.getLogger("datagod.tasks.scraper")
 def run_scraper(self, jurisdiction_id: int, scraper_type: str = "business_filings"):
     """
     Run a scraper for a specific jurisdiction asynchronously.
-    
+
     Args:
         jurisdiction_id: ID of the jurisdiction to scrape
         scraper_type: Type of scraper to run
     """
     try:
-        logger.info(f"Starting scraper task: jurisdiction={jurisdiction_id}, type={scraper_type}")
+        logger.info(
+            f"Starting scraper task: jurisdiction={jurisdiction_id}, type={scraper_type}"
+        )
 
-        from datagod.scrapers.scraper_orchestrator import ScraperOrchestrator
         from datagod.db_manager import get_session
+        from datagod.scrapers.scraper_orchestrator import ScraperOrchestrator
 
         orchestrator = ScraperOrchestrator()
         session = get_session()
 
         try:
             jurisdiction = session.execute(
-                "SELECT * FROM jurisdictions WHERE id = :id",
-                {"id": jurisdiction_id}
+                "SELECT * FROM jurisdictions WHERE id = :id", {"id": jurisdiction_id}
             ).fetchone()
 
             if not jurisdiction:
@@ -63,7 +64,7 @@ def run_scraper(self, jurisdiction_id: int, scraper_type: str = "business_filing
 def run_bulk_scrape(self, state_code: str):
     """
     Run scrapers for all jurisdictions in a state.
-    
+
     Args:
         state_code: Two-letter state code
     """
@@ -76,7 +77,7 @@ def run_bulk_scrape(self, state_code: str):
         try:
             jurisdictions = session.execute(
                 "SELECT id FROM jurisdictions WHERE state = :state",
-                {"state": state_code}
+                {"state": state_code},
             ).fetchall()
 
             task_ids = []

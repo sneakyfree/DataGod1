@@ -32,12 +32,12 @@ from bs4 import BeautifulSoup
 
 from .base import (
     CountyRecorderBase,
-    DocumentType,
+    DocumentParty,
     DocumentStatus,
+    DocumentType,
+    LegalDescription,
     PartyRole,
     RecordedDocument,
-    DocumentParty,
-    LegalDescription,
     SearchCriteria,
     SearchResult,
 )
@@ -96,7 +96,6 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         "CORRECTION DEED": DocumentType.CORRECTION_DEED,
         "LADYBIRD DEED": DocumentType.GRANT_DEED,  # Florida enhanced life estate deed
         "ENHANCED LIFE ESTATE DEED": DocumentType.GRANT_DEED,
-
         # Mortgages (Florida uses traditional mortgage, not DOT)
         "MTG": DocumentType.MORTGAGE,
         "MORTGAGE": DocumentType.MORTGAGE,
@@ -121,7 +120,6 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         "SUB": DocumentType.SUBORDINATION_AGREEMENT,
         "SUBORDINATION": DocumentType.SUBORDINATION_AGREEMENT,
         "SUBORDINATION AGREEMENT": DocumentType.SUBORDINATION_AGREEMENT,
-
         # Liens
         "COL": DocumentType.MECHANICS_LIEN,
         "CLAIM OF LIEN": DocumentType.MECHANICS_LIEN,
@@ -145,7 +143,6 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         "HOA LIEN": DocumentType.HOA_LIEN,
         "CLAIM OF LIEN (HOA)": DocumentType.HOA_LIEN,
         "CONDO LIEN": DocumentType.HOA_LIEN,
-
         # Foreclosure (Florida judicial foreclosure)
         "LP": DocumentType.LIS_PENDENS,
         "LIS PENDENS": DocumentType.LIS_PENDENS,
@@ -155,17 +152,14 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         "NOTICE OF VOLUNTARY DISMISSAL": DocumentType.NOTICE,
         "CERTIFICATE OF TITLE": DocumentType.TRUSTEES_DEED,  # FL foreclosure deed
         "COT": DocumentType.TRUSTEES_DEED,
-
         # UCC
         "UCC": DocumentType.UCC_FINANCING,
         "UCC1": DocumentType.UCC_FINANCING,
         "UCC-1": DocumentType.UCC_FINANCING,
         "FINANCING STATEMENT": DocumentType.UCC_FINANCING,
-
         # Documentary Stamps (Florida specific)
         "DS": DocumentType.OTHER,
         "DOC STAMPS": DocumentType.OTHER,
-
         # Easements and Restrictions
         "EASE": DocumentType.EASEMENT,
         "EASEMENT": DocumentType.EASEMENT,
@@ -178,7 +172,6 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         "DECLARATION OF RESTRICTIONS": DocumentType.CC_AND_RS,
         "RESTRICTIONS": DocumentType.RESTRICTIVE_COVENANT,
         "UNITY OF TITLE": DocumentType.AGREEMENT,
-
         # Other common documents
         "AFF": DocumentType.AFFIDAVIT,
         "AFFIDAVIT": DocumentType.AFFIDAVIT,
@@ -196,18 +189,15 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         "CONTRACT": DocumentType.AGREEMENT,
         "AGREEMENT": DocumentType.AGREEMENT,
         "NOTICE": DocumentType.NOTICE,
-
         # Maps and Plats
         "PLAT": DocumentType.PLAT_MAP,
         "SUBDIVISION PLAT": DocumentType.SUBDIVISION_MAP,
         "REPLAT": DocumentType.PLAT_MAP,
         "CONDOMINIUM PLAT": DocumentType.SUBDIVISION_MAP,
-
         # Marriage
         "MAR": DocumentType.MARRIAGE_LICENSE,
         "MARRIAGE LICENSE": DocumentType.MARRIAGE_LICENSE,
         "MARRIAGE": DocumentType.MARRIAGE_LICENSE,
-
         # Death certificates (index only)
         "DC": DocumentType.DEATH_CERTIFICATE,
         "DEATH CERTIFICATE": DocumentType.DEATH_CERTIFICATE,
@@ -289,12 +279,16 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         soup = self._parse_html(html)
 
         # Find results table
-        results_table = soup.find("table", {"id": "gvResults"}) or \
-                        soup.find("table", {"class": "results"}) or \
-                        soup.find("table", {"class": "GridView"})
+        results_table = (
+            soup.find("table", {"id": "gvResults"})
+            or soup.find("table", {"class": "results"})
+            or soup.find("table", {"class": "GridView"})
+        )
 
         if not results_table:
-            no_results = soup.find(text=re.compile(r"no\s+(results?|records?)\s+found", re.I))
+            no_results = soup.find(
+                text=re.compile(r"no\s+(results?|records?)\s+found", re.I)
+            )
             if no_results:
                 logger.debug("No results found")
             return documents
@@ -358,20 +352,24 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
             for name in self._split_party_names(grantor_text):
                 if name:
                     grantors.append(self._normalize_name(name))
-                    parties.append(DocumentParty(
-                        name=self._normalize_name(name),
-                        role=PartyRole.GRANTOR,
-                        raw_name=name
-                    ))
+                    parties.append(
+                        DocumentParty(
+                            name=self._normalize_name(name),
+                            role=PartyRole.GRANTOR,
+                            raw_name=name,
+                        )
+                    )
 
             for name in self._split_party_names(grantee_text):
                 if name:
                     grantees.append(self._normalize_name(name))
-                    parties.append(DocumentParty(
-                        name=self._normalize_name(name),
-                        role=PartyRole.GRANTEE,
-                        raw_name=name
-                    ))
+                    parties.append(
+                        DocumentParty(
+                            name=self._normalize_name(name),
+                            role=PartyRole.GRANTEE,
+                            raw_name=name,
+                        )
+                    )
 
             # Parse folio
             legal_descriptions = []
@@ -381,11 +379,13 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                     folio = self._parse_folio(folio_part.strip())
                     if folio:
                         parcels.append(folio)
-                        legal_descriptions.append(LegalDescription(
-                            full_description=f"Folio: {folio}",
-                            parcel_number=folio,
-                            apn=folio
-                        ))
+                        legal_descriptions.append(
+                            LegalDescription(
+                                full_description=f"Folio: {folio}",
+                                parcel_number=folio,
+                                apn=folio,
+                            )
+                        )
 
             return RecordedDocument(
                 document_number=cfn,
@@ -412,7 +412,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                     "grantor_raw": grantor_text,
                     "grantee_raw": grantee_text,
                     "folio_raw": folio_text,
-                }
+                },
             )
 
         except Exception as e:
@@ -430,7 +430,13 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         for part in parts:
             part = part.strip()
             # Skip common suffixes that aren't names
-            if part and part.upper() not in ["ET AL", "ETAL", "ET UX", "ETUX", "ET VIR"]:
+            if part and part.upper() not in [
+                "ET AL",
+                "ETAL",
+                "ET UX",
+                "ETUX",
+                "ET VIR",
+            ]:
                 names.append(part)
 
         return names
@@ -443,7 +449,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search Miami-Dade County records by party name.
@@ -461,6 +467,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
             SearchResult with matching documents
         """
         import time
+
         start_time = time.time()
 
         if not self._viewstate:
@@ -495,11 +502,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         all_documents = []
 
         try:
-            status, html = await self._fetch(
-                search_url,
-                method="POST",
-                data=form_data
-            )
+            status, html = await self._fetch(search_url, method="POST", data=form_data)
 
             if status != 200:
                 logger.warning(f"Name search returned HTTP {status}")
@@ -507,7 +510,9 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                 documents = self._parse_search_results(html)
 
                 if document_types:
-                    documents = [d for d in documents if d.document_type in document_types]
+                    documents = [
+                        d for d in documents if d.document_type in document_types
+                    ]
 
                 all_documents.extend(documents)
 
@@ -528,9 +533,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                     form_data["__EVENTTARGET"] = f"gvResults$ctl01$ctl{page:02d}"
 
                     status, html = await self._fetch(
-                        search_url,
-                        method="POST",
-                        data=form_data
+                        search_url, method="POST", data=form_data
                     )
 
                     if status != 200:
@@ -541,7 +544,9 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                         break
 
                     if document_types:
-                        documents = [d for d in documents if d.document_type in document_types]
+                        documents = [
+                            d for d in documents if d.document_type in document_types
+                        ]
 
                     all_documents.extend(documents)
 
@@ -569,15 +574,14 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                 party_type=party_type,
                 start_date=start_date,
                 end_date=end_date,
-                document_types=document_types or []
+                document_types=document_types or [],
             ),
             search_time_ms=elapsed_ms,
-            source_system=self.SYSTEM_NAME
+            source_system=self.SYSTEM_NAME,
         )
 
     async def search_by_document_number(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """
         Search for a specific document by CFN (Clerk's File Number).
@@ -603,11 +607,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         search_url = f"{self.SEARCH_URL}Search.aspx"
 
         try:
-            status, html = await self._fetch(
-                search_url,
-                method="POST",
-                data=form_data
-            )
+            status, html = await self._fetch(search_url, method="POST", data=form_data)
 
             if status != 200:
                 logger.warning(f"CFN search returned HTTP {status}")
@@ -630,7 +630,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         document_types: Optional[List[DocumentType]] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search Miami-Dade County records by Folio number.
@@ -646,6 +646,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
             SearchResult with matching documents
         """
         import time
+
         start_time = time.time()
 
         if not self._viewstate:
@@ -663,7 +664,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                 search_criteria=SearchCriteria(parcel_number=parcel_number),
                 search_time_ms=0,
                 source_system=self.SYSTEM_NAME,
-                warnings=["Invalid Folio format. Use XX-XXXX-XXX-XXXX format."]
+                warnings=["Invalid Folio format. Use XX-XXXX-XXX-XXXX format."],
             )
 
         form_data = {
@@ -683,11 +684,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         all_documents = []
 
         try:
-            status, html = await self._fetch(
-                search_url,
-                method="POST",
-                data=form_data
-            )
+            status, html = await self._fetch(search_url, method="POST", data=form_data)
 
             if status != 200:
                 logger.warning(f"Folio search returned HTTP {status}")
@@ -695,7 +692,9 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                 documents = self._parse_search_results(html)
 
                 if document_types:
-                    documents = [d for d in documents if d.document_type in document_types]
+                    documents = [
+                        d for d in documents if d.document_type in document_types
+                    ]
 
                 all_documents.extend(documents)
 
@@ -714,10 +713,10 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                 parcel_number=folio,
                 start_date=start_date,
                 end_date=end_date,
-                document_types=document_types or []
+                document_types=document_types or [],
             ),
             search_time_ms=elapsed_ms,
-            source_system=self.SYSTEM_NAME
+            source_system=self.SYSTEM_NAME,
         )
 
     async def search_by_address(
@@ -727,7 +726,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         zip_code: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        max_results: int = 100
+        max_results: int = 100,
     ) -> SearchResult:
         """
         Search Miami-Dade County records by property address.
@@ -761,14 +760,12 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
             warnings=[
                 "Miami-Dade Clerk doesn't support direct address search.",
                 "Look up Folio number at miamidade.gov/pa then search by Folio.",
-                "Alternatively, search by owner name."
-            ]
+                "Alternatively, search by owner name.",
+            ],
         )
 
     async def search_by_book_page(
-        self,
-        book: str,
-        page: str
+        self, book: str, page: str
     ) -> Optional[RecordedDocument]:
         """
         Search for a document by book and page number.
@@ -794,11 +791,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
         search_url = f"{self.SEARCH_URL}Search.aspx"
 
         try:
-            status, html = await self._fetch(
-                search_url,
-                method="POST",
-                data=form_data
-            )
+            status, html = await self._fetch(search_url, method="POST", data=form_data)
 
             if status != 200:
                 return None
@@ -814,8 +807,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
             return None
 
     async def get_document_detail(
-        self,
-        document_number: str
+        self, document_number: str
     ) -> Optional[RecordedDocument]:
         """
         Get detailed information for a specific document.
@@ -844,7 +836,7 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                 county=self.COUNTY_NAME,
                 state=self.STATE_ABBREV,
                 fips_code=self.FIPS_CODE,
-                source_url=detail_url
+                source_url=detail_url,
             )
 
             # Parse document details
@@ -856,10 +848,14 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
             logger.error(f"Error getting document detail: {e}")
             return None
 
-    def _parse_detail_page(self, soup: BeautifulSoup, doc: RecordedDocument) -> RecordedDocument:
+    def _parse_detail_page(
+        self, soup: BeautifulSoup, doc: RecordedDocument
+    ) -> RecordedDocument:
         """Parse the document detail page."""
         # Find detail container
-        detail_div = soup.find("div", {"class": "detail"}) or soup.find("div", {"id": "docDetail"})
+        detail_div = soup.find("div", {"class": "detail"}) or soup.find(
+            "div", {"id": "docDetail"}
+        )
         if not detail_div:
             detail_div = soup
 
@@ -872,7 +868,9 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                 doc = self._apply_detail_field(doc, label, value)
 
         # Parse labeled spans
-        for label_elem in detail_div.find_all(["span", "label"], class_=re.compile(r"label|field")):
+        for label_elem in detail_div.find_all(
+            ["span", "label"], class_=re.compile(r"label|field")
+        ):
             label = label_elem.get_text(strip=True).lower().rstrip(":")
             value_elem = label_elem.find_next_sibling()
             if value_elem:
@@ -880,24 +878,34 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                 doc = self._apply_detail_field(doc, label, value)
 
         # Parse parties
-        parties_section = soup.find("div", {"id": "parties"}) or soup.find("table", {"class": "parties"})
+        parties_section = soup.find("div", {"id": "parties"}) or soup.find(
+            "table", {"class": "parties"}
+        )
         if parties_section:
             doc.parties = self._parse_parties(parties_section)
             doc.grantors = doc.get_grantors()
             doc.grantees = doc.get_grantees()
 
         # Parse Folio numbers
-        folio_section = soup.find("div", {"class": "folio"}) or soup.find(text=re.compile(r"folio", re.I))
+        folio_section = soup.find("div", {"class": "folio"}) or soup.find(
+            text=re.compile(r"folio", re.I)
+        )
         if folio_section:
-            text = folio_section.get_text() if hasattr(folio_section, 'get_text') else str(folio_section)
+            text = (
+                folio_section.get_text()
+                if hasattr(folio_section, "get_text")
+                else str(folio_section)
+            )
             folio_matches = re.findall(r"\d{2}-\d{4}-\d{3}-\d{4}", text)
             for folio in folio_matches:
                 doc.parcels.append(folio)
-                doc.legal_descriptions.append(LegalDescription(
-                    full_description=f"Folio: {folio}",
-                    parcel_number=folio,
-                    apn=folio
-                ))
+                doc.legal_descriptions.append(
+                    LegalDescription(
+                        full_description=f"Folio: {folio}",
+                        parcel_number=folio,
+                        apn=folio,
+                    )
+                )
 
         # Check for image
         image_link = soup.find("a", text=re.compile(r"view\s*image|document", re.I))
@@ -914,7 +922,9 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
 
         return doc
 
-    def _apply_detail_field(self, doc: RecordedDocument, label: str, value: str) -> RecordedDocument:
+    def _apply_detail_field(
+        self, doc: RecordedDocument, label: str, value: str
+    ) -> RecordedDocument:
         """Apply a parsed detail field to the document."""
         label = label.lower()
 
@@ -948,11 +958,13 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                 text = parent.get_text()
                 text = re.sub(r"grantor[s]?:?\s*", "", text, flags=re.I)
                 for name in self._split_party_names(text):
-                    parties.append(DocumentParty(
-                        name=self._normalize_name(name),
-                        role=PartyRole.GRANTOR,
-                        raw_name=name
-                    ))
+                    parties.append(
+                        DocumentParty(
+                            name=self._normalize_name(name),
+                            role=PartyRole.GRANTOR,
+                            raw_name=name,
+                        )
+                    )
 
         # Look for grantee entries
         for elem in section.find_all(text=re.compile(r"grantee", re.I)):
@@ -961,45 +973,47 @@ class MiamiDadeCountyRecorder(CountyRecorderBase):
                 text = parent.get_text()
                 text = re.sub(r"grantee[s]?:?\s*", "", text, flags=re.I)
                 for name in self._split_party_names(text):
-                    parties.append(DocumentParty(
-                        name=self._normalize_name(name),
-                        role=PartyRole.GRANTEE,
-                        raw_name=name
-                    ))
+                    parties.append(
+                        DocumentParty(
+                            name=self._normalize_name(name),
+                            role=PartyRole.GRANTEE,
+                            raw_name=name,
+                        )
+                    )
 
         return parties
 
 
 # Convenience functions for synchronous usage
 
+
 def search_miami_dade_by_name(
-    last_name: str,
-    first_name: Optional[str] = None,
-    **kwargs
+    last_name: str, first_name: Optional[str] = None, **kwargs
 ) -> SearchResult:
     """Search Miami-Dade County records by name (synchronous)."""
+
     async def _search():
         async with MiamiDadeCountyRecorder() as recorder:
             return await recorder.search_by_name(last_name, first_name, **kwargs)
+
     return asyncio.run(_search())
 
 
-def search_miami_dade_by_folio(
-    folio: str,
-    **kwargs
-) -> SearchResult:
+def search_miami_dade_by_folio(folio: str, **kwargs) -> SearchResult:
     """Search Miami-Dade County records by Folio (synchronous)."""
+
     async def _search():
         async with MiamiDadeCountyRecorder() as recorder:
             return await recorder.search_by_parcel(folio, **kwargs)
+
     return asyncio.run(_search())
 
 
-def get_miami_dade_document(
-    cfn: str
-) -> Optional[RecordedDocument]:
+def get_miami_dade_document(cfn: str) -> Optional[RecordedDocument]:
     """Get a Miami-Dade County document by CFN (synchronous)."""
+
     async def _get():
         async with MiamiDadeCountyRecorder() as recorder:
             return await recorder.get_document_detail(cfn)
+
     return asyncio.run(_get())

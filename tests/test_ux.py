@@ -2,33 +2,33 @@
 Tests for UX modules — coverage for ux/intake_wizard.py and ux/report_generator.py (0% → 50%+)
 """
 
-import pytest
 from datetime import datetime
 
+import pytest
+
 from datagod.ux.intake_wizard import (
+    Contradiction,
     FieldType,
     FieldVisibility,
-    ValidationSeverity,
     FormField,
-    ValidationResult,
-    Contradiction,
-    VerificationTask,
-    IntakeSchema,
     GuidedIntakeWizard,
+    IntakeSchema,
+    ValidationResult,
+    ValidationSeverity,
+    VerificationTask,
 )
-
 from datagod.ux.report_generator import (
-    ReportView,
     ExportFormat,
-    ReportSection,
-    ReportMetadata,
     MultiViewReportGenerator,
+    ReportMetadata,
+    ReportSection,
+    ReportView,
 )
-
 
 # ============================================================
 # Intake Wizard Tests
 # ============================================================
+
 
 class TestFieldType:
     def test_values(self):
@@ -51,7 +51,9 @@ class TestFieldVisibility:
 
 class TestFormField:
     def test_create(self):
-        field = FormField(id="name", label="Full Name", field_type=FieldType.TEXT, required=True)
+        field = FormField(
+            id="name", label="Full Name", field_type=FieldType.TEXT, required=True
+        )
         assert field.id == "name"
         assert field.label == "Full Name"
         assert field.required is True
@@ -97,10 +99,13 @@ class TestGuidedIntakeWizard:
     def test_submit_stage_property(self):
         session = self.wizard.start_session("property_research")
         sid = session["session_id"]
-        result = self.wizard.submit_stage(sid, {
-            "property_address": "123 Main St",
-            "property_type": "single_family",
-        })
+        result = self.wizard.submit_stage(
+            sid,
+            {
+                "property_address": "123 Main St",
+                "property_type": "single_family",
+            },
+        )
         assert isinstance(result, dict)
 
     def test_submit_stage_empty_data(self):
@@ -112,28 +117,38 @@ class TestGuidedIntakeWizard:
     def test_get_summary(self):
         session = self.wizard.start_session("property_research")
         sid = session["session_id"]
-        self.wizard.submit_stage(sid, {"property_address": "123 Main St", "property_type": "condo"})
+        self.wizard.submit_stage(
+            sid, {"property_address": "123 Main St", "property_type": "condo"}
+        )
         summary = self.wizard.get_summary(sid)
         assert isinstance(summary, dict)
 
     def test_validate_fields(self):
         schema = self.wizard.SCHEMAS.get("property_research")
-        results = self.wizard._validate_fields(schema, {"property_address": "123 Main St"})
+        results = self.wizard._validate_fields(
+            schema, {"property_address": "123 Main St"}
+        )
         assert isinstance(results, list)
 
     def test_detect_contradictions(self):
         schema = self.wizard.SCHEMAS.get("property_research")
-        contradictions = self.wizard._detect_contradictions(schema, {
-            "property_address": "123 Main St",
-            "owner_name": "John",
-        })
+        contradictions = self.wizard._detect_contradictions(
+            schema,
+            {
+                "property_address": "123 Main St",
+                "owner_name": "John",
+            },
+        )
         assert isinstance(contradictions, list)
 
     def test_check_uncertain_responses(self):
         schema = self.wizard.SCHEMAS.get("property_research")
-        uncertain = self.wizard._check_uncertain_responses(schema, {
-            "property_type": "unknown",
-        })
+        uncertain = self.wizard._check_uncertain_responses(
+            schema,
+            {
+                "property_type": "unknown",
+            },
+        )
         assert isinstance(uncertain, list)
         assert "property_type" in uncertain
 
@@ -152,7 +167,9 @@ class TestGuidedIntakeWizard:
         session = self.wizard.start_session("property_research")
         sid = session["session_id"]
         self.wizard.submit_stage(sid, {"property_address": "123 Main"})
-        result = self.wizard.resolve_contradiction(sid, 0, {"property_type": "commercial"})
+        result = self.wizard.resolve_contradiction(
+            sid, 0, {"property_type": "commercial"}
+        )
         assert result["resolved"] is True
 
     def test_contains_business_suffix(self):
@@ -163,6 +180,7 @@ class TestGuidedIntakeWizard:
 # ============================================================
 # Report Generator Tests
 # ============================================================
+
 
 class TestReportView:
     def test_values(self):
@@ -200,7 +218,9 @@ class TestMultiViewReportGenerator:
             "scenarios": [],
             "blockers": [],
         }
-        report = self.generator.generate(data, view=ReportView.CONSUMER, title="Test Report")
+        report = self.generator.generate(
+            data, view=ReportView.CONSUMER, title="Test Report"
+        )
         assert isinstance(report, dict)
 
     def test_generate_operator_report(self):
@@ -251,14 +271,15 @@ class TestMultiViewReportGenerator:
 
     def test_build_audit_metadata(self):
         metadata = self.generator._build_audit_metadata(
-            {"property": {"address": "test"}},
-            {"extra": "data"}
+            {"property": {"address": "test"}}, {"extra": "data"}
         )
         assert isinstance(metadata, dict)
 
     def test_consumer_property_description(self):
-        desc = self.generator._consumer_property_description({
-            "address": "123 Main St",
-            "city": "New York",
-        })
+        desc = self.generator._consumer_property_description(
+            {
+                "address": "123 Main St",
+                "city": "New York",
+            }
+        )
         assert isinstance(desc, str)

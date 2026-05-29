@@ -15,99 +15,92 @@ Usage Notes:
 - Rate limits and data access vary by subscription tier
 """
 
-# CoreLogic API
-from datagod.scrapers.paid.corelogic_api import (
-    CoreLogicAPI,
-    CoreLogicAPIClient,
-    create_corelogic_client,
-    # Property data
-    PropertyCharacteristics,
-    TaxAssessment,
-    SaleTransaction,
-    MortgageRecord,
-    ForeclosureRecord,
-    AVMResult,
-    PropertySearch,
-    # Enums
-    PropertyType,
-    TransactionType,
-    ForeclosureStatus,
-)
-
 # ATTOM API
+from datagod.scrapers.paid.attom_api import ATTOMAPI  # Property data; Enums
 from datagod.scrapers.paid.attom_api import (
-    ATTOMAPI,
     ATTOMAPIClient,
-    create_attom_client,
-    # Property data
     ATTOMProperty,
-    SalesComparable,
-    NeighborhoodData,
-    SchoolInfo,
+    ATTOMSearch,
     HazardRisk,
     MarketTrend,
-    ATTOMSearch,
-    # Enums
+    NeighborhoodData,
     RiskLevel,
+    SalesComparable,
+    SchoolInfo,
     SchoolType,
+    create_attom_client,
+)
+
+# CoreLogic API
+from datagod.scrapers.paid.corelogic_api import (  # Property data; Enums
+    AVMResult,
+    CoreLogicAPI,
+    CoreLogicAPIClient,
+    ForeclosureRecord,
+    ForeclosureStatus,
+    MortgageRecord,
+    PropertyCharacteristics,
+    PropertySearch,
+    PropertyType,
+    SaleTransaction,
+    TaxAssessment,
+    TransactionType,
+    create_corelogic_client,
 )
 
 # LexisNexis API
-from datagod.scrapers.paid.lexisnexis_api import (
+from datagod.scrapers.paid.lexisnexis_api import (  # Data records; Search params; Enums
+    AssetRecord,
+    BusinessRecord,
+    BusinessSearch,
+    CourtRecord,
     LexisNexisAPI,
     LexisNexisAPIClient,
-    create_lexisnexis_client,
-    # Data records
-    PersonRecord,
-    BusinessRecord,
-    CourtRecord,
-    AssetRecord,
-    # Search params
-    PersonSearch,
-    BusinessSearch,
-    # Enums
     PermissiblePurpose,
+    PersonRecord,
+    PersonSearch,
     RecordType,
+    create_lexisnexis_client,
 )
 
 __all__ = [
     # CoreLogic
-    'CoreLogicAPI',
-    'CoreLogicAPIClient',
-    'create_corelogic_client',
-    'PropertyCharacteristics',
-    'TaxAssessment',
-    'SaleTransaction',
-    'MortgageRecord',
-    'ForeclosureRecord',
-    'AVMResult',
-    'PropertySearch',
-    'PropertyType',
-    'TransactionType',
-    'ForeclosureStatus',
+    "CoreLogicAPI",
+    "CoreLogicAPIClient",
+    "create_corelogic_client",
+    "PropertyCharacteristics",
+    "TaxAssessment",
+    "SaleTransaction",
+    "MortgageRecord",
+    "ForeclosureRecord",
+    "AVMResult",
+    "PropertySearch",
+    "PropertyType",
+    "TransactionType",
+    "ForeclosureStatus",
     # ATTOM
-    'ATTOMAPI',
-    'ATTOMAPIClient',
-    'create_attom_client',
-    'ATTOMProperty',
-    'SalesComparable',
-    'NeighborhoodData',
-    'SchoolInfo',
-    'HazardRisk',
-    'MarketTrend',
-    'ATTOMSearch',
-    'RiskLevel',
-    'SchoolType',
+    "ATTOMAPI",
+    "ATTOMAPIClient",
+    "create_attom_client",
+    "ATTOMProperty",
+    "SalesComparable",
+    "NeighborhoodData",
+    "SchoolInfo",
+    "HazardRisk",
+    "MarketTrend",
+    "ATTOMSearch",
+    "RiskLevel",
+    "SchoolType",
     # LexisNexis
-    'LexisNexisAPI',
-    'LexisNexisAPIClient',
-    'create_lexisnexis_client',
-    'PersonRecord',
-    'BusinessRecord',
-    'CourtRecord',
-    'AssetRecord',
-    'PersonSearch',
-    'BusinessSearch',
-    'PermissiblePurpose',
-    'RecordType',
+    "LexisNexisAPI",
+    "LexisNexisAPIClient",
+    "create_lexisnexis_client",
+    "PersonRecord",
+    "BusinessRecord",
+    "CourtRecord",
+    "AssetRecord",
+    "PersonSearch",
+    "BusinessSearch",
+    "PermissiblePurpose",
+    "RecordType",
 ]

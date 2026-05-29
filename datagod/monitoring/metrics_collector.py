@@ -11,28 +11,30 @@ Features:
 """
 
 import logging
-import time
-from datetime import datetime, timedelta
-from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional, Union
-from enum import Enum
-from collections import defaultdict
 import statistics
+import time
+from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
 logger = logging.getLogger(__name__)
 
 
 class MetricType(Enum):
     """Types of metrics"""
-    COUNTER = "counter"      # Monotonically increasing value
-    GAUGE = "gauge"          # Point-in-time value
+
+    COUNTER = "counter"  # Monotonically increasing value
+    GAUGE = "gauge"  # Point-in-time value
     HISTOGRAM = "histogram"  # Distribution of values
-    TIMER = "timer"          # Duration measurements
+    TIMER = "timer"  # Duration measurements
 
 
 @dataclass
 class Metric:
     """A single metric data point"""
+
     name: str
     value: float
     metric_type: MetricType
@@ -43,18 +45,19 @@ class Metric:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'name': self.name,
-            'value': self.value,
-            'type': self.metric_type.value,
-            'timestamp': self.timestamp.isoformat(),
-            'tags': self.tags,
-            'unit': self.unit,
+            "name": self.name,
+            "value": self.value,
+            "type": self.metric_type.value,
+            "timestamp": self.timestamp.isoformat(),
+            "tags": self.tags,
+            "unit": self.unit,
         }
 
 
 @dataclass
 class AggregatedMetric:
     """Aggregated metric over a time window"""
+
     name: str
     metric_type: MetricType
     count: int
@@ -70,17 +73,17 @@ class AggregatedMetric:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
-            'name': self.name,
-            'type': self.metric_type.value,
-            'count': self.count,
-            'sum': round(self.sum_value, 4),
-            'min': round(self.min_value, 4),
-            'max': round(self.max_value, 4),
-            'avg': round(self.avg_value, 4),
-            'std_dev': round(self.std_dev, 4),
-            'start_time': self.start_time.isoformat(),
-            'end_time': self.end_time.isoformat(),
-            'tags': self.tags,
+            "name": self.name,
+            "type": self.metric_type.value,
+            "count": self.count,
+            "sum": round(self.sum_value, 4),
+            "min": round(self.min_value, 4),
+            "max": round(self.max_value, 4),
+            "avg": round(self.avg_value, 4),
+            "std_dev": round(self.std_dev, 4),
+            "start_time": self.start_time.isoformat(),
+            "end_time": self.end_time.isoformat(),
+            "tags": self.tags,
         }
 
 
@@ -118,15 +121,23 @@ class MetricsCollector:
         self._metrics: Dict[str, List[Metric]] = defaultdict(list)
 
         # Counter values: {metric_name: {tags_key: value}}
-        self._counters: Dict[str, Dict[str, float]] = defaultdict(lambda: defaultdict(float))
+        self._counters: Dict[str, Dict[str, float]] = defaultdict(
+            lambda: defaultdict(float)
+        )
 
         # Histograms: {metric_name: {tags_key: [values]}}
-        self._histograms: Dict[str, Dict[str, List[float]]] = defaultdict(lambda: defaultdict(list))
+        self._histograms: Dict[str, Dict[str, List[float]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
 
-    def record(self, name: str, value: float,
-               metric_type: MetricType = MetricType.GAUGE,
-               tags: Dict[str, str] = None,
-               unit: str = ""):
+    def record(
+        self,
+        name: str,
+        value: float,
+        metric_type: MetricType = MetricType.GAUGE,
+        tags: Dict[str, str] = None,
+        unit: str = "",
+    ):
         """
         Record a metric.
 
@@ -141,11 +152,7 @@ class MetricsCollector:
         tags_key = self._tags_to_key(tags)
 
         metric = Metric(
-            name=name,
-            value=value,
-            metric_type=metric_type,
-            tags=tags,
-            unit=unit
+            name=name, value=value, metric_type=metric_type, tags=tags, unit=unit
         )
 
         self._metrics[name].append(metric)
@@ -158,23 +165,23 @@ class MetricsCollector:
 
         logger.debug(f"Recorded metric: {name}={value} ({metric_type.value})")
 
-    def increment(self, name: str, value: float = 1.0,
-                  tags: Dict[str, str] = None):
+    def increment(self, name: str, value: float = 1.0, tags: Dict[str, str] = None):
         """Increment a counter metric"""
         self.record(name, value, MetricType.COUNTER, tags)
 
-    def gauge(self, name: str, value: float,
-              tags: Dict[str, str] = None, unit: str = ""):
+    def gauge(
+        self, name: str, value: float, tags: Dict[str, str] = None, unit: str = ""
+    ):
         """Record a gauge metric"""
         self.record(name, value, MetricType.GAUGE, tags, unit)
 
-    def histogram(self, name: str, value: float,
-                  tags: Dict[str, str] = None, unit: str = ""):
+    def histogram(
+        self, name: str, value: float, tags: Dict[str, str] = None, unit: str = ""
+    ):
         """Record a histogram metric"""
         self.record(name, value, MetricType.HISTOGRAM, tags, unit)
 
-    def timer(self, name: str, duration_ms: float,
-              tags: Dict[str, str] = None):
+    def timer(self, name: str, duration_ms: float, tags: Dict[str, str] = None):
         """Record a timer metric"""
         self.record(name, duration_ms, MetricType.TIMER, tags, "ms")
 
@@ -187,6 +194,7 @@ class MetricsCollector:
             def my_function():
                 pass
         """
+
         def decorator(func):
             def wrapper(*args, **kwargs):
                 start = time.time()
@@ -196,13 +204,18 @@ class MetricsCollector:
                 finally:
                     duration_ms = (time.time() - start) * 1000
                     self.timer(name, duration_ms, tags)
+
             return wrapper
+
         return decorator
 
-    def get_metrics(self, name: str,
-                    start_time: datetime = None,
-                    end_time: datetime = None,
-                    tags: Dict[str, str] = None) -> List[Metric]:
+    def get_metrics(
+        self,
+        name: str,
+        start_time: datetime = None,
+        end_time: datetime = None,
+        tags: Dict[str, str] = None,
+    ) -> List[Metric]:
         """
         Get metrics by name and optional filters.
 
@@ -225,20 +238,20 @@ class MetricsCollector:
 
         # Filter by tags
         if tags:
-            metrics = [m for m in metrics
-                      if all(m.tags.get(k) == v for k, v in tags.items())]
+            metrics = [
+                m for m in metrics if all(m.tags.get(k) == v for k, v in tags.items())
+            ]
 
         return metrics
 
-    def get_counter_value(self, name: str,
-                          tags: Dict[str, str] = None) -> float:
+    def get_counter_value(self, name: str, tags: Dict[str, str] = None) -> float:
         """Get current counter value"""
         tags_key = self._tags_to_key(tags or {})
         return self._counters.get(name, {}).get(tags_key, 0.0)
 
-    def aggregate(self, name: str,
-                  window: timedelta = None,
-                  tags: Dict[str, str] = None) -> Optional[AggregatedMetric]:
+    def aggregate(
+        self, name: str, window: timedelta = None, tags: Dict[str, str] = None
+    ) -> Optional[AggregatedMetric]:
         """
         Aggregate metrics over a time window.
 
@@ -274,9 +287,9 @@ class MetricsCollector:
             tags=tags or {},
         )
 
-    def get_histogram_percentiles(self, name: str,
-                                   percentiles: List[float] = None,
-                                   tags: Dict[str, str] = None) -> Dict[str, float]:
+    def get_histogram_percentiles(
+        self, name: str, percentiles: List[float] = None, tags: Dict[str, str] = None
+    ) -> Dict[str, float]:
         """
         Get histogram percentiles.
 
@@ -311,26 +324,28 @@ class MetricsCollector:
 
     def get_metrics_by_prefix(self, prefix: str) -> Dict[str, List[Metric]]:
         """Get all metrics matching a prefix"""
-        return {name: metrics
-                for name, metrics in self._metrics.items()
-                if name.startswith(prefix)}
+        return {
+            name: metrics
+            for name, metrics in self._metrics.items()
+            if name.startswith(prefix)
+        }
 
     def get_summary(self) -> Dict[str, Any]:
         """Get summary of all metrics"""
         summary = {
-            'total_metrics': sum(len(m) for m in self._metrics.values()),
-            'metric_names': len(self._metrics),
-            'counters': len(self._counters),
-            'histograms': len(self._histograms),
-            'by_category': {},
+            "total_metrics": sum(len(m) for m in self._metrics.values()),
+            "metric_names": len(self._metrics),
+            "counters": len(self._counters),
+            "histograms": len(self._histograms),
+            "by_category": {},
         }
 
         # Group by category (prefix)
         for name in self._metrics.keys():
-            prefix = name.split('.')[0] if '.' in name else name
-            if prefix not in summary['by_category']:
-                summary['by_category'][prefix] = 0
-            summary['by_category'][prefix] += len(self._metrics[name])
+            prefix = name.split(".")[0] if "." in name else name
+            if prefix not in summary["by_category"]:
+                summary["by_category"][prefix] = 0
+            summary["by_category"][prefix] += len(self._metrics[name])
 
         return summary
 
@@ -341,8 +356,9 @@ class MetricsCollector:
 
         for name in list(self._metrics.keys()):
             original_count = len(self._metrics[name])
-            self._metrics[name] = [m for m in self._metrics[name]
-                                   if m.timestamp > cutoff]
+            self._metrics[name] = [
+                m for m in self._metrics[name] if m.timestamp > cutoff
+            ]
             removed += original_count - len(self._metrics[name])
 
             # Remove empty entries
@@ -366,9 +382,9 @@ class MetricsCollector:
             # Format tags
             if latest.tags:
                 tags_str = ",".join(f'{k}="{v}"' for k, v in latest.tags.items())
-                metric_line = f'{name}{{{tags_str}}} {latest.value}'
+                metric_line = f"{name}{{{tags_str}}} {latest.value}"
             else:
-                metric_line = f'{name} {latest.value}'
+                metric_line = f"{name} {latest.value}"
 
             lines.append(f"# TYPE {name} {latest.metric_type.value}")
             lines.append(metric_line)
@@ -378,11 +394,13 @@ class MetricsCollector:
     def export_json(self) -> Dict[str, Any]:
         """Export all metrics as JSON"""
         return {
-            'metrics': {name: [m.to_dict() for m in metrics]
-                       for name, metrics in self._metrics.items()},
-            'counters': dict(self._counters),
-            'summary': self.get_summary(),
-            'exported_at': datetime.now().isoformat(),
+            "metrics": {
+                name: [m.to_dict() for m in metrics]
+                for name, metrics in self._metrics.items()
+            },
+            "counters": dict(self._counters),
+            "summary": self.get_summary(),
+            "exported_at": datetime.now().isoformat(),
         }
 
     def clear(self):
@@ -410,15 +428,18 @@ def get_collector() -> MetricsCollector:
     return _collector_instance
 
 
-def record_metric(name: str, value: float,
-                  metric_type: MetricType = MetricType.GAUGE,
-                  tags: Dict[str, str] = None):
+def record_metric(
+    name: str,
+    value: float,
+    metric_type: MetricType = MetricType.GAUGE,
+    tags: Dict[str, str] = None,
+):
     """Convenience function to record a metric"""
     get_collector().record(name, value, metric_type, tags)
 
 
-def get_metrics(name: str,
-                start_time: datetime = None,
-                end_time: datetime = None) -> List[Metric]:
+def get_metrics(
+    name: str, start_time: datetime = None, end_time: datetime = None
+) -> List[Metric]:
     """Convenience function to get metrics"""
     return get_collector().get_metrics(name, start_time, end_time)
