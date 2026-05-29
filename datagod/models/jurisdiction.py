@@ -20,6 +20,7 @@ class Jurisdiction(Base):
     scraper_needed = Column(Boolean, default=True)
     description = Column(Text, nullable=True)
     population = Column(Integer, nullable=True)
+    record_count = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

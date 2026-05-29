@@ -1,5 +1,7 @@
 import os
-from pydantic_settings import BaseSettings
+from typing import Annotated, List
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 from pathlib import Path
 import sys
 
@@ -14,7 +16,14 @@ class Settings(BaseSettings):
     database_url: str = DATABASE_URL
 
     # CORS settings
-    cors_origins: list = CORS_ORIGINS
+    cors_origins: Annotated[List[str], NoDecode] = CORS_ORIGINS
+
+    @field_validator('cors_origins', mode='before')
+    @classmethod
+    def _split_cors(cls, v):
+        if isinstance(v, str):
+            return [x.strip() for x in v.split(',') if x.strip()]
+        return v
 
     # API settings
     api_title: str = "DataGod API"
@@ -56,8 +65,7 @@ class Settings(BaseSettings):
     enable_neural_network_integration: bool = True
     enable_scraper_integration: bool = True
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()
 

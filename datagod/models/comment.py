@@ -4,7 +4,7 @@ Supports threaded comments on records and entities
 """
 
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from datetime import datetime
 
 from datagod.models import Base, TimestampMixin
@@ -24,4 +24,4 @@ class Comment(Base, TimestampMixin):
     is_deleted = Column(Boolean, default=False)
 
     # Relationships
-    replies = relationship("Comment", backref="parent", remote_side=[id], lazy="dynamic")
+    replies = relationship("Comment", backref=backref("parent", remote_side=[id]), lazy="dynamic")

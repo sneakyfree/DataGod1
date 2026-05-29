@@ -59,6 +59,7 @@ class Jurisdiction(Base, TimestampMixin):
     area_sq_miles = Column(Float, nullable=True)
     description = Column(Text, nullable=True)
     contact_info = Column(JSON, nullable=True)  # Contact details
+    record_count = Column(Integer, nullable=False, default=0)
     jurisdiction_metadata = Column(JSON, nullable=True)     # Additional jurisdiction data
 
     # FIPS code support for standardized county identification
@@ -851,3 +852,22 @@ class DataSnapshot(Base):
 
     def __repr__(self):
         return f"<DataSnapshot(snapshot_id='{self.snapshot_id}', type='{self.snapshot_type}')>"
+
+
+# Register external-file model classes so init_db() creates their tables
+try:
+    from datagod.models.notification import Notification  # noqa: F401
+except Exception as _e:
+    logger.warning(f"Could not import Notification model: {_e}")
+try:
+    from datagod.models.comment import Comment  # noqa: F401
+except Exception as _e:
+    logger.warning(f"Could not import Comment model: {_e}")
+try:
+    from datagod.models.data_categories import (  # noqa: F401
+        CourtCaseRecord, BusinessEntityRecord, UCCFilingRecord,
+        ProfessionalLicenseRecord, TrademarkRecord, PatentRecord,
+        SECFilingRecord, BankRecord, NewsArticleRecord, PressReleaseRecord,
+    )
+except Exception as _e:
+    logger.warning(f"Could not import data_categories models: {_e}")

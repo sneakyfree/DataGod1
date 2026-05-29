@@ -1979,7 +1979,7 @@ async def get_recent_searches(
     current_user: User = Depends(get_current_active_user)
 ):
     """Return the user's most recent saved searches"""
-    from api.src.models import SavedSearch
+    from datagod.models import SavedSearch
     recent = db.query(SavedSearch).filter(
         SavedSearch.user_id == current_user.id
     ).order_by(desc(SavedSearch.created_at)).limit(limit).all()
