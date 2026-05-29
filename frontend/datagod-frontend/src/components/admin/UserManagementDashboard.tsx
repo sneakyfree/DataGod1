@@ -127,6 +127,7 @@ interface UserActionsMenuProps {
 }
 
 function UserActionsMenu({ user, anchorEl, onClose, onAction }: UserActionsMenuProps) {
+    if (!user) return null;
     return (
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={onClose}>
             <MenuItem onClick={() => { onAction('view', user); onClose(); }}>
@@ -174,8 +175,8 @@ function UserDetailDialog({ user, open, onClose }: UserDetailDialogProps) {
     const theme = useTheme();
     if (!user) return null;
 
-    const role = roleConfig[user.role];
-    const status = statusConfig[user.status];
+    const role = roleConfig[user.role] || { color: '#9e9e9e', label: user.role || (user.roles && user.roles[0]) || 'User', icon: null };
+    const status = statusConfig[user.status] || { color: '#9e9e9e', label: user.status || 'Unknown' };
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -263,7 +264,24 @@ export default function UserManagementDashboard({
         queryFn: async () => {
             try {
                 const response = await apiService.get('/users');
-                return response.data;
+                const raw = Array.isArray(response.data) ? response.data : (response.data?.users ?? response.data?.items ?? []);
+                return raw.map((u: any) => {
+                    const name = String(u.full_name || u.username || u.email || 'User').trim();
+                    const parts = name.split(' ');
+                    return {
+                        id: String(u.id ?? ''),
+                        email: u.email || '',
+                        firstName: parts[0] || '?',
+                        lastName: parts.slice(1).join(' ') || '',
+                        role: u.role || (u.roles && u.roles[0]) || 'user',
+                        status: u.status || (u.disabled ? 'inactive' : 'active'),
+                        avatar: u.avatar,
+                        lastLogin: u.last_login,
+                        createdAt: u.created_at || '',
+                        mfaEnabled: !!u.mfa_enabled,
+                        permissions: u.permissions || [],
+                    } as UserInfo;
+                });
             } catch {
                 return mockUsers;
             }
@@ -432,8 +450,8 @@ export default function UserManagementDashboard({
                     </TableHead>
                     <TableBody>
                         {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((user) => {
-                            const role = roleConfig[user.role];
-                            const status = statusConfig[user.status];
+                            const role = roleConfig[user.role] || { color: '#9e9e9e', label: user.role || (user.roles && user.roles[0]) || 'User', icon: null };
+                            const status = statusConfig[user.status] || { color: '#9e9e9e', label: user.status || 'Unknown' };
                             return (
                                 <TableRow key={user.id} hover>
                                     <TableCell>

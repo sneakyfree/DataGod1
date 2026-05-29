@@ -11,6 +11,7 @@ import os
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'api', 'src'))
 
 from datetime import datetime, timedelta
 import random
@@ -18,7 +19,7 @@ import random
 def seed_sample_records():
     """Seed sample property/lien records for demo."""
     from datagod.models import Record, Entity, Relationship
-    from datagod.db import SessionLocal
+    from db import SessionLocal
     
     db = SessionLocal()
     try:

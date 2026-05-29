@@ -71,7 +71,7 @@ function AnomaliesContent() {
     const { data: anomalies, isLoading, error, refetch } = useQuery({
         queryKey: ['anomalies', severityFilter],
         queryFn: () =>
-            apiService.get('/anomalies', {
+            apiService.get('/api/v2/anomalies', {
                 params: { severity: severityFilter || undefined, limit: 100 },
             }).then((res: any) => res.data),
         staleTime: 30 * 1000,
@@ -79,7 +79,7 @@ function AnomaliesContent() {
 
     const { data: stats } = useQuery({
         queryKey: ['anomaly-stats'],
-        queryFn: () => apiService.get('/anomaly-stats').then((res: any) => res.data),
+        queryFn: () => apiService.get('/api/v2/anomalies/stats/summary').then((res: any) => res.data),
         staleTime: 60 * 1000,
     });
 

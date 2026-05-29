@@ -64,6 +64,7 @@ function RecordDetailContent() {
       return response.data;
     },
     enabled: !!recordId,
+    retry: false,
   });
 
   const handleShare = () => {

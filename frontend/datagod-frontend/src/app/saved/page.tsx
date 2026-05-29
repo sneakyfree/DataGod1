@@ -66,7 +66,7 @@ function SavedSearchesContent() {
 
   const { data: savedSearches, isLoading, error } = useQuery({
     queryKey: ['savedSearches'],
-    queryFn: () => apiService.getSavedSearches().then(res => res.data),
+    queryFn: () => apiService.getSavedSearches().then((res: any) => res.data?.saved_searches ?? (Array.isArray(res.data) ? res.data : [])),
   });
 
   const deleteMutation = useMutation({
