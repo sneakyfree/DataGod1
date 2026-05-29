@@ -148,7 +148,7 @@ def rate_limit(max_requests: int = 100, window: int = 60):
                 # Get request from kwargs if available
                 request = kwargs.get("request")
                 if request:
-                    client_ip = request.client.host
+                    client_ip = request.client.host if request.client else "unknown"
                     cache_key = f"rate_limit:{func.__name__}:{client_ip}"
 
                     current = redis_client.get(cache_key)

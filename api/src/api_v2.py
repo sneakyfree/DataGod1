@@ -131,7 +131,7 @@ def rate_limit(max_requests: int = 100, window: int = 60):
     def decorator(func):
         @wraps(func)
         async def wrapper(request: Request, *args, **kwargs):
-            client_ip = request.client.host
+            client_ip = request.client.host if request.client else "unknown"
             cache_key = f"rate_limit:{func.__name__}:{client_ip}"
 
             if redis_client:
@@ -740,7 +740,7 @@ async def register_user(request: Request, user_data: UserRegister):
     - Password must be at least 8 characters with at least one letter and one number
     - Rate limited to 5 registrations per IP per hour
     """
-    client_ip = request.client.host
+    client_ip = request.client.host if request.client else "unknown"
 
     # Check rate limit
     if not check_registration_rate_limit(client_ip):
